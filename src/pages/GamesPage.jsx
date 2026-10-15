@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowRight, Award, Check, Compass, MapPin, RotateCcw, Sparkles, Target, X } from 'lucide-react'
+import { ArrowRight, Award, Check, Compass, MapPin, RotateCcw, Target, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { games, rooms } from '../data'
 import FloorMap from '../components/FloorMap'
@@ -44,7 +44,7 @@ export default function GamesPage() {
   const restartFind = () => { setGameIndex(0); setFound(false); setMapFeedback(''); setFindScore(0); setGameFloor(findQuestions[0]?.floor || 1) }
 
   return <>
-    <PageHeading eyebrow="ПЕРЕМЕНА / ИНТЕРАКТИВНЫЕ ИГРЫ" title={<>Освой колледж.<br /><em>Играючи.</em></>} description="Короткие задания помогут запомнить этажи и план помещений. Можно ошибаться, пробовать снова и постепенно ориентироваться увереннее." aside={<div className="games-heading-badge"><Sparkles size={21} /><span>МИКРО-ИГРЫ</span><strong>02</strong><small>РЕЖИМА</small></div>} />
+    <PageHeading eyebrow="Игры" title={<>Потренируйтесь<br /><em>по карте.</em></>} description="Два небольших задания: угадайте этаж или найдите кабинет на плане. Ошибаться можно — это тренировка." />
 
     <section className="games-section container"><div className="game-mode-tabs" role="tablist" aria-label="Выберите игру">{games.map((item) => { const Icon = item.id === 'floor-quiz' ? Compass : Target; return <button key={item.id} role="tab" aria-selected={mode === item.id} className={mode === item.id ? 'game-mode-tab game-mode-active' : 'game-mode-tab'} onClick={() => setMode(item.id)}><span className="game-mode-icon"><Icon size={18} /></span><span><small>{item.tag}</small><strong>{item.title}</strong><em>{item.description}</em></span><ArrowRight size={16} /></button> })}</div>
 
@@ -53,6 +53,6 @@ export default function GamesPage() {
         {!findFinished ? <><div className="find-target-card"><span className="find-target-symbol"><Target size={18} /></span><span><small>НАЙДИ НА {targetRoom.floor} ЭТАЖЕ</small><strong>{roomLabel(targetRoom)}</strong></span><span className="find-target-count">{String(gameIndex + 1).padStart(2, '0')} / 05</span></div><div className="find-feedback-line" role="status">{found ? <><Check size={15} /> Верно! Кабинет найден на плане.</> : mapFeedback ? <><X size={15} /> Не то место — попробуй ещё раз, цель подсвечена.</> : <><MapPin size={15} /> Нажми на помещение на схеме.</>}</div><div className="find-map-toolbar"><span>ЭТАЖ {gameFloor}</span>{found && <button onClick={nextFind}>Следующее место <ArrowRight size={14} /></button>}</div><FloorMap floor={gameFloor} compact gameTargetId="" gameFeedback={mapFeedback} onSelect={onMapSelect} /></> : <div className="game-finish"><span className="game-finish-medal"><Target size={27} /></span><span className="eyebrow">ТОЧНОСТЬ</span><strong>{findScore}<small> / {findQuestions.length}</small></strong><p>Хороший результат! Теперь ты знаешь, как устроены оба этажа.</p><button className="button button-primary" onClick={restartFind}><RotateCcw size={15} /> Пройти ещё раз</button></div>}</Reveal>}
       </section>
 
-    <section className="games-bottom container"><span className="games-bottom-icon"><Sparkles size={17} /></span><p>Хочешь проверить себя в здании? Открой карту, выбери цель и найди её уже вживую.</p><Link to="/map">Карта этажей <ArrowRight size={14} /></Link></section>
+    <section className="games-bottom container"><span className="games-bottom-icon"><MapPin size={17} /></span><p>После игры откройте карту и попробуйте найти кабинет в самом колледже.</p><Link to="/map">Карта этажей <ArrowRight size={14} /></Link></section>
   </>
 }
