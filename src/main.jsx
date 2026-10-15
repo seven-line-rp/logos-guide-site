@@ -4,6 +4,7 @@ import App from './App'
 import './styles.css'
 import './styles-more.css'
 import './refinement.css'
+import './open-day.css'
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
