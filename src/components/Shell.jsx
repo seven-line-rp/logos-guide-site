@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { ArrowRight, ArrowUpRight, Check, MapPin, Moon, PartyPopper, Search, Sun, X } from 'lucide-react'
 import { navigation, rooms } from '../data'
+import { lockBodyScroll, storageGet, storageSet } from '../storage'
 import { useOpenDay } from '../useOpenDay'
 
 const ToastContext = createContext(() => {})
@@ -44,7 +45,8 @@ function SearchDialog({ open, onClose }) {
     if (open) {
       setQuery('')
       const timer = window.setTimeout(() => inputRef.current?.focus(), 40)
-      return () => window.clearTimeout(timer)
+      const unlock = lockBodyScroll()
+      return () => { window.clearTimeout(timer); unlock() }
     }
     return undefined
   }, [open])
@@ -84,7 +86,7 @@ function SearchDialog({ open, onClose }) {
 export function Header() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [theme, setTheme] = useState(() => localStorage.getItem('site-theme') || 'light')
+  const [theme, setTheme] = useState(() => storageGet('site-theme') || 'light')
   const [openDay, toggleOpenDay] = useOpenDay()
   const location = useLocation()
   const closeSearch = useCallback(() => setSearchOpen(false), [])
@@ -92,7 +94,7 @@ export function Header() {
   useEffect(() => setMobileOpen(false), [location.pathname])
   useEffect(() => {
     document.documentElement.dataset.theme = theme
-    localStorage.setItem('site-theme', theme)
+    storageSet('site-theme', theme)
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#07172e' : '#245ce5')
   }, [theme])
   useEffect(() => {

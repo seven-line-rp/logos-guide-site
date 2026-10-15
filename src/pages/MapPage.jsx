@@ -9,6 +9,7 @@ import { useOpenDay } from '../useOpenDay.js'
 import { FloorTag, PageHeading, Reveal } from '../components/Primitives.jsx'
 import { isInsidePlan, planRoomBounds } from '../map-geometry.js'
 import { addGpsAnchor, gpsPointOnPlan, readGpsAnchors, readManualLocation } from '../map-location.js'
+import { storageGet, storageRemove, storageSet } from '../storage.js'
 
 const otherFloor = (floor) => floor === 1 ? 2 : 1
 
@@ -20,17 +21,17 @@ export default function MapPage() {
   const floorRooms = useMemo(() => rooms.filter((room) => room.floor === floor), [floor])
   const [filter, setFilter] = useState('Все места')
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const [showLabels, setShowLabels] = useState(() => localStorage.getItem('map-show-labels') !== 'false')
-  const [showDoorMarks, setShowDoorMarks] = useState(() => localStorage.getItem('map-show-doors') !== 'false')
+  const [showLabels, setShowLabels] = useState(() => storageGet('map-show-labels') !== 'false')
+  const [showDoorMarks, setShowDoorMarks] = useState(() => storageGet('map-show-doors') !== 'false')
   const [zoomed, setZoomed] = useState(() => window.matchMedia('(max-width: 680px)').matches)
   const [gpsEnabled, setGpsEnabled] = useState(false)
   const [gpsStatus, setGpsStatus] = useState('idle')
   const [gpsCoordinates, setGpsCoordinates] = useState(null)
-  const [gpsAnchors, setGpsAnchors] = useState(() => readGpsAnchors(localStorage.getItem('map-gps-anchors')))
+  const [gpsAnchors, setGpsAnchors] = useState(() => readGpsAnchors(storageGet('map-gps-anchors')))
   const [manualPoint, setManualPoint] = useState(() => {
-    const saved = readManualLocation(localStorage.getItem('map-manual-point'))
+    const saved = readManualLocation(storageGet('map-manual-point'))
     if (saved) return saved
-    const oldRoom = rooms.find((room) => room.id === localStorage.getItem('map-manual-location'))
+    const oldRoom = rooms.find((room) => room.id === storageGet('map-manual-location'))
     if (!oldRoom) return null
     const [x, y, width, height] = planRoomBounds[oldRoom.id]
     return { floor: oldRoom.floor, x: x + width / 2, y: y + height / 2 }
@@ -58,15 +59,15 @@ export default function MapPage() {
   const stair = selected?.id.match(/^(stairs-(?:north|middle|west))-[12]$/)
 
   useEffect(() => {
-    localStorage.setItem('map-show-labels', String(showLabels))
-    localStorage.setItem('map-show-doors', String(showDoorMarks))
+    storageSet('map-show-labels', String(showLabels))
+    storageSet('map-show-doors', String(showDoorMarks))
   }, [showLabels, showDoorMarks])
   useEffect(() => {
-    if (manualPoint) localStorage.setItem('map-manual-point', JSON.stringify(manualPoint))
-    else localStorage.removeItem('map-manual-point')
-    localStorage.removeItem('map-manual-location')
+    if (manualPoint) storageSet('map-manual-point', JSON.stringify(manualPoint))
+    else storageRemove('map-manual-point')
+    storageRemove('map-manual-location')
   }, [manualPoint])
-  useEffect(() => { localStorage.setItem('map-gps-anchors', JSON.stringify(gpsAnchors)) }, [gpsAnchors])
+  useEffect(() => { storageSet('map-gps-anchors', JSON.stringify(gpsAnchors)) }, [gpsAnchors])
   useEffect(() => {
     if (!gpsEnabled) return undefined
     if (!window.isSecureContext || !navigator.geolocation) {
