@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { ArrowRight, Navigation, Sparkles, Users, X } from 'lucide-react'
 import { rooms } from '../data.js'
 import { venueByRoomId } from '../openDay.js'
+import { lockBodyScroll } from '../storage.js'
 
 export default function VenueModal({ roomId, onClose, fromParam = '', manualPoint = null, mode = '' }) {
   const venue = venueByRoomId(roomId)
@@ -13,6 +14,7 @@ export default function VenueModal({ roomId, onClose, fromParam = '', manualPoin
   useEffect(() => {
     if (!venue) return undefined
     const previouslyFocused = document.activeElement
+    const unlock = lockBodyScroll()
     closeRef.current?.focus()
     const onKeyDown = (event) => {
       if (event.key === 'Escape') { onClose(); return }
@@ -28,6 +30,7 @@ export default function VenueModal({ roomId, onClose, fromParam = '', manualPoin
     }
     window.addEventListener('keydown', onKeyDown)
     return () => {
+      unlock()
       window.removeEventListener('keydown', onKeyDown)
       if (previouslyFocused instanceof HTMLElement) previouslyFocused.focus()
     }

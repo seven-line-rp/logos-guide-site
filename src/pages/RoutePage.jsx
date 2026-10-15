@@ -6,13 +6,14 @@ import { FloorTag, PageHeading, Reveal } from '../components/Primitives.jsx'
 import FloorMap from '../components/FloorMap.jsx'
 import { buildIndoorRoute } from '../map-routing.js'
 import { readManualLocation } from '../map-location.js'
+import { storageGet } from '../storage.js'
 
 function roomName(room) { return `${room.name}${room.number ? ` №${room.number}` : ''}` }
 function stepLabel(count) { return `${count} ${count % 10 === 1 && count % 100 !== 11 ? 'шаг' : count % 10 >= 2 && count % 10 <= 4 && !(count % 100 >= 12 && count % 100 <= 14) ? 'шага' : 'шагов'}` }
 
 export default function RoutePage() {
   const [params] = useSearchParams()
-  const manualPoint = readManualLocation(localStorage.getItem('map-manual-point'))
+  const manualPoint = readManualLocation(storageGet('map-manual-point'))
   const [startId, setStartId] = useState(() => params.get('from') === 'manual' && manualPoint ? 'manual' : rooms.some((room) => room.id === params.get('from')) ? params.get('from') : 'entrance-1')
   const [targetId, setTargetId] = useState(() => rooms.some((room) => room.id === params.get('to')) ? params.get('to') : 'auditorium-104')
   const [transition, setTransition] = useState(() => params.get('mode') === 'stairs' ? 'stairs' : 'lift')

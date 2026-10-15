@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Link, Route, Routes, useLocation } from 'react-router-dom'
 import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { Footer, Header, ToastProvider } from './components/Shell'
+import WelcomeDialog from './components/WelcomeDialog'
 import HomePage from './pages/HomePage'
 
 const MapPage = lazy(() => import('./pages/MapPage'))
@@ -36,7 +37,7 @@ function NotFoundPage() {
 
 function Site() {
   const location = useLocation()
-  return <><RouteEffects /><Header /><main id="main-content" className="site-main page-transition" key={location.pathname}><Suspense fallback={<div className="page-loading container" role="status">Открываем раздел…</div>}><Routes location={location}><Route path="/" element={<HomePage />} /><Route path="/map" element={<MapPage />} /><Route path="/rooms" element={<RoomsPage />} /><Route path="/route" element={<RoutePage />} /><Route path="/games" element={<GamesPage />} /><Route path="/services" element={<ServicesPage />} /><Route path="/about" element={<AboutPage />} /><Route path="*" element={<NotFoundPage />} /></Routes></Suspense></main><Footer /></>
+  return <><RouteEffects /><Header /><main id="main-content" className="site-main page-transition" key={location.pathname}><Suspense fallback={<div className="page-loading container" role="status">Открываем раздел…</div>}><Routes location={location}><Route path="/" element={<HomePage />} /><Route path="/map" element={<MapPage />} /><Route path="/rooms" element={<RoomsPage />} /><Route path="/route" element={<RoutePage />} /><Route path="/games" element={<GamesPage />} /><Route path="/services" element={<ServicesPage />} /><Route path="/about" element={<AboutPage />} /><Route path="*" element={<NotFoundPage />} /></Routes></Suspense></main><Footer /><WelcomeDialog /></>
 }
 
 export default function App() {

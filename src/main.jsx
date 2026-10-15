@@ -5,6 +5,8 @@ import './styles.css'
 import './styles-more.css'
 import './refinement.css'
 import './open-day.css'
+import './welcome.css'
+import './mobile.css'
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
