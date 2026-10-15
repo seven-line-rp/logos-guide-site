@@ -364,3 +364,30 @@ h1 em, h2 em, h3 em, blockquote em, .about-values-quote blockquote,
   .venue-dialog { padding: 18px 16px 13px; }
   .venue-dialog-actions { flex-direction: column; align-items: stretch; }
 }
+
+/* Dark theme support for the open-day surfaces */
+html[data-theme='dark'] .open-day-band {
+  border-color: var(--line);
+  background: linear-gradient(180deg, #1a2c42 0%, #172538 100%);
+}
+html[data-theme='dark'] .open-day-head h2 { color: var(--ink); }
+html[data-theme='dark'] .open-day-head h2 em { color: #9fc0ff; }
+html[data-theme='dark'] .open-day-chip, html[data-theme='dark'] .open-day-card-index {
+  color: #9fc0ff;
+  border-color: rgba(126, 166, 255, .35);
+  background: rgba(126, 166, 255, .12);
+}
+html[data-theme='dark'] .open-day-card, html[data-theme='dark'] .venue-dialog {
+  border-color: var(--line);
+  background: var(--surface);
+}
+html[data-theme='dark'] .venue-dialog-badge, html[data-theme='dark'] .venue-highlight-chip, html[data-theme='dark'] .directory-venue-chip {
+  color: #9fc0ff;
+  border-color: rgba(126, 166, 255, .35);
+  background: rgba(126, 166, 255, .12);
+}
+html[data-theme='dark'] .venue-leader { background: rgba(255, 201, 61, .12); }
+html[data-theme='dark'] .room-venue-chip { color: #9fc0ff; background: rgba(126, 166, 255, .12); }
+html[data-theme='dark'] .room-venue-chip:hover { color: #0d1c3b; background: #9fc0ff; }
+html[data-theme='dark'] .venue-dialog h2 { color: var(--ink); }
+html[data-theme='dark'] .plan-venue-star { fill: #0d1c3b; }
