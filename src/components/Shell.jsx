@@ -1,7 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
-import { ArrowRight, ArrowUpRight, Check, MapPin, Moon, Search, Sun, X } from 'lucide-react'
+import { ArrowRight, ArrowUpRight, Check, MapPin, Moon, PartyPopper, Search, Sun, X } from 'lucide-react'
 import { navigation, rooms } from '../data'
+import { useOpenDay } from '../useOpenDay'
 
 const ToastContext = createContext(() => {})
 
@@ -84,6 +85,7 @@ export function Header() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [theme, setTheme] = useState(() => localStorage.getItem('site-theme') || 'light')
+  const [openDay, toggleOpenDay] = useOpenDay()
   const location = useLocation()
   const closeSearch = useCallback(() => setSearchOpen(false), [])
 
@@ -105,9 +107,9 @@ export function Header() {
     <header className="site-header">
       <div className="header-inner"><Brand />
         <nav className="desktop-nav" aria-label="Основная навигация">{navigation.map((item) => <NavLink end key={item.to} to={item.to} className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}>{item.label}</NavLink>)}</nav>
-        <div className="header-actions"><button className="theme-toggle" onClick={() => setTheme((value) => value === 'dark' ? 'light' : 'dark')} aria-label={theme === 'dark' ? 'Включить светлую тему' : 'Включить тёмную тему'} title={theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}>{theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}</button><button className="search-trigger" onClick={() => setSearchOpen(true)} aria-label="Найти кабинет"><Search size={16} /><span>Найти место</span><kbd>⌘ K</kbd></button><Link className="header-cta" to="/map">Открыть карту <ArrowUpRight size={15} /></Link><button className={`mobile-menu-toggle ${mobileOpen ? 'is-open' : ''}`} onClick={() => setMobileOpen((value) => !value)} aria-label={mobileOpen ? 'Закрыть меню' : 'Открыть меню'} aria-expanded={mobileOpen}>{mobileOpen ? <X size={21} /> : <span className="menu-lines"><i /><i /></span>}</button></div>
+        <div className="header-actions"><button className={`open-day-toggle ${openDay ? 'open-day-toggle-on' : ''}`} onClick={() => toggleOpenDay()} aria-pressed={openDay} title={openDay ? 'Режим дня открытых дверей включён — нажмите, чтобы выключить' : 'Режим дня открытых дверей выключен — нажмите, чтобы включить'}><PartyPopper size={15} /><span>День открытых дверей</span><i className="open-day-switch" aria-hidden="true"><b /></i></button><button className="theme-toggle" onClick={() => setTheme((value) => value === 'dark' ? 'light' : 'dark')} aria-label={theme === 'dark' ? 'Включить светлую тему' : 'Включить тёмную тему'} title={theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}>{theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}</button><button className="search-trigger" onClick={() => setSearchOpen(true)} aria-label="Найти кабинет"><Search size={16} /><span>Найти место</span><kbd>⌘ K</kbd></button><Link className="header-cta" to="/map">Открыть карту <ArrowUpRight size={15} /></Link><button className={`mobile-menu-toggle ${mobileOpen ? 'is-open' : ''}`} onClick={() => setMobileOpen((value) => !value)} aria-label={mobileOpen ? 'Закрыть меню' : 'Открыть меню'} aria-expanded={mobileOpen}>{mobileOpen ? <X size={21} /> : <span className="menu-lines"><i /><i /></span>}</button></div>
       </div>
-      {mobileOpen && <div className="mobile-nav-panel"><div className="mobile-nav-links">{navigation.map((item, index) => <NavLink key={item.to} to={item.to} className={({ isActive }) => `mobile-nav-link ${isActive ? 'mobile-nav-link-active' : ''}`}><span className="mobile-nav-index">0{index + 1}</span>{item.label}<ArrowRight size={17} /></NavLink>)}</div><div className="mobile-nav-bottom"><span>Найдите нужное место</span><button onClick={() => { setMobileOpen(false); setSearchOpen(true) }}><Search size={15} /> Поиск кабинета</button></div></div>}
+      {mobileOpen && <div className="mobile-nav-panel"><div className="mobile-nav-links">{navigation.map((item, index) => <NavLink key={item.to} to={item.to} className={({ isActive }) => `mobile-nav-link ${isActive ? 'mobile-nav-link-active' : ''}`}><span className="mobile-nav-index">0{index + 1}</span>{item.label}<ArrowRight size={17} /></NavLink>)}</div><div className="mobile-nav-bottom"><span>Найдите нужное место</span><button onClick={() => { setMobileOpen(false); setSearchOpen(true) }}><Search size={15} /> Поиск кабинета</button></div><div className="mobile-nav-bottom"><span>Режим мероприятия</span><button className={`open-day-toggle ${openDay ? 'open-day-toggle-on' : ''}`} onClick={() => toggleOpenDay()} aria-pressed={openDay}><PartyPopper size={15} /> День открытых дверей <i className="open-day-switch" aria-hidden="true"><b /></i></button></div></div>}
     </header>
     <SearchDialog open={searchOpen} onClose={closeSearch} />
   </>
