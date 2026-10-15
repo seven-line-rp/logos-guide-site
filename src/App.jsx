@@ -1,14 +1,15 @@
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Link, Route, Routes, useLocation } from 'react-router-dom'
 import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { Footer, Header, ToastProvider } from './components/Shell'
 import HomePage from './pages/HomePage'
-import MapPage from './pages/MapPage'
-import RoomsPage from './pages/RoomsPage'
-import RoutePage from './pages/RoutePage'
-import GamesPage from './pages/GamesPage'
-import ServicesPage from './pages/ServicesPage'
-import AboutPage from './pages/AboutPage'
+
+const MapPage = lazy(() => import('./pages/MapPage'))
+const RoomsPage = lazy(() => import('./pages/RoomsPage'))
+const RoutePage = lazy(() => import('./pages/RoutePage'))
+const GamesPage = lazy(() => import('./pages/GamesPage'))
+const ServicesPage = lazy(() => import('./pages/ServicesPage'))
+const AboutPage = lazy(() => import('./pages/AboutPage'))
 
 const titles = {
   '/': 'Путеводитель по колледжу',
@@ -35,7 +36,7 @@ function NotFoundPage() {
 
 function Site() {
   const location = useLocation()
-  return <><RouteEffects /><Header /><main id="main-content" className="site-main page-transition" key={location.pathname}><Routes location={location}><Route path="/" element={<HomePage />} /><Route path="/map" element={<MapPage />} /><Route path="/rooms" element={<RoomsPage />} /><Route path="/route" element={<RoutePage />} /><Route path="/games" element={<GamesPage />} /><Route path="/services" element={<ServicesPage />} /><Route path="/about" element={<AboutPage />} /><Route path="*" element={<NotFoundPage />} /></Routes></main><Footer /></>
+  return <><RouteEffects /><Header /><main id="main-content" className="site-main page-transition" key={location.pathname}><Suspense fallback={<div className="page-loading container" role="status">Открываем раздел…</div>}><Routes location={location}><Route path="/" element={<HomePage />} /><Route path="/map" element={<MapPage />} /><Route path="/rooms" element={<RoomsPage />} /><Route path="/route" element={<RoutePage />} /><Route path="/games" element={<GamesPage />} /><Route path="/services" element={<ServicesPage />} /><Route path="/about" element={<AboutPage />} /><Route path="*" element={<NotFoundPage />} /></Routes></Suspense></main><Footer /></>
 }
 
 export default function App() {

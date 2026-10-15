@@ -1,154 +1,107 @@
-import { rooms } from './data'
+import { rooms } from './data.js'
+import { circulation, isManualPoint, pointInPolygon, roomAccess, roomAtPoint } from './map-geometry.js'
 
-// Bounds are in the same coordinate system as the two floor-plan SVG viewBoxes.
-// Keeping these rectangles here also clips every interactive hit-area to the plan.
-export const planRoomBounds = {
-  canteen: [0, 0, 147, 155], 'workshop-115': [148, 94, 109, 62], 'simulator-114': [257, 94, 84, 62],
-  'academic-office': [341, 94, 184, 62], 'lift-1': [525, 94, 24, 62], 'stairs-north-1': [549, 94, 62, 62],
-  'auditorium-104': [610, 94, 147, 150], 'class-119': [0, 179, 61, 74], 'class-118': [0, 252, 61, 74],
-  'toilet-men-1': [85.5, 179, 84, 32], 'toilet-women-1': [85.5, 210, 84, 32], 'language-148': [148, 179, 95, 63],
-  'aerodynamics-120': [243, 179, 75, 63], 'stairs-middle-1': [318, 179, 65, 63], 'director-149': [383, 179, 67, 63],
-  'changing-room': [450, 179, 99, 63], 'hall-1': [549, 179, 61, 62], 'entrance-1': [548, 241, 62, 23],
-  'stairs-west-1': [0, 322, 62, 64], 'class-139': [85, 308, 63, 67], 'class-138': [85, 375, 63, 68],
-  'class-162': [0, 419, 62, 49], 'training-centre-113': [0, 468, 149, 84],
-  'library-214': [0, 0, 148, 155], 'radio-lab-228': [144, 94, 115, 63], 'electro-radio-230': [259, 94, 98, 63],
-  'assistant-230': [357, 94, 66, 63], 'uav-lab-209': [423, 94, 112, 63], 'lift-2': [535, 94, 26, 63],
-  'stairs-north-2': [561, 94, 49, 63], 'meteorology-236': [0, 182, 62, 97], 'toilet-men-2': [86, 182, 62, 32],
-  'toilet-women-2': [86, 214, 62, 34], 'physics-211': [168, 182, 154, 64], 'stairs-middle-2': [322, 182, 70, 64],
-  'psychologist-224': [392, 182, 33, 64], 'class-217': [425, 182, 55, 64], 'class-229': [480, 182, 31, 64],
-  'informatics-222': [511, 182, 50, 64], 'stairs-west-2': [0, 331, 62, 96], 'chemistry-biology-202': [86, 245, 62, 83],
-  'assistant-202': [86, 328, 62, 55], 'practical-225': [86, 383, 62, 34], 'electrical-lab-207': [0, 478, 78, 82],
-  'biotech-lab-225': [78, 431, 70, 128],
-}
+export { planRoomBounds } from './map-geometry.js'
 
-// These are the actual walkable strips visible on the supplied plans. Routes are
-// searched only inside them, rather than drawing a straight line through rooms.
-const corridors = {
-  1: [[0, 155, 610, 24], [62, 179, 24, 290], [548, 179, 62, 85]],
-  2: [[86, 155, 524, 28], [62, 178, 24, 320]],
-}
-const GRID = 8
-const floorGrids = new Map()
+const emptyRoute = { points: [], waypoints: [], length: 0 }
+const transfers = { lift: ['lift'], stairs: ['stairs-west', 'stairs-middle', 'stairs-north'] }
 
-function pointInCorridor([x, y], floor) {
-  const doorTolerance = 2
-  return corridors[floor].some(([left, top, width, height]) => x >= left - doorTolerance && x <= left + width + doorTolerance && y >= top - doorTolerance && y <= top + height + doorTolerance)
-}
+function samePoint(a, b) { return a[0] === b[0] && a[1] === b[1] }
 
-function segmentInCorridors(start, end, floor) {
-  const length = Math.abs(end[0] - start[0]) + Math.abs(end[1] - start[1])
-  const samples = Math.max(1, Math.ceil(length / 2))
-  for (let index = 0; index <= samples; index += 1) {
-    const ratio = index / samples
-    if (!pointInCorridor([start[0] + (end[0] - start[0]) * ratio, start[1] + (end[1] - start[1]) * ratio], floor)) return false
-  }
-  return true
-}
-
-function gridForFloor(floor) {
-  if (floorGrids.has(floor)) return floorGrids.get(floor)
-  const width = floor === 1 ? 758 : 767
-  const height = floor === 1 ? 552 : 561
-  const columns = Math.ceil((width - 4) / GRID)
-  const rows = Math.ceil((height - 4) / GRID)
-  const points = new Map()
-  const neighbours = new Map()
-  for (let row = 0; row < rows; row += 1) {
-    for (let column = 0; column < columns; column += 1) {
-      const point = [4 + column * GRID, 4 + row * GRID]
-      if (pointInCorridor(point, floor)) points.set(`${column}:${row}`, point)
-    }
-  }
-  for (const key of points.keys()) {
-    const [column, row] = key.split(':').map(Number)
-    neighbours.set(key, [[column - 1, row], [column + 1, row], [column, row - 1], [column, row + 1]]
-      .map(([nextColumn, nextRow]) => `${nextColumn}:${nextRow}`)
-      .filter((nextKey) => points.has(nextKey)))
-  }
-  const grid = { points, neighbours }
-  floorGrids.set(floor, grid)
-  return grid
-}
-
-export function isPointInCollegePlan(point, floor) {
-  if (!corridors[floor]) return false
-  const [x, y] = point
-  const inRoom = rooms.some((room) => {
-    if (room.floor !== floor || !planRoomBounds[room.id]) return false
-    const [left, top, width, height] = planRoomBounds[room.id]
-    return x >= left && x <= left + width && y >= top && y <= top + height
+function cleanPath(points) {
+  const withoutDuplicates = points.filter((point, index) => index === 0 || !samePoint(point, points[index - 1]))
+  return withoutDuplicates.filter((point, index) => {
+    if (index === 0 || index === withoutDuplicates.length - 1) return true
+    const prev = withoutDuplicates[index - 1]
+    const next = withoutDuplicates[index + 1]
+    return (point[0] - prev[0]) * (next[1] - point[1]) !== (point[1] - prev[1]) * (next[0] - point[0])
   })
-  return inRoom || pointInCorridor(point, floor)
 }
 
-function roomDoor(room) {
-  const [x, y, width, height] = planRoomBounds[room.id]
-  const [side, position = 0.5] = room.map.door || ['top', 0.5]
-  if (side === 'bottom') return [x + width * position, y + height]
-  if (side === 'left') return [x, y + height * position]
-  if (side === 'right') return [x + width, y + height * position]
-  return [x + width * position, y]
+function distance(points) {
+  return points.slice(1).reduce((sum, point, index) => sum + Math.hypot(point[0] - points[index][0], point[1] - points[index][1]), 0)
 }
 
-function corridorEntrances(door, floor, grid) {
-  return [...grid.points.entries()]
-    .filter(([, point]) => Math.abs(point[0] - door[0]) + Math.abs(point[1] - door[1]) <= 40 && segmentInCorridors(door, point, floor))
-    .sort((first, second) => (Math.abs(first[1][0] - door[0]) + Math.abs(first[1][1] - door[1])) - (Math.abs(second[1][0] - door[0]) + Math.abs(second[1][1] - door[1])))
-    .map(([key]) => key)
+function name(room) { return `${room.name}${room.number ? ` №${room.number}` : ''}` }
+
+function endpoint(value) {
+  const room = typeof value === 'string' ? rooms.find((item) => item.id === value) :
+    isManualPoint(value, rooms) ? roomAtPoint(value.floor, [value.x, value.y], rooms) : null
+  if (typeof value === 'string' && !room) return null
+  if (typeof value !== 'string' && !isManualPoint(value, rooms)) return null
+
+  if (!room) {
+    // A manually selected point in an actual corridor, not inside a room.
+    const [x, y] = [value.x, value.y]
+    const inMain = y >= 156 && y <= (value.floor === 1 ? 179 : 182) && x <= 610
+    const inWest = x >= 62 && x <= 86 && y >= 179
+    const inHall = value.floor === 1 && circulation[1][2] && pointInPolygon([x, y], circulation[1][2])
+    const anchor = inMain ? [x, 168] : inWest ? [73, y] : inHall ? [579, 168] : [73, 168]
+    const path = inMain ? [[x, y], anchor] : inWest ? [[x, y], anchor] :
+      inHall ? [[x, y], [579, y], anchor] : [[x, y], [73, y], anchor]
+    return { floor: value.floor, anchor, branch: inWest ? 'west' : 'main', path: cleanPath(path), label: 'Метка на плане' }
+  }
+
+  const access = roomAccess[room.id]
+  if (!access) return null
+  const { door, branch } = access
+  const anchor = branch === 'west' ? [73, door[1]] : branch === 'hall' || branch === 'auditorium' ? [579, 168] :
+    branch === 'library' ? [73, 168] : [door[0], 168]
+  let path = branch === 'library' ? [door, [116, 126], [73, 126], anchor] :
+    branch === 'auditorium' ? [door, [579, door[1]], anchor] : [door, anchor]
+
+  if (typeof value !== 'string') {
+    const from = [value.x, value.y]
+    // Stay inside the selected room until its one known doorway. In particular,
+    // a point in the lower west wing must not jump across the corridor.
+    const via = branch === 'west' ? [door[0], from[1]] : [from[0], door[1]]
+    path = [from, via, ...path]
+  }
+  return { floor: room.floor, anchor, branch: branch === 'west' ? 'west' : 'main', path: cleanPath(path), label: typeof value === 'string' ? name(room) : 'Метка на плане' }
 }
 
-function corridorPath(floor, startDoor, endDoor) {
-  const grid = gridForFloor(floor)
-  const starts = corridorEntrances(startDoor, floor, grid)
-  const ends = new Set(corridorEntrances(endDoor, floor, grid))
-  if (!starts.length || !ends.size) return []
+function walk(from, to) {
+  if (!from || !to || from.floor !== to.floor) return emptyRoute
+  const junction = [73, 168]
+  const middle = from.branch !== to.branch ? [junction] : []
+  const points = cleanPath([...from.path, ...middle, ...[...to.path].reverse()])
+  const waypoints = []
+  if (from.branch === 'west' || to.branch === 'west') waypoints.push('Коридор западного крыла')
+  if (points.some((point, index) => index > 0 && point[1] === 168 && points[index - 1][1] === 168 && Math.abs(point[0] - points[index - 1][0]) > 30)) waypoints.push('Главный коридор')
+  return { points, waypoints, length: distance(points), startLabel: from.label, endLabel: to.label }
+}
 
-  const queue = [...starts]
-  const previous = new Map(starts.map((key) => [key, null]))
-  let destination = null
-  for (let cursor = 0; cursor < queue.length; cursor += 1) {
-    const current = queue[cursor]
-    if (ends.has(current)) { destination = current; break }
-    for (const next of grid.neighbours.get(current) || []) {
-      if (previous.has(next)) continue
-      previous.set(next, current)
-      queue.push(next)
+export function buildIndoorRoute(start, targetId, transition = 'lift') {
+  const from = endpoint(start)
+  const target = endpoint(targetId)
+  if (!from || !target) return { byFloor: {}, transfer: null, length: 0 }
+  if (from.floor === target.floor) {
+    const startRoom = typeof start === 'string' ? start : roomAtPoint(start.floor, [start.x, start.y], rooms)
+    if (startRoom?.id === targetId) {
+      const point = typeof start === 'string' ? roomAccess[targetId].door : [start.x, start.y]
+      return { byFloor: { [from.floor]: { ...emptyRoute, points: [point], startLabel: from.label, endLabel: target.label } }, transfer: null, length: 0 }
     }
+    const leg = walk(from, target)
+    return { byFloor: { [from.floor]: leg }, transfer: null, length: leg.length }
   }
-  if (!destination) return []
-  const keys = []
-  for (let key = destination; key; key = previous.get(key)) keys.unshift(key)
-  const points = keys.map((key) => grid.points.get(key))
-  // Simplify collinear grid steps without changing the safe path.
-  const simplified = points.filter((point, index) => {
-    if (index === 0 || index === points.length - 1) return true
-    const before = points[index - 1]
-    const after = points[index + 1]
-    return (point[0] - before[0]) * (after[1] - point[1]) !== (point[1] - before[1]) * (after[0] - point[0])
-  })
-  return [startDoor, ...simplified, endDoor]
+
+  const candidates = (transfers[transition] || transfers.lift).map((key) => {
+    const departure = endpoint(`${key}-${from.floor}`)
+    const arrival = endpoint(`${key}-${target.floor}`)
+    if (!departure || !arrival) return null
+    const firstLeg = walk(from, departure)
+    const secondLeg = walk(arrival, target)
+    return {
+      byFloor: { [from.floor]: firstLeg, [target.floor]: secondLeg },
+      transfer: { kind: key, startFloor: from.floor, endFloor: target.floor, startId: `${key}-${from.floor}`, endId: `${key}-${target.floor}`, label: transition === 'lift' ? 'лифт' : 'лестница', toward: transition === 'lift' ? 'лифта' : 'лестницы', method: transition === 'lift' ? 'на лифте' : 'по лестнице' },
+      length: firstLeg.length + secondLeg.length,
+    }
+  }).filter(Boolean)
+  return candidates.sort((first, second) => first.length - second.length)[0] || { byFloor: {}, transfer: null, length: 0 }
 }
 
-function transferRoom(floor, transition) {
-  return rooms.find((room) => room.id === (transition === 'stairs' ? `stairs-middle-${floor}` : `lift-${floor}`))
-}
-
-function roomName(room) { return `${room.name}${room.number ? ` №${room.number}` : ''}` }
-
-export function calculateIndoorRoute(startId, targetId, floor, transition = 'lift') {
-  const startRoom = rooms.find((room) => room.id === startId)
-  const targetRoom = rooms.find((room) => room.id === targetId)
-  if (!corridors[floor] || !startRoom || !targetRoom) return { points: [], waypoints: [] }
-
-  const routeStart = startRoom.floor === floor ? startRoom : transferRoom(floor, transition)
-  const routeEnd = targetRoom.floor === floor ? targetRoom : transferRoom(floor, transition)
-  if (!routeStart || !routeEnd || !planRoomBounds[routeStart.id] || !planRoomBounds[routeEnd.id]) return { points: [], waypoints: [] }
-
-  const points = corridorPath(floor, roomDoor(routeStart), roomDoor(routeEnd))
-  return {
-    points,
-    waypoints: points.length > 3 ? ['По коридору'] : [],
-    startLabel: roomName(routeStart),
-    endLabel: roomName(routeEnd),
-  }
+// Called by both the full-size plan and route previews, so the same stairwell
+// and the same wall-aware path are displayed on both floors.
+export function calculateIndoorRoute(start, targetId, floor, transition = 'lift') {
+  return buildIndoorRoute(start, targetId, transition).byFloor[floor] || emptyRoute
 }
