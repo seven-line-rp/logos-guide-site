@@ -8,6 +8,8 @@ import './open-day.css'
 import './welcome.css'
 import './mobile.css'
 import './polish.css'
+import './premium.css'
+import './interactions.js'
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>

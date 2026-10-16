@@ -26,9 +26,10 @@ export const planRoomBounds = {
   'toilet-women-1': [86, 209.9, 83.6, 32],
   'language-148': [167.9, 179, 77.2, 62.8],
   'aerodynamics-120': [243.7, 179, 74.4, 62.8],
-  // The staircase next to room 149 is two drawn cells (a landing and a flight)
-  // between the shaft at x=317.6 and the wall of the director's office at x=383.4.
-  'stairs-middle-1': [336.5, 179.7, 46.9, 61.4],
+  // The central staircase on the first floor is three drawn cells: the landing
+  // shaft at x=317.6…336.5 and the two flights at x=336.5…383.4. The whole block
+  // is one clickable staircase; the director's office starts at x=383.4.
+  'stairs-middle-1': [317.6, 179.7, 65.8, 61.4],
   'director-149': [383.4, 179.7, 66.3, 61.4],
   'changing-room': [448.8, 179, 99.9, 62.8],
   'hall-1': [548, 179, 62, 63],

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
-export function Reveal({ children, className = '', delay = 0, as: Tag = 'div', style, ...props }) {
+export function Reveal({ children, className = '', delay = 0, as: Tag = 'div', style, variant = 'up', ...props }) {
   const ref = useRef(null)
   const [visible, setVisible] = useState(false)
 
@@ -12,12 +12,13 @@ export function Reveal({ children, className = '', delay = 0, as: Tag = 'div', s
     if (!('IntersectionObserver' in window)) { setVisible(true); return undefined }
     const observer = new IntersectionObserver(([entry]) => {
       if (entry.isIntersecting) { setVisible(true); observer.unobserve(node) }
-    }, { threshold: 0.08, rootMargin: '0px 0px -30px 0px' })
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' })
     observer.observe(node)
     return () => observer.disconnect()
   }, [])
 
-  return <Tag ref={ref} {...props} className={`reveal ${visible ? 'reveal-visible' : ''} ${className}`} style={{ ...style, '--reveal-delay': `${delay}ms` }}>{children}</Tag>
+  const variantClass = `reveal-${variant}`
+  return <Tag ref={ref} {...props} className={`reveal ${variantClass} ${visible ? 'reveal-visible' : ''} ${className}`} style={{ ...style, '--reveal-delay': `${delay}ms` }}>{children}</Tag>
 }
 
 export function PageHeading({ eyebrow, title, description, aside, className = '' }) {
