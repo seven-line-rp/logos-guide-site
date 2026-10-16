@@ -104,9 +104,16 @@ html[data-theme='dark'] .floor-map-zoom-controls button { background: #14294a; c
 .plan-route circle { fill: #1667e6; stroke: #fff; stroke-width: 3; }
 .plan-route .plan-route-destination { fill: #e5484d; }
 .plan-route .plan-route-pulse { fill: none; stroke: #e5484d; stroke-width: 2; animation: route-pulse 1.6s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+/* Пройденная часть линии остаётся как след: бледная и без анимации. */
+.plan-route .plan-route-passed { fill: none; stroke: #1667e6; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; opacity: .28; stroke-dasharray: none; animation: none; }
+/* Точка, которая едет по маршруту вместе с шагами подсказки. */
+.plan-route .plan-route-guide { transition: transform .35s ease; }
+.plan-route .plan-route-guide-core { fill: #ffb020; stroke: #fff; stroke-width: 3; animation: none; }
+.plan-route .plan-route-guide-center { fill: #fff; }
+.plan-route .plan-route-guide-pulse { fill: none; stroke: #ffb020; stroke-width: 2.5; animation: route-pulse 1.8s ease-out infinite; transform-box: fill-box; transform-origin: center; }
 @keyframes route-march { to { stroke-dashoffset: -14; } }
 @keyframes route-pulse { from { opacity: .9; transform: scale(1); } to { opacity: 0; transform: scale(2.6); } }
-@media (prefers-reduced-motion: reduce) { .plan-route .plan-route-flow, .plan-route .plan-route-pulse { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .plan-route .plan-route-flow, .plan-route .plan-route-pulse, .plan-route .plan-route-guide-pulse { animation: none; } .plan-route .plan-route-guide { transition: none; } }
 
 .route-nav { margin: 14px 0 6px; padding: 14px; border-radius: 14px; color: #fff; background: #1667e6; }
 .route-nav-main { display: grid; grid-template-columns: 46px minmax(0,1fr); align-items: center; gap: 12px; }
@@ -120,10 +127,18 @@ html[data-theme='dark'] .floor-map-zoom-controls button { background: #14294a; c
 .route-nav-controls button.route-nav-voice-off { color: #fff; background: rgba(255,255,255,.2); }
 .route-progress { height: 5px; margin-top: 12px; overflow: hidden; border-radius: 4px; background: rgba(255,255,255,.25); }
 .route-progress > span { display: block; height: 100%; border-radius: 4px; background: #fff; transition: width .3s; }
-.route-step { cursor: pointer; }
+.route-step { cursor: pointer; transition: opacity .25s ease, background .25s ease; }
 .route-step-current { background: #eaf1ff; border-radius: 10px; }
 html[data-theme='dark'] .route-step-current { background: #18345e; }
 .route-step-current .route-step-index { background: #1667e6; color: #fff; }
+/* Пройденный шаг остаётся в списке, но гаснет — видно, откуда пришли. */
+.route-step-past { opacity: .45; }
+.route-step-past .route-step-index { color: #1667e6; background: #eef3fb; }
+.route-step-past strong { font-weight: 600; }
+.route-step-past .route-step-count { color: #1667e6; }
+.route-step-past:hover, .route-step-past:focus-visible { opacity: .8; }
+html[data-theme='dark'] .route-step-past .route-step-index { background: #14294a; }
+@media (prefers-reduced-motion: reduce) { .route-step { transition: none; } }
 
 /* --- Игры: три режима и карточки без номеров --- */
 .game-mode-tabs { grid-template-columns: 1fr; }
@@ -145,5 +160,8 @@ html[data-theme='dark'] .route-step-current { background: #18345e; }
 .route-voice-toggle { min-height: 36px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; border: 1px solid #cfdbf0; border-radius: 9px; color: var(--ink); background: #fff; font-size: 14px; font-weight: 600; cursor: pointer; }
 .route-voice-toggle.route-voice-on { color: #fff; background: #1667e6; border-color: #1667e6; }
 html[data-theme='dark'] .route-voice-toggle { background: #14294a; color: #e6efff; border-color: rgba(171,198,238,.2); }
+.route-voice-notice { display: flex; align-items: flex-start; gap: 7px; margin: 12px 0 0; padding: 9px 11px; border-radius: 10px; color: #7a4a08; background: #fff6e5; font-size: 13px; line-height: 1.45; }
+.route-voice-notice svg { flex: none; margin-top: 2px; }
+html[data-theme='dark'] .route-voice-notice { color: #f2d7ab; background: #3a2c14; }
 .route-hint-band p { font-size: 15px; }
 @media (hover: hover) { .floor-map-hint { display: none; } }

@@ -3,7 +3,7 @@ import { circulation, isManualPoint, pointInPolygon, roomAccess, roomAtPoint } f
 
 export { planRoomBounds } from './map-geometry.js'
 
-const emptyRoute = { points: [], waypoints: [], length: 0 }
+const emptyRoute = { points: [], waypoints: [], guides: [], length: 0 }
 const transfers = { lift: ['lift'], stairs: ['stairs-west', 'stairs-middle', 'stairs-north'] }
 
 function samePoint(a, b) { return a[0] === b[0] && a[1] === b[1] }
@@ -68,7 +68,69 @@ function walk(from, to) {
   const waypoints = []
   if (from.branch === 'west' || to.branch === 'west') waypoints.push('Коридор западного крыла')
   if (points.some((point, index) => index > 0 && point[1] === 168 && points[index - 1][1] === 168 && Math.abs(point[0] - points[index - 1][0]) > 30)) waypoints.push('Главный коридор')
-  return { points, waypoints, length: distance(points), startLabel: from.label, endLabel: to.label }
+  return { points, waypoints, guides: buildGuides(points, from.floor), length: distance(points), startLabel: from.label, endLabel: to.label }
+}
+
+// Куда ведёт восточный конец главного коридора — на каждом этаже своё.
+const EAST_LANDMARK = {
+  1: { title: 'к холлу и актовому залу', say: 'в сторону холла' },
+  2: { title: 'к лабораториям', say: 'в сторону лабораторий' },
+}
+const WEST_LANDMARK = {
+  1: { title: 'к западному крылу', say: 'в сторону западного крыла' },
+  2: { title: 'к библиотеке', say: 'в сторону библиотеки' },
+}
+
+// Подсказки «что делать дальше» с привязкой к вершине маршрута: страница
+// маршрута двигает по ним точку на плане, поэтому index — позиция в points.
+function buildGuides(points, floor = 1) {
+  const guides = []
+  const push = (guide) => {
+    const previous = guides.at(-1)
+    if (previous && previous.index === guide.index) guides[guides.length - 1] = guide
+    else guides.push(guide)
+  }
+  for (let index = 1; index < points.length; index += 1) {
+    const [x0, y0] = points[index - 1]
+    const [x1, y1] = points[index]
+    // Точка-поводырь встаёт в НАЧАЛО участка: это место, где пользователь
+    // слушает подсказку, и пройденная часть линии доходит ровно до него.
+    // У первого участка начало совпадает со стартом — тогда точка сдвигается
+    // на шаг вперёд, иначе подсказка не отличалась бы от шага «Начало».
+    const at = Math.max(1, index - 1)
+    if (y0 === y1 && y0 === 168 && x0 !== x1) {
+      const east = x1 > x0
+      const landmark = east ? (EAST_LANDMARK[floor] || EAST_LANDMARK[1]) : (WEST_LANDMARK[floor] || WEST_LANDMARK[1])
+      push({
+        index: at,
+        kind: 'main-corridor',
+        title: `Главный коридор · ${landmark.title}`,
+        detail: east ? 'Двери кабинетов по правой стороне' : 'Двери кабинетов по левой стороне',
+        say: `Идите по главному коридору ${landmark.say}, до нужной двери.`,
+      })
+    } else if (x0 === x1 && y0 === y1) {
+      continue
+    } else if (x0 === x1 && Math.abs(y1 - y0) > 24) {
+      if (x0 === 73) {
+        push({
+          index: at,
+          kind: 'west-corridor',
+          title: 'Коридор западного крыла',
+          detail: 'Кабинеты по левой стороне',
+          say: 'Поверните в коридор западного крыла и идите вдоль кабинетов.',
+        })
+      } else if (x0 === 579) {
+        push({
+          index: at,
+          kind: 'hall',
+          title: 'Холл у входа',
+          detail: 'Идите к актовому залу',
+          say: 'Пройдите через холл в сторону актового зала.',
+        })
+      }
+    }
+  }
+  return guides
 }
 
 export function buildIndoorRoute(start, targetId, transition = 'lift') {
