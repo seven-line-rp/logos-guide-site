@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef } from 'react'
+import { useEffect, useId, useMemo, useRef } from 'react'
 import { rooms } from '../data.js'
 import floorOnePlan from '../../map1lower.svg?raw'
 import floorTwoPlan from '../../map2lower.svg?raw'
