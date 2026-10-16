@@ -1,30 +1,44 @@
-// Голосовой пакет навигатора — заранее записанные фразы в стиле 2ГИС.
+// Голосовые пакеты навигатора — заранее записанные фразы в стиле 2ГИС.
 //
 // У 2ГИС нет публичной веб-библиотеки озвучки (голосовые пакеты доступны
-// только в приложении и нативном SDK), поэтому сайт приносит собственный
-// пакет: фиксированные манёвры лежат файлами в public/voice и играют через
+// только в приложении и нативном SDK), поэтому сайт приносит собственные
+// пакеты: фиксированные манёвры лежат файлами в public/voice и играют через
 // Web Audio API. Такая озвучка не зависит от системных голосов браузера и
 // звучит одинаково на любом устройстве, включая машины без русского голоса.
 //
-// Названия кабинетов заранее записать нельзя — их по-прежнему читает
-// браузерный синтез (speech.js). Шаг маршрута несёт voiceCue со списком
-// фраз пакета; если хоть одна фраза не загрузилась, шаг целиком озвучивается
-// синтезатором, чтобы подсказка не пропала.
+// Пакетов два — женский и мужской; список фраз у них общий, отличаются
+// только папки с файлами. Названия кабинетов заранее записать нельзя — их
+// по-прежнему читает браузерный синтез (speech.js). Шаг маршрута несёт
+// voiceCue со списком фраз; если хоть одна фраза не загрузилась, шаг целиком
+// озвучивается синтезатором, чтобы подсказка не пропала.
 
 export const VOICE_PACK_ID = 'pack2gis'
+export const VOICE_PACK_MALE_ID = 'pack2gis-male'
+
+export const VOICE_PACKS = {
+  female: { presetId: VOICE_PACK_ID, label: 'Женская запись', dir: 'voice' },
+  male: { presetId: VOICE_PACK_MALE_ID, label: 'Мужская запись', dir: 'voice/male' },
+}
+
+export function voicePackForPreset(presetId) {
+  return Object.values(VOICE_PACKS).find((pack) => pack.presetId === presetId) || null
+}
 
 export const VOICE_PACK_PHRASES = {
-  'route-built': { file: 'voice/route-built.mp3', text: 'Маршрут построен.' },
-  'corridor-1-east': { file: 'voice/corridor-1-east.mp3', text: 'Идите по главному коридору в сторону холла, до нужной двери.' },
-  'corridor-2-east': { file: 'voice/corridor-2-east.mp3', text: 'Идите по главному коридору в сторону лабораторий, до нужной двери.' },
-  'corridor-1-west': { file: 'voice/corridor-1-west.mp3', text: 'Идите по главному коридору в сторону западного крыла, до нужной двери.' },
-  'corridor-2-west': { file: 'voice/corridor-2-west.mp3', text: 'Идите по главному коридору в сторону библиотеки, до нужной двери.' },
-  'west-corridor': { file: 'voice/west-corridor.mp3', text: 'Поверните в коридор западного крыла и идите вдоль кабинетов.' },
-  'hall': { file: 'voice/hall.mp3', text: 'Пройдите через холл в сторону актового зала.' },
-  'transfer-up': { file: 'voice/transfer-up.mp3', text: 'Поднимитесь на второй этаж.' },
-  'transfer-down': { file: 'voice/transfer-down.mp3', text: 'Спуститесь на первый этаж.' },
-  'arrive': { file: 'voice/arrive.mp3', text: 'Вы пришли на место.' },
+  'route-built': { text: 'Маршрут построен.' },
+  'corridor-1-east': { text: 'Идите по главному коридору в сторону холла, до нужной двери.' },
+  'corridor-2-east': { text: 'Идите по главному коридору в сторону лабораторий, до нужной двери.' },
+  'corridor-1-west': { text: 'Идите по главному коридору в сторону западного крыла, до нужной двери.' },
+  'corridor-2-west': { text: 'Идите по главному коридору в сторону библиотеки, до нужной двери.' },
+  'west-corridor': { text: 'Поверните в коридор западного крыла и идите вдоль кабинетов.' },
+  'hall': { text: 'Пройдите через холл в сторону актового зала.' },
+  'transfer-up': { text: 'Поднимитесь на второй этаж.' },
+  'transfer-down': { text: 'Спуститесь на первый этаж.' },
+  'arrive': { text: 'Вы пришли на место.' },
 }
+
+// Имя файла каждой фразы — её ключ.
+const phraseFile = (key) => `${key}.mp3`
 
 const PHRASE_GAP = 0.26
 
@@ -50,16 +64,16 @@ export function primeVoicePack() {
   } catch { /* Web Audio недоступен — фразы озвучит синтезатор */ }
 }
 
-function phraseUrl(key) {
-  const phrase = VOICE_PACK_PHRASES[key]
-  if (!phrase) return null
-  return `${import.meta.env.BASE_URL || '/'}${phrase.file}`
+function phraseUrl(key, dir) {
+  if (!VOICE_PACK_PHRASES[key]) return null
+  return `${import.meta.env.BASE_URL || '/'}${dir}/${phraseFile(key)}`
 }
 
-async function loadBuffer(key) {
-  if (bufferCache.has(key)) return bufferCache.get(key)
-  if (unavailable.has(key)) return null
-  const url = phraseUrl(key)
+async function loadBuffer(key, dir) {
+  const cacheKey = `${dir}/${key}`
+  if (bufferCache.has(cacheKey)) return bufferCache.get(cacheKey)
+  if (unavailable.has(cacheKey)) return null
+  const url = phraseUrl(key, dir)
   if (!url) return null
   try {
     const response = await fetch(url, { cache: 'force-cache' })
@@ -70,16 +84,12 @@ async function loadBuffer(key) {
       const maybePromise = audioContext.decodeAudioData(data, resolve, reject)
       if (maybePromise && typeof maybePromise.then === 'function') maybePromise.then(resolve, reject)
     })
-    bufferCache.set(key, buffer)
+    bufferCache.set(cacheKey, buffer)
     return buffer
   } catch {
-    unavailable.add(key)
+    unavailable.add(cacheKey)
     return null
   }
-}
-
-export function voicePackKnownMissing(key) {
-  return unavailable.has(key)
 }
 
 export function stopVoicePack() {
@@ -90,14 +100,16 @@ export function stopVoicePack() {
   activeSources = []
 }
 
-// Играет последовательность фраз с короткими паузами. Возвращает 'played',
-// если всё прозвучало; иначе причина, по которой вызывающий код должен
-// озвучить шаг синтезатором.
-export async function playVoicePack(keys) {
+// Играет последовательность фраз выбранного пакета ('female' | 'male') с
+// короткими паузами. Возвращает 'played', если всё прозвучало; иначе причина,
+// по которой вызывающий код должен озвучить шаг синтезатором.
+export async function playVoicePack(keys, { voice = 'female' } = {}) {
   if (!Array.isArray(keys) || keys.length === 0) return 'empty'
   primeVoicePack()
   if (!audioContext) return 'unavailable'
-  const buffers = await Promise.all(keys.map(loadBuffer))
+  const dir = VOICE_PACKS[voice]?.dir
+  if (!dir) return 'empty'
+  const buffers = await Promise.all(keys.map((key) => loadBuffer(key, dir)))
   if (buffers.some((buffer) => !buffer)) return 'missing'
   stopVoicePack()
   const current = generation

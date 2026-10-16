@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef } from 'react'
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { rooms } from '../data.js'
 import floorOnePlan from '../../map1lower.svg?raw'
 import floorTwoPlan from '../../map2lower.svg?raw'
@@ -157,6 +157,26 @@ export default function FloorMap({ floor = 1, selectedId = '', onSelect, onFloor
   const pinchEndedAt = useRef(0)
   const markerId = `route-arrow-${useId().replace(/[^a-zA-Z0-9]/g, '')}`
 
+  // Сдвиг 3D-камеры задаётся в пикселях страницы, а фокусная точка — в
+  // единицах плана (viewBox). Замеряем реальный масштаб отрисовки, иначе на
+  // широких панелях камера уезжает вниз: чем ниже точка на плане, тем сильнее
+  // ошибался перевод координат. useLayoutEffect — чтобы ошибочный кадр не
+  // успел показаться до замера.
+  const [renderScale, setRenderScale] = useState(1)
+  useLayoutEffect(() => {
+    const stage = stageRef.current
+    if (!stage) return undefined
+    const measure = () => {
+      const next = stage.offsetWidth / width
+      if (next > 0) setRenderScale((current) => (Math.abs(current - next) > 0.004 ? next : current))
+    }
+    measure()
+    if (typeof ResizeObserver === 'undefined') return undefined
+    const observer = new ResizeObserver(measure)
+    observer.observe(stage)
+    return () => observer.disconnect()
+  }, [floor, width])
+
   const focalPoint = useMemo(() => {
     if (activeStepPoint) return activeStepPoint
     if (routeProgress !== null && route?.points?.[routeProgress]) {
@@ -171,8 +191,10 @@ export default function FloorMap({ floor = 1, selectedId = '', onSelect, onFloor
     const cx = width / 2
     const cy = height / 2
     const targetPoint = focalPoint || [cx, cy]
-    const tx = cx - targetPoint[0]
-    const ty = cy - targetPoint[1] + 35
+    // План отрисован в renderScale раз крупнее своих единиц, поэтому сдвиг
+    // к центру тоже умножаем на этот масштаб.
+    const tx = renderScale * (cx - targetPoint[0])
+    const ty = renderScale * (cy - targetPoint[1] + 35)
     if (swoopActive) {
       return {
         transformOrigin: '50% 65%',
@@ -185,7 +207,7 @@ export default function FloorMap({ floor = 1, selectedId = '', onSelect, onFloor
       transform: `rotateX(46deg) scale(1.45) translate3d(${tx}px, ${ty}px, 0)`,
       transition: 'transform 0.75s cubic-bezier(0.22, 1, 0.36, 1)',
     }
-  }, [navMode3d, width, height, focalPoint, swoopActive])
+  }, [navMode3d, width, height, focalPoint, swoopActive, renderScale])
 
   useEffect(() => {
     const viewport = viewportRef.current

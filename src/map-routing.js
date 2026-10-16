@@ -4,7 +4,59 @@ import { circulation, isManualPoint, pointInPolygon, roomAccess, roomAtPoint } f
 export { planRoomBounds } from './map-geometry.js'
 
 const emptyRoute = { points: [], waypoints: [], guides: [], length: 0 }
-const transfers = { lift: ['lift'], stairs: ['stairs-west', 'stairs-middle', 'stairs-north'] }
+
+// Метрики маршрута. Масштаб плана снят с коридора: его ширина 24.5 единицы
+// при реальных ~2.5 м. Скорость — спокойная походка, плюс накладные расходы
+// на ожидание лифта или подъём по лестнице.
+export const UNITS_PER_METER = 9.8
+export const WALKING_METERS_PER_SECOND = 1.25
+export const STRIDE_METERS = 0.7
+export const TRANSFER_SECONDS = { lift: 45, stairs: 30 }
+
+export function routeMetrics(lengthUnits, transferKind = null) {
+  const meters = lengthUnits / UNITS_PER_METER
+  const overhead = transferKind ? TRANSFER_SECONDS[transferKind === 'lift' ? 'lift' : 'stairs'] : 0
+  const seconds = meters / WALKING_METERS_PER_SECOND + overhead
+  return { meters, seconds, footsteps: Math.round(meters / STRIDE_METERS) }
+}
+
+const TRANSFER_LABELS = {
+  lift: 'Через лифт',
+  'stairs-west': 'По лестнице западного крыла',
+  'stairs-middle': 'По центральной лестнице',
+  'stairs-north': 'По северной лестнице',
+}
+const TRANSFER_SHORT = {
+  lift: 'лифт',
+  'stairs-west': 'лестница западного крыла',
+  'stairs-middle': 'центральная лестница',
+  'stairs-north': 'северная лестница',
+}
+const TRANSFER_TOWARD = {
+  lift: 'лифта',
+  'stairs-west': 'лестницы западного крыла',
+  'stairs-middle': 'центральной лестницы',
+  'stairs-north': 'северной лестницы',
+}
+const TRANSFER_METHOD = {
+  lift: 'на лифте',
+  'stairs-west': 'по лестнице западного крыла',
+  'stairs-middle': 'по центральной лестнице',
+  'stairs-north': 'по северной лестнице',
+}
+
+function transferInfo(key, from, to) {
+  return {
+    kind: key,
+    startFloor: from,
+    endFloor: to,
+    startId: `${key}-${from}`,
+    endId: `${key}-${to}`,
+    label: TRANSFER_SHORT[key] || key,
+    toward: TRANSFER_TOWARD[key] || 'лестницы',
+    method: TRANSFER_METHOD[key] || 'по лестнице',
+  }
+}
 
 function samePoint(a, b) { return a[0] === b[0] && a[1] === b[1] }
 
@@ -137,32 +189,77 @@ function buildGuides(points, floor = 1) {
 }
 
 export function buildIndoorRoute(start, targetId, transition = 'lift') {
+  return pickRoute(buildRouteOptions(start, targetId), transition)
+}
+
+// Все разумные варианты маршрута, как в навигаторе: на одном этаже вариант
+// один, между этажами — лифт и каждая из трёх лестниц. Варианты отсортированы
+// по времени (расстояние + ожидание лифта или подъём), быстрый всегда первый.
+export function buildRouteOptions(start, targetId) {
   const from = endpoint(start)
   const target = endpoint(targetId)
-  if (!from || !target) return { byFloor: {}, transfer: null, length: 0 }
+  if (!from || !target) return []
+
   if (from.floor === target.floor) {
     const startRoom = typeof start === 'string' ? start : roomAtPoint(start.floor, [start.x, start.y], rooms)
     if (startRoom?.id === targetId) {
       const point = typeof start === 'string' ? roomAccess[targetId].door : [start.x, start.y]
-      return { byFloor: { [from.floor]: { ...emptyRoute, points: [point], startLabel: from.label, endLabel: target.label } }, transfer: null, length: 0 }
+      return [{
+        kind: 'same',
+        label: 'Вы уже на месте',
+        byFloor: { [from.floor]: { ...emptyRoute, points: [point], startLabel: from.label, endLabel: target.label } },
+        transfer: null,
+        length: 0,
+        meters: 0,
+        seconds: 0,
+        footsteps: 0,
+      }]
     }
     const leg = walk(from, target)
-    return { byFloor: { [from.floor]: leg }, transfer: null, length: leg.length }
+    return [{
+      kind: 'same',
+      label: 'Путь по этажу',
+      byFloor: { [from.floor]: leg },
+      transfer: null,
+      length: leg.length,
+      ...routeMetrics(leg.length),
+    }]
   }
 
-  const candidates = (transfers[transition] || transfers.lift).map((key) => {
+  const candidates = ['lift', 'stairs-west', 'stairs-middle', 'stairs-north'].map((key) => {
     const departure = endpoint(`${key}-${from.floor}`)
     const arrival = endpoint(`${key}-${target.floor}`)
     if (!departure || !arrival) return null
     const firstLeg = walk(from, departure)
     const secondLeg = walk(arrival, target)
+    const length = firstLeg.length + secondLeg.length
     return {
+      kind: key,
+      label: TRANSFER_LABELS[key] || key,
       byFloor: { [from.floor]: firstLeg, [target.floor]: secondLeg },
-      transfer: { kind: key, startFloor: from.floor, endFloor: target.floor, startId: `${key}-${from.floor}`, endId: `${key}-${target.floor}`, label: transition === 'lift' ? 'лифт' : 'лестница', toward: transition === 'lift' ? 'лифта' : 'лестницы', method: transition === 'lift' ? 'на лифте' : 'по лестнице' },
-      length: firstLeg.length + secondLeg.length,
+      transfer: transferInfo(key, from.floor, target.floor),
+      length,
+      ...routeMetrics(length, key),
     }
   }).filter(Boolean)
-  return candidates.sort((first, second) => first.length - second.length)[0] || { byFloor: {}, transfer: null, length: 0 }
+  return candidates.sort((first, second) => (first.seconds - second.seconds) || (first.length - second.length))
+}
+
+// Выбор конкретного варианта: 'lift' — только лифт, 'stairs' — ближайшая
+// лестница, остальное — точный вид перехода ('stairs-west' и т.д.).
+export function pickRoute(options, preference = 'lift') {
+  if (!options.length) return { byFloor: {}, transfer: null, length: 0 }
+  if (preference === 'stairs') {
+    const stairs = options.filter((option) => option.kind !== 'lift')
+    if (stairs.length) return [...stairs].sort((first, second) => first.length - second.length)[0]
+  }
+  const exact = options.find((option) => option.kind === preference)
+  if (exact) return exact
+  if (preference === 'lift') {
+    const lift = options.find((option) => option.kind === 'lift')
+    if (lift) return lift
+  }
+  return options[0]
 }
 
 // Called by both the full-size plan and route previews, so the same stairwell

@@ -13,7 +13,8 @@ const VOICE_KEY = 'route-voice-name'
 const PRESET_KEY = 'route-voice-preset'
 
 export const VOICE_PRESETS = [
-  { id: 'pack2gis', label: '2ГИС Навигатор (запись)', hint: 'Записанные фразы, одинаковые на любом устройстве', gender: 'pack' },
+  { id: 'pack2gis', label: '2ГИС Навигатор (запись, женский)', hint: 'Записанные фразы, одинаковые на любом устройстве', gender: 'pack' },
+  { id: 'pack2gis-male', label: '2ГИС Навигатор (запись, мужской)', hint: 'Мужской голос, записанные фразы', gender: 'pack' },
   { id: 'female', label: 'Женский (Алиса / Ирина)', hint: 'Мягкий женский голос', gender: 'female' },
   { id: 'male', label: 'Мужской (Дмитрий / Павел)', hint: 'Уверенный мужской голос', gender: 'male' },
   { id: 'navigator', label: 'Яндекс.Навигатор', hint: 'Бодрый голос диктора', gender: 'navigator' },
