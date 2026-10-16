@@ -182,7 +182,7 @@ button, a { touch-action: manipulation; }
 .plan-position-manual .plan-position-core { fill: #ae583b; }
 .plan-position-anchor .plan-position-core { fill: #62809c; }
 .plan-position-accuracy { fill: rgba(37,110,173,.12); stroke: rgba(37,110,173,.32); stroke-width: 1; }
-.plan-position text { fill: #173451; font-size: 10px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-weight: 750; paint-order: stroke; stroke: #fff; stroke-width: 3; stroke-linejoin: round; }
+.plan-position text { fill: #173451; font-size: 11px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-weight: 750; paint-order: stroke; stroke: #fff; stroke-width: 3; stroke-linejoin: round; }
 .floor-map-picking .floor-plan-svg { cursor: crosshair; }
 .floor-map-picking .plan-room { cursor: crosshair; }
 .room-detail-panel { min-height: 0; }

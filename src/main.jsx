@@ -7,6 +7,7 @@ import './refinement.css'
 import './open-day.css'
 import './welcome.css'
 import './mobile.css'
+import './polish.css'
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>

@@ -76,5 +76,6 @@ export const quickPlaces = [
 
 export const games = [
   { id: 'floor-quiz', title: 'Узнай этаж', description: 'Вспомни, где находится кабинет. Пять быстрых вопросов.', tag: 'МИНИ-КВИЗ', icon: 'compass' },
-  { id: 'find-room', title: 'Найди на карте', description: 'Найди нужное место на плане этажа быстрее подсказки.', tag: 'ТРЕНИРОВКА', icon: 'target' },
+  { id: 'find-room', title: 'Найди по описанию', description: 'Прочитай подсказку и найди, о каком месте идёт речь, на плане.', tag: 'ЗАГАДКИ', icon: 'target' },
+  { id: 'speed-run', title: 'Забег по карте', description: 'За 60 секунд найди как можно больше мест по названию.', tag: 'НА ВРЕМЯ', icon: 'timer' },
 ]

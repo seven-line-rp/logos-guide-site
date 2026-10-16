@@ -1,9 +1,12 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useId, useRef } from 'react'
 import { rooms } from '../data.js'
 import floorOnePlan from '../../map1lower.svg?raw'
 import floorTwoPlan from '../../map2lower.svg?raw'
 import { roomOutline, planSizes } from '../map-geometry.js'
 import { calculateIndoorRoute } from '../map-routing.js'
+
+const MIN_ZOOM = 1
+const MAX_ZOOM = 3.5
 
 function FloorRoom({ room, selected, onSelect, onFloorRequest, gameTargetId, gameFeedback, filterCategory, venue }) {
   const isTarget = gameTargetId === room.id
@@ -84,12 +87,36 @@ function LocationMarker({ point, kind, radius }) {
   </g>
 }
 
+function RouteLayer({ points, markerId }) {
+  const line = points.map(([x, y]) => `${x},${y}`).join(' ')
+  const end = points.at(-1)
+  return <g className="plan-route">
+    <defs>
+      <marker id={markerId} viewBox="-6 -6 12 12" refX="0" refY="0" markerWidth="12" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto">
+        <path d="M-3.5 -4 L4 0 L-3.5 4 Z" />
+      </marker>
+    </defs>
+    <polyline className="plan-route-halo" points={line} />
+    <polyline className="plan-route-line" points={line} markerMid={`url(#${markerId})`} />
+    <polyline className="plan-route-flow" points={line} />
+    <circle cx={points[0][0]} cy={points[0][1]} r="7" />
+    <circle className="plan-route-pulse" cx={end[0]} cy={end[1]} r="9" />
+    <circle className="plan-route-destination" cx={end[0]} cy={end[1]} r="8" />
+  </g>
+}
+
 export default function FloorMap({ floor = 1, selectedId = '', onSelect, onFloorRequest, onPointSelect, picking = false, gameTargetId = '', gameFeedback = '', filterCategory = 'Все места', compact = false, zoomed = false, showLabels = true, showDoorMarks = true, routeStart = '', routeTargetId = '', manualPoint = null, gpsMarker = null, transition = 'lift', venueRoomIds = [] }) {
   const floorRooms = rooms.filter((room) => room.floor === floor)
   const plan = floor === 1 ? floorOnePlan : floorTwoPlan
   const route = routeStart && routeTargetId ? calculateIndoorRoute(routeStart, routeTargetId, floor, transition) : null
   const { width, height } = planSizes[floor]
   const viewportRef = useRef(null)
+  const stageRef = useRef(null)
+  const zoomRef = useRef(1)
+  const pointers = useRef(new Map())
+  const pinch = useRef(null)
+  const pinchEndedAt = useRef(0)
+  const markerId = `route-arrow-${useId().replace(/[^a-zA-Z0-9]/g, '')}`
 
   useEffect(() => {
     const viewport = viewportRef.current
@@ -110,6 +137,69 @@ export default function FloorMap({ floor = 1, selectedId = '', onSelect, onFloor
     return () => window.clearTimeout(timer)
   }, [compact, floor, manualPoint?.floor, manualPoint?.x, manualPoint?.y, selectedId, width, zoomed])
 
+  // Each floor reuses the same stage element, so reset its zoom when the floor changes.
+  useEffect(() => {
+    if (stageRef.current) stageRef.current.style.width = ''
+    zoomRef.current = 1
+  }, [floor])
+
+  // Zoom around a point (in viewport pixels) so that the content under the fingers stays put.
+  const applyZoom = (nextZoom, anchorX, anchorY) => {
+    const viewport = viewportRef.current
+    const stage = stageRef.current
+    if (!viewport || !stage) return
+    const clamped = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, nextZoom))
+    const oldWidth = stage.offsetWidth
+    const oldHeight = stage.offsetHeight
+    const fx = (viewport.scrollLeft + anchorX) / oldWidth
+    const fy = (viewport.scrollTop + anchorY) / oldHeight
+    stage.style.width = `${clamped * 100}%`
+    viewport.scrollLeft = Math.max(0, fx * stage.offsetWidth - anchorX)
+    viewport.scrollTop = Math.max(0, fy * stage.offsetHeight - anchorY)
+    zoomRef.current = clamped
+  }
+  const zoomByButton = (factor) => {
+    const viewport = viewportRef.current
+    if (!viewport) return
+    applyZoom(zoomRef.current * factor, viewport.clientWidth / 2, viewport.clientHeight / 2)
+  }
+  const resetZoom = () => {
+    const viewport = viewportRef.current
+    if (stageRef.current) stageRef.current.style.width = ''
+    zoomRef.current = 1
+    if (viewport) { viewport.scrollLeft = 0; viewport.scrollTop = 0 }
+  }
+
+  const onPointerDown = (event) => {
+    if (compact || event.pointerType !== 'touch') return
+    pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
+    if (pointers.current.size === 2) {
+      const [a, b] = [...pointers.current.values()]
+      pinch.current = { distance: Math.hypot(a.x - b.x, a.y - b.y) || 1, zoom: zoomRef.current }
+    }
+  }
+  const onPointerMove = (event) => {
+    if (!pinch.current || !pointers.current.has(event.pointerId)) return
+    pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
+    if (pointers.current.size < 2) return
+    const [a, b] = [...pointers.current.values()]
+    const distance = Math.hypot(a.x - b.x, a.y - b.y) || 1
+    const rect = viewportRef.current.getBoundingClientRect()
+    applyZoom(pinch.current.zoom * distance / pinch.current.distance, (a.x + b.x) / 2 - rect.left, (a.y + b.y) / 2 - rect.top)
+  }
+  const onPointerEnd = (event) => {
+    if (!pointers.current.has(event.pointerId)) return
+    pointers.current.delete(event.pointerId)
+    if (pinch.current) {
+      pinchEndedAt.current = Date.now()
+      if (pointers.current.size < 2) pinch.current = null
+    }
+  }
+  // After a two-finger gesture, the browser may still send a click to a room under a finger.
+  const onClickCapture = (event) => {
+    if (Date.now() - pinchEndedAt.current < 350) { event.stopPropagation(); event.preventDefault() }
+  }
+
   const showLowerFloor = () => onFloorRequest?.(1, rooms.find((room) => room.id === 'auditorium-104'))
   const onGhostKeyDown = (event) => {
     if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); showLowerFloor() }
@@ -126,18 +216,38 @@ export default function FloorMap({ floor = 1, selectedId = '', onSelect, onFloor
     onPointSelect({ floor, x: Math.round(point[0] * 10) / 10, y: Math.round(point[1] * 10) / 10 })
   }
 
-  return <div ref={viewportRef} className={`floor-map-viewport ${compact ? 'floor-map-compact' : ''} ${zoomed ? 'floor-map-zoomed' : ''} ${picking ? 'floor-map-picking' : ''} ${showLabels ? '' : 'floor-map-labels-hidden'} ${showDoorMarks ? '' : 'floor-map-doors-hidden'}`}>
-    <div className={`floor-map-stage floor-map-stage-floor-${floor}`}>
+  const viewport = <div ref={viewportRef} className={`floor-map-viewport ${compact ? 'floor-map-compact' : ''} ${zoomed ? 'floor-map-zoomed' : ''} ${picking ? 'floor-map-picking' : ''} ${showLabels ? '' : 'floor-map-labels-hidden'} ${showDoorMarks ? '' : 'floor-map-doors-hidden'}`}
+    onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerEnd} onPointerCancel={onPointerEnd} onClickCapture={onClickCapture}>
+    <div ref={stageRef} className={`floor-map-stage floor-map-stage-floor-${floor}`}>
       <div className="floor-map-art" aria-hidden="true" dangerouslySetInnerHTML={{ __html: plan }} />
       <svg className="floor-plan-svg" viewBox={`0 0 ${width} ${height}`} role="group" aria-label={`Интерактивная карта, ${floor} этаж`} onClickCapture={onMapClickCapture}>
         <title>{`${floor} этаж колледжа`}</title>
         <desc>{picking ? 'Коснитесь точки на плане, чтобы установить отметку.' : 'Выберите помещение, чтобы открыть описание. Двойной щелчок по лестнице переключает этаж.'}</desc>
         {floorRooms.map((room) => <FloorRoom key={room.id} room={room} selected={selectedId === room.id} onSelect={onSelect} onFloorRequest={onFloorRequest} gameTargetId={gameTargetId} gameFeedback={gameFeedback} filterCategory={filterCategory} venue={venueRoomIds.includes(room.id)} />)}
-        {route?.points.length > 1 && <g className="plan-route"><polyline points={route.points.map(([x, y]) => `${x},${y}`).join(' ')} /><circle cx={route.points[0][0]} cy={route.points[0][1]} r="6" /><circle className="plan-route-destination" cx={route.points.at(-1)[0]} cy={route.points.at(-1)[1]} r="7" /></g>}
+        {route?.points.length > 1 && <RouteLayer points={route.points} markerId={markerId} />}
         {floor === 2 && onFloorRequest && <g className="plan-downstairs-link" role="button" tabIndex={0} aria-label="Актовый зал на первом этаже. Открыть первый этаж" onClick={showLowerFloor} onKeyDown={onGhostKeyDown}><rect x="610" y="94" width="156" height="150" rx="2" /></g>}
         {manualPoint?.floor === floor && <LocationMarker point={[manualPoint.x, manualPoint.y]} kind="manual" />}
         {gpsMarker?.floor === floor && <LocationMarker point={gpsMarker.point} radius={gpsMarker.radius} kind={gpsMarker.mode} />}
       </svg>
     </div>
   </div>
+
+  if (compact) return viewport
+  return <div className="floor-map-wrap">
+    {viewport}
+    <div className="floor-map-zoom-controls" role="group" aria-label="Масштаб карты">
+      <button type="button" onClick={() => zoomByButton(1.4)} aria-label="Приблизить"><ZoomPlus /></button>
+      <button type="button" onClick={() => zoomByButton(1 / 1.4)} aria-label="Отдалить"><ZoomMinus /></button>
+      <button type="button" onClick={resetZoom} aria-label="Показать весь план" style={{ fontSize: 12, fontWeight: 650 }}>1:1</button>
+    </div>
+    <span className="floor-map-hint" aria-hidden="true">Двумя пальцами — масштаб</span>
+  </div>
+}
+
+function ZoomPlus() {
+  return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+}
+
+function ZoomMinus() {
+  return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><path d="M5 12h14" /></svg>
 }
