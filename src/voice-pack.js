@@ -66,7 +66,7 @@ export function primeVoicePack() {
 
 function phraseUrl(key, dir) {
   if (!VOICE_PACK_PHRASES[key]) return null
-  return `${import.meta.env.BASE_URL || '/'}${dir}/${phraseFile(key)}`
+  return `${import.meta.env?.BASE_URL || '/'}${dir}/${phraseFile(key)}`
 }
 
 async function loadBuffer(key, dir) {
@@ -104,15 +104,16 @@ export function stopVoicePack() {
 // короткими паузами. Возвращает 'played', если всё прозвучало; иначе причина,
 // по которой вызывающий код должен озвучить шаг синтезатором.
 export async function playVoicePack(keys, { voice = 'female' } = {}) {
+  stopVoicePack()
+  const current = generation
   if (!Array.isArray(keys) || keys.length === 0) return 'empty'
   primeVoicePack()
   if (!audioContext) return 'unavailable'
   const dir = VOICE_PACKS[voice]?.dir
   if (!dir) return 'empty'
   const buffers = await Promise.all(keys.map((key) => loadBuffer(key, dir)))
+  if (current !== generation) return 'stopped'
   if (buffers.some((buffer) => !buffer)) return 'missing'
-  stopVoicePack()
-  const current = generation
   const gain = audioContext.createGain()
   gain.gain.value = 1
   gain.connect(audioContext.destination)

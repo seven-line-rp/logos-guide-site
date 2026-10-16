@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, ArrowRight, ArrowUp, ArrowUpRight, Check, Footprints, Info, MapPin, MoveDown, MoveUp, Play, Volume2, VolumeX, X } from 'lucide-react'
 import { rooms } from '../data.js'
@@ -8,7 +8,7 @@ import RoomSearchSelect from '../components/RoomSearchSelect.jsx'
 import { buildRouteOptions, pickRoute } from '../map-routing.js'
 import { buildRouteSteps } from '../route-steps.js'
 import { readManualLocation } from '../map-location.js'
-import { VOICE_PRESETS, getAvailableVoices, getStoredPreset, loadVoices, primeSpeech, setVoicePreset, speakText, stopSpeech } from '../speech.js'
+import { VOICE_PRESETS, getStoredPreset, setVoicePreset, speakText, stopSpeech } from '../speech.js'
 import { VOICE_PACK_MALE_ID, playVoicePack, primeVoicePack, stopVoicePack, voicePackForPreset } from '../voice-pack.js'
 import { storageGet, storageSet } from '../storage.js'
 
@@ -53,8 +53,8 @@ export default function RoutePage() {
   // только после нажатия кнопки, поэтому автозапуск браузер не блокирует.
   const [voiceOn, setVoiceOn] = useState(() => storageGet('route-voice') === 'on' || storageGet('route-voice') === null)
   const [voiceNotice, setVoiceNotice] = useState('')
-  const [voicePreset, setVoicePresetState] = useState(() => storageGet('route-voice-preset') || getStoredPreset())
-  const [systemVoices, setSystemVoices] = useState([])
+  const [voicePreset, setVoicePresetState] = useState(getStoredPreset)
+  const voiceRequest = useRef(0)
   const [mode3d, setMode3d] = useState(true)
   const [swoop, setSwoop] = useState(false)
 
@@ -62,52 +62,38 @@ export default function RoutePage() {
   const stepIcon = (step) => step.kind === 'start' ? MapPin : step.kind === 'arrive' ? Check : step.kind === 'transfer' ? (step.title.startsWith('Поднимитесь') ? MoveUp : MoveDown) : Footprints
   const CurrentIcon = stepIcon(current)
 
-  // Голоса браузера грузятся асинхронно — прогреваем синтезатор заранее,
-  // иначе первая же подсказка уходит в пустоту и её не слышно.
+  // Any new action invalidates both playback and delayed fallback callbacks.
+  const cancelVoice = () => {
+    voiceRequest.current += 1
+    stopSpeech()
+    stopVoicePack()
+    return voiceRequest.current
+  }
   useEffect(() => {
-    if (voiceOn) primeSpeech()
-    loadVoices().then(() => {
-      setSystemVoices(getAvailableVoices())
-    })
-  }, [voiceOn])
-
-  // Если браузер не может говорить по-русски, пользователь должен понять,
-  // что дело в системе, а не в сайте.
-  const reportVoice = (result) => {
-    if (result === 'unsupported') setVoiceNotice('Браузер не умеет синтез речи — озвучка недоступна, подсказки можно читать на экране.')
-    else if (result === 'foreign-voice' || result === 'no-voice') setVoiceNotice('В системе нет русского голоса: речь звучит с акцентом или молчит. Добавьте русский голос в настройках телефона или компьютера.')
-    else setVoiceNotice('')
-  }
-  const packVoiceActive = () => voicePackForPreset(voicePreset) !== null
-  // Записанных пакетов два: женский и мужской.
-  const packVoice = () => (voicePreset === VOICE_PACK_MALE_ID ? 'male' : 'female')
-  // Названия кабинетов в пакете не записаны — их читает синтезатор тем
-  // голосом, который был выбран до переключения на записанную озвучку.
-  const fallbackTtsPreset = () => {
-    const stored = storageGet('route-voice-tts-preset')
-    return VOICE_PRESETS.some((preset) => preset.id === stored && !voicePackForPreset(preset.id)) ? stored : 'female'
-  }
-
-  // Озвучка шага: у шага есть voiceCue со списком записанных фраз навигатора.
-  // Если пакета нет или фраза не загрузилась — шаг читает синтезатор браузера.
-  const speakStep = (step) => {
-    if (!voiceOn) return
-    if (packVoiceActive()) {
-      const keys = step.voiceCue || []
-      if (keys.length) {
-        playVoicePack(keys, { voice: packVoice() }).then((result) => {
-          if (result === 'played') setVoiceNotice('')
-          else if (result === 'unavailable') {
-            setVoiceNotice('Записанная озвучка не поддерживается браузером — подсказки читает системный голос.')
-            speakText(step.say, { preset: fallbackTtsPreset() }).then(reportVoice)
-          } else {
-            speakText(step.say, { preset: fallbackTtsPreset() }).then(reportVoice)
-          }
-        })
-        return
-      }
+    return () => {
+      voiceRequest.current += 1
+      stopSpeech()
+      stopVoicePack()
     }
-    speakText(step.say, { preset: packVoiceActive() ? fallbackTtsPreset() : voicePreset }).then(reportVoice)
+  }, [routeKey])
+
+  const playPrompt = async (keys, text, preset = voicePreset) => {
+    const request = cancelVoice()
+    setVoiceNotice('')
+    primeVoicePack()
+    const result = keys.length
+      ? await playVoicePack(keys, { voice: preset === VOICE_PACK_MALE_ID ? 'male' : 'female' })
+      : 'empty'
+    if (request !== voiceRequest.current || result === 'stopped') return
+    if (result === 'played') return
+    // Dynamic room names and unavailable recordings use a matching system voice.
+    const fallback = await speakText(text, { preset: preset === VOICE_PACK_MALE_ID ? 'male' : 'female' })
+    if (request !== voiceRequest.current || fallback === 'stopped') return
+    if (fallback === 'unsupported') setVoiceNotice('Озвучка недоступна в этом браузере. Подсказки можно читать на экране.')
+    else if (fallback === 'foreign-voice' || fallback === 'no-voice') setVoiceNotice('Для названий кабинетов нужен русский системный голос. Добавьте его в настройках устройства.')
+  }
+  const speakStep = (step) => {
+    if (voiceOn) void playPrompt(step.voiceCue || [], step.say)
   }
   const goToStep = (index, withVoice = true) => {
     const next = Math.max(0, Math.min(steps.length - 1, index))
@@ -118,83 +104,36 @@ export default function RoutePage() {
     const next = !voiceOn
     setVoiceOn(next)
     storageSet('route-voice', next ? 'on' : 'off')
-    if (!next) { stopSpeech(); stopVoicePack(); setVoiceNotice('') }
-    else {
-      primeSpeech()
-      if (packVoiceActive()) {
-        primeVoicePack()
-        playVoicePack(['route-built'], { voice: packVoice() }).then((result) => {
-          if (result !== 'played') speakText(steps[stepIndex].say, { preset: fallbackTtsPreset() }).then(reportVoice)
-        })
-      } else {
-        speakText(steps[stepIndex].say, { preset: voicePreset }).then(reportVoice)
-      }
-    }
+    cancelVoice()
+    setVoiceNotice('')
+    if (next) void playPrompt(['route-built'], current.say)
   }
-
   const handleVoicePresetChange = (presetId) => {
-    // Запомнить синтезаторный голос для фраз с названиями кабинетов.
-    if (!voicePackForPreset(voicePreset) && voicePreset !== presetId) storageSet('route-voice-tts-preset', voicePreset)
+    if (!voicePackForPreset(presetId)) return
+    cancelVoice()
     setVoicePresetState(presetId)
     setVoicePreset(presetId)
-    storageSet('route-voice-preset', presetId)
-    if (voiceOn) {
-      if (voicePackForPreset(presetId)) {
-        primeVoicePack()
-        playVoicePack(['route-built'], { voice: packVoice() }).then((result) => {
-          if (result !== 'played') speakText('Голос изменён.', { preset: fallbackTtsPreset() }).then(reportVoice)
-        })
-      } else {
-        speakText('Голос изменён.', { preset: presetId }).then(reportVoice)
-      }
-    }
+    if (voiceOn) void playPrompt(['route-built'], 'Голос изменён.', presetId)
   }
-
   const testVoice = () => {
-    if (!voiceOn) {
-      setVoiceOn(true)
-      storageSet('route-voice', 'on')
-      primeSpeech()
-    }
-    if (voicePackForPreset(voicePreset)) {
-      primeVoicePack()
-      playVoicePack(['route-built', 'corridor-1-east'], { voice: packVoice() }).then((result) => {
-        if (result !== 'played') speakText('Маршрут построен. Следуйте прямо по коридору.', { preset: fallbackTtsPreset() }).then(reportVoice)
-      })
-      return
-    }
-    const sample = voicePreset === 'navigator'
-      ? 'Маршрут построен. Поехали! Следуйте прямо по коридору.'
-      : 'Маршрут построен. Следуйте прямо по коридору до нужной двери.'
-    speakText(sample, { preset: voicePreset }).then(reportVoice)
+    setVoiceOn(true)
+    storageSet('route-voice', 'on')
+    void playPrompt(['route-built', 'corridor-1-east'], 'Маршрут построен. Следуйте прямо по коридору.')
   }
-
-  // «Повторить» работает и при выключенном голосе: нажатие — это явное
-  // намерение услышать подсказку, поэтому голос включаем сами.
   const repeatStep = () => {
-    if (!voiceOn) { setVoiceOn(true); storageSet('route-voice', 'on'); primeSpeech(); primeVoicePack() }
-    speakStep(current)
+    setVoiceOn(true)
+    storageSet('route-voice', 'on')
+    void playPrompt(current.voiceCue || [], current.say)
   }
-
   const planRoute = (event) => {
     event.preventDefault()
+    cancelVoice()
     setNav({ key: routeKey, index: 0 })
     setMode3d(true)
     setSwoop(true)
-    primeVoicePack()
     document.getElementById('route-result')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     window.setTimeout(() => setSwoop(false), 1100)
-    if (voiceOn && voicePackForPreset(voicePreset)) {
-      playVoicePack(['route-built'], { voice: packVoice() }).then((result) => {
-        if (result === 'played') speakStep(steps[0])
-        else speakText(`Маршрут построен. ${steps[0].say}`, { preset: fallbackTtsPreset() }).then(reportVoice)
-      })
-      return
-    }
-    const intro = voicePreset === 'navigator'
-      ? `Маршрут построен. Поехали! ${steps[0].say}`
-      : `Маршрут построен. ${steps[0].say}`
-    if (voiceOn) speakText(intro, { preset: voicePreset }).then(reportVoice)
+    if (voiceOn) void playPrompt(['route-built', ...(steps[0].voiceCue || [])], `Маршрут построен. ${steps[0].say}`)
   }
   const resetRoute = () => { setStartId('entrance-1'); setTargetId('auditorium-104'); setRoutePreference('auto') }
   const mapUrl = `/map?floor=${target.floor}&from=${encodeURIComponent(startId)}&to=${encodeURIComponent(target.id)}${crossFloor ? `&mode=${transition}` : ''}`
@@ -228,7 +167,7 @@ export default function RoutePage() {
       </form></Reveal>
       <Reveal id="route-result" className="route-result-panel" delay={100}><div className="route-result-top"><span className="eyebrow">Ваш маршрут</span><div className="route-top-actions"><button className="route-reset" type="button" onClick={resetRoute}><X size={14} /> Сбросить</button></div></div>
         
-        {/* Панель озвучки с выбором женского, мужского, навигатора и проверкой */}
+        {/* Два записанных Логос-голоса и проверка озвучки */}
         <div className="route-voice-bar">
           <div className="route-voice-selector-wrap">
             <label htmlFor="route-voice-select"><Volume2 size={15} /> <strong>Озвучка:</strong></label>
@@ -239,18 +178,11 @@ export default function RoutePage() {
               className="route-voice-select"
               aria-label="Выбор голоса озвучки"
             >
-              <optgroup label="Варианты озвучки">
+              <optgroup label="Логос-голоса">
                 {VOICE_PRESETS.map((preset) => (
                   <option key={preset.id} value={preset.id}>{preset.label}</option>
                 ))}
               </optgroup>
-              {systemVoices.length > 0 && (
-                <optgroup label="Системные русские голоса">
-                  {systemVoices.map((v) => (
-                    <option key={v.name} value={`sys:${v.name}`}>{v.name}</option>
-                  ))}
-                </optgroup>
-              )}
             </select>
             <button
               type="button"
@@ -413,6 +345,6 @@ export default function RoutePage() {
         <div className="route-result-actions"><Link className="button button-primary" to={mapUrl}>Показать на карте <ArrowUpRight size={15} /></Link><Link className="route-other-link" to="/rooms">Справочник кабинетов <ArrowRight size={14} /></Link></div>
       </Reveal>
     </section>
-    <section className="route-hint-band"><div className="container route-hint-inner"><span className="route-hint-icon">i</span><div><strong>О навигаторе колледжа</strong><p>Маршрут работает в режиме 3D-навигатора с видом камеры по направлению движения. На маршрутах между этажами 3D-камера показывает этажи по очереди: сначала этаж старта, второй — в момент перехода; в виде «Сверху» (2D) оба плана остаются рядом. Озвучка — на выбор: записанные фразы в стиле 2ГИС (не зависят от голосов системы), женский, мужской или диктор-навигатор. Кабинет в поле поиска находится по названию, номеру или слову-псевдониму.</p></div><Link to="/map">Карта этажей <ArrowRight size={14} /></Link></div></section>
+    <section className="route-hint-band"><div className="container route-hint-inner"><span className="route-hint-icon">i</span><div><strong>О навигаторе колледжа</strong><p>Маршрут работает в режиме 3D-навигатора с видом камеры по направлению движения. На маршрутах между этажами 3D-камера показывает этажи по очереди: сначала этаж старта, второй — в момент перехода; в виде «Сверху» (2D) оба плана остаются рядом. Озвучка — на выбор: два записанных Логос-голоса: женский и мужской. Названия кабинетов при необходимости читает системный синтезатор. Кабинет в поле поиска находится по названию, номеру или слову-псевдониму.</p></div><Link to="/map">Карта этажей <ArrowRight size={14} /></Link></div></section>
   </>
 }
