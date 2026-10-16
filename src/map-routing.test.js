@@ -59,6 +59,42 @@ test('routes stay in circulation or in their own rooms, never through another ro
   }
 })
 
+test('every leg carries step guides that point at a real vertex of the route', () => {
+  for (const from of rooms) for (const to of rooms) {
+    const route = buildIndoorRoute(from.id, to.id, 'stairs')
+    for (const [floor, leg] of Object.entries(route.byFloor)) {
+      let previous = -1
+      for (const guide of leg.guides) {
+        assert.ok(Number.isInteger(guide.index), `${from.id} -> ${to.id}: index must be a whole vertex number`)
+        assert.ok(guide.index > 0 && guide.index < leg.points.length, `${from.id} -> ${to.id}: guide ${guide.index} outside leg`)
+        assert.ok(guide.index > previous, `${from.id} -> ${to.id}: guides must move forward`)
+        previous = guide.index
+        assert.ok(guide.title && guide.say && guide.detail, `${from.id} -> ${to.id}: guide needs text`)
+        // Точка-поводырь обязана стоять на самой линии маршрута.
+        const point = leg.points[guide.index]
+        assert.ok(Number.isFinite(point[0]) && Number.isFinite(point[1]))
+      }
+      assert.ok(Number(floor) === from.floor || Number(floor) === to.floor)
+    }
+  }
+})
+
+test('corridor guides name the wing and never repeat the same vertex twice', () => {
+  const cross = buildIndoorRoute('class-162', 'auditorium-104', 'stairs').byFloor[1]
+  // Подсказки стоят в начале своих участков: поворот в западное крыло -> вход
+  // в главный коридор -> выход в холл.
+  assert.deepEqual(cross.guides.map((guide) => guide.index), [1, 2, 3])
+  assert.equal(cross.guides[0].kind, 'west-corridor')
+  assert.deepEqual(cross.points[cross.guides[0].index], [73, 450], 'точка стоит там, где начинается поворот')
+  assert.match(cross.guides[1].title, /Главный коридор · к холлу/)
+  assert.match(cross.guides[2].say, /актового зала/)
+  assert.deepEqual(cross.points[cross.guides[1].index], [73, 168], 'главный коридор начинается от западного перекрёстка')
+  const secondFloor = buildIndoorRoute('radio-lab-228', 'canteen', 'stairs').byFloor[2]
+  assert.match(secondFloor.guides[0].say, /лабораторий/, 'на втором этаже восточный коридор ведёт к лабораториям')
+  const firstFloor = buildIndoorRoute('radio-lab-228', 'canteen', 'stairs').byFloor[1]
+  assert.match(firstFloor.guides[0].say, /западного крыла/)
+})
+
 test('the auditorium is reached through the entrance hall, not through its north wall', () => {
   const leg = calculateIndoorRoute('canteen', 'auditorium-104', 1)
   assert.deepEqual(leg.points.at(-1), [610, 205])

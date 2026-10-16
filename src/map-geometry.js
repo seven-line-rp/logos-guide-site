@@ -1,55 +1,65 @@
 // Coordinates are in the viewBox of the original floor SVGs. Keep these bounds,
 // the clickable areas and the routing doorways in sync when changing the plan.
+//
+// Every box below is the centre line of the wall that is actually drawn on the
+// plan (a stroked shape in the SVG straddles its own outline, so the hit area
+// and the drawn wall line coincide). Fractional values are intentional: rounded
+// boxes used to drift 1-3 px away from the drawing, and the middle staircase of
+// the first floor even swallowed the shaft next to it. When the plan changes,
+// take the new numbers from the SVG paths instead of eyeballing them.
 export const planSizes = {
   1: { width: 758, height: 552 },
   2: { width: 767, height: 561 },
 }
 
 export const planRoomBounds = {
-  canteen: [0, 0, 147, 156],
-  'workshop-115': [148, 94, 109, 62],
-  'simulator-114': [257, 94, 84, 62],
-  'academic-office': [341, 94, 184, 62],
-  'lift-1': [525, 94, 24, 62],
-  'stairs-north-1': [549, 94, 61, 62],
-  'auditorium-104': [610, 94, 147, 150],
-  'class-119': [0, 179, 62, 74],
-  'class-118': [0, 253, 62, 73],
-  'toilet-men-1': [86, 179, 84, 32],
-  'toilet-women-1': [86, 210, 84, 32],
-  'language-148': [168, 179, 77, 63],
-  'aerodynamics-120': [244, 179, 74, 63],
-  'stairs-middle-1': [318, 179, 64, 63],
-  'director-149': [382, 179, 68, 63],
-  'changing-room': [449, 179, 99, 63],
+  canteen: [0.7, 0.7, 146.9, 154.4],
+  'workshop-115': [147.7, 94.2, 109.6, 61.1],
+  'simulator-114': [256, 93.5, 85, 62.5],
+  'academic-office': [339.9, 93.5, 184.1, 62.5],
+  'lift-1': [524, 93.5, 25, 62.5],
+  'stairs-north-1': [549, 93, 60.7, 62.8],
+  'auditorium-104': [609.7, 93, 147.4, 148.8],
+  'class-119': [0, 179.5, 61.4, 72.6],
+  'class-118': [0, 252.1, 61.4, 73.9],
+  'toilet-men-1': [86, 178.9, 83.6, 32],
+  'toilet-women-1': [86, 209.9, 83.6, 32],
+  'language-148': [167.9, 179, 77.2, 62.8],
+  'aerodynamics-120': [243.7, 179, 74.4, 62.8],
+  // The staircase next to room 149 is two drawn cells (a landing and a flight)
+  // between the shaft at x=317.6 and the wall of the director's office at x=383.4.
+  'stairs-middle-1': [336.5, 179.7, 46.9, 61.4],
+  'director-149': [383.4, 179.7, 66.3, 61.4],
+  'changing-room': [448.8, 179, 99.9, 62.8],
   'hall-1': [548, 179, 62, 63],
-  'entrance-1': [548, 240, 62, 24],
+  'entrance-1': [547.8, 239.5, 61.9, 24.2],
   'stairs-west-1': [0, 322, 62, 64],
-  'class-139': [86, 306, 63, 69],
-  'class-138': [86, 375, 63, 68],
-  'class-162': [0, 419, 62, 49],
-  'training-centre-113': [0, 468, 149, 84],
+  'class-139': [86, 306, 63.3, 69.8],
+  'class-138': [86, 374.4, 63.3, 68.3],
+  'class-162': [0, 419, 61.9, 50.2],
+  'training-centre-113': [0, 467.8, 149.3, 84.2],
 
-  'library-214': [0, 0, 144, 114],
-  'radio-lab-228': [144, 94, 115, 63],
-  'electro-radio-230': [259, 94, 98, 63],
-  'assistant-230': [357, 94, 66, 63],
-  'uav-lab-209': [423, 94, 112, 63],
-  'lift-2': [535, 94, 26, 63],
-  'stairs-north-2': [561, 94, 49, 63],
-  'meteorology-236': [0, 182, 62, 97],
-  'toilet-men-2': [86, 182, 62, 32],
-  'toilet-women-2': [86, 214, 62, 34],
-  'physics-211': [168, 182, 154, 64],
-  'stairs-middle-2': [322, 182, 70, 64],
-  'psychologist-224': [392, 182, 33, 64],
-  'class-217': [425, 182, 55, 64],
-  'class-229': [480, 182, 31, 64],
-  'informatics-222': [511, 182, 50, 64],
-  'stairs-west-2': [0, 279, 62, 138],
-  'chemistry-biology-202': [86, 245, 62, 83],
-  'assistant-202': [86, 328, 62, 55],
-  'practical-225': [86, 383, 62, 34],
+  'library-214': [0.7, 0.7, 143.8, 112.7],
+  'radio-lab-228': [144.5, 95.5, 113.6, 61.3],
+  'electro-radio-230': [258.1, 95.5, 98.5, 61.3],
+  'assistant-230': [356.4, 94.8, 69.8, 62.7],
+  'uav-lab-209': [422.6, 95.5, 112.2, 61.3],
+  'lift-2': [534.6, 94.8, 26.4, 62.7],
+  'stairs-north-2': [560.8, 95.5, 49, 61.3],
+  'meteorology-236': [0.7, 181.7, 60.8, 98.6],
+  'toilet-men-2': [87, 182.2, 60.8, 33.9],
+  'toilet-women-2': [87, 213.8, 60.8, 31.1],
+  'physics-211': [168.3, 181.5, 154.2, 64.1],
+  'stairs-middle-2': [322.2, 182.2, 69.8, 62.7],
+  'psychologist-224': [392.5, 182.2, 33, 62.7],
+  'class-217': [425.5, 182.2, 54.2, 62.7],
+  'class-229': [479.7, 182.2, 32, 62.7],
+  'informatics-222': [511.7, 182.2, 49.5, 62.7],
+  // The western staircase on the second floor starts below the grey shaft.
+  'stairs-west-2': [0.7, 331.2, 60.8, 95.7],
+  'chemistry-biology-202': [87, 244.2, 60.8, 83.8],
+  'assistant-202': [87, 328, 60.8, 55.2],
+  'practical-225': [87, 383.2, 60.8, 33.3],
   // Room 207 wraps around the corridor's lower end; room 225 is rectangular.
   'electrical-lab-207': [0, 417, 86, 143],
   'biotech-lab-225': [86, 417, 62, 143],
@@ -73,7 +83,10 @@ export function roomOutline(id) {
 // line is drawn through rooms to reach a 'nearest node'.
 export const circulation = {
   1: [
-    [[0, 156], [610, 156], [610, 179], [0, 179]],
+    // The drawn corridor is the white band y=155.5…179.5; the lower edge is
+    // 180 so that rows whose wall centre line sits at 179.0-179.7 stay connected
+    // to the corridor (a hairline gap made a route look like it left the plan).
+    [[0, 155.5], [610, 155.5], [610, 180], [0, 180]],
     [[62, 179], [86, 179], [86, 468], [62, 468]],
     [[548, 179], [610, 179], [610, 242], [548, 242]],
   ],

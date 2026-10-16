@@ -87,25 +87,39 @@ function LocationMarker({ point, kind, radius }) {
   </g>
 }
 
-function RouteLayer({ points, markerId }) {
-  const line = points.map(([x, y]) => `${x},${y}`).join(' ')
+function RouteLayer({ points, markerId, progress = null }) {
+  const toLine = (list) => list.map(([x, y]) => `${x},${y}`).join(' ')
   const end = points.at(-1)
+  // progress — индекс вершины, до которой пользователь уже дошёл. Пройденная
+  // часть рисуется бледной, оставшаяся — яркой, и по ней едет точка-поводырь.
+  const passedIndex = progress === null ? 0 : Math.max(0, Math.min(points.length - 1, progress))
+  const passed = points.slice(0, passedIndex + 1)
+  const ahead = points.slice(passedIndex)
+  const dot = ahead[0]
   return <g className="plan-route">
     <defs>
       <marker id={markerId} viewBox="-6 -6 12 12" refX="0" refY="0" markerWidth="12" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto">
         <path d="M-3.5 -4 L4 0 L-3.5 4 Z" />
       </marker>
     </defs>
-    <polyline className="plan-route-halo" points={line} />
-    <polyline className="plan-route-line" points={line} markerMid={`url(#${markerId})`} />
-    <polyline className="plan-route-flow" points={line} />
+    <polyline className="plan-route-halo" points={toLine(points)} />
+    <polyline className="plan-route-line" points={toLine(ahead)} markerMid={`url(#${markerId})`} />
+    <polyline className="plan-route-flow" points={toLine(ahead)} />
+    {passedIndex > 0 && <polyline className="plan-route-passed" points={toLine(passed)} />}
     <circle cx={points[0][0]} cy={points[0][1]} r="7" />
+    {/* Точка шага: позиция задаётся сдвигом группы, чтобы переход между
+        шагами анимировался, а не прыгал. */}
+    {progress !== null && <g className="plan-route-guide" transform={`translate(${dot[0]} ${dot[1]})`} style={{ transform: `translate(${dot[0]}px, ${dot[1]}px)` }}>
+      <circle className="plan-route-guide-pulse" cx="0" cy="0" r="11" />
+      <circle className="plan-route-guide-core" cx="0" cy="0" r="8" />
+      <circle className="plan-route-guide-center" cx="0" cy="0" r="3" />
+    </g>}
     <circle className="plan-route-pulse" cx={end[0]} cy={end[1]} r="9" />
     <circle className="plan-route-destination" cx={end[0]} cy={end[1]} r="8" />
   </g>
 }
 
-export default function FloorMap({ floor = 1, selectedId = '', onSelect, onFloorRequest, onPointSelect, picking = false, gameTargetId = '', gameFeedback = '', filterCategory = 'Все места', compact = false, zoomed = false, showLabels = true, showDoorMarks = true, routeStart = '', routeTargetId = '', manualPoint = null, gpsMarker = null, transition = 'lift', venueRoomIds = [] }) {
+export default function FloorMap({ floor = 1, selectedId = '', onSelect, onFloorRequest, onPointSelect, picking = false, gameTargetId = '', gameFeedback = '', filterCategory = 'Все места', compact = false, zoomed = false, showLabels = true, showDoorMarks = true, routeStart = '', routeTargetId = '', manualPoint = null, gpsMarker = null, transition = 'lift', venueRoomIds = [], routeProgress = null }) {
   const floorRooms = rooms.filter((room) => room.floor === floor)
   const plan = floor === 1 ? floorOnePlan : floorTwoPlan
   const route = routeStart && routeTargetId ? calculateIndoorRoute(routeStart, routeTargetId, floor, transition) : null
@@ -224,7 +238,7 @@ export default function FloorMap({ floor = 1, selectedId = '', onSelect, onFloor
         <title>{`${floor} этаж колледжа`}</title>
         <desc>{picking ? 'Коснитесь точки на плане, чтобы установить отметку.' : 'Выберите помещение, чтобы открыть описание. Двойной щелчок по лестнице переключает этаж.'}</desc>
         {floorRooms.map((room) => <FloorRoom key={room.id} room={room} selected={selectedId === room.id} onSelect={onSelect} onFloorRequest={onFloorRequest} gameTargetId={gameTargetId} gameFeedback={gameFeedback} filterCategory={filterCategory} venue={venueRoomIds.includes(room.id)} />)}
-        {route?.points.length > 1 && <RouteLayer points={route.points} markerId={markerId} />}
+        {route?.points.length > 1 && <RouteLayer points={route.points} markerId={markerId} progress={routeProgress} />}
         {floor === 2 && onFloorRequest && <g className="plan-downstairs-link" role="button" tabIndex={0} aria-label="Актовый зал на первом этаже. Открыть первый этаж" onClick={showLowerFloor} onKeyDown={onGhostKeyDown}><rect x="610" y="94" width="156" height="150" rx="2" /></g>}
         {manualPoint?.floor === floor && <LocationMarker point={[manualPoint.x, manualPoint.y]} kind="manual" />}
         {gpsMarker?.floor === floor && <LocationMarker point={gpsMarker.point} radius={gpsMarker.radius} kind={gpsMarker.mode} />}
