@@ -67,7 +67,7 @@ function Confetti() {
       const left = Math.random() * 100
       const delay = Math.random() * 0.4
       const dx = (Math.random() - 0.5) * 200
-      const color = ['#245ce5', '#ffd267', '#1454ee', '#0d1c3b'][i % 4]
+      const color = ['#1854e8', '#ffd267', '#1454ee', '#0d1c3b'][i % 4]
       return <span key={i} className="confetti-piece" style={{ left: left + '%', top: '10%', animationDelay: delay + 's', '--dx': dx + 'px', background: color }} />
     })}
   </div>

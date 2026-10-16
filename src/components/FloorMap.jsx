@@ -1,12 +1,10 @@
-import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { rooms } from '../data.js'
 import floorOnePlan from '../../map1lower.svg?raw'
 import floorTwoPlan from '../../map2lower.svg?raw'
 import { roomOutline, planSizes } from '../map-geometry.js'
 import { calculateIndoorRoute } from '../map-routing.js'
-
-const MIN_ZOOM = 1
-const MAX_ZOOM = 3.5
+import { zoomFrame } from '../map-zoom.js'
 
 function FloorRoom({ room, selected, onSelect, onFloorRequest, gameTargetId, gameFeedback, filterCategory, venue }) {
   const isTarget = gameTargetId === room.id
@@ -152,7 +150,6 @@ export default function FloorMap({ floor = 1, selectedId = '', onSelect, onFloor
   const viewportRef = useRef(null)
   const stageRef = useRef(null)
   const zoomRef = useRef(1)
-  const pointers = useRef(new Map())
   const pinch = useRef(null)
   const pinchEndedAt = useRef(0)
   const markerId = `route-arrow-${useId().replace(/[^a-zA-Z0-9]/g, '')}`
@@ -209,46 +206,61 @@ export default function FloorMap({ floor = 1, selectedId = '', onSelect, onFloor
     }
   }, [navMode3d, width, height, focalPoint, swoopActive, renderScale])
 
+  const activeX = activeStepPoint?.[0]
+  const activeY = activeStepPoint?.[1]
   useEffect(() => {
     const viewport = viewportRef.current
-    if (!viewport || compact) return
+    if (!viewport || navMode3d) return
     const room = rooms.find((item) => item.floor === floor && item.id === selectedId)
     const outline = room ? roomOutline(room.id) : null
-    const focusPoint = outline ? [outline.reduce((sum, point) => sum + point[0], 0) / outline.length, outline.reduce((sum, point) => sum + point[1], 0) / outline.length] :
-      manualPoint?.floor === floor ? [manualPoint.x, manualPoint.y] : null
+    const focusPoint = compact && activeX !== undefined && activeY !== undefined ? [activeX, activeY] : outline
+      ? [outline.reduce((sum, point) => sum + point[0], 0) / outline.length, outline.reduce((sum, point) => sum + point[1], 0) / outline.length]
+      : manualPoint?.floor === floor ? [manualPoint.x, manualPoint.y] : null
     if (!focusPoint) return
-    const stage = viewport.querySelector('.floor-map-stage')
+    const stage = stageRef.current
     if (!stage) return
-    const scale = stage.getBoundingClientRect().width / width
+    // offsetWidth (не getBoundingClientRect) не учитывает 3D-трансформацию.
+    const scale = stage.offsetWidth / width
     // Don't move a staircase between the first and second tap on a phone.
+    const delay = compact ? 0 : room?.id.startsWith('stairs-') ? 540 : 340
     const timer = window.setTimeout(() => {
       viewport.scrollLeft = Math.max(0, focusPoint[0] * scale - viewport.clientWidth / 2)
       viewport.scrollTop = Math.max(0, focusPoint[1] * scale - viewport.clientHeight / 2)
-    }, room?.id.startsWith('stairs-') ? 540 : 340)
+    }, delay)
     return () => window.clearTimeout(timer)
-  }, [compact, floor, manualPoint?.floor, manualPoint?.x, manualPoint?.y, selectedId, width, zoomed])
+  }, [activeX, activeY, compact, floor, manualPoint?.floor, manualPoint?.x, manualPoint?.y, navMode3d, selectedId, width, zoomed])
 
-  // Each floor reuses the same stage element, so reset its zoom when the floor changes.
-  useEffect(() => {
+  // Revert to the CSS base size when switching floors, fit/large view or 3D.
+  useLayoutEffect(() => {
     if (stageRef.current) stageRef.current.style.width = ''
     zoomRef.current = 1
-  }, [floor])
+    pinch.current = null
+  }, [floor, zoomed, navMode3d])
 
-  // Zoom around a point (in viewport pixels) so that the content under the fingers stays put.
-  const applyZoom = (nextZoom, anchorX, anchorY) => {
+  // Without a selected room, open the large mobile plan near its centre.
+  useLayoutEffect(() => {
+    const viewport = viewportRef.current
+    const stage = stageRef.current
+    if (!viewport || !stage || compact || !zoomed || navMode3d || selectedId || manualPoint?.floor === floor) return
+    viewport.scrollLeft = Math.max(0, (stage.offsetWidth - viewport.clientWidth) / 2)
+    viewport.scrollTop = Math.max(0, (stage.offsetHeight - viewport.clientHeight) / 2)
+  }, [compact, floor, manualPoint?.floor, navMode3d, selectedId, zoomed])
+
+  // The CSS min-width is 740px on phones. Using a percentage of the viewport
+  // made +/- and pinch appear broken until zoom exceeded 740 / viewportWidth.
+  const applyZoom = useCallback((nextZoom, anchorX, anchorY) => {
     const viewport = viewportRef.current
     const stage = stageRef.current
     if (!viewport || !stage) return
-    const clamped = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, nextZoom))
-    const oldWidth = stage.offsetWidth
-    const oldHeight = stage.offsetHeight
-    const fx = (viewport.scrollLeft + anchorX) / oldWidth
-    const fy = (viewport.scrollTop + anchorY) / oldHeight
-    stage.style.width = `${clamped * 100}%`
-    viewport.scrollLeft = Math.max(0, fx * stage.offsetWidth - anchorX)
-    viewport.scrollTop = Math.max(0, fy * stage.offsetHeight - anchorY)
-    zoomRef.current = clamped
-  }
+    const frame = zoomFrame({
+      zoom: zoomRef.current, nextZoom, stageWidth: stage.offsetWidth,
+      scrollLeft: viewport.scrollLeft, scrollTop: viewport.scrollTop, anchorX, anchorY,
+    })
+    stage.style.width = `${frame.width}px`
+    viewport.scrollLeft = frame.left
+    viewport.scrollTop = frame.top
+    zoomRef.current = frame.zoom
+  }, [])
   const zoomByButton = (factor) => {
     const viewport = viewportRef.current
     if (!viewport) return
@@ -261,31 +273,42 @@ export default function FloorMap({ floor = 1, selectedId = '', onSelect, onFloor
     if (viewport) { viewport.scrollLeft = 0; viewport.scrollTop = 0 }
   }
 
-  const onPointerDown = (event) => {
-    if (compact || event.pointerType !== 'touch') return
-    pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
-    if (pointers.current.size === 2) {
-      const [a, b] = [...pointers.current.values()]
-      pinch.current = { distance: Math.hypot(a.x - b.x, a.y - b.y) || 1, zoom: zoomRef.current }
+  // Safari often cancels pointer events when a scrollable element is panned.
+  // Native touch events with a non-passive two-finger listener keep one-finger
+  // native scrolling intact while allowing pinch to resize the plan itself.
+  useEffect(() => {
+    const viewport = viewportRef.current
+    if (!viewport || compact || navMode3d) return undefined
+    const begin = (event) => {
+      if (event.touches.length !== 2) return
+      const [a, b] = event.touches
+      pinch.current = { distance: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) || 1, zoom: zoomRef.current }
     }
-  }
-  const onPointerMove = (event) => {
-    if (!pinch.current || !pointers.current.has(event.pointerId)) return
-    pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
-    if (pointers.current.size < 2) return
-    const [a, b] = [...pointers.current.values()]
-    const distance = Math.hypot(a.x - b.x, a.y - b.y) || 1
-    const rect = viewportRef.current.getBoundingClientRect()
-    applyZoom(pinch.current.zoom * distance / pinch.current.distance, (a.x + b.x) / 2 - rect.left, (a.y + b.y) / 2 - rect.top)
-  }
-  const onPointerEnd = (event) => {
-    if (!pointers.current.has(event.pointerId)) return
-    pointers.current.delete(event.pointerId)
-    if (pinch.current) {
+    const move = (event) => {
+      if (event.touches.length !== 2 || !pinch.current) return
+      event.preventDefault()
+      const [a, b] = event.touches
+      const rect = viewport.getBoundingClientRect()
+      const distance = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) || 1
+      applyZoom(pinch.current.zoom * distance / pinch.current.distance,
+        (a.clientX + b.clientX) / 2 - rect.left, (a.clientY + b.clientY) / 2 - rect.top)
+    }
+    const end = (event) => {
+      if (!pinch.current) return
       pinchEndedAt.current = Date.now()
-      if (pointers.current.size < 2) pinch.current = null
+      if (event.touches.length < 2) pinch.current = null
     }
-  }
+    viewport.addEventListener('touchstart', begin, { passive: true })
+    viewport.addEventListener('touchmove', move, { passive: false })
+    viewport.addEventListener('touchend', end, { passive: true })
+    viewport.addEventListener('touchcancel', end, { passive: true })
+    return () => {
+      viewport.removeEventListener('touchstart', begin)
+      viewport.removeEventListener('touchmove', move)
+      viewport.removeEventListener('touchend', end)
+      viewport.removeEventListener('touchcancel', end)
+    }
+  }, [applyZoom, compact, navMode3d])
   // After a two-finger gesture, the browser may still send a click to a room under a finger.
   const onClickCapture = (event) => {
     if (Date.now() - pinchEndedAt.current < 350) { event.stopPropagation(); event.preventDefault() }
@@ -308,7 +331,7 @@ export default function FloorMap({ floor = 1, selectedId = '', onSelect, onFloor
   }
 
   const viewport = <div ref={viewportRef} className={`floor-map-viewport ${compact ? 'floor-map-compact' : ''} ${zoomed ? 'floor-map-zoomed' : ''} ${picking ? 'floor-map-picking' : ''} ${showLabels ? '' : 'floor-map-labels-hidden'} ${showDoorMarks ? '' : 'floor-map-doors-hidden'} ${navMode3d ? 'floor-map-3d' : ''}`}
-    onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerEnd} onPointerCancel={onPointerEnd} onClickCapture={onClickCapture}>
+    onClickCapture={onClickCapture}>
     <div ref={stageRef} className={`floor-map-stage floor-map-stage-floor-${floor} ${navMode3d ? 'floor-map-stage-3d' : ''}`} style={stageTransformStyle}>
       <div className="floor-map-art" aria-hidden="true" dangerouslySetInnerHTML={{ __html: plan }} />
       <svg className="floor-plan-svg" viewBox={`0 0 ${width} ${height}`} role="group" aria-label={`Интерактивная карта, ${floor} этаж`} onClickCapture={onMapClickCapture}>
@@ -338,12 +361,12 @@ export default function FloorMap({ floor = 1, selectedId = '', onSelect, onFloor
   if (compact) return viewport
   return <div className="floor-map-wrap">
     {viewport}
-    <div className="floor-map-zoom-controls" role="group" aria-label="Масштаб карты">
+    {!navMode3d && <div className="floor-map-zoom-controls" role="group" aria-label="Масштаб карты">
       <button type="button" onClick={() => zoomByButton(1.4)} aria-label="Приблизить"><ZoomPlus /></button>
       <button type="button" onClick={() => zoomByButton(1 / 1.4)} aria-label="Отдалить"><ZoomMinus /></button>
-      <button type="button" onClick={resetZoom} aria-label="Показать весь план" style={{ fontSize: 12, fontWeight: 650 }}>1:1</button>
-    </div>
-    <span className="floor-map-hint" aria-hidden="true">Двумя пальцами — масштаб</span>
+      <button type="button" onClick={resetZoom} aria-label="Сбросить масштаб" style={{ fontSize: 12, fontWeight: 650 }}>1:1</button>
+    </div>}
+    {!navMode3d && <span className="floor-map-hint" aria-hidden="true">Двумя пальцами — масштаб</span>}
   </div>
 }
 

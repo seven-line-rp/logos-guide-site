@@ -89,16 +89,19 @@ export function Header() {
   const language = useLanguage()
   const [searchOpen, setSearchOpen] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const menuToggleRef = useRef(null)
   const [theme, setTheme] = useState(() => storageGet('site-theme') || 'light')
   const [openDay, toggleOpenDay] = useOpenDay()
   const location = useLocation()
   const closeSearch = useCallback(() => setSearchOpen(false), [])
+  const changeTheme = () => setTheme((value) => value === 'dark' ? 'light' : 'dark')
+  const openSearch = () => { setMobileOpen(false); setSearchOpen(true) }
 
   useEffect(() => setMobileOpen(false), [location.pathname])
   useEffect(() => {
     document.documentElement.dataset.theme = theme
     storageSet('site-theme', theme)
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#07172e' : '#245ce5')
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#07172e' : '#1854e8')
   }, [theme])
   useEffect(() => {
     const onKeyDown = (event) => {
@@ -107,15 +110,40 @@ export function Header() {
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [])
+  useEffect(() => {
+    if (!mobileOpen) return undefined
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') { setMobileOpen(false); menuToggleRef.current?.focus() }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [mobileOpen])
 
   return <>
     <header className="site-header">
-      <div className="header-inner"><Brand />
-        <nav className="desktop-nav" aria-label="Основная навигация">{navigation.map((item) => <NavLink end key={item.to} to={item.to} className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}>{item.label}</NavLink>)}</nav>
-        <div className="header-actions"><div className="language-switch" role="group" aria-label="Язык сайта">{['ru', 'en'].map((locale) => <button key={locale} type="button" lang={locale} aria-pressed={language === locale} onClick={() => setLanguage(locale)} title={locale === 'ru' ? 'Русская версия' : 'English version'}>{locale.toUpperCase()}</button>)}</div><button className={`open-day-toggle ${openDay ? 'open-day-toggle-on' : ''}`} onClick={() => toggleOpenDay()} aria-pressed={openDay} title={openDay ? 'Режим дня открытых дверей включён — нажмите, чтобы выключить' : 'Режим дня открытых дверей выключен — нажмите, чтобы включить'}><PartyPopper size={15} /><span>День открытых дверей</span><i className="open-day-switch" aria-hidden="true"><b /></i></button><button className="theme-toggle" onClick={() => setTheme((value) => value === 'dark' ? 'light' : 'dark')} aria-label={theme === 'dark' ? 'Включить светлую тему' : 'Включить тёмную тему'} title={theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}>{theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}</button><button className="search-trigger" aria-keyshortcuts="K" onClick={() => setSearchOpen(true)} aria-label="Найти кабинет"><Search size={16} /><span>Найти место</span><kbd>K</kbd></button><Link className="header-cta" to="/map">Открыть карту <ArrowUpRight size={15} /></Link><button className={`mobile-menu-toggle ${mobileOpen ? 'is-open' : ''}`} onClick={() => setMobileOpen((value) => !value)} aria-label={mobileOpen ? 'Закрыть меню' : 'Открыть меню'} aria-expanded={mobileOpen}>{mobileOpen ? <X size={21} /> : <span className="menu-lines"><i /><i /></span>}</button></div>
+      <div className="header-inner">
+        <Brand />
+        <nav className="desktop-nav" aria-label="Основная навигация">
+          {navigation.map((item) => <NavLink end key={item.to} to={item.to} className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}>{item.label}</NavLink>)}
+        </nav>
+        <div className="header-actions">
+          <button className={`open-day-toggle header-open-day ${openDay ? 'open-day-toggle-on' : ''}`} type="button" onClick={() => toggleOpenDay()} aria-pressed={openDay} title={openDay ? 'Режим дня открытых дверей включён — нажмите, чтобы выключить' : 'Режим дня открытых дверей выключен — нажмите, чтобы включить'}><PartyPopper size={15} /><span>День открытых дверей</span><i className="open-day-switch" aria-hidden="true"><b /></i></button>
+          <button className="theme-toggle header-theme" type="button" onClick={changeTheme} aria-label={theme === 'dark' ? 'Включить светлую тему' : 'Включить тёмную тему'} title={theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}>{theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}</button>
+          <button className="search-trigger" type="button" aria-keyshortcuts="K" onClick={openSearch} aria-label="Найти кабинет"><Search size={18} /><span>Найти место</span><kbd>K</kbd></button>
+          <Link className="header-cta" to="/map">Открыть карту <ArrowUpRight size={15} /></Link>
+          <NavLink className={({ isActive }) => `mobile-map-link ${isActive ? 'mobile-map-link-active' : ''}`} to="/map" aria-label="Открыть карту"><MapPin size={18} /><span>Карта</span></NavLink>
+          <button ref={menuToggleRef} className={`mobile-menu-toggle ${mobileOpen ? 'is-open' : ''}`} type="button" onClick={() => setMobileOpen((value) => !value)} aria-controls="site-menu" aria-label={mobileOpen ? 'Закрыть меню' : 'Открыть меню'} aria-expanded={mobileOpen}>{mobileOpen ? <X size={23} /> : <span className="menu-lines"><i /><i /><i /></span>}</button>
+        </div>
       </div>
-      {mobileOpen && <div className="mobile-nav-panel"><div className="mobile-nav-links">{navigation.map((item, index) => <NavLink key={item.to} to={item.to} className={({ isActive }) => `mobile-nav-link ${isActive ? 'mobile-nav-link-active' : ''}`}><span className="mobile-nav-index">0{index + 1}</span>{item.label}<ArrowRight size={17} /></NavLink>)}</div><div className="mobile-nav-bottom"><span>Найдите нужное место</span><button onClick={() => { setMobileOpen(false); setSearchOpen(true) }}><Search size={15} /> Поиск кабинета</button></div><div className="mobile-nav-bottom"><span>Режим мероприятия</span><button className={`open-day-toggle ${openDay ? 'open-day-toggle-on' : ''}`} onClick={() => toggleOpenDay()} aria-pressed={openDay}><PartyPopper size={15} /> День открытых дверей <i className="open-day-switch" aria-hidden="true"><b /></i></button></div></div>}
+      <nav id="site-menu" className="mobile-nav-panel" aria-label="Меню сайта" hidden={!mobileOpen}>
+        <div className="mobile-nav-language"><span>Язык интерфейса</span><div className="language-switch" role="group" aria-label="Язык сайта">{['ru', 'en'].map((locale) => <button key={locale} type="button" lang={locale} aria-pressed={language === locale} onClick={() => setLanguage(locale)} title={locale === 'ru' ? 'Русская версия' : 'English version'}>{locale.toUpperCase()}</button>)}</div></div>
+        <div className="mobile-nav-links">{navigation.map((item, index) => <NavLink end key={item.to} to={item.to} onClick={() => setMobileOpen(false)} className={({ isActive }) => `mobile-nav-link ${isActive ? 'mobile-nav-link-active' : ''}`}><span className="mobile-nav-index">0{index + 1}</span>{item.label}<ArrowRight size={17} /></NavLink>)}</div>
+        <div className="mobile-nav-bottom"><span>Найдите нужное место</span><button type="button" onClick={openSearch}><Search size={17} /> Поиск кабинета</button></div>
+        <div className="mobile-nav-bottom"><span>Режим мероприятия</span><button className={`open-day-toggle ${openDay ? 'open-day-toggle-on' : ''}`} type="button" onClick={() => toggleOpenDay()} aria-pressed={openDay}><PartyPopper size={16} /> День открытых дверей <i className="open-day-switch" aria-hidden="true"><b /></i></button></div>
+        <div className="mobile-nav-bottom"><span>Оформление</span><button type="button" onClick={changeTheme}>{theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}{theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}</button></div>
+      </nav>
     </header>
+    {mobileOpen && <button type="button" className="menu-scrim" onClick={() => setMobileOpen(false)} aria-hidden="true" tabIndex={-1} />}
     <SearchDialog open={searchOpen} onClose={closeSearch} />
   </>
 }

@@ -16,9 +16,9 @@ export const english = {
   'План этажей колледжа': 'College floor plans', 'План колледжа': 'Campus map', 'Этаж на главной карте': 'Map floor', 'Нажмите на помещение': 'Select a room', 'Открыть полную карту': 'Open full map', 'Открыть план': 'Open floor plan',
   'Например, 217 или библиотека': 'For example, 217 or library', 'Искать': 'Search', 'Посмотреть все результаты': 'View all results', 'в справочнике': 'in the directory',
   'Сегодня': 'Today', 'День открытых дверей:': 'Open day:', 'площадки и мастер-классы.': 'venues and workshops.', 'Выберите площадку — покажем аудиторию, ведущих и предложим построить маршрут прямо по плану колледжа.': 'Choose a venue to see the room, meet the hosts and plan your route on the campus map.',
-  'День открытых дверей · путеводитель колледжа': 'Open day · campus guide', 'Путеводитель по колледжу · два этажа': 'Campus guide · two floors', 'Куда идти': 'Where to go', 'сегодня?': 'today?', 'на следующую пару?': 'for your next class?',
-  'Найдите площадки дня открытых дверей, посмотрите расписание на карте и постройте маршрут до нужной аудитории.': 'Find open day venues, explore the programme on the map and get directions to your room.',
-  'Введите номер кабинета или откройте план. Покажем, где находится нужное место и как к нему пройти.': 'Enter a room number or open the map. We’ll show you where it is and how to get there.',
+  'Навигатор по колледжу': 'Your campus navigator', 'Куда идти': 'Where to go', 'сегодня?': 'today?', 'на следующую пару?': 'for your next class?',
+  'Найдите площадку или кабинет — покажем место на плане и подскажем маршрут.': 'Find a venue or room — see it on the map and get directions.',
+  'Найдите кабинет по номеру или названию — покажем его на карте и подскажем маршрут.': 'Find a room by number or name — see it on the map and get directions.', 'Поиск по колледжу': 'Search the campus',
   'Смотреть карту': 'View map', 'Построить маршрут': 'Plan a route', 'План корпуса · 1 и 2 этажи': 'Building plan · floors 1 and 2', 'Часто ищут': 'Popular places', 'Начните': 'Start', 'здесь.': 'here.', 'Все помещения': 'All rooms', 'Планы этажей': 'Floor plans', 'Первый': 'First', 'или': 'or', 'второй?': 'second?',
   'Переключайтесь между этажами, выбирайте помещения и находите ближайшую лестницу.': 'Switch between floors, select a room and find the nearest stairs.', 'ПЕРВЫЙ ЭТАЖ': 'FLOOR 1', 'ВТОРОЙ ЭТАЖ': 'FLOOR 2', 'Столовая, актовый зал, учебная часть': 'Canteen, assembly hall, academic office', 'Библиотека, лаборатории, кабинеты': 'Library, laboratories, classrooms',
   'На перемене': 'Between classes', 'Проверьте себя': 'Test yourself', 'по плану.': 'on the map.', 'В коротком квизе можно потренироваться узнавать кабинеты и этажи.': 'Practise finding rooms and floors in a short quiz.', 'Открыть игры': 'Play games', '5 вопросов': '5 questions', 'без оценок': 'no grades',
@@ -67,3 +67,14 @@ Object.assign(english, {
 })
 
 Object.assign(english, { 'колледжа': 'of the college', 'Столовая · актовый зал · учебные кабинеты': 'Canteen · assembly hall · classrooms', 'Библиотека · лаборатории · кабинет физики': 'Library · laboratories · physics classroom' })
+
+Object.assign(english, {
+  'Язык интерфейса': 'Interface language',
+  'Меню сайта': 'Site menu',
+  'Оформление': 'Appearance',
+  'Двигайте план пальцем: кабинеты показаны крупно, без сжатия.': 'Drag the map to explore: room labels stay readable.',
+  'На iPhone нажмите «Прослушать», чтобы включить звук. Проверьте громкость, если не слышно.': 'On iPhone, tap Listen to enable audio. If you hear nothing, check the volume.',
+  'Звук не разблокировался. Нажмите «Прослушать» ещё раз и проверьте громкость и беззвучный режим iPhone.': 'Audio did not unlock. Tap Listen again and check your iPhone volume and silent mode.',
+  'Запись не воспроизвелась, а синтез речи недоступен. Проверьте подключение и нажмите «Прослушать» ещё раз.': 'The recording did not play and speech synthesis is unavailable. Check your connection and tap Listen again.',
+  'Запись не воспроизвелась. Для запасной озвучки нужен русский системный голос; повторите попытку или проверьте подключение.': 'The recording did not play. The backup needs a Russian system voice; try again or check your connection.',
+})

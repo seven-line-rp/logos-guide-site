@@ -6,11 +6,12 @@ import './styles-more.css'
 import './refinement.css'
 import './open-day.css'
 import './welcome.css'
-import './mobile.css'
 import './polish.css'
 import './premium.css'
 import './navigator.css'
 import './contrast.css'
+import './mobile.css'
+import './home-hero.css'
 import './interactions.js'
 
 createRoot(document.getElementById('root')).render(

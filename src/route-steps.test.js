@@ -26,6 +26,7 @@ function stepsFor(fromId, toId, transition = 'stairs') {
 test('a route keeps the start, the wing guides, the transfer and the arrival', () => {
   const { route, steps } = stepsFor('class-162', 'auditorium-104')
   assert.equal(steps[0].kind, 'start')
+  assert.deepEqual(steps[0].voiceCue, ['route-built'], 'первый шаг не должен молчать без русского голоса на iPhone')
   assert.equal(steps.at(-1).kind, 'arrive')
   assert.equal(steps.at(-1).floor, 1)
   assert.deepEqual(steps.map((step) => step.kind), ['start', 'guide', 'guide', 'guide', 'arrive'])
@@ -76,4 +77,5 @@ test('a route to your own room is a single step', () => {
   })
   assert.equal(steps.length, 1)
   assert.equal(steps[0].title, 'Вы уже на месте')
+  assert.deepEqual(steps[0].voiceCue, ['arrive'])
 })

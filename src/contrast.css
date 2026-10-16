@@ -1,21 +1,29 @@
-/* Final semantic contrast layer: accent text and filled controls use separate
-   colors, so changing the theme cannot produce blue text on a blue button. */
+/* One cobalt accent across navigation, links and filled controls. The dark
+   theme keeps a lighter blue for text on dark surfaces, but filled controls
+   use the same saturated cobalt and white text in both themes. */
 :root {
   --muted-2: #586b7d;
-  --action-bg: #24579b;
-  --action-hover: #1c467f;
+  --blue: #1854e8;
+  --blue-bright: #286dff;
+  --action-bg: #1854e8;
+  --action-hover: #103fbd;
   --on-action: #fff;
 }
 html[data-theme='dark'] {
   --muted-2: #bbcad6;
+  --blue: #6b9bff;
+  --blue-bright: #6b9bff;
   --blue-pale: #304b66;
-  --action-bg: #285c9e;
-  --action-hover: #326db5;
+  --action-bg: #1854e8;
+  --action-hover: #3268ed;
 }
 :is(.home-hero, .floor-preview-band) h1 em,
 .floor-preview-copy h2 em { color: #dfebff; }
 :is(.home-hero, .floor-preview-band) .section-label,
 :is(.home-hero, .floor-preview-band) .eyebrow { color: #dce7f5; }
+.floor-preview-band { background: #103bac; }
+html[data-theme='dark'] .floor-preview-band { background: #0d2e88; }
+.floor-preview-copy h2 em { color: #ffd66d; }
 html[data-theme='dark'] .header-cta,
 .header-cta,
 html[data-theme='dark'] .button-primary,
@@ -30,11 +38,25 @@ html[data-theme='dark'] .route-voice-toggle.route-voice-on,
 }
 html[data-theme='dark'] .button-primary:hover,
 .button-primary:hover, .header-cta:hover { color: #fff; background: var(--action-hover); }
-.route-nav { background: #24579b; }
+.route-nav { background: var(--action-bg); }
 .route-nav-main :is(strong, small, em) { color: #fff; }
-.route-nav-controls button { color: #204e89; background: #fff; }
+.route-nav-controls button { color: var(--action-bg); background: #fff; }
 .route-nav-controls button:disabled { color: #536174; background: #dce5f1; opacity: 1; cursor: not-allowed; }
-.route-nav-controls button.route-nav-voice-off { color: #fff; background: #173e72; }
+.route-nav-controls button.route-nav-voice-off { color: #fff; background: #103fbd; }
+.open-day-toggle-on, html[data-theme='dark'] .open-day-toggle-on {
+  color: #fff;
+  border-color: var(--action-bg);
+  background: var(--action-bg);
+}
+.open-day-toggle-on:hover, html[data-theme='dark'] .open-day-toggle-on:hover {
+  color: #fff;
+  border-color: var(--action-hover);
+  background: var(--action-hover);
+}
+.room-venue-chip:hover, html[data-theme='dark'] .room-venue-chip:hover,
+html[data-theme='dark'] .text-link:hover > span,
+html[data-theme='dark'] .icon-button:hover { color: #fff; background: var(--action-bg); }
+.floor-tab-active, .map-filter-active { border-color: var(--blue); }
 html[data-theme='dark'] .route-voice-selector-wrap :is(label, label strong) { color: var(--ink); }
 .route-voice-select option, .route-voice-select optgroup { color: var(--ink); background: var(--surface); }
 .route-room-search-field input::placeholder { color: var(--muted); opacity: 1; }

@@ -1,5 +1,8 @@
 // Premium micro-interactions: magnetic buttons, tilt cards, ripple, parallax, cursor glow, scroll progress.
 const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+// На телефоне hover-эффекты не работают, но раньше их MutationObserver всё
+// равно пересканировал DOM при каждом обновлении React.
+const coarsePointer = window.matchMedia('(pointer: coarse)').matches
 
 function onReady(fn) {
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn, { once: true })
@@ -35,7 +38,7 @@ function initHeaderScroll() {
 }
 
 function initCursorGlow() {
-  if (reduced || window.matchMedia('(pointer: coarse)').matches) return
+  if (reduced || coarsePointer) return
   let glow = document.querySelector('.cursor-glow')
   if (!glow) {
     glow = document.createElement('div')
@@ -60,7 +63,7 @@ function initCursorGlow() {
 }
 
 function initMagnetic() {
-  if (reduced) return
+  if (reduced || coarsePointer) return
   const selector = '.button, .header-cta, .magnetic, .nav-link, .text-link'
   const attach = (el) => {
     if (el.dataset.mag) return
@@ -89,7 +92,7 @@ function initMagnetic() {
 }
 
 function initTilt() {
-  if (reduced) return
+  if (reduced || coarsePointer) return
   const selector = '.tilt, .quick-place-card, .open-day-card, .floor-switch-card, .game-mode-tab, .quiz-option, .service-card, .about-person, .about-value-row, .faq-item, .search-result, .directory-card'
   const attach = (el) => {
     if (el.dataset.tilt) return
@@ -111,6 +114,7 @@ function initTilt() {
 }
 
 function initRipple() {
+  if (reduced || coarsePointer) return
   document.addEventListener('click', (e) => {
     const target = e.target.closest('.button, .header-cta, .quiz-option, .game-mode-tab, .nav-link, .text-link, .search-result, .quick-place-card, .open-day-card, .floor-switch-card, .ripple-host')
     if (!target) return
@@ -128,7 +132,7 @@ function initRipple() {
 }
 
 function initParallax() {
-  if (reduced) return
+  if (reduced || coarsePointer) return
   const els = () => document.querySelectorAll('[data-parallax]')
   const update = () => {
     const sy = window.scrollY
@@ -141,12 +145,6 @@ function initParallax() {
   update()
 }
 
-function initRevealEnhance() {
-  // Add variant classes based on data-reveal attribute if present (default up)
-  const obs = new MutationObserver(() => {})
-  obs.observe(document.body, { childList: true, subtree: true })
-}
-
 onReady(() => {
   initScrollProgress()
   initHeaderScroll()
@@ -155,5 +153,4 @@ onReady(() => {
   initTilt()
   initRipple()
   initParallax()
-  initRevealEnhance()
 })

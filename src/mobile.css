@@ -1,6 +1,5 @@
-/* Мобильные правки с приоритетом на iPhone / iOS Safari.
-   Подключается последним: перекрывает более ранние стили только там,
-   где на телефоне реально что-то ломалось (аудит по ширинам 320–430 px). */
+/* Финальный адаптивный слой: iPhone, узкие экраны и доступ к языку через меню.
+   Подключается после основных стилей, чтобы не спорить с их media queries. */
 
 /* --- База iOS: без авто-зума текста в ландшафте, без серой вспышки при тапе,
        и страховка от горизонтального скролла страницы из-за декора --- */
@@ -12,12 +11,6 @@ html, body { overflow-x: clip; }
   /* Тап-цели не меньше ~40px (Apple HIG — 44, но хотя бы не 33 у крестиков) */
   .icon-button { width: 40px; height: 40px; }
   input, select, textarea { font-size: 16px !important; } /* иначе Safari зумит поле при фокусе */
-
-  /* Шапка на 320–360px: тумблер дня открытых дверей — квадратная кнопка-иконка
-     (подпись всё равно скрыта, а переключатель съедал ~30px ширины) */
-  .open-day-toggle { width: 40px; min-height: 40px; justify-content: center; padding: 0; }
-  .open-day-toggle .open-day-switch { display: none; }
-  .header-inner { width: calc(100% - 20px); }
 
   /* Модалки: отступы с учётом чёлки и home-indicator (работает вместе с
      viewport-fit=cover в index.html), высота — через dvh, а не 100vh:
@@ -41,14 +34,6 @@ html, body { overflow-x: clip; }
   .footer-links-group > a, .footer-about-link { display: inline-block; padding-block: 5px; }
 }
 
-/* Совсем узкие iPhone (SE 1-го поколения, 320–360px): прячем подзаголовок
-   бренда «ПУТЕВОДИТЕЛЬ» — иначе шапка не влезает и кнопки уезжают за экран */
-@media (max-width: 380px) {
-  .brand { gap: 7px; }
-  .brand-copy small { display: none; }
-  .header-actions { gap: 4px; }
-}
-
 /* Альбомный телефон (высота меньше 500px): welcome-диалог компактнее и в ряд */
 @media (max-height: 500px) and (orientation: landscape) {
   .welcome-dialog { padding: 18px 20px 16px; }
@@ -57,4 +42,279 @@ html, body { overflow-x: clip; }
   .welcome-app { margin-top: 12px; padding: 12px; }
   .welcome-toggle { margin-top: 12px; }
   .welcome-submit { margin-top: 12px; }
+}
+
+/* Язык интерфейса перенесён из шапки в бургер-меню */
+.mobile-nav-language {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  border: 1px solid var(--line, rgba(18,36,71,.1));
+  border-radius: 12px;
+  background: var(--surface-soft, #f4f7fd);
+}
+.mobile-nav-language > span {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink, #1b2e4c);
+}
+.mobile-nav-language .language-switch {
+  display: inline-flex;
+  gap: 4px;
+}
+.mobile-nav-language .language-switch button {
+  min-width: 40px;
+  min-height: 34px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid var(--line, rgba(18,36,71,.12));
+  background: var(--surface, #fff);
+  color: var(--ink, #1b2e4c);
+  font-weight: 700;
+  cursor: pointer;
+}
+.mobile-nav-language .language-switch button[aria-pressed="true"] {
+  background: var(--action-bg, #1854e8);
+  color: #fff;
+  border-color: var(--action-bg, #1854e8);
+}
+.mobile-nav-bottom .open-day-toggle-on,
+html[data-theme='dark'] .mobile-nav-bottom .open-day-toggle-on {
+  color: #fff;
+  background: var(--action-bg);
+  border-color: var(--action-bg);
+}
+
+/* Бургер доступен и на широком экране: язык больше не занимает место в шапке. */
+.mobile-map-link { display: none; }
+.mobile-nav-panel[hidden] { display: none; }
+.menu-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 79;
+  width: 100%;
+  background: rgba(7, 20, 42, .42);
+  cursor: default;
+  touch-action: none;
+}
+@media (min-width: 1221px) {
+  .mobile-menu-toggle { display: grid; width: 42px; height: 42px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface); }
+  .mobile-menu-toggle.is-open { border-color: var(--blue); color: var(--blue); }
+}
+@media (min-width: 681px) {
+  .mobile-nav-panel {
+    left: auto;
+    right: max(12px, calc((100vw - 1420px) / 2));
+    width: min(470px, calc(100vw - 24px));
+    max-height: calc(100dvh - 86px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 18px 20px 22px; /* Не наследовать огромный desktop padding из styles.css. */
+    border: 1px solid var(--line);
+    border-radius: 0 0 16px 16px;
+    background: var(--surface);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .mobile-nav-bottom { gap: 10px; }
+  .mobile-nav-bottom button { padding-inline: 10px; border-radius: 8px; background: var(--surface-soft); font-size: 13px; letter-spacing: 0; text-transform: none; }
+}
+@media (min-width: 1221px) and (max-width: 1450px) {
+  .header-open-day { display: none; } /* Режим остаётся в меню. */
+  .header-inner { gap: 12px; }
+  .desktop-nav { gap: 14px; }
+}
+@media (min-width: 1221px) and (max-width: 1350px) {
+  .header-cta { display: none; } /* Ссылка на карту уже есть в навигации. */
+}
+.mobile-nav-language { min-height: 56px; }
+.mobile-nav-language .language-switch button { min-height: 44px; }
+.mobile-nav-bottom button { min-height: 44px; }
+
+.route-map-mobile-hint, .route-voice-help { display: none; }
+
+@media (max-width: 980px) {
+  .route-builder, .route-preview-grid { grid-template-columns: minmax(0, 1fr); }
+  .route-form-panel, .route-result-panel { min-width: 0; }
+}
+
+@media (max-width: 680px) {
+  html { scroll-padding-top: calc(82px + env(safe-area-inset-top)); }
+  .site-header {
+    height: auto;
+    min-height: 72px;
+    padding-top: env(safe-area-inset-top);
+    border-bottom: 2px solid var(--blue);
+    background: var(--surface) !important;
+    box-shadow: 0 5px 18px rgba(20, 49, 91, .12);
+  }
+  .header-inner { width: calc(100% - 28px); height: 72px; min-height: 72px; gap: 8px; }
+  .brand { min-width: 0; gap: 8px; }
+  .brand-mark { width: 42px; height: 42px; flex: 0 0 42px; border-radius: 12px; }
+  .brand-copy strong { font-size: 18px; font-weight: 800; letter-spacing: .025em; }
+  .brand-copy small { display: block; font-size: 9px !important; line-height: 1.25; letter-spacing: .025em !important; }
+  .header-actions { gap: 5px; }
+  .header-open-day, .header-theme { display: none; }
+  .mobile-map-link {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 0 11px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    color: var(--action-bg);
+    background: var(--blue-soft);
+    font-size: 14px !important;
+    font-weight: 750;
+    white-space: nowrap;
+  }
+  .mobile-map-link-active { border-color: var(--action-bg); }
+  html[data-theme='dark'] .mobile-map-link { color: #e8f1ff; background: #1c406f; border-color: #4f75ac; }
+  html[data-theme='dark'] .mobile-map-link-active { color: #fff; background: var(--action-bg); border-color: #91b9f2; }
+  .search-trigger, .mobile-menu-toggle {
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+    flex: 0 0 44px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border-radius: 12px;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .search-trigger { border: 1px solid var(--line); color: var(--ink); background: var(--surface-soft); }
+  .search-trigger kbd { display: none; }
+  .mobile-menu-toggle, html[data-theme='dark'] .mobile-menu-toggle {
+    border: 1px solid var(--action-bg);
+    color: #fff;
+    background: var(--action-bg);
+  }
+  .menu-lines { width: 20px; height: 16px; }
+  .menu-lines i { width: 100%; height: 2px; background: currentColor; }
+  .mobile-nav-panel {
+    top: 100%; right: 0; left: 0;
+    width: 100%;
+    max-height: calc(100dvh - env(safe-area-inset-top) - 72px - 8px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding: 12px 16px max(18px, env(safe-area-inset-bottom));
+    border-radius: 0 0 18px 18px;
+    background: var(--surface);
+  }
+  .mobile-nav-link { min-height: 52px; }
+  .mobile-nav-language { margin-bottom: 4px; }
+  .mobile-nav-bottom { gap: 7px 12px; }
+  .mobile-nav-bottom .open-day-toggle {
+    width: auto;
+    min-height: 44px;
+    justify-content: flex-start;
+    padding: 0 12px;
+    white-space: normal;
+  }
+  .mobile-nav-bottom .open-day-switch { display: inline-block; }
+  html[data-theme='dark'] .mobile-nav-panel { background: var(--surface); }
+  html[data-theme='dark'] .mobile-nav-language { background: var(--surface-soft); }
+
+  /* На телефоне карта — окно для движения по плану, а не уменьшенная миниатюра. */
+  .map-workspace, .map-plan-panel, .floor-map-wrap { min-width: 0; }
+  .map-page-section .floor-map-viewport:not(.floor-map-compact):not(.floor-map-3d) {
+    height: clamp(350px, 62svh, 540px);
+    height: clamp(350px, 62dvh, 540px);
+    max-height: none;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .map-page-section .floor-map-viewport:not(.floor-map-compact):not(.floor-map-3d):not(.floor-map-zoomed) {
+    height: auto; /* Кнопка «Весь план» показывает его целиком. */
+  }
+  .map-page-section .floor-map-viewport.floor-map-3d { height: clamp(280px, 45svh, 420px); max-height: none; }
+  .map-page-section .floor-map-3d .floor-map-stage { min-width: 0; }
+  .floor-map-zoom-controls { right: 8px; bottom: 8px; }
+  .floor-map-zoom-controls button { width: 44px; height: 44px; }
+  .floor-map-hint { bottom: 8px; left: 8px; max-width: calc(100% - 76px); font-size: 12px !important; }
+  .map-panel-heading { gap: 8px; }
+  .map-panel-heading > span:first-child { min-width: 0; }
+  .map-panel-heading small { white-space: normal; }
+  .map-zoom-button { min-height: 44px; }
+  .map-navigation-actions { min-width: 0; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 44px; }
+  .map-gps-button, .map-manual-button { min-width: 0; min-height: 44px; gap: 4px; padding-inline: 4px; font-size: 12px !important; }
+  .map-gps-button svg, .map-manual-button svg { flex: 0 0 auto; }
+  .map-settings-button { width: 44px; min-height: 44px; }
+  .map-filter, .directory-chip { min-height: 44px; }
+  .map-category-filters { gap: 6px; }
+  .map-panel-foot { line-height: 1.45; }
+
+  /* Маршрут по умолчанию в 2D: на узком экране план не сжимается в превью. */
+  .route-preview-panel .floor-map-viewport:not(.floor-map-3d) {
+    max-height: min(58svh, 480px);
+    max-height: min(58dvh, 480px);
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .route-preview-panel .floor-map-viewport:not(.floor-map-3d) .floor-map-stage { min-width: 650px; }
+  .route-preview-panel .floor-map-viewport.floor-map-3d { min-height: 250px; }
+  .route-map-mobile-hint { display: block; margin: 12px 0 6px; color: var(--muted); font-size: 13px; line-height: 1.45; }
+  .route-builder, .route-result-panel, .route-preview-grid, .route-preview-floor, .route-preview-panel { min-width: 0; }
+  .route-endpoints strong { white-space: normal; overflow-wrap: anywhere; font-size: 14px !important; }
+  .route-step { min-height: 64px; }
+  .route-voice-bar { padding: 13px; }
+  .route-voice-selector-wrap { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .route-voice-selector-wrap label { grid-column: 1 / -1; }
+  .route-voice-select { width: 100%; min-width: 0; height: 44px; }
+  .route-voice-test-button { width: 100%; min-height: 44px; justify-content: center; padding-inline: 10px; }
+  .route-voice-toggle { width: 100%; min-height: 44px; justify-content: center; }
+  .route-voice-help { display: block; width: 100%; margin: 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
+  .route-nav-controls { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+  .route-nav-controls button { min-width: 0; min-height: 46px; font-size: 14px !important; }
+  .route-nav-controls button:nth-child(2) { grid-column: 1 / -1; grid-row: 1; }
+  .route-nav-controls button:first-child { grid-column: 1; grid-row: 2; }
+  .route-nav-controls button:last-child { grid-column: 2; grid-row: 2; }
+  .route-room-option { min-height: 44px; }
+  .quiz-option { min-height: 60px; }
+}
+
+@media (max-width: 365px) {
+  .mobile-map-link { width: 44px; padding: 0; }
+  .mobile-map-link span { display: none; }
+  .brand { gap: 6px; }
+  .brand-copy strong { font-size: 17px; }
+  .brand-copy small { display: block; font-size: 9px !important; }
+  .map-navigation-actions { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 44px; }
+  .map-gps-button, .map-manual-button { font-size: 11px !important; }
+}
+@media (max-width: 1000px) and (max-height: 500px) and (orientation: landscape) {
+  .map-page-section .floor-map-viewport:not(.floor-map-compact) { height: min(76dvh, 420px); max-height: none; overflow: auto; }
+  .mobile-nav-panel { max-height: calc(100dvh - env(safe-area-inset-top) - 72px); }
+}
+
+/* iPhone в альбомной ориентации шире 680px, но это всё ещё телефон. */
+@media (max-width: 1000px) and (max-height: 500px) and (orientation: landscape) {
+  .site-header { height: auto; min-height: 62px; padding-top: env(safe-area-inset-top); border-bottom: 2px solid var(--blue); background: var(--surface) !important; }
+  .header-inner { width: calc(100% - 28px); height: 62px; min-height: 62px; }
+  .brand-mark { width: 40px; height: 40px; }
+  .brand-copy strong { font-size: 17px; }
+  .header-open-day, .header-theme { display: none; }
+  .mobile-map-link {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    min-height: 44px; padding: 0 12px; border: 1px solid var(--line);
+    border-radius: 11px; color: var(--action-bg); background: var(--blue-soft);
+    font-size: 14px !important; font-weight: 750;
+  }
+  .mobile-map-link-active { border-color: var(--action-bg); }
+  html[data-theme='dark'] .mobile-map-link { color: #fff; background: #1c406f; border-color: #4f75ac; }
+  .search-trigger, .mobile-menu-toggle { width: 44px; height: 44px; min-height: 44px; display: grid; place-items: center; border-radius: 11px; }
+  .search-trigger { border: 1px solid var(--line); color: var(--ink); background: var(--surface-soft); }
+  .mobile-menu-toggle, html[data-theme='dark'] .mobile-menu-toggle { color: #fff; background: var(--action-bg); border: 1px solid var(--action-bg); }
+  .menu-lines { width: 20px; height: 16px; }
+  .menu-lines i { background: currentColor; }
+  .mobile-nav-panel { top: 100%; max-height: calc(100dvh - env(safe-area-inset-top) - 66px); }
 }

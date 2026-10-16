@@ -7,6 +7,10 @@ import { translate, setLanguage, searchableRoom } from './i18n.js'
 test('language switches both ways without altering source data', () => {
   setLanguage('en')
   assert.equal(translate('Открыть карту'), 'Open map')
+  assert.equal(translate('Язык интерфейса'), 'Interface language')
+  assert.equal(translate('Оформление'), 'Appearance')
+  assert.equal(translate('Поиск по колледжу'), 'Search the campus')
+  assert.equal(translate('Найдите площадку или кабинет — покажем место на плане и подскажем маршрут.'), 'Find a venue or room — see it on the map and get directions.')
   assert.equal(translate('Библиотека (читальный зал) №214'), 'Library (reading room) №214')
   assert.equal(translate('2 этаж · Библиотека'), 'Floor 2 · Library')
   setLanguage('ru')

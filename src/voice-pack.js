@@ -7,10 +7,10 @@
 // звучит одинаково на любом устройстве, включая машины без русского голоса.
 //
 // Пакетов два — женский и мужской; список фраз у них общий, отличаются
-// только папки с файлами. Названия кабинетов заранее записать нельзя — их
-// по-прежнему читает браузерный синтез (speech.js). Шаг маршрута несёт
-// voiceCue со списком фраз; если хоть одна фраза не загрузилась, шаг целиком
-// озвучивается синтезатором, чтобы подсказка не пропала.
+// только папки с файлами. Начало и прибытие имеют общие записанные фразы:
+// на iPhone они звучат даже без русского системного голоса, а название
+// кабинета остаётся на экране. Шаг маршрута несёт voiceCue со списком фраз;
+// если запись не загрузилась, полную фразу пробует прочитать синтезатор.
 
 export const VOICE_PACK_ID = 'pack2gis'
 export const VOICE_PACK_MALE_ID = 'pack2gis-male'
@@ -45,23 +45,32 @@ const PHRASE_GAP = 0.26
 let audioContext = null
 let generation = 0
 const bufferCache = new Map()
-const unavailable = new Set()
 let activeSources = []
+let finishPlayback = null
 
 function contextClass() {
   if (typeof window === 'undefined') return null
   return window.AudioContext || window.webkitAudioContext || null
 }
 
-// AudioContext можно создавать только после жеста пользователя: клик по
-// кнопкам маршрута им и является, поэтому «прогрев» привязан к этим кликам.
+// Safari создаёт AudioContext в состоянии suspended/interrupted. resume()
+// вызываем СИНХРОННО внутри обработчика нажатия — после fetch/decode жест
+// уже потерян. Не выдаём «played», если движок так и не перешёл в running.
 export function primeVoicePack() {
   const Ctx = contextClass()
-  if (!Ctx) return
+  if (!Ctx) return Promise.resolve(false)
   try {
-    if (!audioContext) audioContext = new Ctx()
-    if (audioContext.state === 'suspended') audioContext.resume().catch(() => { })
-  } catch { /* Web Audio недоступен — фразы озвучит синтезатор */ }
+    if (!audioContext || audioContext.state === 'closed') audioContext = new Ctx()
+    if (!audioContext.state || audioContext.state === 'running') return Promise.resolve(true)
+    if (typeof audioContext.resume !== 'function') return Promise.resolve(false)
+    const resumed = audioContext.resume()
+    // На iOS promise resume() может зависнуть, пока вкладка не станет активной.
+    let timeout
+    return Promise.race([
+      Promise.resolve(resumed).then(() => audioContext.state === 'running', () => false),
+      new Promise((resolve) => { timeout = window.setTimeout(() => resolve(false), 2500) }),
+    ]).finally(() => window.clearTimeout?.(timeout))
+  } catch { return Promise.resolve(false) }
 }
 
 function phraseUrl(key, dir) {
@@ -72,7 +81,6 @@ function phraseUrl(key, dir) {
 async function loadBuffer(key, dir) {
   const cacheKey = `${dir}/${key}`
   if (bufferCache.has(cacheKey)) return bufferCache.get(cacheKey)
-  if (unavailable.has(cacheKey)) return null
   const url = phraseUrl(key, dir)
   if (!url) return null
   try {
@@ -87,13 +95,14 @@ async function loadBuffer(key, dir) {
     bufferCache.set(cacheKey, buffer)
     return buffer
   } catch {
-    unavailable.add(cacheKey)
     return null
   }
 }
 
 export function stopVoicePack() {
   generation += 1
+  finishPlayback?.('stopped')
+  finishPlayback = null
   for (const source of activeSources) {
     try { source.stop() } catch { /* источник уже остановлен */ }
   }
@@ -101,33 +110,65 @@ export function stopVoicePack() {
 }
 
 // Играет последовательность фраз выбранного пакета ('female' | 'male') с
-// короткими паузами. Возвращает 'played', если всё прозвучало; иначе причина,
-// по которой вызывающий код должен озвучить шаг синтезатором.
+// короткими паузами. Возвращает 'played' только после запуска в running
+// context; 'blocked' означает, что Safari не разблокировал звук этим жестом.
 export async function playVoicePack(keys, { voice = 'female' } = {}) {
   stopVoicePack()
   const current = generation
   if (!Array.isArray(keys) || keys.length === 0) return 'empty'
-  primeVoicePack()
-  if (!audioContext) return 'unavailable'
   const dir = VOICE_PACKS[voice]?.dir
   if (!dir) return 'empty'
-  const buffers = await Promise.all(keys.map((key) => loadBuffer(key, dir)))
+
+  // Важно: вызов primeVoicePack() идёт ДО первого await.
+  const ready = primeVoicePack()
+  if (!audioContext) return 'unavailable'
+  const [unlocked, buffers] = await Promise.all([ready, Promise.all(keys.map((key) => loadBuffer(key, dir)))])
   if (current !== generation) return 'stopped'
+  if (!unlocked || (audioContext.state && audioContext.state !== 'running')) return 'blocked'
   if (buffers.some((buffer) => !buffer)) return 'missing'
-  const gain = audioContext.createGain()
-  gain.gain.value = 1
-  gain.connect(audioContext.destination)
+
+  let gain
   let cursor = audioContext.currentTime + 0.05
-  for (const buffer of buffers) {
-    const source = audioContext.createBufferSource()
-    source.buffer = buffer
-    source.connect(gain)
-    source.start(cursor)
-    activeSources.push(source)
-    cursor += buffer.duration + PHRASE_GAP
+  try {
+    gain = audioContext.createGain()
+    gain.gain.value = 1
+    gain.connect(audioContext.destination)
+    for (const buffer of buffers) {
+      const source = audioContext.createBufferSource()
+      source.buffer = buffer
+      source.connect(gain)
+      source.start(cursor)
+      activeSources.push(source)
+      cursor += buffer.duration + PHRASE_GAP
+    }
+  } catch {
+    for (const source of activeSources) { try { source.stop() } catch { /* ignore */ } }
+    activeSources = []
+    gain?.disconnect?.()
+    return 'unavailable'
   }
+
+  const lastSource = activeSources.at(-1)
   const total = cursor - PHRASE_GAP - audioContext.currentTime
   return new Promise((resolve) => {
-    window.setTimeout(() => resolve(current === generation ? 'played' : 'stopped'), Math.max(0, total + 0.15) * 1000)
+    let finished = false
+    let timeout
+    const finish = (result) => {
+      if (finished) return
+      finished = true
+      window.clearTimeout?.(timeout)
+      lastSource.onended = null
+      gain.disconnect?.()
+      if (finishPlayback === finish) finishPlayback = null
+      // Keep the sources until the next prompt: even if WebKit fired ended
+      // early, stop() must still be able to silence them on replacement.
+      resolve(result)
+    }
+    finishPlayback = finish
+    lastSource.onended = () => finish(current === generation ? 'played' : 'stopped')
+    // Старые WebKit иногда не посылают ended; не оставляем UI в ожидании.
+    timeout = window.setTimeout(() => finish(current !== generation ? 'stopped' :
+      audioContext.state && audioContext.state !== 'running' ? 'blocked' : 'played'),
+    Math.max(1500, (total + 0.5) * 1000))
   })
 }

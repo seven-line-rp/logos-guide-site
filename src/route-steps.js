@@ -20,6 +20,9 @@ export function buildRouteSteps({ startLabel, startFloor, targetFloor, targetNam
     title: sameRoom ? 'Вы уже на месте' : `Начало: ${startLabel}`,
     detail: `${startFloor} этаж`,
     say: sameRoom ? 'Вы уже на месте.' : `Начинаем движение от: ${startLabel}.`,
+    // На iPhone системный русский голос может отсутствовать: первый шаг
+    // всегда имеет записанную фразу, а название помещения видно на экране.
+    voiceCue: [sameRoom ? 'arrive' : 'route-built'],
     floor: startFloor,
     progress: 0,
   }]
