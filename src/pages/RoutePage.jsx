@@ -9,12 +9,13 @@ import { buildRouteOptions, pickRoute } from '../map-routing.js'
 import { buildRouteSteps } from '../route-steps.js'
 import { readManualLocation } from '../map-location.js'
 import { VOICE_PRESETS, getStoredPreset, setVoicePreset, speakText, stopSpeech } from '../speech.js'
-import { VOICE_PACK_MALE_ID, playVoicePack, primeVoicePack, stopVoicePack, voicePackForPreset } from '../voice-pack.js'
+import { VOICE_PACK_MALE_ID, playVoicePack, stopVoicePack, voicePackForPreset } from '../voice-pack.js'
 import { storageGet, storageSet } from '../storage.js'
 
 function roomName(room) { return `${room.name}${room.number ? ` №${room.number}` : ''}` }
 function stepLabel(count) { return `${count} ${count % 10 === 1 && count % 100 !== 11 ? 'шаг' : count % 10 >= 2 && count % 10 <= 4 && !(count % 100 >= 12 && count % 100 <= 14) ? 'шага' : 'шагов'}` }
 function timeLabel(seconds) { return seconds < 60 ? 'меньше минуты' : `≈ ${Math.max(1, Math.round(seconds / 60))} мин` }
+const prefersFlatMap = () => window.matchMedia('(max-width: 680px), (max-height: 500px) and (pointer: coarse)').matches
 
 export default function RoutePage() {
   const [params] = useSearchParams()
@@ -55,7 +56,8 @@ export default function RoutePage() {
   const [voiceNotice, setVoiceNotice] = useState('')
   const [voicePreset, setVoicePresetState] = useState(getStoredPreset)
   const voiceRequest = useRef(0)
-  const [mode3d, setMode3d] = useState(true)
+  // На телефоне крупный 2D-план читабельнее маленькой перспективы.
+  const [mode3d, setMode3d] = useState(() => !prefersFlatMap())
   const [swoop, setSwoop] = useState(false)
 
   const current = steps[stepIndex]
@@ -80,17 +82,22 @@ export default function RoutePage() {
   const playPrompt = async (keys, text, preset = voicePreset) => {
     const request = cancelVoice()
     setVoiceNotice('')
-    primeVoicePack()
+    // playVoicePack разблокирует AudioContext прямо в обработчике нажатия,
+    // до загрузки mp3: после await Safari уже теряет пользовательский жест.
     const result = keys.length
       ? await playVoicePack(keys, { voice: preset === VOICE_PACK_MALE_ID ? 'male' : 'female' })
       : 'empty'
     if (request !== voiceRequest.current || result === 'stopped') return
     if (result === 'played') return
-    // Dynamic room names and unavailable recordings use a matching system voice.
+    if (result === 'blocked') {
+      setVoiceNotice('Звук не разблокировался. Нажмите «Прослушать» ещё раз и проверьте громкость и беззвучный режим iPhone.')
+      return
+    }
+    // Если запись не загрузилась, пробуем системный синтезатор.
     const fallback = await speakText(text, { preset: preset === VOICE_PACK_MALE_ID ? 'male' : 'female' })
     if (request !== voiceRequest.current || fallback === 'stopped') return
-    if (fallback === 'unsupported') setVoiceNotice('Озвучка недоступна в этом браузере. Подсказки можно читать на экране.')
-    else if (fallback === 'foreign-voice' || fallback === 'no-voice') setVoiceNotice('Для названий кабинетов нужен русский системный голос. Добавьте его в настройках устройства.')
+    if (fallback === 'unsupported') setVoiceNotice('Запись не воспроизвелась, а синтез речи недоступен. Проверьте подключение и нажмите «Прослушать» ещё раз.')
+    else if (fallback === 'foreign-voice' || fallback === 'no-voice') setVoiceNotice('Запись не воспроизвелась. Для запасной озвучки нужен русский системный голос; повторите попытку или проверьте подключение.')
   }
   const speakStep = (step) => {
     if (voiceOn) void playPrompt(step.voiceCue || [], step.say)
@@ -129,11 +136,12 @@ export default function RoutePage() {
     event.preventDefault()
     cancelVoice()
     setNav({ key: routeKey, index: 0 })
-    setMode3d(true)
-    setSwoop(true)
+    const largeScreen = !prefersFlatMap()
+    setMode3d(largeScreen)
+    setSwoop(largeScreen)
     document.getElementById('route-result')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     window.setTimeout(() => setSwoop(false), 1100)
-    if (voiceOn) void playPrompt(['route-built', ...(steps[0].voiceCue || [])], `Маршрут построен. ${steps[0].say}`)
+    if (voiceOn) void playPrompt([...new Set(['route-built', ...(steps[0].voiceCue || [])])], `Маршрут построен. ${steps[0].say}`)
   }
   const resetRoute = () => { setStartId('entrance-1'); setTargetId('auditorium-104'); setRoutePreference('auto') }
   const mapUrl = `/map?floor=${target.floor}&from=${encodeURIComponent(startId)}&to=${encodeURIComponent(target.id)}${crossFloor ? `&mode=${transition}` : ''}`
@@ -202,7 +210,9 @@ export default function RoutePage() {
             {voiceOn ? <Volume2 size={15} /> : <VolumeX size={15} />}
             <span>Голос {voiceOn ? 'вкл' : 'выкл'}</span>
           </button>
+          <p className="route-voice-help">На iPhone нажмите «Прослушать», чтобы включить звук. Проверьте громкость, если не слышно.</p>
         </div>
+        {voiceNotice && <p className="route-voice-notice" role="status"><Info size={14} /> {voiceNotice}</p>}
 
         <div className="route-endpoints"><div><span>Старт</span><strong>{startLabel}</strong><FloorTag floor={start.floor} /></div><div className="route-end-arrow"><ArrowRight size={19} /></div><div><span>Финиш</span><strong>{roomName(target)}</strong><FloorTag floor={target.floor} /></div></div>
         <div className="route-distance"><span><Footprints size={16} /> Пешком</span><span>{crossFloor ? `Переход: ${route.transfer?.label}` : 'Один этаж'}</span><span>≈ {Math.round(route.meters)} м · ~{stepLabel(route.footsteps)}</span><span>{timeLabel(route.seconds)}</span><span>{stepLabel(steps.length)}</span></div>
@@ -245,6 +255,8 @@ export default function RoutePage() {
             </button>
           </div>
         </div>
+
+        {!mode3d && <p className="route-map-mobile-hint">Двигайте план пальцем: кабинеты показаны крупно, без сжатия.</p>}
 
         {/* Превью этажей. В 2D маршрут между этажами показан двумя планами
             рядом (как раньше), а в 3D-режиме камера идёт по этажам по
@@ -339,12 +351,11 @@ export default function RoutePage() {
           )}
         </div>
         )}
-        {voiceNotice && <p className="route-voice-notice" role="status"><Info size={14} /> {voiceNotice}</p>}
         <div className="route-nav" aria-live="polite"><div className="route-nav-main"><span className="route-nav-icon"><CurrentIcon size={22} /></span><div><small>Шаг {stepIndex + 1} из {steps.length}</small><strong>{current.title}</strong><em>{current.detail}</em></div></div><div className="route-progress" aria-hidden="true"><span style={{ width: `${(stepIndex + 1) / steps.length * 100}%` }} /></div><div className="route-nav-controls"><button type="button" onClick={() => goToStep(stepIndex - 1)} disabled={stepIndex === 0}><ArrowLeft size={16} /> Назад</button><button type="button" className={voiceOn ? '' : 'route-nav-voice-off'} onClick={repeatStep} aria-label="Повторить подсказку голосом"><Volume2 size={16} /> Повторить</button><button type="button" onClick={() => goToStep(stepIndex + 1)} disabled={stepIndex >= steps.length - 1}>Дальше <ArrowRight size={16} /></button></div></div>
         <div className="route-steps">{steps.map((step, index) => { const Icon = stepIcon(step); return <button type="button" className={`route-step ${index === stepIndex ? 'route-step-current' : ''} ${index < stepIndex ? 'route-step-past' : ''}`} key={`${step.title}-${index}`} onClick={() => goToStep(index)} aria-current={index === stepIndex}><span className="route-step-index"><Icon size={15} /></span><div><strong>{step.title}</strong><small>{step.detail}</small></div><span className="route-step-count">{index < stepIndex ? <Check size={14} /> : String(index + 1).padStart(2, '0')}</span></button> })}</div>
         <div className="route-result-actions"><Link className="button button-primary" to={mapUrl}>Показать на карте <ArrowUpRight size={15} /></Link><Link className="route-other-link" to="/rooms">Справочник кабинетов <ArrowRight size={14} /></Link></div>
       </Reveal>
     </section>
-    <section className="route-hint-band"><div className="container route-hint-inner"><span className="route-hint-icon">i</span><div><strong>О навигаторе колледжа</strong><p>Маршрут работает в режиме 3D-навигатора с видом камеры по направлению движения. На маршрутах между этажами 3D-камера показывает этажи по очереди: сначала этаж старта, второй — в момент перехода; в виде «Сверху» (2D) оба плана остаются рядом. Озвучка — на выбор: два записанных Логос-голоса: женский и мужской. Названия кабинетов при необходимости читает системный синтезатор. Кабинет в поле поиска находится по названию, номеру или слову-псевдониму.</p></div><Link to="/map">Карта этажей <ArrowRight size={14} /></Link></div></section>
+    <section className="route-hint-band"><div className="container route-hint-inner"><span className="route-hint-icon">i</span><div><strong>О навигаторе колледжа</strong><p>Маршрут работает в режиме 3D-навигатора с видом камеры по направлению движения. На маршрутах между этажами 3D-камера показывает этажи по очереди: сначала этаж старта, второй — в момент перехода; в виде «Сверху» (2D) оба плана остаются рядом. Озвучка — два записанных голоса «Логос»: женский и мужской. Названия кабинетов видны на экране; если запись недоступна, полную фразу попробует прочитать системный синтезатор. Кабинет в поле поиска находится по названию, номеру или слову-псевдониму.</p></div><Link to="/map">Карта этажей <ArrowRight size={14} /></Link></div></section>
   </>
 }

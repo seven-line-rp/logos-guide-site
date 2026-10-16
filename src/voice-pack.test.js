@@ -44,7 +44,7 @@ test('steps of any route only reference phrases that exist in the pack', () => {
       }
       // Манёвры, которые можно записать заранее, всегда озвучиваются пакетом.
       for (const step of steps) {
-        if (step.kind === 'transfer' || step.kind === 'arrive' || step.kind === 'guide') {
+        if (['start', 'transfer', 'arrive', 'guide'].includes(step.kind)) {
           assert.ok((step.voiceCue || []).length > 0, `${from.id} → ${to.id}: у шага «${step.title}» нет ключа озвучки`)
         }
       }
