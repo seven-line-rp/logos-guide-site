@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, ArrowUp, ArrowUpRight, Check, Compass, Footprints, Info, MapPin, MoveDown, MoveUp, Navigation, Play, Volume2, VolumeX, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ArrowUp, ArrowUpRight, Check, Footprints, Info, MapPin, MoveDown, MoveUp, Play, Volume2, VolumeX, X } from 'lucide-react'
 import { floors, rooms } from '../data.js'
 import { FloorTag, PageHeading, Reveal } from '../components/Primitives.jsx'
 import FloorMap from '../components/FloorMap.jsx'
