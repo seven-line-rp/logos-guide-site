@@ -107,6 +107,7 @@ function buildGuides(points, floor = 1) {
         title: `Главный коридор · ${landmark.title}`,
         detail: east ? 'Двери кабинетов по правой стороне' : 'Двери кабинетов по левой стороне',
         say: `Идите по главному коридору ${landmark.say}, до нужной двери.`,
+        voiceKey: `corridor-${floor}-${east ? 'east' : 'west'}`,
       })
     } else if (x0 === x1 && y0 === y1) {
       continue
@@ -118,6 +119,7 @@ function buildGuides(points, floor = 1) {
           title: 'Коридор западного крыла',
           detail: 'Кабинеты по левой стороне',
           say: 'Поверните в коридор западного крыла и идите вдоль кабинетов.',
+          voiceKey: 'west-corridor',
         })
       } else if (x0 === 579) {
         push({
@@ -126,6 +128,7 @@ function buildGuides(points, floor = 1) {
           title: 'Холл у входа',
           detail: 'Идите к актовому залу',
           say: 'Пройдите через холл в сторону актового зала.',
+          voiceKey: 'hall',
         })
       }
     }

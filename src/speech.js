@@ -13,6 +13,7 @@ const VOICE_KEY = 'route-voice-name'
 const PRESET_KEY = 'route-voice-preset'
 
 export const VOICE_PRESETS = [
+  { id: 'pack2gis', label: '2ГИС Навигатор (запись)', hint: 'Записанные фразы, одинаковые на любом устройстве', gender: 'pack' },
   { id: 'female', label: 'Женский (Алиса / Ирина)', hint: 'Мягкий женский голос', gender: 'female' },
   { id: 'male', label: 'Мужской (Дмитрий / Павел)', hint: 'Уверенный мужской голос', gender: 'male' },
   { id: 'navigator', label: 'Яндекс.Навигатор', hint: 'Бодрый голос диктора', gender: 'navigator' },
@@ -20,9 +21,11 @@ export const VOICE_PRESETS = [
 ]
 
 export function getStoredPreset() {
-  if (typeof localStorage === 'undefined') return 'female'
+  if (typeof localStorage === 'undefined') return VOICE_PRESETS[0].id
   const saved = localStorage.getItem(PRESET_KEY)
-  return VOICE_PRESETS.some((preset) => preset.id === saved) ? saved : 'female'
+  // По умолчанию — записанный пакет навигатора (первый в VOICE_PRESETS);
+  // уже сделанный выбор пользователя не трогаем.
+  return VOICE_PRESETS.some((preset) => preset.id === saved) ? saved : VOICE_PRESETS[0].id
 }
 
 export function setVoicePreset(presetId) {

@@ -9,6 +9,7 @@ import './welcome.css'
 import './mobile.css'
 import './polish.css'
 import './premium.css'
+import './navigator.css'
 import './interactions.js'
 
 createRoot(document.getElementById('root')).render(
