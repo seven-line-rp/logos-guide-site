@@ -417,3 +417,361 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   letter-spacing: .08em;
   text-transform: uppercase;
 }
+
+/* ============================================================
+   Yandex Navigator 3D Perspective View & Camera Controls
+   ============================================================ */
+
+.floor-map-viewport {
+  position: relative;
+}
+
+.floor-map-viewport.floor-map-3d {
+  perspective: 950px;
+  perspective-origin: 50% 68%;
+  overflow: hidden !important;
+}
+
+.floor-map-stage-3d {
+  transform-style: preserve-3d;
+  box-shadow: 0 30px 60px -15px rgba(12, 31, 61, 0.32);
+  border-radius: 14px;
+}
+
+/* Floating 3D/2D toggle badge in map viewport */
+.floor-map-3d-toggle-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 15;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px 5px 6px;
+  border: 1px solid rgba(21, 87, 233, 0.25);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 4px 14px rgba(16, 40, 80, 0.12);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  font-family: inherit;
+}
+
+.floor-map-3d-toggle-btn:hover {
+  transform: translateY(-1px) scale(1.03);
+  box-shadow: 0 6px 18px rgba(16, 40, 80, 0.18);
+  border-color: #1557e9;
+}
+
+.floor-map-3d-toggle-btn.is-3d {
+  background: #1557e9;
+  color: #ffffff;
+  border-color: #1557e9;
+  box-shadow: 0 4px 16px rgba(21, 87, 233, 0.35);
+}
+
+.floor-map-3d-toggle-btn .map-3d-badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 24px;
+  height: 20px;
+  padding: 0 4px;
+  border-radius: 12px;
+  font-family: var(--mono, monospace);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.05em;
+  background: #eaf1ff;
+  color: #1557e9;
+}
+
+.floor-map-3d-toggle-btn.is-3d .map-3d-badge {
+  background: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+}
+
+.floor-map-3d-toggle-btn .map-3d-label {
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+}
+
+/* 3D Navigator directional arrow and radar ripple */
+@keyframes nav-radar-pulse {
+  0% { transform: scale(0.6); opacity: 0.85; }
+  60% { opacity: 0.35; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+.plan-nav-radar {
+  fill: rgba(21, 87, 233, 0.18);
+  stroke: rgba(21, 87, 233, 0.65);
+  stroke-width: 1.6;
+  transform-origin: 0 0;
+  animation: nav-radar-pulse 2s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+  pointer-events: none;
+}
+
+.plan-nav-halo {
+  fill: rgba(21, 87, 233, 0.28);
+  pointer-events: none;
+}
+
+.plan-route-guide-3d {
+  filter: drop-shadow(0 4px 8px rgba(12, 40, 100, 0.35));
+}
+
+/* ============================================================
+   Yandex Navigator HUD Banner (Maneuver and Direction Bar)
+   ============================================================ */
+
+.yandex-nav-hud {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 14px;
+  margin-bottom: 8px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(21, 87, 233, 0.18);
+  background: linear-gradient(135deg, rgba(240, 246, 255, 0.95), rgba(255, 255, 255, 0.98));
+  box-shadow: 0 6px 20px rgba(15, 45, 95, 0.06);
+}
+
+.yandex-hud-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.yandex-hud-icon {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #1557e9, #2b70f7);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(21, 87, 233, 0.32);
+}
+
+.yandex-hud-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.yandex-hud-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--mono, monospace);
+  font-size: 11px;
+  color: #6d7f99;
+  letter-spacing: 0.03em;
+}
+
+.yandex-hud-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #102545;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.yandex-hud-detail {
+  font-size: 12px;
+  color: #556882;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.yandex-hud-right {
+  flex-shrink: 0;
+}
+
+.yandex-hud-3d-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(21, 87, 233, 0.22);
+  background: #ffffff;
+  color: #1557e9;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.yandex-hud-3d-btn:hover {
+  border-color: #1557e9;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(21, 87, 233, 0.15);
+}
+
+.yandex-hud-3d-btn.is-3d {
+  background: #1557e9;
+  color: #ffffff;
+  border-color: #1557e9;
+  box-shadow: 0 4px 14px rgba(21, 87, 233, 0.28);
+}
+
+.yandex-3d-badge {
+  display: inline-grid;
+  place-items: center;
+  padding: 1px 5px;
+  border-radius: 6px;
+  font-family: var(--mono, monospace);
+  font-size: 10px;
+  font-weight: 800;
+  background: #eaf1ff;
+  color: #1557e9;
+}
+
+.yandex-hud-3d-btn.is-3d .yandex-3d-badge {
+  background: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+}
+
+/* ============================================================
+   Voice Selector & Audio Controls Bar
+   ============================================================ */
+
+.route-voice-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 10px 14px;
+  border: 1px solid #dce4f0;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(18, 45, 90, 0.04);
+}
+
+.route-voice-selector-wrap {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.route-voice-selector-wrap label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: #5d6f88;
+}
+
+.route-voice-selector-wrap label strong {
+  color: #1a2f50;
+  font-weight: 650;
+}
+
+.route-voice-select {
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid #ccd7e8;
+  border-radius: 8px;
+  background: #f8faff;
+  color: #152d4e;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 550;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.route-voice-select:hover, .route-voice-select:focus {
+  border-color: #1557e9;
+  box-shadow: 0 0 0 3px rgba(21, 87, 233, 0.12);
+}
+
+.route-voice-test-button {
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  border: 1px solid #ccd7e8;
+  border-radius: 8px;
+  background: #f0f4fc;
+  color: #1557e9;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+
+.route-voice-test-button:hover {
+  background: #e4eeff;
+  border-color: #1557e9;
+  transform: translateY(-1px);
+}
+
+.route-floor-active {
+  border: 2px solid #1557e9;
+  border-radius: 12px;
+  padding: 4px;
+  background: rgba(21, 87, 233, 0.02);
+}
+
+/* Dark mode adjustments */
+html[data-theme='dark'] .yandex-nav-hud {
+  background: linear-gradient(135deg, rgba(16, 36, 64, 0.95), rgba(12, 28, 52, 0.98));
+  border-color: rgba(60, 110, 190, 0.35);
+}
+
+html[data-theme='dark'] .yandex-hud-title {
+  color: #e2efff;
+}
+
+html[data-theme='dark'] .yandex-hud-detail {
+  color: #9cb1ce;
+}
+
+html[data-theme='dark'] .route-voice-bar {
+  background: rgba(14, 32, 58, 0.9);
+  border-color: rgba(60, 110, 190, 0.3);
+}
+
+html[data-theme='dark'] .route-voice-select {
+  background: #0d213b;
+  border-color: rgba(70, 120, 200, 0.35);
+  color: #e2efff;
+}
+
+html[data-theme='dark'] .route-voice-test-button {
+  background: #17355e;
+  border-color: rgba(70, 120, 200, 0.4);
+  color: #b7d5ff;
+}
+
+html[data-theme='dark'] .floor-map-3d-toggle-btn {
+  background: rgba(15, 34, 62, 0.92);
+  color: #d8e8ff;
+  border-color: rgba(70, 120, 200, 0.35);
+}
+
+html[data-theme='dark'] .yandex-hud-3d-btn {
+  background: #142e52;
+  color: #b7d5ff;
+  border-color: rgba(70, 120, 200, 0.35);
+}

@@ -53,15 +53,22 @@ test('the chosen voice is a Russian system voice, not an English or espeak one',
     { name: 'Daniel', lang: 'en-GB', localService: true, default: true },
     { name: 'Google русский', lang: 'ru-RU', localService: false, default: false },
     { name: 'Microsoft Irina', lang: 'ru-RU', localService: true, default: false },
+    { name: 'Microsoft Pavel', lang: 'ru-RU', localService: true, default: false },
   ])
-  assert.equal(await speakText('Начинаем движение от: Актовый зал № 104.'), 'ok')
+  assert.equal(await speakText('Начинаем движение от: Актовый зал № 104.', { preset: 'female' }), 'ok')
   assert.equal(spoken.length, 1)
+  assert.equal(spoken[0].voice.name, 'Microsoft Irina')
   assert.equal(spoken[0].voice.lang, 'ru-RU')
   assert.ok(!/espeak/.test(spoken[0].voice.name), 'espeak звучит роботом, его выбираем последним')
   assert.equal(spoken[0].lang, 'ru-RU', 'без lang браузер читает русский текст английскими правилами')
-  assert.equal(spoken[0].rate, 1)
   assert.equal(spoken[0].text, 'Начинаем движение от: Актовый зал № 104.')
   assert.equal(synth.cancelled, 1, 'предыдущая фраза отменяется, иначе очередь залипает')
+
+  // Test male preset
+  assert.equal(await speakText('Поверните направо.', { preset: 'male' }), 'ok')
+  assert.equal(spoken.length, 2)
+  assert.equal(spoken[1].voice.name, 'Microsoft Pavel')
+
   delete globalThis.window
 })
 
