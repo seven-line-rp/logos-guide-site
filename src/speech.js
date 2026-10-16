@@ -10,6 +10,26 @@
 //      события end, иначе половина шагов остаётся без звука.
 
 const VOICE_KEY = 'route-voice-name'
+const PRESET_KEY = 'route-voice-preset'
+
+export const VOICE_PRESETS = [
+  { id: 'female', label: 'Женский (Алиса / Ирина)', hint: 'Мягкий женский голос', gender: 'female' },
+  { id: 'male', label: 'Мужской (Дмитрий / Павел)', hint: 'Уверенный мужской голос', gender: 'male' },
+  { id: 'navigator', label: 'Яндекс.Навигатор', hint: 'Бодрый голос диктора', gender: 'navigator' },
+  { id: 'system', label: 'Системный голос', hint: 'По умолчанию в системе', gender: 'system' },
+]
+
+export function getStoredPreset() {
+  if (typeof localStorage === 'undefined') return 'female'
+  const saved = localStorage.getItem(PRESET_KEY)
+  return VOICE_PRESETS.some((preset) => preset.id === saved) ? saved : 'female'
+}
+
+export function setVoicePreset(presetId) {
+  if (typeof localStorage !== 'undefined') {
+    try { localStorage.setItem(PRESET_KEY, presetId) } catch { /* private mode */ }
+  }
+}
 
 let voicesCache = []
 let warmedUp = false
@@ -42,6 +62,16 @@ export function loadVoices() {
   })
 }
 
+export function getAvailableVoices() {
+  return voicesCache.filter((voice) => {
+    const lang = (voice.lang || '').toLowerCase().replace('_', '-')
+    return lang.startsWith('ru')
+  })
+}
+
+const FEMALE_NAMES = /(irina|milena|katya|victoria|svetlana|dariya|daria|alena|anna|olga|elena|tatyana|maria|female|женск|zira)/i
+const MALE_NAMES = /(pavel|dmitry|dmitri|yuri|boris|alexander|aleksandr|maxim|maksim|mikhail|male|мужск|david)/i
+
 function score(voice) {
   const name = `${voice.name} ${voice.voiceURI}`.toLowerCase()
   const lang = (voice.lang || '').toLowerCase().replace('_', '-')
@@ -50,7 +80,7 @@ function score(voice) {
   else if (lang.startsWith('en')) value += 12
   // Системные голоса «из коробки» звучат ровнее и всегда доступны офлайн.
   if (/google/.test(name)) value += 26
-  if (/yandex|alena|alena|milena|katya|dariya|svetlana|pavel/.test(name)) value += 22
+  if (/yandex|alena|milena|katya|dariya|svetlana|pavel/.test(name)) value += 22
   if (/microsoft|aria|irina|dmitry|svetlana/.test(name)) value += 20
   if (/apple|milena|yuri/.test(name)) value += 18
   if (voice.localService) value += 20
@@ -59,15 +89,38 @@ function score(voice) {
   return value
 }
 
-// «Базовый ИИ-шный» голос: русский системный синтез, ровный темп, средняя высота.
-export function pickVoice() {
+export function pickVoice(preset = null) {
   if (!voicesCache.length) return null
-  const saved = typeof localStorage !== 'undefined' ? localStorage.getItem(VOICE_KEY) : null
-  if (saved) {
-    const match = voicesCache.find((voice) => voice.name === saved)
+  const currentPreset = preset || getStoredPreset()
+  const savedName = typeof localStorage !== 'undefined' ? localStorage.getItem(VOICE_KEY) : null
+
+  if (currentPreset?.startsWith('sys:')) {
+    const specificName = currentPreset.slice(4)
+    const match = voicesCache.find((voice) => voice.name === specificName)
     if (match) return match
   }
-  return [...voicesCache].sort((first, second) => score(second) - score(first))[0] || null
+
+  // If a specific voice was explicitly remembered and matches:
+  if (savedName && currentPreset === 'system') {
+    const match = voicesCache.find((voice) => voice.name === savedName)
+    if (match) return match
+  }
+
+  const russianVoices = voicesCache.filter((voice) => (voice.lang || '').toLowerCase().startsWith('ru'))
+  const pool = russianVoices.length ? russianVoices : voicesCache
+
+  if (currentPreset === 'female') {
+    const femaleMatch = pool.find((voice) => FEMALE_NAMES.test(voice.name))
+    if (femaleMatch) return femaleMatch
+  } else if (currentPreset === 'male') {
+    const maleMatch = pool.find((voice) => MALE_NAMES.test(voice.name))
+    if (maleMatch) return maleMatch
+  } else if (currentPreset === 'navigator') {
+    const navMatch = pool.find((voice) => /yandex|alena|milena|dariya|aria|google/i.test(voice.name))
+    if (navMatch) return navMatch
+  }
+
+  return [...pool].sort((first, second) => score(second) - score(first))[0] || null
 }
 
 // Разбудить синтезатор: тихая фраза снимает блокировку первых вызовов.
@@ -107,11 +160,11 @@ export function prepareSpeechText(text) {
   return phrase.replace(/\s{2,}/g, ' ').trim()
 }
 
-function speakOnce(text, voice, rate) {
+function speakOnce(text, voice, rate = 1, pitch = 1) {
   const utterance = new window.SpeechSynthesisUtterance(text)
   utterance.lang = (voice?.lang || 'ru-RU').replace('_', '-')
   utterance.rate = rate
-  utterance.pitch = 1
+  utterance.pitch = pitch
   utterance.volume = 1
   if (voice) {
     utterance.voice = voice
@@ -145,7 +198,7 @@ export function hasRussianVoice() {
 
 // Возвращаем код, а не boolean: странице нужно объяснить пользователю, почему
 // тишина (нет русского голоса в системе / браузер не умеет синтез).
-export async function speakText(text, { rate = 1 } = {}) {
+export async function speakText(text, { preset = null, rate = null, pitch = null } = {}) {
   if (!supported()) return 'unsupported'
   const phrase = prepareSpeechText(text)
   if (!phrase) return 'empty'
@@ -157,9 +210,26 @@ export async function speakText(text, { rate = 1 } = {}) {
   const fresh = synth.getVoices?.() || []
   const voices = fresh.length ? fresh : voicesCache.length ? voicesCache : await loadVoices()
   voicesCache = voices
-  const voice = pickVoice()
+  const activePreset = preset || getStoredPreset()
+  const voice = pickVoice(activePreset)
   const russian = Boolean(voice && (voice.lang || '').toLowerCase().startsWith('ru'))
-  await speakOnce(phrase, voice, rate)
+
+  const isFemale = voice && FEMALE_NAMES.test(voice.name)
+  const isMale = voice && MALE_NAMES.test(voice.name)
+  let effectivePitch = pitch ?? 1
+  let effectiveRate = rate ?? 1
+  if (pitch === null) {
+    if (activePreset === 'female') effectivePitch = isFemale ? 1.05 : 1.18
+    else if (activePreset === 'male') effectivePitch = isMale ? 0.95 : 0.82
+    else if (activePreset === 'navigator') effectivePitch = 1.06
+  }
+  if (rate === null) {
+    if (activePreset === 'navigator') effectiveRate = 1.08
+    else if (activePreset === 'male') effectiveRate = 0.98
+    else if (activePreset === 'female') effectiveRate = 1.0
+  }
+
+  await speakOnce(phrase, voice, effectiveRate, effectivePitch)
   // Хром с длинными фразами иногда ставит очередь на паузу сразу после старта.
   window.setTimeout(() => { try { if (synth.speaking && synth.paused) synth.resume() } catch { /* ignore */ } }, 220)
   if (!voice) return 'no-voice'

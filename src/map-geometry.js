@@ -26,11 +26,12 @@ export const planRoomBounds = {
   'toilet-women-1': [86, 209.9, 83.6, 32],
   'language-148': [167.9, 179, 77.2, 62.8],
   'aerodynamics-120': [243.7, 179, 74.4, 62.8],
-  // The central staircase on the first floor is three drawn cells: the landing
-  // shaft at x=317.6…336.5 and the two flights at x=336.5…383.4. The whole block
-  // is one clickable staircase; the director's office starts at x=383.4.
+  // The central staircase on the first floor covers the landing shaft
+  // (x=317.6…336.5, y=179.7…241.1) and the lower flight (x=336.5…383.4, y=209.7…241.1).
+  // The director's office wraps around it: top cell "КАБ." (x=336.5…383.4, y=179.7…209.7)
+  // plus the main office "ДИРЕКТОРА" (x=383.4…449.7, y=179.7…241.1).
   'stairs-middle-1': [317.6, 179.7, 65.8, 61.4],
-  'director-149': [383.4, 179.7, 66.3, 61.4],
+  'director-149': [336.5, 179.7, 113.2, 61.4],
   'changing-room': [448.8, 179, 99.9, 62.8],
   'hall-1': [548, 179, 62, 63],
   'entrance-1': [547.8, 239.5, 61.9, 24.2],
@@ -66,8 +67,10 @@ export const planRoomBounds = {
   'biotech-lab-225': [86, 417, 62, 143],
 }
 
-const irregularRooms = {
+export const irregularRooms = {
   'electrical-lab-207': [[0, 417], [62, 417], [62, 477], [86, 477], [86, 560], [0, 560]],
+  'stairs-middle-1': [[317.6, 179.7], [336.5, 179.7], [336.5, 209.7], [383.4, 209.7], [383.4, 241.1], [317.6, 241.1]],
+  'director-149': [[336.5, 179.7], [449.7, 179.7], [449.7, 241.1], [383.4, 241.1], [383.4, 209.7], [336.5, 209.7]],
 }
 
 export function roomOutline(id) {
@@ -116,8 +119,8 @@ export const roomAccess = {
   'toilet-women-1': { door: [86, 237], branch: 'west' },
   'language-148': { door: [183, 181], branch: 'main' },
   'aerodynamics-120': { door: [261, 181], branch: 'main' },
-  'stairs-middle-1': { door: [359, 181], branch: 'main' },
-  'director-149': { door: [416, 181], branch: 'main' },
+  'stairs-middle-1': { door: [327, 181], branch: 'main' },
+  'director-149': { door: [359, 181], branch: 'main' },
   'changing-room': { door: [505, 181], branch: 'main' },
   'hall-1': { door: [579, 179], branch: 'hall' },
   'entrance-1': { door: [579, 241], branch: 'hall' },

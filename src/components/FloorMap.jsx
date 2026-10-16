@@ -87,7 +87,7 @@ function LocationMarker({ point, kind, radius }) {
   </g>
 }
 
-function RouteLayer({ points, markerId, progress = null }) {
+function RouteLayer({ points, markerId, progress = null, is3d = false }) {
   const toLine = (list) => list.map(([x, y]) => `${x},${y}`).join(' ')
   const end = points.at(-1)
   // progress — индекс вершины, до которой пользователь уже дошёл. Пройденная
@@ -96,6 +96,17 @@ function RouteLayer({ points, markerId, progress = null }) {
   const passed = points.slice(0, passedIndex + 1)
   const ahead = points.slice(passedIndex)
   const dot = ahead[0]
+
+  // Вычисляем угол поворота курсора для 3D-режима навигатора
+  let heading = 0
+  if (ahead.length > 1) {
+    const next = ahead[1]
+    heading = Math.atan2(next[1] - dot[1], next[0] - dot[0]) * (180 / Math.PI)
+  } else if (points.length > 1) {
+    const prev = points[points.length - 2]
+    heading = Math.atan2(end[1] - prev[1], end[0] - prev[0]) * (180 / Math.PI)
+  }
+
   return <g className="plan-route">
     <defs>
       <marker id={markerId} viewBox="-6 -6 12 12" refX="0" refY="0" markerWidth="12" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto">
@@ -108,18 +119,32 @@ function RouteLayer({ points, markerId, progress = null }) {
     {passedIndex > 0 && <polyline className="plan-route-passed" points={toLine(passed)} />}
     <circle cx={points[0][0]} cy={points[0][1]} r="7" />
     {/* Точка шага: позиция задаётся сдвигом группы, чтобы переход между
-        шагами анимировался, а не прыгал. */}
-    {progress !== null && <g className="plan-route-guide" transform={`translate(${dot[0]} ${dot[1]})`} style={{ transform: `translate(${dot[0]}px, ${dot[1]}px)` }}>
-      <circle className="plan-route-guide-pulse" cx="0" cy="0" r="11" />
-      <circle className="plan-route-guide-core" cx="0" cy="0" r="8" />
-      <circle className="plan-route-guide-center" cx="0" cy="0" r="3" />
-    </g>}
+        шагами анимировался, а не прыгал. В 3D-режиме — объёмный курсор навигатора. */}
+    {progress !== null && (
+      is3d ? (
+        <g className="plan-route-guide plan-route-guide-3d" transform={`translate(${dot[0]} ${dot[1]})`} style={{ transform: `translate(${dot[0]}px, ${dot[1]}px)` }}>
+          <circle className="plan-nav-radar" cx="0" cy="0" r="22" />
+          <circle className="plan-nav-halo" cx="0" cy="0" r="13" />
+          <g transform={`rotate(${heading})`}>
+            {/* Стрелка навигатора по образцу Яндекс.Навигатора */}
+            <path d="M13 0 L-8 -8 L-3 0 L-8 8 Z" fill="#1557e9" stroke="#ffffff" strokeWidth="2.2" strokeLinejoin="round" />
+            <circle cx="0" cy="0" r="2.2" fill="#ffffff" />
+          </g>
+        </g>
+      ) : (
+        <g className="plan-route-guide" transform={`translate(${dot[0]} ${dot[1]})`} style={{ transform: `translate(${dot[0]}px, ${dot[1]}px)` }}>
+          <circle className="plan-route-guide-pulse" cx="0" cy="0" r="11" />
+          <circle className="plan-route-guide-core" cx="0" cy="0" r="8" />
+          <circle className="plan-route-guide-center" cx="0" cy="0" r="3" />
+        </g>
+      )
+    )}
     <circle className="plan-route-pulse" cx={end[0]} cy={end[1]} r="9" />
     <circle className="plan-route-destination" cx={end[0]} cy={end[1]} r="8" />
   </g>
 }
 
-export default function FloorMap({ floor = 1, selectedId = '', onSelect, onFloorRequest, onPointSelect, picking = false, gameTargetId = '', gameFeedback = '', filterCategory = 'Все места', compact = false, zoomed = false, showLabels = true, showDoorMarks = true, routeStart = '', routeTargetId = '', manualPoint = null, gpsMarker = null, transition = 'lift', venueRoomIds = [], routeProgress = null }) {
+export default function FloorMap({ floor = 1, selectedId = '', onSelect, onFloorRequest, onPointSelect, picking = false, gameTargetId = '', gameFeedback = '', filterCategory = 'Все места', compact = false, zoomed = false, showLabels = true, showDoorMarks = true, routeStart = '', routeTargetId = '', manualPoint = null, gpsMarker = null, transition = 'lift', venueRoomIds = [], routeProgress = null, navMode3d = false, onToggle3d = null, activeStepPoint = null, swoopActive = false }) {
   const floorRooms = rooms.filter((room) => room.floor === floor)
   const plan = floor === 1 ? floorOnePlan : floorTwoPlan
   const route = routeStart && routeTargetId ? calculateIndoorRoute(routeStart, routeTargetId, floor, transition) : null
@@ -131,6 +156,36 @@ export default function FloorMap({ floor = 1, selectedId = '', onSelect, onFloor
   const pinch = useRef(null)
   const pinchEndedAt = useRef(0)
   const markerId = `route-arrow-${useId().replace(/[^a-zA-Z0-9]/g, '')}`
+
+  const focalPoint = useMemo(() => {
+    if (activeStepPoint) return activeStepPoint
+    if (routeProgress !== null && route?.points?.[routeProgress]) {
+      return route.points[routeProgress]
+    }
+    if (route?.points?.length) return route.points[0]
+    return null
+  }, [activeStepPoint, routeProgress, route?.points])
+
+  const stageTransformStyle = useMemo(() => {
+    if (!navMode3d) return undefined
+    const cx = width / 2
+    const cy = height / 2
+    const targetPoint = focalPoint || [cx, cy]
+    const tx = cx - targetPoint[0]
+    const ty = cy - targetPoint[1] + 35
+    if (swoopActive) {
+      return {
+        transformOrigin: '50% 65%',
+        transform: `rotateX(15deg) scale(1.1) translate3d(${tx * 0.4}px, ${ty * 0.4}px, 0)`,
+        transition: 'transform 1.05s cubic-bezier(0.18, 0.89, 0.32, 1.15)',
+      }
+    }
+    return {
+      transformOrigin: '50% 65%',
+      transform: `rotateX(46deg) scale(1.45) translate3d(${tx}px, ${ty}px, 0)`,
+      transition: 'transform 0.75s cubic-bezier(0.22, 1, 0.36, 1)',
+    }
+  }, [navMode3d, width, height, focalPoint, swoopActive])
 
   useEffect(() => {
     const viewport = viewportRef.current
@@ -230,20 +285,32 @@ export default function FloorMap({ floor = 1, selectedId = '', onSelect, onFloor
     onPointSelect({ floor, x: Math.round(point[0] * 10) / 10, y: Math.round(point[1] * 10) / 10 })
   }
 
-  const viewport = <div ref={viewportRef} className={`floor-map-viewport ${compact ? 'floor-map-compact' : ''} ${zoomed ? 'floor-map-zoomed' : ''} ${picking ? 'floor-map-picking' : ''} ${showLabels ? '' : 'floor-map-labels-hidden'} ${showDoorMarks ? '' : 'floor-map-doors-hidden'}`}
+  const viewport = <div ref={viewportRef} className={`floor-map-viewport ${compact ? 'floor-map-compact' : ''} ${zoomed ? 'floor-map-zoomed' : ''} ${picking ? 'floor-map-picking' : ''} ${showLabels ? '' : 'floor-map-labels-hidden'} ${showDoorMarks ? '' : 'floor-map-doors-hidden'} ${navMode3d ? 'floor-map-3d' : ''}`}
     onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerEnd} onPointerCancel={onPointerEnd} onClickCapture={onClickCapture}>
-    <div ref={stageRef} className={`floor-map-stage floor-map-stage-floor-${floor}`}>
+    <div ref={stageRef} className={`floor-map-stage floor-map-stage-floor-${floor} ${navMode3d ? 'floor-map-stage-3d' : ''}`} style={stageTransformStyle}>
       <div className="floor-map-art" aria-hidden="true" dangerouslySetInnerHTML={{ __html: plan }} />
       <svg className="floor-plan-svg" viewBox={`0 0 ${width} ${height}`} role="group" aria-label={`Интерактивная карта, ${floor} этаж`} onClickCapture={onMapClickCapture}>
         <title>{`${floor} этаж колледжа`}</title>
         <desc>{picking ? 'Коснитесь точки на плане, чтобы установить отметку.' : 'Выберите помещение, чтобы открыть описание. Двойной щелчок по лестнице переключает этаж.'}</desc>
         {floorRooms.map((room) => <FloorRoom key={room.id} room={room} selected={selectedId === room.id} onSelect={onSelect} onFloorRequest={onFloorRequest} gameTargetId={gameTargetId} gameFeedback={gameFeedback} filterCategory={filterCategory} venue={venueRoomIds.includes(room.id)} />)}
-        {route?.points.length > 1 && <RouteLayer points={route.points} markerId={markerId} progress={routeProgress} />}
+        {route?.points.length > 1 && <RouteLayer points={route.points} markerId={markerId} progress={routeProgress} is3d={navMode3d} />}
         {floor === 2 && onFloorRequest && <g className="plan-downstairs-link" role="button" tabIndex={0} aria-label="Актовый зал на первом этаже. Открыть первый этаж" onClick={showLowerFloor} onKeyDown={onGhostKeyDown}><rect x="610" y="94" width="156" height="150" rx="2" /></g>}
         {manualPoint?.floor === floor && <LocationMarker point={[manualPoint.x, manualPoint.y]} kind="manual" />}
         {gpsMarker?.floor === floor && <LocationMarker point={gpsMarker.point} radius={gpsMarker.radius} kind={gpsMarker.mode} />}
       </svg>
     </div>
+    {onToggle3d && (
+      <button
+        type="button"
+        className={`floor-map-3d-toggle-btn ${navMode3d ? 'is-3d' : 'is-2d'}`}
+        onClick={onToggle3d}
+        aria-label={navMode3d ? 'Переключить в 2D (вид сверху)' : 'Переключить в 3D (вид навигатора)'}
+        title={navMode3d ? '2D вид сверху' : '3D навигатор (вид камеры)'}
+      >
+        <span className="map-3d-badge">{navMode3d ? '3D' : '2D'}</span>
+        <span className="map-3d-label">{navMode3d ? 'Камера' : 'Сверху'}</span>
+      </button>
+    )}
   </div>
 
   if (compact) return viewport
