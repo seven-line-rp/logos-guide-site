@@ -77,3 +77,19 @@ test('a browser without a Russian voice reports it instead of staying silent', a
   assert.equal(await speakText('Начало маршрута.'), 'foreign-voice', 'страница покажет подсказку про настройки системы')
   delete globalThis.window
 })
+
+test('stopping speech while voices load prevents a delayed utterance', async () => {
+  const { spoken, synth } = fakeBrowser([])
+  // Clear the cache through loadVoices before exercising the deferred path.
+  const { loadVoices } = await import('./speech.js')
+  await loadVoices()
+  let finishLoading
+  window.setTimeout = (fn) => { finishLoading = fn; return 0 }
+  const pending = speakText('Эта подсказка уже отменена.')
+  stopSpeech()
+  synth.getVoices = () => [{ name: 'Microsoft Irina', lang: 'ru-RU' }]
+  finishLoading()
+  assert.equal(await pending, 'stopped')
+  assert.equal(spoken.length, 0)
+  delete globalThis.window
+})

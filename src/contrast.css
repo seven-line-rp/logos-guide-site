@@ -1,0 +1,57 @@
+/* Final semantic contrast layer: accent text and filled controls use separate
+   colors, so changing the theme cannot produce blue text on a blue button. */
+:root {
+  --muted-2: #586b7d;
+  --action-bg: #24579b;
+  --action-hover: #1c467f;
+  --on-action: #fff;
+}
+html[data-theme='dark'] {
+  --muted-2: #bbcad6;
+  --blue-pale: #304b66;
+  --action-bg: #285c9e;
+  --action-hover: #326db5;
+}
+:is(.home-hero, .floor-preview-band) h1 em,
+.floor-preview-copy h2 em { color: #dfebff; }
+:is(.home-hero, .floor-preview-band) .section-label,
+:is(.home-hero, .floor-preview-band) .eyebrow { color: #dce7f5; }
+html[data-theme='dark'] .header-cta,
+.header-cta,
+html[data-theme='dark'] .button-primary,
+.button-primary,
+html[data-theme='dark'] .route-submit,
+.route-submit,
+html[data-theme='dark'] .route-voice-toggle.route-voice-on,
+.route-voice-toggle.route-voice-on {
+  color: var(--on-action);
+  background: var(--action-bg);
+  border-color: var(--action-bg);
+}
+html[data-theme='dark'] .button-primary:hover,
+.button-primary:hover, .header-cta:hover { color: #fff; background: var(--action-hover); }
+.route-nav { background: #24579b; }
+.route-nav-main :is(strong, small, em) { color: #fff; }
+.route-nav-controls button { color: #204e89; background: #fff; }
+.route-nav-controls button:disabled { color: #536174; background: #dce5f1; opacity: 1; cursor: not-allowed; }
+.route-nav-controls button.route-nav-voice-off { color: #fff; background: #173e72; }
+html[data-theme='dark'] .route-voice-selector-wrap :is(label, label strong) { color: var(--ink); }
+.route-voice-select option, .route-voice-select optgroup { color: var(--ink); background: var(--surface); }
+.route-room-search-field input::placeholder { color: var(--muted); opacity: 1; }
+:is(.games-heading-badge > small, .game-mode-tab small, .quiz-question-index,
+.find-target-count, .game-finish > strong small, .service-card-bottom > span:last-child,
+.about-person-index, .yandex-hud-eyebrow) { color: var(--muted); }
+html[data-theme='dark'] :is(.game-hint-line, .speed-start-wrap p, .speed-stats small) { color: var(--muted); }
+html[data-theme='dark'] .speed-stats > div { color: var(--ink); background: var(--surface-soft); }
+html[data-theme='dark'] .route-step-past :is(.route-step-index, .route-step-count) { color: #b9d7ff; }
+html[data-theme='dark'] .route-option-icon { color: #c2dcff; background: #233e58; }
+html[data-theme='dark'] .route-option-active .route-option-icon { color: #fff; background: var(--action-bg); }
+html[data-theme='dark'] .route-option-active { background: #233e58; border-color: #8ab8f5; }
+:where(input, textarea)::placeholder { color: var(--muted); opacity: 1; }
+:where(button, a, input, select, textarea):focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+:is(.home-hero, .floor-preview-band, .route-nav) :focus-visible { outline-color: #fff; }
+
+.language-switch { display: inline-flex; flex-shrink: 0; padding: 3px; gap: 2px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); }
+.language-switch button { min-width: 32px; min-height: 32px; padding: 0 6px; border-radius: 6px; color: var(--muted); background: transparent; font-size: 12px; font-weight: 700; cursor: pointer; }
+.language-switch button[aria-pressed='true'] { color: #fff; background: var(--action-bg); }
+@media (max-width: 420px) { .language-switch { gap: 0; padding: 2px; } .language-switch button { min-width: 27px; min-height: 36px; padding: 0 4px; } .header-actions { gap: 5px; } }

@@ -1,3 +1,4 @@
+import { searchableRoom } from '../i18n.js'
 import { useMemo, useState } from 'react'
 import { ArrowRight, ArrowUpRight, Building2, Search, Sparkles, X } from 'lucide-react'
 import { Link, useSearchParams } from 'react-router-dom'
@@ -22,7 +23,7 @@ export default function RoomsPage() {
   const visibleRooms = useMemo(() => {
     const term = query.trim().toLocaleLowerCase('ru')
     return rooms.filter((room) => {
-      const text = `${room.name} ${room.number} ${room.category} ${room.aliases}`.toLocaleLowerCase('ru')
+      const text = searchableRoom(room)
       return (!term || text.includes(term)) && (floor === 'all' || room.floor === Number(floor)) && (category === 'Все места' || room.category === category)
     })
   }, [query, floor, category])

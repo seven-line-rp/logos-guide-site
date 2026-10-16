@@ -1,3 +1,4 @@
+import { searchableRoom } from '../i18n.js'
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { ChevronDown, MapPin, Search } from 'lucide-react'
 import { floors, rooms } from '../data.js'
@@ -28,6 +29,7 @@ function scoreRoom(room, query, digits) {
   const words = `${name} ${aliases}`.split(' ')
   if (words.some((word) => word.startsWith(query))) return 100
   if (name.includes(query) || aliases.includes(query)) return 70
+  if (normalize(searchableRoom(room)).includes(query)) return 60
   if (normalize(room.category).includes(query)) return 40
   return 0
 }

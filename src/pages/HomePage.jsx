@@ -1,3 +1,4 @@
+import { searchableRoom } from '../i18n.js'
 import { useMemo, useState } from 'react'
 import { ArrowDownRight, ArrowRight, ArrowUpRight, MapPin, PartyPopper, Search, Users } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -26,7 +27,7 @@ function HomeSearch() {
   const matches = useMemo(() => {
     const term = query.trim().toLocaleLowerCase('ru')
     if (!term) return []
-    return rooms.filter((room) => `${room.name} ${room.number} ${room.aliases}`.toLocaleLowerCase('ru').includes(term)).slice(0, 4)
+    return rooms.filter((room) => searchableRoom(room).includes(term)).slice(0, 4)
   }, [query])
   const goTo = (room) => navigate(`/map?floor=${room.floor}&room=${encodeURIComponent(room.id)}`)
   const submit = (event) => {

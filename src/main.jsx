@@ -10,6 +10,7 @@ import './mobile.css'
 import './polish.css'
 import './premium.css'
 import './navigator.css'
+import './contrast.css'
 import './interactions.js'
 
 createRoot(document.getElementById('root')).render(
