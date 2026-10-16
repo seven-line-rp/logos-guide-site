@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { rooms } from './data.js'
 import { isInsidePlan, planRoomBounds, planSizes, pointInPolygon, roomAccess, roomOutline } from './map-geometry.js'
-import { buildIndoorRoute, calculateIndoorRoute } from './map-routing.js'
+import { buildIndoorRoute, buildRouteOptions, calculateIndoorRoute, pickRoute, routeMetrics } from './map-routing.js'
 
 function length(a, b) { return Math.hypot(a[0] - b[0], a[1] - b[1]) }
 
@@ -54,6 +54,12 @@ test('routes stay in circulation or in their own rooms, never through another ro
       if (!leg) continue
       const allowed = [from.id, to.id, 'hall-1']
       if (route.transfer) allowed.push(route.transfer.startId, route.transfer.endId)
+      // Кабинет врача находится за медпунктом, и маршрут законно идёт через
+      // него — это единственный проход, помеченный в roomAccess как `via`.
+      for (const room of [from, to]) {
+        const via = roomAccess[room.id]?.via
+        if (via) allowed.push(via)
+      }
       checkLeg(leg, floor, allowed)
     }
   }
@@ -129,4 +135,48 @@ test('a manually placed point anywhere in a room or corridor can start a route',
   const alreadyHere = buildIndoorRoute({ floor: 2, x: 100, y: 530 }, 'biotech-lab-225')
   assert.equal(alreadyHere.length, 0)
   assert.deepEqual(alreadyHere.byFloor[2].points, [[100, 530]])
+})
+
+test('the medical block below room 138 has two rooms reachable on foot', () => {
+  const post = rooms.find((room) => room.id === 'medical-post')
+  const doctor = rooms.find((room) => room.id === 'medical-doctor')
+  assert.ok(post && doctor, 'оба медкабинета описаны в справочнике')
+  assert.ok(post.floor === 1 && doctor.floor === 1)
+  // Медпункт открывается прямо в коридор, кабинет врача — через медпункт.
+  const toPost = buildIndoorRoute('entrance-1', 'medical-post', 'stairs')
+  checkLeg(toPost.byFloor[1], 1, ['entrance-1', 'medical-post', 'hall-1'])
+  const toDoctor = buildIndoorRoute('entrance-1', 'medical-doctor', 'stairs')
+  assert.deepEqual(toDoctor.byFloor[1].points.at(-1), roomAccess['medical-doctor'].door)
+  checkLeg(toDoctor.byFloor[1], 1, ['entrance-1', 'medical-doctor', 'hall-1', 'medical-post'])
+  const doctorToPost = buildIndoorRoute('medical-doctor', 'medical-post', 'stairs')
+  checkLeg(doctorToPost.byFloor[1], 1, ['medical-doctor', 'medical-post', 'hall-1'])
+})
+
+test('route options list every transfer with distance, time and footsteps', () => {
+  const options = buildRouteOptions('canteen', 'library-214')
+  assert.equal(options.length, 4, 'лифт плюс три лестницы')
+  assert.ok(options[0].seconds <= options.at(-1).seconds, 'самый быстрый вариант стоит первым')
+  for (const option of options) {
+    assert.ok(option.label, 'у варианта есть подпись')
+    assert.ok(option.meters > 0 && option.seconds > 0 && option.footsteps > 0)
+    assert.ok(option.byFloor[1].points.length && option.byFloor[2].points.length)
+  }
+  assert.ok(options.some((option) => option.kind === 'lift'))
+  assert.equal(pickRoute(options, 'lift').transfer.kind, 'lift', 'режим «лифт» возвращает лифт')
+  assert.equal(pickRoute(options, 'stairs').transfer.kind, 'stairs-west', 'из столовой ближе всего западная лестница')
+  assert.match(pickRoute(options, 'stairs-middle').transfer.method, /центральной лестнице/)
+
+  const same = buildRouteOptions('canteen', 'auditorium-104')
+  assert.equal(same.length, 1)
+  assert.equal(same[0].kind, 'same')
+  assert.ok(same[0].meters > 0)
+
+  const nowhere = buildRouteOptions('canteen', 'no-such-room')
+  assert.equal(nowhere.length, 0)
+
+  // Метрики согласованы друг с другом: шаги ≈ длина шага, минуты из секунд.
+  const metrics = routeMetrics(196, 'lift')  // 20 метров + ожидание лифта
+  assert.equal(Math.round(metrics.meters), 20)
+  assert.equal(metrics.footsteps, 29)
+  assert.equal(metrics.seconds, 20 / 1.25 + 45)
 })

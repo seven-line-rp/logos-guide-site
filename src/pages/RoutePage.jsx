@@ -1,29 +1,39 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, ArrowRight, ArrowUp, ArrowUpRight, Check, Footprints, Info, MapPin, MoveDown, MoveUp, Play, Volume2, VolumeX, X } from 'lucide-react'
-import { floors, rooms } from '../data.js'
+import { rooms } from '../data.js'
 import { FloorTag, PageHeading, Reveal } from '../components/Primitives.jsx'
 import FloorMap from '../components/FloorMap.jsx'
-import { buildIndoorRoute } from '../map-routing.js'
+import RoomSearchSelect from '../components/RoomSearchSelect.jsx'
+import { buildRouteOptions, pickRoute } from '../map-routing.js'
 import { buildRouteSteps } from '../route-steps.js'
 import { readManualLocation } from '../map-location.js'
 import { VOICE_PRESETS, getAvailableVoices, getStoredPreset, loadVoices, primeSpeech, setVoicePreset, speakText, stopSpeech } from '../speech.js'
+import { VOICE_PACK_MALE_ID, playVoicePack, primeVoicePack, stopVoicePack, voicePackForPreset } from '../voice-pack.js'
 import { storageGet, storageSet } from '../storage.js'
 
 function roomName(room) { return `${room.name}${room.number ? ` №${room.number}` : ''}` }
 function stepLabel(count) { return `${count} ${count % 10 === 1 && count % 100 !== 11 ? 'шаг' : count % 10 >= 2 && count % 10 <= 4 && !(count % 100 >= 12 && count % 100 <= 14) ? 'шага' : 'шагов'}` }
+function timeLabel(seconds) { return seconds < 60 ? 'меньше минуты' : `≈ ${Math.max(1, Math.round(seconds / 60))} мин` }
 
 export default function RoutePage() {
   const [params] = useSearchParams()
   const manualPoint = readManualLocation(storageGet('map-manual-point'))
   const [startId, setStartId] = useState(() => params.get('from') === 'manual' && manualPoint ? 'manual' : rooms.some((room) => room.id === params.get('from')) ? params.get('from') : 'entrance-1')
   const [targetId, setTargetId] = useState(() => rooms.some((room) => room.id === params.get('to')) ? params.get('to') : 'auditorium-104')
-  const [transition, setTransition] = useState(() => params.get('mode') === 'stairs' ? 'stairs' : 'lift')
+  // Какой вариант маршрута выбрал пользователь: 'auto' — самый быстрый,
+  // 'stairs' — любая ближайшая лестница, либо точный вид ('lift',
+  // 'stairs-west', 'stairs-middle', 'stairs-north').
+  const [routePreference, setRoutePreference] = useState(() => params.get('mode') === 'stairs' ? 'stairs' : 'auto')
   const start = startId === 'manual' && manualPoint ? manualPoint : rooms.find((room) => room.id === startId) || rooms.find((room) => room.id === 'entrance-1')
   const target = rooms.find((room) => room.id === targetId) || rooms[0]
   const startLabel = startId === 'manual' ? 'Ваша отметка' : roomName(start)
   const crossFloor = start.floor !== target.floor
-  const route = useMemo(() => buildIndoorRoute(startId === 'manual' && manualPoint ? manualPoint : start.id, target.id, transition), [startId, start, target.id, transition, manualPoint])
+  // Варианты маршрута, как в навигаторе: лифт и три лестницы с метриками.
+  // Быстрый всегда первый; выбранный вариант хранится в routePreference.
+  const routeOptions = useMemo(() => buildRouteOptions(startId === 'manual' && manualPoint ? manualPoint : start.id, target.id), [startId, start.id, target.id, manualPoint])
+  const route = useMemo(() => pickRoute(routeOptions, routePreference), [routeOptions, routePreference])
+  const transition = route.transfer?.kind === 'lift' || !route.transfer ? 'lift' : route.transfer.kind
   const sameRoom = !crossFloor && route.length === 0
   // Каждый шаг знает свой этаж и вершину маршрута: по ним на плане двигается
   // точка, а пройденная часть линии остаётся бледной (см. src/route-steps.js).
@@ -36,7 +46,7 @@ export default function RoutePage() {
     sameRoom,
   })
 
-  const routeKey = [startId, target.id, transition].join('|')
+  const routeKey = [startId, target.id, route.kind || 'same'].join('|')
   const [nav, setNav] = useState({ key: routeKey, index: 0 })
   const stepIndex = nav.key === routeKey ? Math.min(nav.index, steps.length - 1) : 0
   // Голос включён по умолчанию: первую фразу пользователь всё равно слышит
@@ -68,28 +78,75 @@ export default function RoutePage() {
     else if (result === 'foreign-voice' || result === 'no-voice') setVoiceNotice('В системе нет русского голоса: речь звучит с акцентом или молчит. Добавьте русский голос в настройках телефона или компьютера.')
     else setVoiceNotice('')
   }
-  const speak = (text, options = {}) => {
-    if (voiceOn) speakText(text, { preset: voicePreset, ...options }).then(reportVoice)
+  const packVoiceActive = () => voicePackForPreset(voicePreset) !== null
+  // Записанных пакетов два: женский и мужской.
+  const packVoice = () => (voicePreset === VOICE_PACK_MALE_ID ? 'male' : 'female')
+  // Названия кабинетов в пакете не записаны — их читает синтезатор тем
+  // голосом, который был выбран до переключения на записанную озвучку.
+  const fallbackTtsPreset = () => {
+    const stored = storageGet('route-voice-tts-preset')
+    return VOICE_PRESETS.some((preset) => preset.id === stored && !voicePackForPreset(preset.id)) ? stored : 'female'
+  }
+
+  // Озвучка шага: у шага есть voiceCue со списком записанных фраз навигатора.
+  // Если пакета нет или фраза не загрузилась — шаг читает синтезатор браузера.
+  const speakStep = (step) => {
+    if (!voiceOn) return
+    if (packVoiceActive()) {
+      const keys = step.voiceCue || []
+      if (keys.length) {
+        playVoicePack(keys, { voice: packVoice() }).then((result) => {
+          if (result === 'played') setVoiceNotice('')
+          else if (result === 'unavailable') {
+            setVoiceNotice('Записанная озвучка не поддерживается браузером — подсказки читает системный голос.')
+            speakText(step.say, { preset: fallbackTtsPreset() }).then(reportVoice)
+          } else {
+            speakText(step.say, { preset: fallbackTtsPreset() }).then(reportVoice)
+          }
+        })
+        return
+      }
+    }
+    speakText(step.say, { preset: packVoiceActive() ? fallbackTtsPreset() : voicePreset }).then(reportVoice)
   }
   const goToStep = (index, withVoice = true) => {
     const next = Math.max(0, Math.min(steps.length - 1, index))
     setNav({ key: routeKey, index: next })
-    if (withVoice) speak(steps[next].say)
+    if (withVoice) speakStep(steps[next])
   }
   const toggleVoice = () => {
     const next = !voiceOn
     setVoiceOn(next)
     storageSet('route-voice', next ? 'on' : 'off')
-    if (!next) { stopSpeech(); setVoiceNotice('') }
-    else { primeSpeech(); speakText(steps[stepIndex].say, { preset: voicePreset }).then(reportVoice) }
+    if (!next) { stopSpeech(); stopVoicePack(); setVoiceNotice('') }
+    else {
+      primeSpeech()
+      if (packVoiceActive()) {
+        primeVoicePack()
+        playVoicePack(['route-built'], { voice: packVoice() }).then((result) => {
+          if (result !== 'played') speakText(steps[stepIndex].say, { preset: fallbackTtsPreset() }).then(reportVoice)
+        })
+      } else {
+        speakText(steps[stepIndex].say, { preset: voicePreset }).then(reportVoice)
+      }
+    }
   }
 
   const handleVoicePresetChange = (presetId) => {
+    // Запомнить синтезаторный голос для фраз с названиями кабинетов.
+    if (!voicePackForPreset(voicePreset) && voicePreset !== presetId) storageSet('route-voice-tts-preset', voicePreset)
     setVoicePresetState(presetId)
     setVoicePreset(presetId)
     storageSet('route-voice-preset', presetId)
     if (voiceOn) {
-      speakText('Голос изменён.', { preset: presetId }).then(reportVoice)
+      if (voicePackForPreset(presetId)) {
+        primeVoicePack()
+        playVoicePack(['route-built'], { voice: packVoice() }).then((result) => {
+          if (result !== 'played') speakText('Голос изменён.', { preset: fallbackTtsPreset() }).then(reportVoice)
+        })
+      } else {
+        speakText('Голос изменён.', { preset: presetId }).then(reportVoice)
+      }
     }
   }
 
@@ -98,6 +155,13 @@ export default function RoutePage() {
       setVoiceOn(true)
       storageSet('route-voice', 'on')
       primeSpeech()
+    }
+    if (voicePackForPreset(voicePreset)) {
+      primeVoicePack()
+      playVoicePack(['route-built', 'corridor-1-east'], { voice: packVoice() }).then((result) => {
+        if (result !== 'played') speakText('Маршрут построен. Следуйте прямо по коридору.', { preset: fallbackTtsPreset() }).then(reportVoice)
+      })
+      return
     }
     const sample = voicePreset === 'navigator'
       ? 'Маршрут построен. Поехали! Следуйте прямо по коридору.'
@@ -108,8 +172,8 @@ export default function RoutePage() {
   // «Повторить» работает и при выключенном голосе: нажатие — это явное
   // намерение услышать подсказку, поэтому голос включаем сами.
   const repeatStep = () => {
-    if (!voiceOn) { setVoiceOn(true); storageSet('route-voice', 'on'); primeSpeech() }
-    speakText(current.say, { preset: voicePreset }).then(reportVoice)
+    if (!voiceOn) { setVoiceOn(true); storageSet('route-voice', 'on'); primeSpeech(); primeVoicePack() }
+    speakStep(current)
   }
 
   const planRoute = (event) => {
@@ -117,14 +181,22 @@ export default function RoutePage() {
     setNav({ key: routeKey, index: 0 })
     setMode3d(true)
     setSwoop(true)
+    primeVoicePack()
     document.getElementById('route-result')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     window.setTimeout(() => setSwoop(false), 1100)
+    if (voiceOn && voicePackForPreset(voicePreset)) {
+      playVoicePack(['route-built'], { voice: packVoice() }).then((result) => {
+        if (result === 'played') speakStep(steps[0])
+        else speakText(`Маршрут построен. ${steps[0].say}`, { preset: fallbackTtsPreset() }).then(reportVoice)
+      })
+      return
+    }
     const intro = voicePreset === 'navigator'
       ? `Маршрут построен. Поехали! ${steps[0].say}`
       : `Маршрут построен. ${steps[0].say}`
-    speak(intro)
+    if (voiceOn) speakText(intro, { preset: voicePreset }).then(reportVoice)
   }
-  const resetRoute = () => { setStartId('entrance-1'); setTargetId('auditorium-104'); setTransition('lift') }
+  const resetRoute = () => { setStartId('entrance-1'); setTargetId('auditorium-104'); setRoutePreference('auto') }
   const mapUrl = `/map?floor=${target.floor}&from=${encodeURIComponent(startId)}&to=${encodeURIComponent(target.id)}${crossFloor ? `&mode=${transition}` : ''}`
 
   const activeStepPoint = useMemo(() => {
@@ -139,11 +211,19 @@ export default function RoutePage() {
     <PageHeading eyebrow="Маршрут по колледжу" title={<>Откуда идёте?<br /><em>Куда нужно попасть?</em></>} description="Выберите старт и кабинет. Покажем путь по коридорам и, если нужно, переход на другой этаж." />
     <section className="route-builder container">
       <Reveal className="route-form-panel"><div className="route-form-header"><span className="eyebrow">Точки маршрута</span><span className="route-form-step">1 / 2</span></div><form onSubmit={planRoute}>
-        <label className="route-select-field"><span>Откуда</span><span className="route-select-wrap"><MapPin size={16} /><select value={startId} onChange={(event) => setStartId(event.target.value)}>{manualPoint && <option value="manual">Ваша отметка · {manualPoint.floor} этаж</option>}{floors.map((floor) => <optgroup key={floor.id} label={floor.label}>{rooms.filter((room) => room.floor === floor.id).map((room) => <option key={room.id} value={room.id}>{roomName(room)}</option>)}</optgroup>)}</select></span></label>
+        <RoomSearchSelect
+          label="Откуда"
+          value={startId}
+          onChange={setStartId}
+          manualOption={manualPoint ? { value: 'manual', label: `Ваша отметка · ${manualPoint.floor} этаж` } : null}
+        />
         <Link className="route-manual-link" to={`/map?floor=${start.floor}&manual=1`}><MapPin size={15} /> {manualPoint ? 'Изменить отметку на плане' : 'Отметить точку на плане'}</Link>
         <div className="route-connector"><span /><i /><span /></div>
-        <label className="route-select-field"><span>Куда</span><span className="route-select-wrap"><MapPin size={16} /><select value={targetId} onChange={(event) => setTargetId(event.target.value)}>{floors.map((floor) => <optgroup key={floor.id} label={floor.label}>{rooms.filter((room) => room.floor === floor.id).map((room) => <option key={room.id} value={room.id}>{roomName(room)}</option>)}</optgroup>)}</select></span></label>
-        {crossFloor && <div className="route-mode-select"><span>Переход между этажами</span><div role="group" aria-label="Способ перехода"><button type="button" className={transition === 'lift' ? 'route-mode-active' : ''} onClick={() => setTransition('lift')}><MoveUp size={15} /> Лифт</button><button type="button" className={transition === 'stairs' ? 'route-mode-active' : ''} onClick={() => setTransition('stairs')}><ArrowUp size={15} /> Ближайшая лестница</button></div></div>}
+        <RoomSearchSelect
+          label="Куда"
+          value={targetId}
+          onChange={setTargetId}
+        />
         <button className="button button-primary route-submit" type="submit">Посмотреть маршрут <ArrowRight size={16} /></button>
       </form></Reveal>
       <Reveal id="route-result" className="route-result-panel" delay={100}><div className="route-result-top"><span className="eyebrow">Ваш маршрут</span><div className="route-top-actions"><button className="route-reset" type="button" onClick={resetRoute}><X size={14} /> Сбросить</button></div></div>
@@ -193,7 +273,18 @@ export default function RoutePage() {
         </div>
 
         <div className="route-endpoints"><div><span>Старт</span><strong>{startLabel}</strong><FloorTag floor={start.floor} /></div><div className="route-end-arrow"><ArrowRight size={19} /></div><div><span>Финиш</span><strong>{roomName(target)}</strong><FloorTag floor={target.floor} /></div></div>
-        <div className="route-distance"><span><Footprints size={16} /> Пешком</span><span>{crossFloor ? `Переход: ${route.transfer?.label}` : 'Один этаж'}</span><span>{stepLabel(steps.length)}</span></div>
+        <div className="route-distance"><span><Footprints size={16} /> Пешком</span><span>{crossFloor ? `Переход: ${route.transfer?.label}` : 'Один этаж'}</span><span>≈ {Math.round(route.meters)} м · ~{stepLabel(route.footsteps)}</span><span>{timeLabel(route.seconds)}</span><span>{stepLabel(steps.length)}</span></div>
+
+        {/* Варианты маршрута, как в навигаторе: лифт и три лестницы,
+            быстрый отмечен. У каждого — расстояние, время и число шагов. */}
+        {routeOptions.length > 1 && <div className="route-options" role="group" aria-label="Варианты маршрута">
+          <span className="route-options-label">Варианты маршрута</span>
+          {routeOptions.map((option, index) => <button type="button" key={option.kind} className={`route-option-card ${route === option ? 'route-option-active' : ''}`} onClick={() => setRoutePreference(option.kind)} aria-pressed={route === option}>
+            <span className="route-option-icon">{option.kind === 'lift' ? <MoveUp size={16} /> : <ArrowUp size={16} />}</span>
+            <span className="route-option-body"><strong>{option.label}</strong><small>≈ {Math.round(option.meters)} м · {timeLabel(option.seconds)} · ~{stepLabel(option.footsteps)}</small></span>
+            {index === 0 && <em className="route-option-badge">Быстрее</em>}
+          </button>)}
+        </div>}
         
         {/* HUD Яндекс.Навигатора с подсказкой манёвра и переключателем 3D-камеры */}
         <div className="yandex-nav-hud">
@@ -223,6 +314,51 @@ export default function RoutePage() {
           </div>
         </div>
 
+        {/* Превью этажей. В 2D маршрут между этажами показан двумя планами
+            рядом (как раньше), а в 3D-режиме камера идёт по этажам по
+            очереди: сначала этаж старта, а второй план «включается» в момент
+            перехода — иначе две наклонённые перспективы рядом выглядят
+            тесно и нечитаемо. */}
+        {crossFloor && mode3d ? (
+          <div className="route-preview-grid route-preview-single">
+            <div className="route-single-stack">
+              {[start.floor, target.floor].map((floorNumber) => {
+                const isActive = current.floor === floorNumber
+                const isStartFloor = floorNumber === start.floor
+                return (
+                  <div key={floorNumber} className={`route-single-layer ${isActive ? 'route-single-visible' : ''}`} inert={!isActive}>
+                    <div className="route-preview-caption">
+                      <span>{floorNumber} этаж</span>
+                      <small>{isStartFloor ? `До ${route.transfer?.toward}` : `От ${route.transfer?.toward} до кабинета`}{isActive ? ` · шаг ${stepIndex + 1}` : ''}</small>
+                    </div>
+                    <div className="route-preview-panel">
+                      <FloorMap
+                        floor={floorNumber}
+                        compact
+                        selectedId={isStartFloor ? route.transfer?.startId : target.id}
+                        routeStart={isStartFloor ? (startId === 'manual' ? manualPoint : start.id) : route.transfer?.endId}
+                        routeTargetId={isStartFloor ? route.transfer?.startId : target.id}
+                        transition={transition}
+                        manualPoint={isStartFloor && startId === 'manual' ? manualPoint : null}
+                        routeProgress={isActive ? current.progress : null}
+                        navMode3d={isActive}
+                        onToggle3d={() => setMode3d((v) => !v)}
+                        activeStepPoint={isActive ? activeStepPoint : null}
+                        swoopActive={swoop && isActive}
+                      />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            <div className="route-single-strip" aria-hidden="true">
+              <span className={current.floor === start.floor ? 'route-strip-active' : ''}>{start.floor} этаж</span>
+              <span className="route-strip-path"><i /><em>{route.transfer?.label}</em><i /></span>
+              <span className={current.floor === target.floor ? 'route-strip-active' : ''}>{target.floor} этаж</span>
+            </div>
+            <p className="route-single-hint">3D-камера показывает этажи по очереди: второй план откроется на шаге перехода. Нужны оба плана рядом — включите вид «Сверху» (2D).</p>
+          </div>
+        ) : (
         <div className={`route-preview-grid ${crossFloor ? 'route-preview-two' : ''}`}>
           <div className={`route-preview-floor ${current.floor === start.floor ? 'route-floor-active' : ''}`}>
             <div className="route-preview-caption">
@@ -270,12 +406,13 @@ export default function RoutePage() {
             </div>
           )}
         </div>
+        )}
         {voiceNotice && <p className="route-voice-notice" role="status"><Info size={14} /> {voiceNotice}</p>}
         <div className="route-nav" aria-live="polite"><div className="route-nav-main"><span className="route-nav-icon"><CurrentIcon size={22} /></span><div><small>Шаг {stepIndex + 1} из {steps.length}</small><strong>{current.title}</strong><em>{current.detail}</em></div></div><div className="route-progress" aria-hidden="true"><span style={{ width: `${(stepIndex + 1) / steps.length * 100}%` }} /></div><div className="route-nav-controls"><button type="button" onClick={() => goToStep(stepIndex - 1)} disabled={stepIndex === 0}><ArrowLeft size={16} /> Назад</button><button type="button" className={voiceOn ? '' : 'route-nav-voice-off'} onClick={repeatStep} aria-label="Повторить подсказку голосом"><Volume2 size={16} /> Повторить</button><button type="button" onClick={() => goToStep(stepIndex + 1)} disabled={stepIndex >= steps.length - 1}>Дальше <ArrowRight size={16} /></button></div></div>
         <div className="route-steps">{steps.map((step, index) => { const Icon = stepIcon(step); return <button type="button" className={`route-step ${index === stepIndex ? 'route-step-current' : ''} ${index < stepIndex ? 'route-step-past' : ''}`} key={`${step.title}-${index}`} onClick={() => goToStep(index)} aria-current={index === stepIndex}><span className="route-step-index"><Icon size={15} /></span><div><strong>{step.title}</strong><small>{step.detail}</small></div><span className="route-step-count">{index < stepIndex ? <Check size={14} /> : String(index + 1).padStart(2, '0')}</span></button> })}</div>
         <div className="route-result-actions"><Link className="button button-primary" to={mapUrl}>Показать на карте <ArrowUpRight size={15} /></Link><Link className="route-other-link" to="/rooms">Справочник кабинетов <ArrowRight size={14} /></Link></div>
       </Reveal>
     </section>
-    <section className="route-hint-band"><div className="container route-hint-inner"><span className="route-hint-icon">i</span><div><strong>О навигаторе колледжа</strong><p>Маршрут работает в режиме 3D-навигатора с видом камеры по направлению движения, как в Яндекс.Навигаторе. Вы можете включить вид сверху кнопкой 2D, настроить женский голос (Алиса), мужской голос или диктора навигатора. Синяя стрелка на плане указывает направление шага, а линия пути подсвечивает коридоры.</p></div><Link to="/map">Карта этажей <ArrowRight size={14} /></Link></div></section>
+    <section className="route-hint-band"><div className="container route-hint-inner"><span className="route-hint-icon">i</span><div><strong>О навигаторе колледжа</strong><p>Маршрут работает в режиме 3D-навигатора с видом камеры по направлению движения. На маршрутах между этажами 3D-камера показывает этажи по очереди: сначала этаж старта, второй — в момент перехода; в виде «Сверху» (2D) оба плана остаются рядом. Озвучка — на выбор: записанные фразы в стиле 2ГИС (не зависят от голосов системы), женский, мужской или диктор-навигатор. Кабинет в поле поиска находится по названию, номеру или слову-псевдониму.</p></div><Link to="/map">Карта этажей <ArrowRight size={14} /></Link></div></section>
   </>
 }

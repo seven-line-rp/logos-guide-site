@@ -29,6 +29,9 @@ export function buildRouteSteps({ startLabel, startFloor, targetFloor, targetNam
     title: guide.title,
     detail: guide.detail,
     say: guide.say,
+    // Ключ фразы голосового пакета (src/voice-pack.js): манёвры озвучены
+    // заранее записанными файлами, синтезатор — запасной вариант.
+    voiceCue: guide.voiceKey ? [guide.voiceKey] : [],
     floor,
     progress: guide.index,
   }))
@@ -40,13 +43,15 @@ export function buildRouteSteps({ startLabel, startFloor, targetFloor, targetNam
   if (route.transfer) {
     const up = targetFloor > startFloor
     const move = up ? 'Поднимитесь' : 'Спуститесь'
+    const floorName = targetFloor === 2 ? 'второй' : 'первый'
     steps.push({
       kind: 'transfer',
       title: `${move} на ${targetFloor} этаж`,
       detail: route.transfer.kind === 'lift'
         ? 'Переход на лифте'
         : `Переход по лестнице (${MOVE_LABEL[route.transfer.kind] || route.transfer.kind})`,
-      say: `${move} на ${targetFloor} этаж ${route.transfer.kind === 'lift' ? 'на лифте' : 'по лестнице'}.`,
+      say: `${move} на ${floorName} этаж ${route.transfer.kind === 'lift' ? 'на лифте' : 'по лестнице'}.`,
+      voiceCue: [up ? 'transfer-up' : 'transfer-down'],
       floor: startFloor,
       progress: lastIndex(firstLeg),
     })
@@ -58,6 +63,7 @@ export function buildRouteSteps({ startLabel, startFloor, targetFloor, targetNam
     title: `Приход: ${targetName}`,
     detail: `${targetFloor} этаж · дверь помещения на плане`,
     say: `Вы пришли: ${targetName}.`,
+    voiceCue: ['arrive'],
     floor: targetFloor,
     progress: lastIndex(lastLeg),
   })
