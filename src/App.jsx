@@ -23,12 +23,16 @@ const titles = {
   '/about': 'О путеводителе — Колледж',
 }
 
+// Адрес вне списка выше — это страница приложения «404»: показываем это и в заголовке вкладки,
+// чтобы неверная ссылка не выглядела как ошибка сервера (см. deploy/reg-ru.md про перезагрузку).
+const notFoundTitle = 'Страница не найдена — Путеводитель колледжа'
+
 function RouteEffects() {
   const language = useLanguage()
   const location = useLocation()
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'smooth' })
-    document.title = translate(titles[location.pathname] || 'Путеводитель по колледжу', language)
+    document.title = translate(titles[location.pathname] || notFoundTitle, language)
   }, [location.pathname, language])
   return null
 }

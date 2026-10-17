@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <title>ЛОГОС:Путеводитель</title>
+    <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+    <script>
+      /* spa-fallback:capture */
+      // Хостинг не нашёл файл по адресу вроде /map или /rooms и отдал эту страницу.
+      // Запоминаем запрошенный адрес и сразу возвращаем пользователя на него:
+      // index.html (скрипт spa-fallback:restore) подменит адрес до загрузки приложения,
+      // и React Router откроет ту же страницу, на которой человек был до перезагрузки.
+      (function () {
+        var path = window.location.pathname + window.location.search + window.location.hash
+        // Защита от цикла: если index.html вдруг отсутствует, на «/» ничего не делаем.
+        if (path === '/' || path === '') return
+        window.location.replace('/?__redirect=' + encodeURIComponent(path))
+      })()
+    </script>
+  </head>
+  <body>
+    <p>Открываем страницу…</p>
+    <noscript>
+      <p>Включите JavaScript или перейдите <a href="/">на главную страницу</a>.</p>
+    </noscript>
+  </body>
+</html>
