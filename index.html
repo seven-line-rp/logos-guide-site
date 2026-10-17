@@ -12,6 +12,30 @@
     <link rel="icon" type="image/svg+xml" href="/logo.svg" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
+    <script>
+      /* spa-fallback:restore */
+      // Если хостинг не умеет отдавать index.html для произвольных адресов (перезагрузка
+      // страницы /map, /rooms, /route…), серверная страница 404.html присылает нас сюда
+      // с параметром ?__redirect=%2Fmap%3Ffrom%3D118. Возвращаем настоящий адрес до того,
+      // как загрузится приложение, — тогда после перезагрузки открывается та же страница.
+      (function () {
+        try {
+          var params = new URLSearchParams(window.location.search)
+          var target = params.get('__redirect')
+          if (!target) return
+          params.delete('__redirect')
+          var url = new URL(target, window.location.origin)
+          // Принимаем только внутренние адреса: «/map», но не «//evil.com» и не «\evil.com».
+          if (url.origin !== window.location.origin) return
+          params.forEach(function (value, key) { url.searchParams.append(key, value) })
+          if (!url.hash) url.hash = window.location.hash
+          // Состояние history сохраняем: его читает React Router при запуске приложения.
+          window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash)
+        } catch (_error) {
+          // Без URLSearchParams/history адрес останется как есть — приложение всё равно откроется.
+        }
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

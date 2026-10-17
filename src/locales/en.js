@@ -31,6 +31,7 @@ export const english = {
   'Озвучка:': 'Voice:', 'Логос-голоса': 'Logos voices', 'Логос — женский': 'Logos — female (Russian)', 'Логос — мужской': 'Logos — male (Russian)', 'Выбор голоса озвучки': 'Navigation voice', 'Прослушать пример голоса': 'Listen to a voice sample', 'Проверить': 'Test', 'Голос': 'Voice', 'вкл': 'on', 'выкл': 'off', 'Повторить': 'Repeat', 'Назад': 'Back', 'Дальше': 'Next', 'Повторить подсказку голосом': 'Repeat voice guidance',
   'Шаг': 'Step', 'шагов': 'steps', 'шага': 'steps', 'шаг': 'step', 'из': 'of', 'меньше минуты': 'less than a minute', 'мин': 'min', 'метров': 'metres', 'Самый быстрый': 'Fastest', 'Быстрый': 'Fast', 'Лестницы': 'Stairs', 'Через лифт': 'Via lift', 'По лестнице': 'Via stairs', 'О навигаторе колледжа': 'About campus navigation',
   'Маршрут построен.': 'Route ready.', 'Вы пришли на место.': 'You have arrived.', 'Поднимитесь на второй этаж.': 'Go up to floor 2.', 'Спуститесь на первый этаж.': 'Go down to floor 1.', 'Начало маршрута': 'Starting point', 'Вы на месте': 'You have arrived', 'На месте': 'Arrived', 'Карта этажей — Путеводитель колледжа': 'Floor maps — Campus guide',
+  'Страница не найдена — Путеводитель колледжа': 'Page not found — Campus guide',
   'МАPШРУТ НЕ НАЙДЕН': 'ROUTE NOT FOUND', 'МАРШРУТ НЕ НАЙДЕН': 'ROUTE NOT FOUND', 'Кажется, мы': 'Looks like we', 'свернули не туда.': 'took a wrong turn.', 'Вернитесь к карте — она поможет найти нужный кабинет или пространство.': 'Go back to the map to find your room or space.', 'На главную': 'Home',
 }
 
