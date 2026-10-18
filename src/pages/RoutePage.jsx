@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, ArrowUp, ArrowUpRight, Check, Footprints, Info, MapPin, MoveDown, MoveUp, Play, Volume2, VolumeX, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ArrowUpDown, ArrowUpRight, Check, ChevronDown, Footprints, Info, Map as MapIcon, MapPin, MoveDown, MoveUp, Navigation, Play, RotateCcw, Volume2, VolumeX } from 'lucide-react'
 import { rooms } from '../data.js'
-import { FloorTag, PageHeading, Reveal } from '../components/Primitives.jsx'
 import FloorMap from '../components/FloorMap.jsx'
 import RoomSearchSelect from '../components/RoomSearchSelect.jsx'
 import { buildRouteOptions, pickRoute } from '../map-routing.js'
@@ -12,101 +11,104 @@ import { VOICE_PRESETS, getStoredPreset, setVoicePreset, speakText, stopSpeech }
 import { VOICE_PACK_MALE_ID, playVoicePack, stopVoicePack, voicePackForPreset } from '../voice-pack.js'
 import { storageGet, storageSet } from '../storage.js'
 
+// Страница маршрута устроена как навигатор: слева панель (откуда/куда,
+// сводка, варианты, шаги, озвучка), справа большая карта с текущей
+// подсказкой и пультом «Назад / Повторить / Дальше». Маршрут пересчитывается
+// сразу при выборе точек; кнопка «Начать» лишь запускает ведение с первого шага.
+
 function roomName(room) { return `${room.name}${room.number ? ` №${room.number}` : ''}` }
-function stepLabel(count) { return `${count} ${count % 10 === 1 && count % 100 !== 11 ? 'шаг' : count % 10 >= 2 && count % 10 <= 4 && !(count % 100 >= 12 && count % 100 <= 14) ? 'шага' : 'шагов'}` }
-function timeLabel(seconds) { return seconds < 60 ? 'меньше минуты' : `≈ ${Math.max(1, Math.round(seconds / 60))} мин` }
+function plural(count, one, few, many) {
+  const mod10 = count % 10
+  const mod100 = count % 100
+  if (mod10 === 1 && mod100 !== 11) return one
+  if (mod10 >= 2 && mod10 <= 4 && !(mod100 >= 12 && mod100 <= 14)) return few
+  return many
+}
+function stepLabel(count) { return `${count} ${plural(count, 'шаг', 'шага', 'шагов')}` }
+function minutes(seconds) { return Math.max(1, Math.round(seconds / 60)) }
 const prefersFlatMap = () => window.matchMedia('(max-width: 680px), (max-height: 500px) and (pointer: coarse)').matches
+
+const stepIcon = (step) => step.kind === 'start' ? MapPin : step.kind === 'arrive' ? Check : step.kind === 'transfer' ? (step.title.startsWith('Поднимитесь') ? MoveUp : MoveDown) : Footprints
 
 export default function RoutePage() {
   const [params] = useSearchParams()
   const manualPoint = readManualLocation(storageGet('map-manual-point'))
   const [startId, setStartId] = useState(() => params.get('from') === 'manual' && manualPoint ? 'manual' : rooms.some((room) => room.id === params.get('from')) ? params.get('from') : 'entrance-1')
   const [targetId, setTargetId] = useState(() => rooms.some((room) => room.id === params.get('to')) ? params.get('to') : 'auditorium-104')
-  // Какой вариант маршрута выбрал пользователь: 'auto' — самый быстрый,
-  // 'stairs' — любая ближайшая лестница, либо точный вид ('lift',
-  // 'stairs-west', 'stairs-middle', 'stairs-north').
-  const [routePreference, setRoutePreference] = useState(() => params.get('mode') === 'stairs' ? 'stairs' : 'auto')
+  // Вариант маршрута: 'auto' — самый быстрый, 'stairs' — ближайшая лестница,
+  // либо точный вид ('lift', 'stairs-west', 'stairs-middle', 'stairs-north').
+  const [routePreference, setRoutePreference] = useState(() => {
+    const mode = params.get('mode')
+    return mode && ['lift', 'stairs', 'stairs-west', 'stairs-middle', 'stairs-north'].includes(mode) ? mode : 'auto'
+  })
   const start = startId === 'manual' && manualPoint ? manualPoint : rooms.find((room) => room.id === startId) || rooms.find((room) => room.id === 'entrance-1')
   const target = rooms.find((room) => room.id === targetId) || rooms[0]
   const startLabel = startId === 'manual' ? 'Ваша отметка' : roomName(start)
   const crossFloor = start.floor !== target.floor
-  // Варианты маршрута, как в навигаторе: лифт и три лестницы с метриками.
-  // Быстрый всегда первый; выбранный вариант хранится в routePreference.
   const routeOptions = useMemo(() => buildRouteOptions(startId === 'manual' && manualPoint ? manualPoint : start.id, target.id), [startId, start.id, target.id, manualPoint])
   const route = useMemo(() => pickRoute(routeOptions, routePreference), [routeOptions, routePreference])
   const transition = route.transfer?.kind === 'lift' || !route.transfer ? 'lift' : route.transfer.kind
   const sameRoom = !crossFloor && route.length === 0
   // Каждый шаг знает свой этаж и вершину маршрута: по ним на плане двигается
   // точка, а пройденная часть линии остаётся бледной (см. src/route-steps.js).
-  const steps = buildRouteSteps({
-    startLabel,
-    startFloor: start.floor,
-    targetFloor: target.floor,
-    targetName: roomName(target),
-    route,
-    sameRoom,
-  })
+  const steps = buildRouteSteps({ startLabel, startFloor: start.floor, targetFloor: target.floor, targetName: roomName(target), route, sameRoom })
 
   const routeKey = [startId, target.id, route.kind || 'same'].join('|')
   const [nav, setNav] = useState({ key: routeKey, index: 0 })
   const stepIndex = nav.key === routeKey ? Math.min(nav.index, steps.length - 1) : 0
-  // Голос включён по умолчанию: первую фразу пользователь всё равно слышит
-  // только после нажатия кнопки, поэтому автозапуск браузер не блокирует.
+  const current = steps[stepIndex]
+  const CurrentIcon = stepIcon(current)
+  // Этаж на карте: по умолчанию — этаж текущего шага; кнопками этажей можно
+  // заглянуть на другой, пока не сменится шаг.
+  const [peek, setPeek] = useState({ key: '', floor: null })
+  const peekKey = `${routeKey}|${stepIndex}`
+  const shownFloor = peek.key === peekKey && peek.floor ? peek.floor : current.floor
+
+  // Голос включён по умолчанию: первую фразу всё равно слышно только после
+  // нажатия кнопки, поэтому браузер автозапуск не блокирует.
   const [voiceOn, setVoiceOn] = useState(() => storageGet('route-voice') === 'on' || storageGet('route-voice') === null)
   const [voiceNotice, setVoiceNotice] = useState('')
   const [voicePreset, setVoicePresetState] = useState(getStoredPreset)
   const voiceRequest = useRef(0)
-  // На телефоне крупный 2D-план читабельнее маленькой перспективы.
   const [mode3d, setMode3d] = useState(() => !prefersFlatMap())
   const [swoop, setSwoop] = useState(false)
+  const stageRef = useRef(null)
 
-  const current = steps[stepIndex]
-  const stepIcon = (step) => step.kind === 'start' ? MapPin : step.kind === 'arrive' ? Check : step.kind === 'transfer' ? (step.title.startsWith('Поднимитесь') ? MoveUp : MoveDown) : Footprints
-  const CurrentIcon = stepIcon(current)
-
-  // Any new action invalidates both playback and delayed fallback callbacks.
+  // Любое новое действие отменяет и воспроизведение, и отложенный запасной синтез.
   const cancelVoice = () => {
     voiceRequest.current += 1
     stopSpeech()
     stopVoicePack()
     return voiceRequest.current
   }
-  useEffect(() => {
-    return () => {
-      voiceRequest.current += 1
-      stopSpeech()
-      stopVoicePack()
-    }
+  useEffect(() => () => {
+    voiceRequest.current += 1
+    stopSpeech()
+    stopVoicePack()
   }, [routeKey])
 
   const playPrompt = async (keys, text, preset = voicePreset) => {
     const request = cancelVoice()
     setVoiceNotice('')
-    // playVoicePack разблокирует AudioContext прямо в обработчике нажатия,
-    // до загрузки mp3: после await Safari уже теряет пользовательский жест.
-    const result = keys.length
-      ? await playVoicePack(keys, { voice: preset === VOICE_PACK_MALE_ID ? 'male' : 'female' })
-      : 'empty'
-    if (request !== voiceRequest.current || result === 'stopped') return
-    if (result === 'played') return
+    // playVoicePack разблокирует звук прямо в обработчике нажатия, до загрузки
+    // mp3: после await Safari уже теряет пользовательский жест.
+    const result = keys.length ? await playVoicePack(keys, { voice: preset === VOICE_PACK_MALE_ID ? 'male' : 'female' }) : 'empty'
+    if (request !== voiceRequest.current || result === 'stopped' || result === 'played') return
     if (result === 'blocked') {
       setVoiceNotice('Звук не разблокировался. Нажмите «Прослушать» ещё раз и проверьте громкость и беззвучный режим iPhone.')
       return
     }
-    // Если запись не загрузилась, пробуем системный синтезатор.
     const fallback = await speakText(text, { preset: preset === VOICE_PACK_MALE_ID ? 'male' : 'female' })
     if (request !== voiceRequest.current || fallback === 'stopped') return
     if (fallback === 'unsupported') setVoiceNotice('Запись не воспроизвелась, а синтез речи недоступен. Проверьте подключение и нажмите «Прослушать» ещё раз.')
     else if (fallback === 'foreign-voice' || fallback === 'no-voice') setVoiceNotice('Запись не воспроизвелась. Для запасной озвучки нужен русский системный голос; повторите попытку или проверьте подключение.')
   }
-  const speakStep = (step) => {
-    if (voiceOn) void playPrompt(step.voiceCue || [], step.say)
-  }
   const goToStep = (index, withVoice = true) => {
     const next = Math.max(0, Math.min(steps.length - 1, index))
     setNav({ key: routeKey, index: next })
-    if (withVoice) speakStep(steps[next])
+    if (withVoice && voiceOn) void playPrompt(steps[next].voiceCue || [], steps[next].say)
   }
+  const enableVoice = () => { setVoiceOn(true); storageSet('route-voice', 'on') }
   const toggleVoice = () => {
     const next = !voiceOn
     setVoiceOn(next)
@@ -115,248 +117,189 @@ export default function RoutePage() {
     setVoiceNotice('')
     if (next) void playPrompt(['route-built'], current.say)
   }
-  const handleVoicePresetChange = (presetId) => {
+  const changePreset = (presetId) => {
     if (!voicePackForPreset(presetId)) return
     cancelVoice()
     setVoicePresetState(presetId)
     setVoicePreset(presetId)
     if (voiceOn) void playPrompt(['route-built'], 'Голос изменён.', presetId)
   }
-  const testVoice = () => {
-    setVoiceOn(true)
-    storageSet('route-voice', 'on')
-    void playPrompt(['route-built', 'corridor-1-east'], 'Маршрут построен. Следуйте прямо по коридору.')
-  }
-  const repeatStep = () => {
-    setVoiceOn(true)
-    storageSet('route-voice', 'on')
-    void playPrompt(current.voiceCue || [], current.say)
-  }
-  const planRoute = (event) => {
-    event.preventDefault()
+  const testVoice = () => { enableVoice(); void playPrompt(['route-built', 'corridor-1-east'], 'Маршрут построен. Следуйте прямо по коридору.') }
+  const repeatStep = () => { enableVoice(); void playPrompt(current.voiceCue || [], current.say) }
+  const startNavigation = () => {
     cancelVoice()
     setNav({ key: routeKey, index: 0 })
     const largeScreen = !prefersFlatMap()
     setMode3d(largeScreen)
     setSwoop(largeScreen)
-    document.getElementById('route-result')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     window.setTimeout(() => setSwoop(false), 1100)
+    if (!largeScreen) stageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     if (voiceOn) void playPrompt([...new Set(['route-built', ...(steps[0].voiceCue || [])])], `Маршрут построен. ${steps[0].say}`)
+  }
+  const canSwap = startId !== 'manual'
+  const swapPoints = () => {
+    if (!canSwap) return
+    setStartId(targetId)
+    setTargetId(startId)
   }
   const resetRoute = () => { setStartId('entrance-1'); setTargetId('auditorium-104'); setRoutePreference('auto') }
   const mapUrl = `/map?floor=${target.floor}&from=${encodeURIComponent(startId)}&to=${encodeURIComponent(target.id)}${crossFloor ? `&mode=${transition}` : ''}`
 
+  // Стрелки на клавиатуре листают шаги, пока фокус не в поле ввода.
+  useEffect(() => {
+    const onKeyDown = (event) => {
+      if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return
+      if (event.target?.closest?.('input, textarea, select, [contenteditable="true"]')) return
+      if (event.key === 'ArrowRight') { event.preventDefault(); setNav((value) => ({ key: routeKey, index: Math.min(steps.length - 1, (value.key === routeKey ? value.index : 0) + 1) })) }
+      if (event.key === 'ArrowLeft') { event.preventDefault(); setNav((value) => ({ key: routeKey, index: Math.max(0, (value.key === routeKey ? value.index : 0) - 1) })) }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [routeKey, steps.length])
+
   const activeStepPoint = useMemo(() => {
     const leg = route.byFloor[current.floor]
-    if (current.progress !== null && leg?.points?.[current.progress]) {
-      return leg.points[current.progress]
-    }
+    if (current.progress !== null && leg?.points?.[current.progress]) return leg.points[current.progress]
     return leg?.points?.[0] || null
   }, [current.floor, current.progress, route.byFloor])
 
-  return <>
-    <PageHeading eyebrow="Маршрут по колледжу" title={<>Откуда идёте?<br /><em>Куда нужно попасть?</em></>} description="Выберите старт и кабинет. Покажем путь по коридорам и, если нужно, переход на другой этаж." />
-    <section className="route-builder container">
-      <Reveal className="route-form-panel"><div className="route-form-header"><span className="eyebrow">Точки маршрута</span><span className="route-form-step">1 / 2</span></div><form onSubmit={planRoute}>
-        <RoomSearchSelect
-          label="Откуда"
-          value={startId}
-          onChange={setStartId}
-          manualOption={manualPoint ? { value: 'manual', label: `Ваша отметка · ${manualPoint.floor} этаж` } : null}
-        />
-        <Link className="route-manual-link" to={`/map?floor=${start.floor}&manual=1`}><MapPin size={15} /> {manualPoint ? 'Изменить отметку на плане' : 'Отметить точку на плане'}</Link>
-        <div className="route-connector"><span /><i /><span /></div>
-        <RoomSearchSelect
-          label="Куда"
-          value={targetId}
-          onChange={setTargetId}
-        />
-        <button className="button button-primary route-submit" type="submit">Посмотреть маршрут <ArrowRight size={16} /></button>
-      </form></Reveal>
-      <Reveal id="route-result" className="route-result-panel" delay={100}>
-        <div className="route-result-top"><span className="eyebrow">Ваш маршрут</span><div className="route-top-actions"><button className="route-reset" type="button" onClick={resetRoute}><X size={14} /> Сбросить</button></div></div>
-        
-        {/* Два записанных Логос-голоса и проверка озвучки */}
-        <div className="route-voice-bar">
-          <div className="route-voice-selector-wrap">
-            <label htmlFor="route-voice-select"><Volume2 size={15} /> <strong>Озвучка:</strong></label>
-            <select
-              id="route-voice-select"
-              value={voicePreset}
-              onChange={(e) => handleVoicePresetChange(e.target.value)}
-              className="route-voice-select"
-              aria-label="Выбор голоса озвучки"
-            >
-              <optgroup label="Логос-голоса">
-                {VOICE_PRESETS.map((preset) => (
-                  <option key={preset.id} value={preset.id}>{preset.label}</option>
-                ))}
-              </optgroup>
-            </select>
-            <button
-              type="button"
-              className="route-voice-test-button"
-              onClick={testVoice}
-              title="Прослушать пример голоса"
-            >
-              <Play size={12} fill="currentColor" /> Прослушать
-            </button>
+  const onStartFloor = shownFloor === start.floor
+  const mapProps = onStartFloor
+    ? { selectedId: crossFloor ? route.transfer?.startId : target.id, routeStart: startId === 'manual' ? manualPoint : start.id, routeTargetId: crossFloor ? route.transfer?.startId : target.id, manualPoint: startId === 'manual' ? manualPoint : null }
+    : { selectedId: target.id, routeStart: route.transfer?.endId, routeTargetId: target.id, manualPoint: null }
+  const followsStep = shownFloor === current.floor
+  const progress = steps.length > 1 ? stepIndex / (steps.length - 1) : 1
+  const viaLabel = crossFloor ? route.transfer?.method || route.transfer?.label : 'по одному этажу'
+
+  return <div className="nv">
+    <header className="nv-head container">
+      <div>
+        <span className="eyebrow"><i className="eyebrow-dot" />Маршрут</span>
+        <h1>Куда идём?</h1>
+        <p>Выберите, откуда и куда. Путь построится по коридорам, с лестницами и лифтом, и его можно пройти по шагам с голосом.</p>
+      </div>
+      <Link className="nv-head-link" to="/map"><MapIcon size={16} /> Карта этажей</Link>
+    </header>
+
+    <div className="nv-layout container">
+      <aside className="nv-panel" aria-label="Параметры маршрута">
+        <section className="nv-card nv-places">
+          <div className="nv-place-rail" aria-hidden="true"><i className="nv-dot-start" /><span /><i className="nv-dot-end" /></div>
+          <div className="nv-place-fields">
+            <RoomSearchSelect label="Откуда" value={startId} onChange={setStartId} manualOption={manualPoint ? { value: 'manual', label: `Ваша отметка · ${manualPoint.floor} этаж` } : null} />
+            <RoomSearchSelect label="Куда" value={targetId} onChange={setTargetId} />
           </div>
-          <button
-            className={`route-voice-toggle ${voiceOn ? 'route-voice-on' : ''}`}
-            type="button"
-            onClick={toggleVoice}
-            aria-pressed={voiceOn}
-          >
-            {voiceOn ? <Volume2 size={15} /> : <VolumeX size={15} />}
-            <span>Голос {voiceOn ? 'вкл' : 'выкл'}</span>
-          </button>
-          <p className="route-voice-help">На iPhone нажмите «Прослушать», чтобы включить звук. Проверьте громкость, если не слышно.</p>
+          <button type="button" className="nv-swap" onClick={swapPoints} disabled={!canSwap} aria-label="Поменять старт и цель местами" title="Поменять местами"><ArrowUpDown size={16} /></button>
+          <Link className="nv-manual" to={`/map?floor=${start.floor}&manual=1`}><MapPin size={14} /> {manualPoint ? 'Изменить свою отметку на плане' : 'Начать от своей точки на плане'}</Link>
+        </section>
+
+        <section className="nv-card nv-summary" aria-live="polite">
+          {sameRoom ? <div className="nv-same"><Check size={20} /> Вы уже на месте</div> : <>
+            <div className="nv-eta">
+              <strong>{route.seconds < 60 ? '<1' : minutes(route.seconds)}</strong>
+              <span>{plural(minutes(route.seconds), 'минута', 'минуты', 'минут')}<small>пешком</small></span>
+            </div>
+            <dl className="nv-facts">
+              <div><dt>Расстояние</dt><dd>≈ {Math.round(route.meters)} м</dd></div>
+              <div><dt>Шагов пешком</dt><dd>~{route.footsteps}</dd></div>
+              <div><dt>Путь</dt><dd>{viaLabel}</dd></div>
+            </dl>
+          </>}
+          <div className="nv-actions">
+            <button type="button" className="nv-go" onClick={startNavigation}><Navigation size={16} /> Начать</button>
+            <button type="button" className="nv-ghost" onClick={resetRoute} title="Вернуть маршрут по умолчанию"><RotateCcw size={15} /> Сбросить</button>
+          </div>
+        </section>
+
+        {routeOptions.length > 1 && <section className="nv-card" aria-labelledby="nv-options-title">
+          <h2 className="nv-title" id="nv-options-title">Как подняться{target.floor < start.floor ? ' и спуститься' : ''}</h2>
+          <div className="nv-options" role="radiogroup" aria-label="Варианты маршрута">
+            {routeOptions.map((option, index) => <button type="button" role="radio" key={option.kind} aria-checked={route === option} className={`nv-option ${route === option ? 'nv-option-on' : ''}`} onClick={() => setRoutePreference(option.kind)}>
+              <span className="nv-option-icon" aria-hidden="true">{option.kind === 'lift' ? <MoveUp size={15} /> : <ArrowUpDown size={15} />}</span>
+              <span className="nv-option-body"><strong>{option.label}</strong><span>≈ {Math.round(option.meters)} м · {option.seconds < 60 ? 'меньше минуты' : `${minutes(option.seconds)} мин`}</span></span>
+              {index === 0 && <em>Быстрее</em>}
+            </button>)}
+          </div>
+        </section>}
+
+        <section className="nv-card" aria-labelledby="nv-timeline-title">
+          <h2 className="nv-title" id="nv-timeline-title">По шагам <span>{stepLabel(steps.length)}</span></h2>
+          <ol className="nv-timeline">
+            {steps.map((step, index) => {
+              const Icon = stepIcon(step)
+              const state = index < stepIndex ? 'nv-done' : index === stepIndex ? 'nv-now' : ''
+              return <li key={`${step.title}-${index}`} className={state}>
+                <button type="button" onClick={() => goToStep(index)} aria-current={index === stepIndex ? 'step' : undefined}>
+                  <span className="nv-pin" aria-hidden="true">{index < stepIndex ? <Check size={13} /> : <Icon size={13} />}</span>
+                  <span className="nv-item-text"><strong>{step.title}</strong><span>{step.detail}</span></span>
+                </button>
+              </li>
+            })}
+          </ol>
+        </section>
+
+        <details className="nv-card nv-sound">
+          <summary>
+            <span className="nv-sound-icon" aria-hidden="true">{voiceOn ? <Volume2 size={16} /> : <VolumeX size={16} />}</span>
+            <span className="nv-sound-text"><strong>Озвучка</strong><span>{voiceOn ? VOICE_PRESETS.find((preset) => preset.id === voicePreset)?.label : 'выключена'}</span></span>
+            <ChevronDown className="nv-chevron" size={16} aria-hidden="true" />
+          </summary>
+          <div className="nv-sound-body">
+            <button type="button" className={`nv-switch ${voiceOn ? 'nv-switch-on' : ''}`} onClick={toggleVoice} aria-pressed={voiceOn}><i aria-hidden="true"><b /></i> Подсказки голосом</button>
+            <div className="nv-voices" role="radiogroup" aria-label="Голос озвучки">
+              {VOICE_PRESETS.map((preset) => <button type="button" role="radio" key={preset.id} aria-checked={voicePreset === preset.id} className={voicePreset === preset.id ? 'nv-voice-on' : ''} onClick={() => changePreset(preset.id)}>{preset.label}</button>)}
+            </div>
+            <button type="button" className="nv-ghost" onClick={testVoice}><Play size={13} fill="currentColor" /> Прослушать</button>
+            <p>На iPhone сначала нажмите «Прослушать» — так браузер разрешит звук. Если тихо, проверьте громкость и беззвучный режим.</p>
+          </div>
+        </details>
+        {voiceNotice && <p className="nv-notice" role="status"><Info size={14} /> {voiceNotice}</p>}
+      </aside>
+
+      <section className="nv-stage" ref={stageRef} aria-label="Карта маршрута">
+        <div className="nv-now-card" aria-live="polite">
+          <span className="nv-now-icon" aria-hidden="true"><CurrentIcon size={22} /></span>
+          <div className="nv-now-text">
+            <span>{`Шаг ${stepIndex + 1} из ${steps.length}`} · {`${current.floor} этаж`}</span>
+            <strong>{current.title}</strong>
+            <em>{current.detail}</em>
+          </div>
         </div>
-        {voiceNotice && <p className="route-voice-notice" role="status"><Info size={14} /> {voiceNotice}</p>}
 
-        <div className="route-endpoints"><div><span>Старт</span><strong>{startLabel}</strong><FloorTag floor={start.floor} /></div><div className="route-end-arrow"><ArrowRight size={19} /></div><div><span>Финиш</span><strong>{roomName(target)}</strong><FloorTag floor={target.floor} /></div></div>
-        <div className="route-distance"><span><Footprints size={16} /> Пешком</span><span>{crossFloor ? `Переход: ${route.transfer?.label}` : 'Один этаж'}</span><span>≈ {Math.round(route.meters)} м · ~{stepLabel(route.footsteps)}</span><span>{timeLabel(route.seconds)}</span><span>{stepLabel(steps.length)}</span></div>
-
-        {/* Варианты маршрута, как в навигаторе: лифт и три лестницы,
-            быстрый отмечен. У каждого — расстояние, время и число шагов. */}
-        {routeOptions.length > 1 && <div className="route-options" role="group" aria-label="Варианты маршрута">
-          <span className="route-options-label">Варианты маршрута</span>
-          {routeOptions.map((option, index) => <button type="button" key={option.kind} className={`route-option-card ${route === option ? 'route-option-active' : ''}`} onClick={() => setRoutePreference(option.kind)} aria-pressed={route === option}>
-            <span className="route-option-icon">{option.kind === 'lift' ? <MoveUp size={16} /> : <ArrowUp size={16} />}</span>
-            <span className="route-option-body"><strong>{option.label}</strong><small>≈ {Math.round(option.meters)} м · {timeLabel(option.seconds)} · ~{stepLabel(option.footsteps)}</small></span>
-            {index === 0 && <em className="route-option-badge">Быстрее</em>}
-          </button>)}
-        </div>}
-        
-        {/* HUD Яндекс.Навигатора с подсказкой манёвра и переключателем 3D-камеры */}
-        <div className="yandex-nav-hud">
-          <div className="yandex-hud-left">
-            <span className="yandex-hud-icon"><CurrentIcon size={24} /></span>
-            <div className="yandex-hud-text">
-              <div className="yandex-hud-eyebrow">
-                <span>Шаг {stepIndex + 1} из {steps.length}</span>
-                <span>·</span>
-                <span>{current.floor} этаж</span>
-              </div>
-              <strong className="yandex-hud-title">{current.title}</strong>
-              <span className="yandex-hud-detail">{current.detail}</span>
+        <div className="nv-map">
+          <FloorMap
+            key={shownFloor}
+            floor={shownFloor}
+            compact
+            transition={transition}
+            routeProgress={followsStep ? current.progress : null}
+            navMode3d={mode3d && followsStep}
+            activeStepPoint={followsStep ? activeStepPoint : null}
+            swoopActive={swoop && followsStep}
+            {...mapProps}
+          />
+          <div className="nv-map-tools">
+            {crossFloor && <div className="nv-floors" role="group" aria-label="Этаж на карте">
+              {[start.floor, target.floor].map((floor) => <button type="button" key={floor} aria-pressed={shownFloor === floor} onClick={() => setPeek({ key: peekKey, floor })}>{`${floor} этаж`}</button>)}
+            </div>}
+            <div className="nv-view" role="group" aria-label="Вид карты">
+              <button type="button" aria-pressed={mode3d} onClick={() => setMode3d(true)}>3D</button>
+              <button type="button" aria-pressed={!mode3d} onClick={() => setMode3d(false)}>Сверху</button>
             </div>
           </div>
-          <div className="yandex-hud-right">
-            <button
-              type="button"
-              className={`yandex-hud-3d-btn ${mode3d ? 'is-3d' : 'is-2d'}`}
-              onClick={() => setMode3d((v) => !v)}
-              aria-pressed={mode3d}
-              title={mode3d ? 'Переключить в 2D (вид сверху)' : 'Переключить в 3D (вид навигатора)'}
-            >
-              <span className="yandex-3d-badge">{mode3d ? '3D' : '2D'}</span>
-              <span>{mode3d ? 'Камера' : 'Сверху'}</span>
-            </button>
-          </div>
+          {!followsStep && <button type="button" className="nv-back-to-step" onClick={() => setPeek({ key: '', floor: null })}>Вернуться к шагу {stepIndex + 1}</button>}
         </div>
 
-        {!mode3d && <p className="route-map-mobile-hint">Двигайте план пальцем: кабинеты показаны крупно, без сжатия.</p>}
-
-        {/* Превью этажей. В 2D маршрут между этажами показан двумя планами
-            рядом (как раньше), а в 3D-режиме камера идёт по этажам по
-            очереди: сначала этаж старта, а второй план «включается» в момент
-            перехода — иначе две наклонённые перспективы рядом выглядят
-            тесно и нечитаемо. */}
-        {crossFloor && mode3d ? (
-          <div className="route-preview-grid route-preview-single">
-            <div className="route-single-stack">
-              {[start.floor, target.floor].map((floorNumber) => {
-                const isActive = current.floor === floorNumber
-                const isStartFloor = floorNumber === start.floor
-                return (
-                  <div key={floorNumber} className={`route-single-layer ${isActive ? 'route-single-visible' : ''}`} inert={!isActive}>
-                    <div className="route-preview-caption">
-                      <span>{floorNumber} этаж</span>
-                      <small>{isStartFloor ? `До ${route.transfer?.toward}` : `От ${route.transfer?.toward} до кабинета`}{isActive ? ` · шаг ${stepIndex + 1}` : ''}</small>
-                    </div>
-                    <div className="route-preview-panel">
-                      <FloorMap
-                        floor={floorNumber}
-                        compact
-                        selectedId={isStartFloor ? route.transfer?.startId : target.id}
-                        routeStart={isStartFloor ? (startId === 'manual' ? manualPoint : start.id) : route.transfer?.endId}
-                        routeTargetId={isStartFloor ? route.transfer?.startId : target.id}
-                        transition={transition}
-                        manualPoint={isStartFloor && startId === 'manual' ? manualPoint : null}
-                        routeProgress={isActive ? current.progress : null}
-                        navMode3d={isActive}
-                        onToggle3d={() => setMode3d((v) => !v)}
-                        activeStepPoint={isActive ? activeStepPoint : null}
-                        swoopActive={swoop && isActive}
-                      />
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-            <div className="route-single-strip" aria-hidden="true">
-              <span className={current.floor === start.floor ? 'route-strip-active' : ''}>{start.floor} этаж</span>
-              <span className="route-strip-path"><i /><em>{route.transfer?.label}</em><i /></span>
-              <span className={current.floor === target.floor ? 'route-strip-active' : ''}>{target.floor} этаж</span>
-            </div>
-            <p className="route-single-hint">3D-камера показывает этажи по очереди: второй план откроется на шаге перехода. Нужны оба плана рядом — включите вид «Сверху» (2D).</p>
-          </div>
-        ) : (
-        <div className={`route-preview-grid ${crossFloor ? 'route-preview-two' : ''}`}>
-          <div className={`route-preview-floor ${current.floor === start.floor ? 'route-floor-active' : ''}`}>
-            <div className="route-preview-caption">
-              <span>{start.floor} этаж</span>
-              <small>{crossFloor ? `До ${route.transfer?.toward}` : 'Путь по этажу'}{current.floor === start.floor ? ` · шаг ${stepIndex + 1}` : ''}</small>
-            </div>
-            <div className="route-preview-panel">
-              <FloorMap
-                floor={start.floor}
-                compact
-                selectedId={crossFloor ? route.transfer?.startId : target.id}
-                routeStart={startId === 'manual' ? manualPoint : start.id}
-                routeTargetId={crossFloor ? route.transfer?.startId : target.id}
-                transition={transition}
-                manualPoint={startId === 'manual' ? manualPoint : null}
-                routeProgress={current.floor === start.floor ? current.progress : null}
-                navMode3d={mode3d && current.floor === start.floor}
-                onToggle3d={() => setMode3d((v) => !v)}
-                activeStepPoint={current.floor === start.floor ? activeStepPoint : null}
-                swoopActive={swoop}
-              />
-            </div>
-          </div>
-          {crossFloor && (
-            <div className={`route-preview-floor ${current.floor === target.floor ? 'route-floor-active' : ''}`}>
-              <div className="route-preview-caption">
-                <span>{target.floor} этаж</span>
-                <small>От {route.transfer?.toward} до кабинета{current.floor === target.floor ? ` · шаг ${stepIndex + 1}` : ''}</small>
-              </div>
-              <div className="route-preview-panel">
-                <FloorMap
-                  floor={target.floor}
-                  compact
-                  selectedId={target.id}
-                  routeStart={route.transfer?.endId}
-                  routeTargetId={target.id}
-                  transition={transition}
-                  routeProgress={current.floor === target.floor ? current.progress : null}
-                  navMode3d={mode3d && current.floor === target.floor}
-                  onToggle3d={() => setMode3d((v) => !v)}
-                  activeStepPoint={current.floor === target.floor ? activeStepPoint : null}
-                  swoopActive={swoop}
-                />
-              </div>
-            </div>
-          )}
+        <div className="nv-controls">
+          <button type="button" className="nv-ctl" onClick={() => goToStep(stepIndex - 1)} disabled={stepIndex === 0} aria-label="Предыдущий шаг"><ArrowLeft size={18} /></button>
+          <div className="nv-progress" aria-hidden="true"><span style={{ width: `${progress * 100}%` }} /></div>
+          <button type="button" className="nv-ctl" onClick={repeatStep} aria-label="Повторить подсказку голосом" title="Повторить голосом"><Volume2 size={17} /></button>
+          {stepIndex < steps.length - 1
+            ? <button type="button" className="nv-next" onClick={() => goToStep(stepIndex + 1)}>Дальше <ArrowRight size={17} /></button>
+            : <Link className="nv-next nv-next-done" to={mapUrl}>На карте <ArrowUpRight size={16} /></Link>}
         </div>
-        )}
-        <div className="route-nav" aria-live="polite"><div className="route-nav-main"><span className="route-nav-icon"><CurrentIcon size={22} /></span><div><small>Шаг {stepIndex + 1} из {steps.length}</small><strong>{current.title}</strong><em>{current.detail}</em></div></div><div className="route-progress" aria-hidden="true"><span style={{ width: `${(stepIndex + 1) / steps.length * 100}%` }} /></div><div className="route-nav-controls"><button type="button" onClick={() => goToStep(stepIndex - 1)} disabled={stepIndex === 0}><ArrowLeft size={16} /> Назад</button><button type="button" className={voiceOn ? '' : 'route-nav-voice-off'} onClick={repeatStep} aria-label="Повторить подсказку голосом"><Volume2 size={16} /> Повторить</button><button type="button" onClick={() => goToStep(stepIndex + 1)} disabled={stepIndex >= steps.length - 1}>Дальше <ArrowRight size={16} /></button></div></div>
-        <div className="route-steps">{steps.map((step, index) => { const Icon = stepIcon(step); return <button type="button" className={`route-step ${index === stepIndex ? 'route-step-current' : ''} ${index < stepIndex ? 'route-step-past' : ''}`} key={`${step.title}-${index}`} onClick={() => goToStep(index)} aria-current={index === stepIndex}><span className="route-step-index"><Icon size={15} /></span><div><strong>{step.title}</strong><small>{step.detail}</small></div><span className="route-step-count">{index < stepIndex ? <Check size={14} /> : String(index + 1).padStart(2, '0')}</span></button> })}</div>
-        <div className="route-result-actions"><Link className="button button-primary" to={mapUrl}>Показать на карте <ArrowUpRight size={15} /></Link><Link className="route-other-link" to="/rooms">Справочник кабинетов <ArrowRight size={14} /></Link></div>
-      </Reveal>
-    </section>
-    <section className="route-hint-band"><div className="container route-hint-inner"><span className="route-hint-icon">i</span><div><strong>О навигаторе колледжа</strong><p>Маршрут работает в режиме 3D-навигатора с видом камеры по направлению движения. На маршрутах между этажами 3D-камера показывает этажи по очереди: сначала этаж старта, второй — в момент перехода; в виде «Сверху» (2D) оба плана остаются рядом. Озвучка — два записанных голоса «Логос»: женский и мужской. Названия кабинетов видны на экране; если запись недоступна, полную фразу попробует прочитать системный синтезатор. Кабинет в поле поиска находится по названию, номеру или слову-псевдониму.</p></div><Link to="/map">Карта этажей <ArrowRight size={14} /></Link></div></section>
-  </>
+        <p className="nv-footnote">Маршрут — ориентир по плану: если проход закрыт, следуйте указателям в здании.<span className="nv-keys"> Стрелки ← → на клавиатуре листают шаги.</span></p>
+      </section>
+    </div>
+  </div>
 }
