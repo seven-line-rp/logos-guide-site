@@ -14,6 +14,7 @@ import './mobile.css'
 import './home-hero.css'
 import './tour.css'
 import './site-docs.css'
+import './dark-theme.css'
 import './interactions.js'
 
 createRoot(document.getElementById('root')).render(

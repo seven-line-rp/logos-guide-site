@@ -102,7 +102,7 @@ export function Header() {
   useEffect(() => {
     document.documentElement.dataset.theme = theme
     storageSet('site-theme', theme)
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#07172e' : '#1854e8')
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#1d1d1c' : '#1854e8')
   }, [theme])
   useEffect(() => {
     const onKeyDown = (event) => {

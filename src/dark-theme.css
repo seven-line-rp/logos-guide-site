@@ -1,0 +1,224 @@
+/* Тёмная тема. Подключается последней и задаёт тему целиком: спокойный
+   графитовый фон с тёплым оттенком, поверхности на полтона светлее, мягкие
+   полупрозрачные границы и синие акценты из светлой темы. Старые тёмные
+   правила в других файлах написаны через html[data-theme='dark']; здесь —
+   :root[data-theme='dark'], он специфичнее и перекрывает их без !important. */
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #1d1d1c;
+  --surface: #262625;
+  --surface-soft: #2e2e2c;
+  --surface-raised: #343432;
+  --line: rgba(255, 255, 255, .09);
+  --line-strong: rgba(255, 255, 255, .16);
+  --ink: #ecebe6;
+  --muted: #a9a8a1;
+  --muted-2: #8c8b85;
+  --blue: #7ba4ff;
+  --blue-bright: #7ba4ff;
+  --blue-deep: #ecebe6;
+  --blue-night: #1d1d1c;
+  --blue-pale: #2b3550;
+  --blue-soft: #262b38;
+  --accent-tint: rgba(91, 140, 255, .14);
+  --action-bg: #2f66eb;
+  --action-hover: #4277f2;
+  --glass: rgba(29, 29, 28, .86);
+  --glass-border: rgba(255, 255, 255, .08);
+  --glass-dark: rgba(29, 29, 28, .78);
+  --glass-strong: rgba(29, 29, 28, .88);
+  --map-bg: #222221;
+  --map-room: #30323a;
+  --map-wall: #5f636e;
+  --map-label: #e6e5e0;
+  --map-door: #7ba4ff;
+  color: var(--ink);
+  background: var(--bg);
+}
+
+:root[data-theme='dark'] body { color: var(--ink); background: var(--bg); }
+:root[data-theme='dark'] ::selection { color: #fff; background: #2f66eb; }
+:root[data-theme='dark'] :is(button, a, input, select):focus-visible { outline-color: #7ba4ff; }
+
+/* ---------- Шапка, меню, поиск ---------- */
+:root[data-theme='dark'] .site-header { border-bottom-color: var(--line); background: var(--glass); box-shadow: none; }
+:root[data-theme='dark'] :is(.nav-link, .brand-copy strong) { color: var(--ink); }
+:root[data-theme='dark'] .brand-copy small { color: var(--muted); }
+:root[data-theme='dark'] .nav-link:hover, :root[data-theme='dark'] .nav-link-active { color: var(--blue); }
+:root[data-theme='dark'] :is(.theme-toggle, .search-trigger, .mobile-menu-toggle, .header-docs, .mobile-map-link) { border: 1px solid var(--line); color: var(--ink); background: var(--surface); }
+:root[data-theme='dark'] :is(.theme-toggle, .search-trigger, .mobile-menu-toggle, .header-docs):hover { border-color: var(--line-strong); background: var(--surface-soft); }
+:root[data-theme='dark'] .header-docs svg { color: var(--blue); }
+:root[data-theme='dark'] .header-docs-active { border-color: rgba(123, 164, 255, .4); color: var(--ink); background: var(--accent-tint); }
+:root[data-theme='dark'] .search-trigger kbd { border-color: var(--line); color: var(--muted); background: var(--surface-soft); }
+:root[data-theme='dark'] :is(.header-cta, .mobile-map-link-active) { color: #fff; background: var(--action-bg); }
+:root[data-theme='dark'] .header-cta:hover { background: var(--action-hover); }
+:root[data-theme='dark'] .mobile-nav-panel { border-color: var(--line); color: var(--ink); background: var(--bg); }
+:root[data-theme='dark'] .mobile-nav-link { border-bottom-color: var(--line); color: var(--ink); }
+:root[data-theme='dark'] :is(.mobile-nav-language, .mobile-nav-bottom) { color: var(--muted); }
+:root[data-theme='dark'] .mobile-nav-language { background: var(--surface); }
+:root[data-theme='dark'] .mobile-nav-bottom :is(button, a) { border: 1px solid var(--line); color: var(--ink); background: var(--surface); }
+:root[data-theme='dark'] .mobile-nav-bottom .mobile-tour-button { border-color: transparent; color: #fff; background: var(--action-bg); }
+:root[data-theme='dark'] .menu-scrim { background: rgba(0, 0, 0, .5); }
+:root[data-theme='dark'] .search-backdrop { background: rgba(0, 0, 0, .55); }
+:root[data-theme='dark'] :is(.search-dialog, .home-search-suggestions) { border-color: var(--line); background: var(--surface); box-shadow: 0 30px 70px rgba(0, 0, 0, .5); }
+:root[data-theme='dark'] :is(.search-input-wrap, .search-result) { border-color: var(--line); background: var(--surface-soft); }
+:root[data-theme='dark'] :is(.search-result:hover, .home-search-suggestions button:hover) { background: var(--surface-raised); }
+:root[data-theme='dark'] .search-result-icon { color: var(--blue); background: var(--accent-tint); }
+:root[data-theme='dark'] .toast { color: var(--ink); background: var(--surface-raised); box-shadow: 0 14px 30px rgba(0, 0, 0, .4); }
+
+/* ---------- Кнопки и общие элементы ---------- */
+:root[data-theme='dark'] :is(.button-primary, .route-submit, .cookie-primary) { color: #fff; background: var(--action-bg); box-shadow: none; }
+:root[data-theme='dark'] :is(.button-primary, .route-submit, .cookie-primary):hover { color: #fff; background: var(--action-hover); }
+:root[data-theme='dark'] .button-white { color: #1d1d1c; background: #ecebe6; }
+:root[data-theme='dark'] .button-white:hover { color: #fff; background: var(--action-bg); }
+:root[data-theme='dark'] .icon-button { border-color: var(--line); color: var(--ink); background: var(--surface-soft); }
+:root[data-theme='dark'] .icon-button:hover { color: #fff; background: var(--action-bg); }
+:root[data-theme='dark'] .text-link > span { border-color: var(--line); color: var(--blue); }
+:root[data-theme='dark'] :is(.eyebrow, .section-label) { color: var(--muted); }
+:root[data-theme='dark'] :is(.eyebrow-dot, .section-label-dot) { background: var(--blue); box-shadow: 0 0 0 4px var(--accent-tint); }
+:root[data-theme='dark'] .section-label-index { color: var(--blue); }
+:root[data-theme='dark'] :is(.page-heading h1, .section-top h2, .play-teaser-copy h2, .about-team-heading h2, .about-access h2, .about-bottom h2, .faq-heading h2, .services-help-inner h2, .not-found h1) { color: var(--ink); }
+:root[data-theme='dark'] :is(.page-heading h1, .section-top h2, .play-teaser-copy h2, .about-team-heading h2, .about-access h2, .about-bottom h2, .faq-heading h2, .services-help-inner h2, .not-found h1, .docs-hero h1, .legal-head h1) em { color: var(--blue); }
+:root[data-theme='dark'] .page-heading { border-color: var(--line); }
+:root[data-theme='dark'] .floor-tag { color: var(--ink); background: var(--surface-soft); }
+:root[data-theme='dark'] .cursor-glow { display: none; }
+
+/* ---------- Главная ---------- */
+/* Первый экран — та же графитовая поверхность с едва заметным синим светом,
+   без насыщенного градиента: он спорил с картой и текстом. */
+:root[data-theme='dark'] :is(.home-hero, .home-hero.hero-mesh) {
+  border-bottom: 1px solid var(--line);
+  background:
+    radial-gradient(55% 80% at 85% 20%, rgba(70, 120, 255, .13), transparent 70%),
+    radial-gradient(40% 60% at 5% 100%, rgba(70, 120, 255, .07), transparent 70%),
+    #212120;
+}
+:root[data-theme='dark'] .home-hero h1 { color: var(--ink); }
+:root[data-theme='dark'] .home-hero h1 span { color: var(--ink); }
+:root[data-theme='dark'] .home-hero h1 em { color: #8fb3ff; }
+:root[data-theme='dark'] .hero-mesh::after { background: radial-gradient(circle at 80% 15%, rgba(70, 120, 255, .12), transparent 45%), radial-gradient(circle at 15% 85%, rgba(70, 120, 255, .06), transparent 45%); }
+:root[data-theme='dark'] :is(.home-eyebrow svg, .home-hero-edge a svg) { color: #8fb3ff; }
+:root[data-theme='dark'] .home-hero-edge { border-color: var(--line); color: var(--muted); }
+:root[data-theme='dark'] .home-hero-edge a { color: var(--ink); }
+:root[data-theme='dark'] .home-hero-edge a:hover { color: #8fb3ff; }
+:root[data-theme='dark'] :is(.home-plain-link svg, .route-heading-mark i) { color: #8fb3ff; }
+:root[data-theme='dark'] .home-search:focus-within { outline-color: #7ba4ff; }
+:root[data-theme='dark'] :is(.home-hero-copy > p, .home-hero-copy label, .home-hero-footer, .home-hero-footer a) { color: var(--muted); }
+:root[data-theme='dark'] .home-hero-footer { border-color: var(--line); }
+:root[data-theme='dark'] .home-hero :is(.hero-badge, .home-badge, .eyebrow) { border-color: var(--line); color: var(--ink); background: var(--surface); }
+:root[data-theme='dark'] .home-search-form, :root[data-theme='dark'] .home-search { border-color: var(--line-strong); background: var(--surface); }
+:root[data-theme='dark'] .home-search input { color: var(--ink); }
+:root[data-theme='dark'] :is(.home-map-cta, .home-map-cta:hover) { color: var(--ink); background: var(--surface-soft); border: 1px solid var(--line); }
+:root[data-theme='dark'] .home-map-cta:hover { background: var(--surface-raised); }
+:root[data-theme='dark'] .home-route-cta { border-color: var(--line-strong); color: var(--ink); background: transparent; }
+:root[data-theme='dark'] .mini-plan-wrap { --map-bg: #222221; --map-room: #30323a; --map-wall: #5f636e; --map-door: #7ba4ff; --map-label: #e6e5e0; color: var(--ink); border-color: var(--line); background: var(--surface); box-shadow: 0 30px 60px rgba(0, 0, 0, .35); }
+:root[data-theme='dark'] .mini-plan-top { color: var(--ink); }
+:root[data-theme='dark'] .mini-plan-top svg { color: var(--blue); }
+:root[data-theme='dark'] .mini-plan-tabs { border-color: var(--line); background: var(--surface-soft); }
+:root[data-theme='dark'] .mini-plan-tabs button { color: var(--muted); }
+:root[data-theme='dark'] :is(.mini-plan-tabs button:hover, .mini-plan-tabs button.mini-plan-tab-active) { color: #fff; background: var(--action-bg); }
+:root[data-theme='dark'] .mini-plan-wrap :is(.floor-map-viewport, .floor-map-stage) { border-color: var(--line); background: var(--map-bg); }
+:root[data-theme='dark'] .mini-plan-bottom { border-color: var(--line); color: var(--muted); }
+:root[data-theme='dark'] .mini-plan-bottom > a { color: #fff; }
+:root[data-theme='dark'] .mini-plan-floor-stamp { color: #7ba4ff; opacity: .35; }
+:root[data-theme='dark'] .mini-plan-wrap :focus-visible { outline-color: #7ba4ff; }
+:root[data-theme='dark'] .mini-plan-wrap .floor-map-art svg > :is(rect, path)[fill='white'] { fill: #2a2a29; }
+:root[data-theme='dark'] .mini-plan-wrap .floor-map-art svg > :is(rect, path)[fill='#D9D9D9'] { fill: #232322; }
+:root[data-theme='dark'] .mini-plan-wrap .floor-map-art svg > :is(rect, path)[fill='#878DA2'] { fill: #3b3c40; }
+:root[data-theme='dark'] .mini-plan-wrap :is(.plan-room-selected, .plan-room:hover, .plan-room:focus-visible) .plan-room-shape { fill: rgba(91, 140, 255, .24); stroke: #7ba4ff; }
+
+:root[data-theme='dark'] .quick-place-card { border-color: var(--line); color: var(--ink); background: var(--surface); }
+:root[data-theme='dark'] .quick-place-card:hover { border-color: var(--line-strong); background: var(--surface-soft); }
+:root[data-theme='dark'] .quick-place-card :is(strong, h3) { color: var(--ink); }
+:root[data-theme='dark'] .quick-place-card :is(small, span, p) { color: var(--muted); }
+
+/* Полоса «Первый или второй?»: в светлой теме она синяя, здесь — приподнятая
+   графитовая поверхность с синим акцентом, чтобы не было яркого пятна. */
+:root[data-theme='dark'] .floor-preview-band { border-block: 1px solid var(--line); background: linear-gradient(180deg, #252524, #222221); }
+:root[data-theme='dark'] .floor-preview-copy h2 { color: var(--ink); }
+:root[data-theme='dark'] .floor-preview-copy h2 em { color: #8fb3ff; }
+:root[data-theme='dark'] :is(.floor-preview-copy p, .floor-preview-copy .section-label) { color: var(--muted); }
+:root[data-theme='dark'] .floor-switch-card { border-color: var(--line); color: var(--ink); background: var(--surface); }
+:root[data-theme='dark'] .floor-switch-card:hover { border-color: rgba(123, 164, 255, .45); color: var(--ink); background: var(--surface-soft); }
+:root[data-theme='dark'] .floor-switch-number { border-color: rgba(123, 164, 255, .45); color: #8fb3ff; }
+:root[data-theme='dark'] :is(.floor-switch-copy small, .floor-switch-card:hover .floor-switch-copy small) { color: var(--muted) !important; }
+:root[data-theme='dark'] .floor-switch-card > svg { color: var(--blue); }
+:root[data-theme='dark'] .play-teaser { border-color: var(--line); }
+:root[data-theme='dark'] .play-teaser-copy > p { color: var(--muted); }
+:root[data-theme='dark'] .quiz-preview { border-color: var(--line); background: var(--surface); }
+
+/* ---------- Полосы и подвал ---------- */
+:root[data-theme='dark'] :is(.about-team-band, .faq-band, .route-hint-band, .services-help-band, .about-values-band) { border-color: var(--line); background: #222221; }
+:root[data-theme='dark'] .about-values-quote blockquote { color: var(--ink); }
+:root[data-theme='dark'] .about-values-quote blockquote em { color: #8fb3ff; }
+:root[data-theme='dark'] :is(.about-person, .about-access, .faq-item, .about-value) { border-color: var(--line); background: var(--surface); }
+:root[data-theme='dark'] :is(.about-photo-frame, .about-person:nth-child(n) .about-photo-frame) { background: var(--surface-raised); }
+:root[data-theme='dark'] .about-photo-placeholder { color: var(--muted); }
+:root[data-theme='dark'] .about-person h3 { color: var(--ink); }
+:root[data-theme='dark'] :is(.about-person p, .about-person-index) { color: var(--muted); }
+:root[data-theme='dark'] :is(.route-hint-icon, .about-access-icon) { color: var(--blue); background: var(--accent-tint); }
+:root[data-theme='dark'] :is(.site-footer, .footer-top) { border-color: var(--line); background: #191918; }
+:root[data-theme='dark'] .footer-bottom { border-color: var(--line); color: var(--muted-2); }
+:root[data-theme='dark'] :is(.footer-links-group > a, .footer-note p, .footer-brand-block > p, .footer-label, .footer-bottom a) { color: var(--muted); }
+:root[data-theme='dark'] :is(.footer-links-group > a, .footer-bottom a):hover { color: var(--ink); }
+:root[data-theme='dark'] .footer-about-link { color: var(--blue); }
+
+/* ---------- Карта ---------- */
+:root[data-theme='dark'] :is(.floor-tab, .map-directory-link, .room-detail-panel, .route-form-panel, .route-result-panel, .game-panel, .game-mode-card, .directory-card, .room-card, .service-card, .map-plan-panel, .route-option-card, .route-single-strip, .directory-search-bar) { border-color: var(--line); color: var(--ink); background: var(--surface); box-shadow: none; }
+:root[data-theme='dark'] :is(.floor-tab-active, .route-option-active, .game-mode-active) { border-color: rgba(123, 164, 255, .5); background: var(--accent-tint); }
+:root[data-theme='dark'] :is(.map-panel-heading, .map-panel-foot) { border-color: var(--line); color: var(--ink); background: var(--surface-soft); }
+:root[data-theme='dark'] :is(.map-filter, .route-mode-select button, .room-floor-button, .map-gps-button, .map-manual-button, .map-settings-button, .map-anchor-button) { border-color: var(--line); color: var(--ink); background: var(--surface); }
+:root[data-theme='dark'] :is(.map-filter-active, .route-mode-select button.route-mode-active) { border-color: rgba(123, 164, 255, .55); color: var(--ink); background: var(--accent-tint); }
+:root[data-theme='dark'] .map-gps-button.map-gps-active { border-color: rgba(45, 180, 140, .5); background: rgba(45, 180, 140, .14); }
+:root[data-theme='dark'] :is(.map-gps-status, .map-manual-hint, .map-point-feedback, .map-manual-summary) { border-color: var(--line); color: var(--ink); background: var(--surface-soft); }
+:root[data-theme='dark'] :is(.room-detail-icon, .route-endpoints, .route-step-index, .route-option-icon, .game-score, .game-mode-icon, .find-target-symbol) { border-color: var(--line); color: var(--blue); background: var(--surface-soft); }
+:root[data-theme='dark'] .route-option-active .route-option-icon { color: #fff; background: var(--action-bg); }
+:root[data-theme='dark'] :is(.floor-map-viewport, .floor-map-stage) { border-color: var(--line); background: var(--map-bg); }
+:root[data-theme='dark'] .floor-map-art svg > :is(rect, path)[fill='#D9D9D9'] { fill: #1f1f1e; }
+:root[data-theme='dark'] .floor-map-art svg > :is(rect, path)[fill='white'] { fill: #2a2a29; }
+:root[data-theme='dark'] .floor-map-art svg > :is(rect, path)[fill='#DFE6FF'] { fill: var(--map-room); }
+:root[data-theme='dark'] .floor-map-art svg > :is(rect, path)[fill='#878DA2'] { fill: #3a3b3f; }
+:root[data-theme='dark'] .floor-map-art svg > :is(rect, path)[stroke='#ACAEB3'] { stroke: var(--map-wall); }
+:root[data-theme='dark'] .floor-map-art svg > path[fill='black'][opacity='0.2'] { fill: var(--map-label); opacity: .9; }
+:root[data-theme='dark'] .floor-map-art .plan-art-text { fill: var(--map-label); opacity: .9; }
+:root[data-theme='dark'] .plan-room-shape { stroke: var(--map-wall); }
+:root[data-theme='dark'] :is(.plan-room:hover, .plan-room:focus-visible) .plan-room-shape { fill: rgba(91, 140, 255, .18); stroke: #7ba4ff; }
+:root[data-theme='dark'] .plan-room-selected .plan-room-shape { fill: rgba(91, 140, 255, .26); stroke: #8fb3ff; }
+:root[data-theme='dark'] :is(.floor-map-zoom-controls button, .floor-map-3d-toggle-btn, .yandex-hud-3d-btn) { border-color: var(--line); color: var(--ink); background: var(--surface-soft); }
+
+/* ---------- Маршрут ---------- */
+:root[data-theme='dark'] :is(.route-select-wrap, .route-room-search-field, .route-voice-toggle, .route-voice-bar, .route-voice-select, .route-voice-test-button) { border-color: var(--line); color: var(--ink); background: var(--surface-soft); }
+:root[data-theme='dark'] .route-room-search-field:focus-within { border-color: rgba(123, 164, 255, .55); background: var(--surface); }
+:root[data-theme='dark'] :is(.route-room-search-list, .route-room-search-group-label, .route-select-wrap select, .route-select-wrap option, .route-select-wrap optgroup) { color: var(--ink); background: var(--surface); }
+:root[data-theme='dark'] .route-room-option-highlight { background: var(--accent-tint); }
+:root[data-theme='dark'] .route-room-option-number { color: var(--blue); background: var(--surface-soft); }
+:root[data-theme='dark'] .route-step-current { border-color: rgba(123, 164, 255, .45); background: var(--accent-tint); }
+:root[data-theme='dark'] .route-step-past .route-step-index { color: var(--muted); background: var(--surface-soft); }
+:root[data-theme='dark'] .route-voice-toggle.route-voice-on { color: #fff; background: var(--action-bg); }
+:root[data-theme='dark'] .route-voice-notice { color: #e9dcc4; background: #33302a; }
+:root[data-theme='dark'] :is(.yandex-nav-hud) { border-color: var(--line); color: var(--ink); background: rgba(38, 38, 37, .94); }
+:root[data-theme='dark'] .yandex-hud-title { color: var(--ink); }
+:root[data-theme='dark'] .yandex-hud-detail { color: var(--muted); }
+
+/* ---------- Игры ---------- */
+:root[data-theme='dark'] .game-progress-line { background: var(--surface-raised); }
+:root[data-theme='dark'] .game-progress-line span { background: var(--action-bg); }
+:root[data-theme='dark'] :is(.quiz-option, .speed-stats > div) { border-color: var(--line); color: var(--ink); background: var(--surface-soft); }
+:root[data-theme='dark'] :is(.quiz-option-correct, .quiz-feedback-correct) { border-color: rgba(52, 190, 120, .45); background: rgba(52, 190, 120, .14); }
+:root[data-theme='dark'] :is(.quiz-option-wrong, .quiz-feedback-wrong, .quiz-feedback:not(.quiz-feedback-correct)) { border-color: rgba(240, 90, 110, .45); background: rgba(240, 90, 110, .13); }
+
+/* ---------- Окна ---------- */
+:root[data-theme='dark'] .welcome-backdrop { background: rgba(0, 0, 0, .6); }
+:root[data-theme='dark'] .welcome-dialog { border-color: var(--line); color: var(--ink); background: var(--surface); box-shadow: 0 30px 80px rgba(0, 0, 0, .55); }
+:root[data-theme='dark'] .welcome-dialog h2 { color: var(--ink); }
+:root[data-theme='dark'] .welcome-dialog p { color: var(--muted); }
+:root[data-theme='dark'] .welcome-app { border-color: var(--line); background: var(--surface-soft); }
+:root[data-theme='dark'] .welcome-switch { background: var(--surface-raised); }
+:root[data-theme='dark'] .welcome-badge { color: #8fb3ff; background: var(--accent-tint); }
+:root[data-theme='dark'] .welcome-tour { border-color: rgba(123, 164, 255, .35); color: #a9c3ff; background: var(--accent-tint); }
+:root[data-theme='dark'] :is(.cookie-banner, .docs-section, .docs-hero-steps li, .docs-faq details) { border-color: var(--line); background: var(--surface); }
+:root[data-theme='dark'] :is(.docs-items > div, .cookie-option, .privacy-consent, .legal-table thead th) { background: var(--surface-soft); }
+:root[data-theme='dark'] .docs-hero { border-color: var(--line); background: radial-gradient(45% 80% at 90% 10%, rgba(70, 120, 255, .12), transparent 70%), #212120; }
+:root[data-theme='dark'] :is(.cookie-secondary) { border-color: var(--line); color: var(--ink); background: var(--surface-soft); }
+:root[data-theme='dark'] .cookie-icon, :root[data-theme='dark'] .privacy-consent-icon { color: #8fb3ff; background: var(--accent-tint); }

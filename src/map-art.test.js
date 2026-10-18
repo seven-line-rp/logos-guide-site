@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { rooms } from './data.js'
 import { planDecor, planRoomBounds, pointInPolygon, roomOutline } from './map-geometry.js'
-import { PLAN_ROOMS_MARKER, composePlanArt } from './map-art.js'
+import { PLAN_ROOMS_MARKER, composePlanArt, planLabels } from './map-art.js'
 
 const boxOutline = ([x, y, width, height]) => [[x, y], [x + width, y], [x + width, y + height], [x, y + height]]
 
@@ -61,5 +61,22 @@ test('the drawn plan takes every room shape from the geometry', () => {
     const art = composePlanArt(raw, floor)
     assert.ok(!art.includes(PLAN_ROOMS_MARKER))
     for (const room of rooms.filter((item) => item.floor === floor)) assert.ok(art.includes(`data-room="${room.id}"`), room.id)
+  }
+})
+
+// Надписи второго этажа «ХОЛЛ» и «АКТОВЫЙ ЗАЛ · 1 этаж» стоят в холле и над
+// залом первого этажа — это не помещения карты, поэтому проверяем только первый этаж.
+test('word labels exist in both languages; first-floor labels sit inside rooms', () => {
+  for (const floor of [1, 2]) {
+    const raw = readFileSync(new URL(`../map${floor}lower.svg`, import.meta.url), 'utf8')
+    for (const label of planLabels[floor]) {
+      assert.ok(label.ru.length > 0, `${floor}: ${label.ru}`)
+      assert.ok(Array.isArray(label.en), `${floor}: ${label.ru}`)
+      if (floor !== 1) continue
+      const inside = shapesOnFloor(floor).some((shape) => pointInPolygon([label.x, label.y - label.size / 2], shape.outline))
+      assert.ok(inside, `${label.ru} is inside a room`)
+    }
+    const english = composePlanArt(raw, floor, 'en')
+    assert.doesNotMatch(english.match(/<text[^>]*>[^<]*<\/text>/g).join(''), /[А-Яа-яЁё]/, `floor ${floor} labels are translated`)
   }
 })
