@@ -403,3 +403,6 @@ html[data-theme='dark'] .quiz-preview-options .quiz-preview-right { color: #86ef
 
 /* Кнопка «Настройки cookie» в подвале — тем же шрифтом, что ссылки рядом. */
 .footer-bottom .footer-legal :is(a, button) { font-family: var(--mono); font-size: 11px !important; letter-spacing: .08em !important; text-transform: uppercase; }
+
+/* Номер версии в подвале. */
+.footer-version { display: inline-block; margin-top: 14px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-family: var(--mono); font-size: 11px; letter-spacing: .02em; }
