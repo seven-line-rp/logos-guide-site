@@ -3,6 +3,7 @@ import { rooms } from '../data.js'
 import floorOnePlan from '../../map1lower.svg?raw'
 import floorTwoPlan from '../../map2lower.svg?raw'
 import { roomOutline, planSizes } from '../map-geometry.js'
+import { composePlanArt } from '../map-art.js'
 import { calculateIndoorRoute } from '../map-routing.js'
 import { zoomFrame } from '../map-zoom.js'
 
@@ -137,7 +138,7 @@ function RouteLayer({ points, markerId, progress = null, is3d = false }) {
 
 export default function FloorMap({ floor = 1, selectedId = '', onSelect, onFloorRequest, onPointSelect, picking = false, gameTargetId = '', gameFeedback = '', filterCategory = 'Все места', compact = false, zoomed = false, showLabels = true, showDoorMarks = true, routeStart = '', routeTargetId = '', manualPoint = null, gpsMarker = null, transition = 'lift', routeProgress = null, navMode3d = false, onToggle3d = null, activeStepPoint = null, swoopActive = false }) {
   const floorRooms = rooms.filter((room) => room.floor === floor)
-  const plan = floor === 1 ? floorOnePlan : floorTwoPlan
+  const plan = composePlanArt(floor === 1 ? floorOnePlan : floorTwoPlan, floor)
   const route = routeStart && routeTargetId ? calculateIndoorRoute(routeStart, routeTargetId, floor, transition) : null
   const { width, height } = planSizes[floor]
   const viewportRef = useRef(null)

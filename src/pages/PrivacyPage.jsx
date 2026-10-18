@@ -1,0 +1,93 @@
+import { useEffect, useState } from 'react'
+import { useLocation } from 'react-router-dom'
+import { Cookie, Settings2 } from 'lucide-react'
+import { onConsentChange, openCookieSettings, readConsent } from '../consent.js'
+import { PRIVACY_UPDATED, storedItems } from './privacy-items.js'
+
+function ConsentStatus() {
+  const [consent, setConsent] = useState(() => readConsent())
+  useEffect(() => onConsentChange(setConsent), [])
+  const label = !consent ? 'Вы ещё не выбрали — настройки пока сохраняются' : consent.functional ? 'Функциональные cookie разрешены' : 'Разрешены только необходимые'
+  return <div className="privacy-consent">
+    <span className="privacy-consent-icon" aria-hidden="true"><Cookie size={18} /></span>
+    <span className="privacy-consent-copy"><small>Ваш выбор</small><strong>{label}</strong></span>
+    <button type="button" className="button button-primary" onClick={openCookieSettings}><Settings2 size={15} /> Изменить</button>
+  </div>
+}
+
+export default function PrivacyPage() {
+  const location = useLocation()
+  // Ссылка «Cookie» в подвале ведёт на #cookies: прокручиваем после отрисовки.
+  useEffect(() => {
+    if (!location.hash) return undefined
+    const timer = window.setTimeout(() => document.getElementById(location.hash.slice(1))?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 350)
+    return () => window.clearTimeout(timer)
+  }, [location.hash])
+
+  return <article className="legal container">
+    <header className="legal-head">
+      <span className="eyebrow"><i className="eyebrow-dot" />Правовая информация</span>
+      <h1>Политика <em>конфиденциальности</em></h1>
+      <p>Коротко: путеводитель работает без регистрации, не собирает персональные данные и не использует рекламу или аналитику. Ниже — подробно, что и где хранится.</p>
+      <small>Редакция от {PRIVACY_UPDATED}</small>
+    </header>
+
+    <div className="legal-body">
+      <section>
+        <h2>1. Общие положения</h2>
+        <p>Политика описывает, как сайт «ЛОГОС: Путеводитель» (далее — сайт) обращается с информацией посетителей. Сайт — учебный проект команды студентов колледжа; состав команды указан на странице «О проекте». Пользуясь сайтом, вы соглашаетесь с этой политикой.</p>
+      </section>
+
+      <section>
+        <h2>2. Какие данные мы не собираем</h2>
+        <ul>
+          <li>На сайте нет регистрации, личного кабинета и форм для ввода имени, телефона или почты.</li>
+          <li>Мы не подключаем счётчики посещаемости, рекламные сети, пиксели социальных сетей и другие сторонние трекеры.</li>
+          <li>Сайт не загружает сторонние скрипты и шрифты: все файлы отдаются с того же домена.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>3. Что хранится в вашем браузере</h2>
+        <p>Чтобы помнить ваши настройки между визитами, сайт пользуется локальным хранилищем браузера (localStorage). Эти данные остаются на вашем устройстве и не отправляются на сервер. Их можно удалить в настройках браузера или отказаться от них кнопкой ниже.</p>
+        <div className="legal-table-wrap">
+          <table className="legal-table">
+            <thead><tr><th scope="col">Что хранится</th><th scope="col">Зачем</th><th scope="col">Категория</th></tr></thead>
+            <tbody>{storedItems.map((item) => <tr key={item.key}><td><code>{item.key}</code></td><td>{item.purpose}</td><td><span className={`legal-kind ${item.kind === 'Необходимые' ? 'legal-kind-required' : ''}`}>{item.kind}</span></td></tr>)}</tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="cookies">
+        <h2>4. Cookie</h2>
+        <p>Сайт не устанавливает HTTP-cookie. Локальное хранилище работает похоже, поэтому мы описываем его как cookie и спрашиваем согласие при первом визите.</p>
+        <ul>
+          <li><strong>Необходимые</strong> — хранят только ваш ответ на вопрос о cookie, чтобы не спрашивать каждый раз. Отключить их нельзя.</li>
+          <li><strong>Функциональные</strong> — тема, язык, голос, настройки карты, рекорды и отметки о приветствии и обучении. Если от них отказаться, сайт продолжит работать, но после перезагрузки вернётся к настройкам по умолчанию, а уже сохранённое будет удалено.</li>
+          <li><strong>Аналитические и рекламные</strong> — не используются.</li>
+        </ul>
+        <ConsentStatus />
+      </section>
+
+      <section>
+        <h2>5. Геолокация</h2>
+        <p>Кнопка «Включить GPS» на карте запрашивает разрешение браузера на определение местоположения. Координаты используются только на вашем устройстве, чтобы показать примерную точку на плане, и никуда не передаются. Разрешение можно отозвать в настройках браузера.</p>
+      </section>
+
+      <section>
+        <h2>6. Озвучка маршрута</h2>
+        <p>Записанные голоса «Логос» загружаются с сервера сайта как обычные аудиофайлы. Если запись недоступна, фразу читает синтезатор речи вашего браузера или операционной системы — его работа регулируется политикой их разработчика.</p>
+      </section>
+
+      <section>
+        <h2>7. Технические журналы сервера</h2>
+        <p>Хостинг, на котором размещён сайт, может вести стандартные журналы запросов: IP-адрес, дата и время, запрошенная страница и сведения о браузере. Они нужны для работы и защиты сервера. Мы не используем их, чтобы установить личность посетителя, и не передаём третьим лицам, кроме случаев, предусмотренных законом.</p>
+      </section>
+
+      <section>
+        <h2>8. Изменения и контакты</h2>
+        <p>Если сайт начнёт хранить что-то новое, мы обновим эту страницу и дату редакции. Вопросы о политике и сообщения об ошибках можно передать команде проекта — контакты на странице «О проекте».</p>
+      </section>
+    </div>
+  </article>
+}

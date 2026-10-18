@@ -1,17 +1,20 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Bug, Construction, Smartphone, X } from 'lucide-react'
-import { lockBodyScroll } from '../storage.js'
+import { Bug, Construction, Smartphone, Sparkles, X } from 'lucide-react'
+import { lockBodyScroll, storageGet, storageSet } from '../storage.js'
+import { startTour } from '../tour-bus.js'
+import { readTutorialDone } from '../tutorial.js'
 
 export const WELCOME_HIDDEN_KEY = 'logos-welcome-hidden'
 
 function readHidden() {
-  try { return localStorage.getItem(WELCOME_HIDDEN_KEY) === '1' } catch { return false }
+  return storageGet(WELCOME_HIDDEN_KEY) === '1'
 }
 
 export default function WelcomeDialog() {
   const [open, setOpen] = useState(() => !readHidden())
   const [dontShow, setDontShow] = useState(false)
+  const [tourDone] = useState(() => readTutorialDone())
   const closeRef = useRef(null)
 
   useEffect(() => {
@@ -31,7 +34,7 @@ export default function WelcomeDialog() {
 
   const close = () => {
     if (dontShow) {
-      try { localStorage.setItem(WELCOME_HIDDEN_KEY, '1') } catch { /* private mode: просто закрыть */ }
+      storageSet(WELCOME_HIDDEN_KEY, '1')
     }
     setOpen(false)
   }
@@ -63,7 +66,10 @@ export default function WelcomeDialog() {
           <span>Больше не показывать</span>
         </label>
 
-        <button ref={closeRef} className="button button-primary welcome-submit" onClick={close}>Понятно, к карте!</button>
+        <div className="welcome-actions">
+          {!tourDone && <button className="button welcome-tour" onClick={() => { close(); startTour() }}><Sparkles size={16} /> Пройти обучение</button>}
+          <button ref={closeRef} className="button button-primary welcome-submit" onClick={close}>Понятно, к карте!</button>
+        </div>
       </section>
     </div>
   )

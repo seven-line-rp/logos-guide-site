@@ -1,12 +1,16 @@
+import { functionalStorageAllowed } from './consent.js'
+
 // Безопасная обёртка над localStorage.
 // В приватном режиме Safari (и при заблокированных cookies) доступ к
 // localStorage может бросать исключение — без try/catch это белый экран,
 // особенно на iPhone. Все чтения/записи на сайте идут через эти функции.
+// Запись — только если человек не отказался от функциональных cookie.
 export function storageGet(key) {
   try { return localStorage.getItem(key) } catch { return null }
 }
 
 export function storageSet(key, value) {
+  if (!functionalStorageAllowed()) return
   try { localStorage.setItem(key, value) } catch { /* приватный режим: просто не сохраняем */ }
 }
 

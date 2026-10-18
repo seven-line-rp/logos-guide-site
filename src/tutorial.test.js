@@ -1,9 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import {
-  TOUR_STEPS, TUTORIAL_COMMAND, TUTORIAL_STORAGE_KEY, isTutorialCommand, markTutorialDone,
-  normalizeCommand, readTutorialDone, tourStepIds,
-} from './tutorial.js'
+import { TOUR_STEPS, TOUR_TONES, TUTORIAL_STORAGE_KEY, markTutorialDone, readTutorialDone, tourStepIds } from './tutorial.js'
 
 function fakeStorage(initial = {}) {
   const data = { ...initial }
@@ -14,44 +11,42 @@ function fakeStorage(initial = {}) {
   }
 }
 
-test('the key command is recognised in any case, layout and wording', () => {
-  assert.equal(TUTORIAL_COMMAND, 'Туторил')
-  for (const variant of ['Туторил', 'туторил', 'ТУТОРИЛ', 'Туторил!', 'туторил?', ' Туторил ', 'туториал', 'tutorial', 'обучение', 'как работает сайт', 'Покажи как работает сайт']) {
-    assert.equal(isTutorialCommand(variant), true, variant)
-  }
-  // «Туторил», набранное в английской раскладке.
-  assert.equal(isTutorialCommand('Nenjhbd'), true)
-})
-
-test('ordinary questions are not treated as the tour command', () => {
-  for (const text of ['', '   ', 'Где находится библиотека?', 'расскажи про обучение в колледже', 'что такое туторил?', 'построй маршрут', 'null', 42, null, undefined]) {
-    assert.equal(isTutorialCommand(text), false, String(text))
-  }
-  assert.equal(normalizeCommand('  ТуТОРИЛ!!  '), 'туторил')
-  assert.equal(normalizeCommand(null), '')
-})
-
 test('every tour step is complete and points at a real page', () => {
   const ids = tourStepIds()
   assert.equal(new Set(ids).size, ids.length, 'step ids are unique')
   assert.ok(ids.length >= 8, 'the tour covers the whole site')
   assert.equal(ids[0], 'intro')
-  assert.equal(ids.at(-1), 'assistant')
+  assert.equal(ids.at(-1), 'docs')
   for (const step of TOUR_STEPS) {
-    assert.match(step.to, /^\/(map|rooms|route|games|services|about)?$/, step.id)
+    assert.match(step.to, /^\/(map|rooms|route|games|services|about|docs)?$/, step.id)
     assert.ok(step.title.length > 3, step.id)
     assert.ok(step.text.length > 20, step.id)
     assert.ok(step.eyebrow.length > 0, step.id)
     assert.ok(step.action.length > 0, step.id)
+    assert.ok(TOUR_TONES.includes(step.tone), `${step.id}: tone ${step.tone}`)
+    assert.ok(step.icon.length > 0, step.id)
     assert.ok(Array.isArray(step.targets), step.id)
     // Каждый селектор — простой CSS-селектор, а не произвольный код.
     for (const selector of step.targets) assert.match(selector, /^[.#][\w-]+$/, `${step.id}: ${selector}`)
   }
 })
 
-test('the tour highlight falls back to another element on small screens', () => {
-  const assistantStep = TOUR_STEPS.find((step) => step.id === 'assistant')
-  assert.deepEqual(assistantStep.targets, ['.assistant-launcher', '.header-assistant'])
+test('neighbouring steps never share a colour', () => {
+  for (let index = 1; index < TOUR_STEPS.length; index += 1) {
+    assert.notEqual(TOUR_STEPS[index].tone, TOUR_STEPS[index - 1].tone, TOUR_STEPS[index].id)
+  }
+})
+
+test('the tour no longer mentions the removed AI assistant', () => {
+  for (const step of TOUR_STEPS) {
+    assert.doesNotMatch(`${step.title} ${step.text}`, /LOGOS AI|помощник|Туторил/i, step.id)
+    assert.ok(!step.targets.some((selector) => selector.includes('assistant')), step.id)
+  }
+})
+
+test('the documentation step falls back to the menu button on small screens', () => {
+  const docsStep = TOUR_STEPS.find((step) => step.id === 'docs')
+  assert.deepEqual(docsStep.targets, ['.header-docs', '.mobile-menu-toggle'])
 })
 
 test('finishing the tour is remembered in the browser', () => {
