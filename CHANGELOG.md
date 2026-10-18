@@ -1,8 +1,8 @@
 # История версий
 
 Описание каждой версии — раздел `## <номер>`. Раздел с номером из
-`package.json` становится текстом релиза на GitHub (см.
-`.github/workflows/release.yml`).
+`package.json` становится текстом релиза на GitHub: релиз публикуется сам,
+когда новая версия попадает в `main` (см. `.github/workflows/release.yml`).
 
 ## 1.0.0-alpha.beta
 
