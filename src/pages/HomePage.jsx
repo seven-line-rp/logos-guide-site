@@ -3,23 +3,8 @@ import { useMemo, useState } from 'react'
 import { ArrowDownRight, ArrowRight, ArrowUpRight, Check, MapPin, Search } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { rooms, quickPlaces } from '../data.js'
-import FloorMap from '../components/FloorMap.jsx'
+import HeroScene from '../components/HeroScene.jsx'
 import { Reveal, SectionLabel } from '../components/Primitives.jsx'
-
-function MiniPlan() {
-  const [floor, setFloor] = useState(1)
-  const navigate = useNavigate()
-  const openRoom = (room) => navigate(`/map?floor=${room.floor}&room=${encodeURIComponent(room.id)}`)
-
-  return <div className="mini-plan-wrap" role="group" aria-label="План этажей колледжа">
-    <div className="mini-plan-top"><span><MapPin size={17} aria-hidden="true" /> План колледжа</span><div className="mini-plan-tabs" role="group" aria-label="Этаж на главной карте">{[1, 2].map((number) => <button key={number} type="button" aria-label={`${number} этаж`} aria-pressed={floor === number} className={floor === number ? 'mini-plan-tab-active' : ''} onClick={() => setFloor(number)}>0{number}</button>)}</div></div>
-    <div className="mini-plan-canvas">
-      <FloorMap floor={floor} compact showLabels={false} onSelect={openRoom} onFloorRequest={setFloor} />
-      <div className="mini-plan-floor-stamp" aria-hidden="true"><strong>0{floor}</strong><span>этаж</span></div>
-    </div>
-    <div className="mini-plan-bottom"><span>Нажмите на помещение</span><Link to={`/map?floor=${floor}`} aria-label="Открыть полную карту">Открыть план <ArrowUpRight size={16} /></Link></div>
-  </div>
-}
 
 function HomeSearch() {
   const [query, setQuery] = useState('')
@@ -42,7 +27,8 @@ function HomeSearch() {
 
 export default function HomePage() {
   return <>
-    <section className="home-hero hero-mesh home-hero-usual" id="top">
+    <section className="home-hero hero-mesh home-hero-usual home-hero-scene" id="top">
+      <HeroScene />
       <div className="container home-hero-inner">
         <div className="home-hero-copy">
           <span className="home-eyebrow">
@@ -60,7 +46,7 @@ export default function HomePage() {
             <Link className="home-plain-link" to="/route" aria-label="Построить маршрут"><span className="home-route-long">Построить маршрут</span><span className="home-route-short">Маршрут</span><ArrowUpRight size={16} /></Link>
           </div>
         </div>
-        <Reveal className="home-hero-visual float-slow" delay={100} variant="scale"><div data-parallax="0.04"><MiniPlan /></div></Reveal>
+        <Link className="hero-scene-caption" to="/route?from=entrance-1&to=class-138"><span className="hero-scene-caption-dot" aria-hidden="true" /><span><strong>Главный вход → кабинет 138</strong><small>Пример маршрута по коридорам · 1 этаж</small></span><ArrowUpRight size={15} /></Link>
       </div>
       <div className="home-hero-edge container"><span>План корпуса · 1 и 2 этажи</span><a href="#quick-places" onClick={(event) => { event.preventDefault(); document.getElementById('quick-places')?.scrollIntoView({ behavior: 'smooth' }) }}>Часто ищут <ArrowDownRight size={14} /></a></div>
     </section>
