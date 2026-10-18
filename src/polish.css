@@ -78,7 +78,6 @@
   .mobile-nav-index { min-width: 22px; font-size: 13px; color: var(--blue); }
   .mobile-nav-bottom { flex-wrap: wrap; gap: 10px; padding-top: 14px; color: #5d6d86; font-size: 14px; letter-spacing: 0; text-transform: none; font-weight: 500; }
   .mobile-nav-bottom button { min-height: 44px; padding: 0 14px; border-radius: 10px; background: var(--blue-soft); color: var(--blue); font-size: 15px; font-weight: 650; }
-  .mobile-nav-bottom .open-day-toggle { min-height: 44px; }
 }
 html[data-theme='dark'] .mobile-nav-panel { background: #0c1d38; color: #e6efff; border-top-color: rgba(171,198,238,.16); }
 html[data-theme='dark'] .mobile-nav-link { color: #e6efff; border-bottom-color: rgba(171,198,238,.14); }

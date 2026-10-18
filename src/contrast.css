@@ -43,17 +43,6 @@ html[data-theme='dark'] .button-primary:hover,
 .route-nav-controls button { color: var(--action-bg); background: #fff; }
 .route-nav-controls button:disabled { color: #536174; background: #dce5f1; opacity: 1; cursor: not-allowed; }
 .route-nav-controls button.route-nav-voice-off { color: #fff; background: #103fbd; }
-.open-day-toggle-on, html[data-theme='dark'] .open-day-toggle-on {
-  color: #fff;
-  border-color: var(--action-bg);
-  background: var(--action-bg);
-}
-.open-day-toggle-on:hover, html[data-theme='dark'] .open-day-toggle-on:hover {
-  color: #fff;
-  border-color: var(--action-hover);
-  background: var(--action-hover);
-}
-.room-venue-chip:hover, html[data-theme='dark'] .room-venue-chip:hover,
 html[data-theme='dark'] .text-link:hover > span,
 html[data-theme='dark'] .icon-button:hover { color: #fff; background: var(--action-bg); }
 .floor-tab-active, .map-filter-active { border-color: var(--blue); }

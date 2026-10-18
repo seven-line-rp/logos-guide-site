@@ -93,7 +93,7 @@ function initMagnetic() {
 
 function initTilt() {
   if (reduced || coarsePointer) return
-  const selector = '.tilt, .quick-place-card, .open-day-card, .floor-switch-card, .game-mode-tab, .quiz-option, .service-card, .about-person, .about-value-row, .faq-item, .search-result, .directory-card'
+  const selector = '.tilt, .quick-place-card, .floor-switch-card, .game-mode-tab, .quiz-option, .service-card, .about-person, .about-value-row, .faq-item, .search-result, .directory-card'
   const attach = (el) => {
     if (el.dataset.tilt) return
     el.dataset.tilt = '1'
@@ -116,7 +116,7 @@ function initTilt() {
 function initRipple() {
   if (reduced || coarsePointer) return
   document.addEventListener('click', (e) => {
-    const target = e.target.closest('.button, .header-cta, .quiz-option, .game-mode-tab, .nav-link, .text-link, .search-result, .quick-place-card, .open-day-card, .floor-switch-card, .ripple-host')
+    const target = e.target.closest('.button, .header-cta, .quiz-option, .game-mode-tab, .nav-link, .text-link, .search-result, .quick-place-card, .floor-switch-card, .ripple-host')
     if (!target) return
     const rect = target.getBoundingClientRect()
     const size = Math.max(rect.width, rect.height)

@@ -1,11 +1,9 @@
 import { searchableRoom } from '../i18n.js'
 import { useMemo, useState } from 'react'
-import { ArrowDownRight, ArrowRight, ArrowUpRight, MapPin, PartyPopper, Search, Users } from 'lucide-react'
+import { ArrowDownRight, ArrowRight, ArrowUpRight, MapPin, Search } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { rooms, quickPlaces } from '../data.js'
 import FloorMap from '../components/FloorMap.jsx'
-import { openDayVenues } from '../openDay.js'
-import { useOpenDay } from '../useOpenDay.js'
 import { Reveal, SectionLabel } from '../components/Primitives.jsx'
 
 function MiniPlan() {
@@ -42,32 +40,17 @@ function HomeSearch() {
   return <form className="home-search" onSubmit={submit} role="search"><Search size={19} /><input id="home-room-search" value={query} onFocus={() => setOpen(true)} onBlur={() => window.setTimeout(() => setOpen(false), 130)} onChange={(event) => setQuery(event.target.value)} placeholder="Например, 217 или библиотека" aria-label="Найти кабинет или пространство" autoComplete="off" /><button type="submit" aria-label="Искать"><ArrowRight size={18} /></button>{open && query.trim() && <div className="home-search-suggestions">{matches.length ? matches.map((room) => <button type="button" key={room.id} onMouseDown={(event) => event.preventDefault()} onClick={() => goTo(room)}><span>{room.name}{room.number && ` №${room.number}`}</span><small>{room.floor} этаж · {room.category}</small></button>) : <button type="submit" className="home-search-no-results"><span>Искать «{query}» в справочнике</span><small>Посмотреть все результаты</small></button>}</div>}</form>
 }
 
-function OpenDayBand() {
-  const [openDay] = useOpenDay()
-  if (!openDay) return null
-  return <section className="open-day-band"><div className="container open-day-inner">
-    <div className="open-day-head"><span className="open-day-chip"><PartyPopper size={14} /> Сегодня</span><h2>День открытых дверей:<br /><em>площадки и мастер-классы.</em></h2><p>Выберите площадку — покажем аудиторию, ведущих и предложим построить маршрут прямо по плану колледжа.</p></div>
-    <div className="open-day-grid">{openDayVenues.map((venue, index) => {
-      const room = rooms.find((item) => item.id === venue.roomId)
-      return <Link key={venue.roomId} className="open-day-card" to={`/map?floor=${room.floor}&room=${encodeURIComponent(room.id)}`}><span className="open-day-card-index">0{index + 1}</span><span className="open-day-card-copy"><strong>{venue.title}</strong><small>{venue.highlights.slice(0, 3).join(' · ')}</small><span className="open-day-card-meta"><MapPin size={13} /> Аудитория {room.number} · {room.floor} этаж <i /> <Users size={13} /> {venue.audience}</span></span><ArrowUpRight size={17} /></Link>
-    })}</div>
-  </div></section>
-}
-
 export default function HomePage() {
-  const [openDay] = useOpenDay()
   return <>
-    <section className={`home-hero hero-mesh ${openDay ? 'home-hero-day' : 'home-hero-usual'}`} id="top">
+    <section className="home-hero hero-mesh home-hero-usual" id="top">
       <div className="container home-hero-inner">
         <div className="home-hero-copy">
           <span className="home-eyebrow">
-            {openDay ? <PartyPopper size={15} aria-hidden="true" /> : <MapPin size={15} aria-hidden="true" />}
-            {openDay ? 'День открытых дверей' : 'Навигатор по колледжу'}
+            <MapPin size={15} aria-hidden="true" />
+            Навигатор по колледжу
           </span>
-          <h1><span>Куда идти</span><em>{openDay ? 'сегодня?' : 'на следующую пару?'}</em></h1>
-          <p>{openDay
-            ? 'Найдите площадку или кабинет — покажем место на плане и подскажем маршрут.'
-            : 'Найдите кабинет по номеру или названию — покажем его на карте и подскажем маршрут.'}</p>
+          <h1><span>Куда идти</span><em>на следующую пару?</em></h1>
+          <p>Найдите кабинет по номеру или названию — покажем его на карте и подскажем маршрут.</p>
           <div className="home-search-group">
             <label className="home-search-label" htmlFor="home-room-search">Поиск по колледжу</label>
             <HomeSearch />
@@ -81,8 +64,6 @@ export default function HomePage() {
       </div>
       <div className="home-hero-edge container"><span>План корпуса · 1 и 2 этажи</span><a href="#quick-places" onClick={(event) => { event.preventDefault(); document.getElementById('quick-places')?.scrollIntoView({ behavior: 'smooth' }) }}>Часто ищут <ArrowDownRight size={14} /></a></div>
     </section>
-
-    <OpenDayBand />
 
     <section className="quick-places container section-pad" id="quick-places"><div className="section-top"><div><SectionLabel>Часто ищут</SectionLabel><h2>Начните <em>здесь.</em></h2></div><Link className="text-link" to="/rooms">Все помещения <span><ArrowRight size={15} /></span></Link></div><div className="quick-place-grid">{quickPlaces.map((place, index) => { const room = rooms.find((item) => item.id === place.roomId); return <Reveal key={place.roomId} delay={index * 60} variant="up"><Link className={`quick-place-card quick-place-${place.tone}`} to={`/map?floor=${room.floor}&room=${room.id}`}><span className="quick-place-num">0{index + 1} / {room.floor} этаж</span><span className="quick-place-copy"><strong>{place.label}</strong><small>{place.meta}</small></span><span className="quick-place-arrow"><ArrowUpRight size={16} /></span></Link></Reveal> })}</div></section>
 

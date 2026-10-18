@@ -15,7 +15,7 @@ const validMessages = [{ role: 'user', content: 'Где находится би�
 test('status reports whether the server has a key without exposing it', async () => {
   const response = await handleAssistantApiRequest(request('/api/chat/status'), { apiKey: 'secret-server-key' })
   assert.equal(response.status, 200)
-  assert.deepEqual(await response.json(), { configured: true, provider: 'DeepSeek', model: 'deepseek-flash' })
+  assert.deepEqual(await response.json(), { configured: true, assistant: 'LOGOS AI' })
 })
 
 test('chat does not call the provider when the server key is missing', async () => {

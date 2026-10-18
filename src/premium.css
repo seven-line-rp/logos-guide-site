@@ -107,14 +107,14 @@ body { transition: background-color var(--motion-med) var(--ease-out), color var
 }
 
 /* Interactive cards global hover */
-.quick-place-card, .open-day-card, .floor-switch-card, .game-mode-tab, .search-result, .venue-card, .concept-card, .thinker-card {
+.quick-place-card, .floor-switch-card, .game-mode-tab, .search-result, .concept-card, .thinker-card {
   transition: transform var(--motion-med) var(--ease-spring), box-shadow var(--motion-med) var(--ease-out), border-color var(--motion-fast) var(--ease-out), background var(--motion-fast) var(--ease-out);
 }
-.quick-place-card:hover, .open-day-card:hover, .floor-switch-card:hover, .game-mode-tab:hover, .search-result:hover {
+.quick-place-card:hover, .floor-switch-card:hover, .game-mode-tab:hover, .search-result:hover {
   transform: translateY(-4px);
   box-shadow: var(--shadow-md);
 }
-.quick-place-card:active, .open-day-card:active, .floor-switch-card:active, .game-mode-tab:active {
+.quick-place-card:active, .floor-switch-card:active, .game-mode-tab:active {
   transform: translateY(-1px) scale(.99);
 }
 
@@ -280,11 +280,11 @@ body { transition: background-color var(--motion-med) var(--ease-out), color var
 .home-hero-edge a:hover::after { transform: scaleX(1); }
 
 /* Cards glass + glow */
-.quick-place-card, .floor-switch-card, .open-day-card {
+.quick-place-card, .floor-switch-card {
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
-.quick-place-card:hover, .floor-switch-card:hover, .open-day-card:hover {
+.quick-place-card:hover, .floor-switch-card:hover {
   border-color: rgba(36, 92, 229, .35);
   box-shadow: var(--shadow-glow);
 }
@@ -402,8 +402,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   box-shadow: var(--shadow-md);
 }
 
-/* Venue modal premium */
-.venue-modal, .modal {
+/* Модальные окна */
+.modal {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
 }

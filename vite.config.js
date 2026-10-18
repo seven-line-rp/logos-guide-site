@@ -7,7 +7,7 @@ import { createAssistantApiMiddleware } from './server/assistant-api.mjs'
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '')
   const assistantApi = createAssistantApiMiddleware({
-    apiKey: env.DEEPSEEK_API_KEY,
+    apiKey: env.LOGOS_AI_API_KEY || env.DEEPSEEK_API_KEY,
     trustProxy: env.TRUST_PROXY === 'true',
   })
 
