@@ -87,3 +87,123 @@ export function transferColumns() {
       return { id: room.id, x: round(cx), y: round(cy), lift: room.id.startsWith('lift-') }
     })
 }
+
+// ---------- Пролёт камеры по маршруту ----------
+// Один цикл (t от 0 до 1): общий план корпуса → камера опускается к входу и
+// летит за точкой по первому этажу → вместе с ней поднимается по лестнице →
+// летит по второму этажу → отъезжает обратно на общий план над целью.
+export const FLIGHT_SECONDS = 20
+const PHASES = { wide: 0.07, lower: 0.12, climb: 0.43, upper: 0.53, back: 0.84 }
+const WIDE = { x: 379, y: 276, zoom: 1.05, tilt: 56, yaw: -24 }
+const FOLLOW = { zoom: 2.3, tilt: 62 }
+const LOOK = 45
+const HIDDEN_FLOOR = 0.08 // на сколько единиц вперёд и назад смотрим, чтобы повороты камеры были плавными
+
+const clamp01 = (value) => Math.max(0, Math.min(1, value))
+const ease = (value) => (value < 0.5 ? 4 * value ** 3 : 1 - (-2 * value + 2) ** 3 / 2)
+const mix = (a, b, k) => a + (b - a) * k
+const nearestAngle = (angle, reference) => angle + 360 * Math.round((reference - angle) / 360)
+
+function polyline(points) {
+  const lengths = [0]
+  for (let index = 1; index < points.length; index += 1) {
+    const [x1, y1] = points[index - 1]
+    const [x2, y2] = points[index]
+    lengths.push(lengths[index - 1] + Math.hypot(x2 - x1, y2 - y1))
+  }
+  const total = lengths.at(-1)
+  const at = (distance) => {
+    const d = Math.max(0, Math.min(total, distance))
+    let index = 1
+    while (index < lengths.length - 1 && lengths[index] < d) index += 1
+    const span = lengths[index] - lengths[index - 1] || 1
+    const k = (d - lengths[index - 1]) / span
+    const [x1, y1] = points[index - 1]
+    const [x2, y2] = points[index]
+    return [mix(x1, x2, k), mix(y1, y2, k)]
+  }
+  return { total, at }
+}
+
+// Камера смотрит «по ходу движения»: направление пути поворачиваем вверх
+// экрана. Угол берём по хорде [d − LOOK, d + LOOK] и разворачиваем без
+// скачков через ±180°, поэтому на поворотах коридора камера плавно доворачивает.
+function yawTrack(line, startReference) {
+  const samples = 64
+  const values = []
+  let reference = startReference
+  for (let index = 0; index <= samples; index += 1) {
+    const d = (line.total * index) / samples
+    const [x1, y1] = line.at(d - LOOK)
+    const [x2, y2] = line.at(d + LOOK)
+    const heading = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI
+    reference = nearestAngle(-90 - heading, reference)
+    values.push(reference)
+  }
+  return (k) => {
+    const position = clamp01(k) * samples
+    const index = Math.min(samples - 1, Math.floor(position))
+    return mix(values[index], values[index + 1], position - index)
+  }
+}
+
+export function buildFlight(lowerPoints, upperPoints, gap = FLOOR_GAP) {
+  const lower = polyline(lowerPoints)
+  const upper = polyline(upperPoints)
+  const lowerYaw = yawTrack(lower, WIDE.yaw)
+  const upperYaw = yawTrack(upper, lowerYaw(1))
+  const climbPoint = lowerPoints.at(-1)
+  const follow = (x, y, z, yaw) => ({ x, y, z, zoom: FOLLOW.zoom, tilt: FOLLOW.tilt, yaw })
+  const blend = (a, b, k) => ({ x: mix(a.x, b.x, k), y: mix(a.y, b.y, k), z: mix(a.z, b.z, k), zoom: mix(a.zoom, b.zoom, k), tilt: mix(a.tilt, b.tilt, k), yaw: mix(a.yaw, nearestAngle(b.yaw, a.yaw), k) })
+  const wide = { ...WIDE, z: gap / 2 }
+
+  return function frameAt(time) {
+    const t = ((time % 1) + 1) % 1
+    // upperFloor — видимость второго этажа: пока камера летит по первому, он
+    // висит прямо перед объективом, поэтому почти растворяется.
+    const frame = { lower: 0, upper: 0, walker: null, beam: 0, beacon: 0.25, upperFloor: 1 }
+    if (t < PHASES.lower) {
+      const [x, y] = lower.at(0)
+      const dive = ease(clamp01((t - PHASES.wide) / (PHASES.lower - PHASES.wide)))
+      frame.camera = blend(wide, follow(x, y, 0, lowerYaw(0)), dive)
+      frame.walker = { x, y, z: 0, visible: t > PHASES.wide }
+      frame.upperFloor = mix(1, HIDDEN_FLOOR, dive)
+    } else if (t < PHASES.climb) {
+      const k = ease(clamp01((t - PHASES.lower) / (PHASES.climb - PHASES.lower)))
+      const [x, y] = lower.at(lower.total * k)
+      frame.lower = k
+      frame.camera = follow(x, y, 0, lowerYaw(k))
+      frame.walker = { x, y, z: 0, visible: true }
+      frame.upperFloor = HIDDEN_FLOOR
+    } else if (t < PHASES.upper) {
+      const k = ease(clamp01((t - PHASES.climb) / (PHASES.upper - PHASES.climb)))
+      const [x, y] = climbPoint
+      frame.lower = 1
+      frame.beam = 1
+      frame.camera = { ...follow(x, y, gap * k, mix(lowerYaw(1), nearestAngle(upperYaw(0), lowerYaw(1)), k)), zoom: FOLLOW.zoom - Math.sin(k * Math.PI) * 0.5 }
+      frame.walker = { x, y, z: gap * k, visible: true }
+      frame.upperFloor = mix(HIDDEN_FLOOR, 1, k)
+    } else if (t < PHASES.back) {
+      const k = ease(clamp01((t - PHASES.upper) / (PHASES.back - PHASES.upper)))
+      const [x, y] = upper.at(upper.total * k)
+      frame.lower = 1
+      frame.upper = k
+      frame.beam = 1
+      frame.camera = follow(x, y, gap, upperYaw(k))
+      frame.walker = { x, y, z: gap, visible: true }
+    } else {
+      const k = ease(clamp01((t - PHASES.back) / (1 - PHASES.back)))
+      const [x, y] = upper.at(upper.total)
+      const fade = clamp01((t - 0.95) / 0.05)
+      frame.lower = 1
+      frame.upper = 1
+      frame.beam = 1 - fade
+      frame.beacon = 1 - fade * 0.75
+      frame.camera = blend(follow(x, y, gap, upperYaw(1)), wide, k)
+      frame.walker = { x, y, z: gap, visible: k < 0.35 }
+      frame.routeOpacity = 1 - fade
+    }
+    if (frame.routeOpacity === undefined) frame.routeOpacity = 1
+    return frame
+  }
+}

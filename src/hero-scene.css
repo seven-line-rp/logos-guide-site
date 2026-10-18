@@ -1,7 +1,7 @@
 /* 3D-корпус на первом экране. Пол — настоящий план («чертёж»), стены, двери
-   и колонны лестниц стоят в CSS 3D. Один цикл маршрута длится 10 секунд:
-   0–32% — путь по первому этажу, 32–44% — подъём по лестнице,
-   44–80% — путь по второму этажу, дальше маяк над целью. */
+   и колонны лестниц стоят в CSS 3D. Камерой, точкой на маршруте и его
+   прорисовкой управляет JS по сценарию пролёта (buildFlight), поэтому здесь
+   у них нет собственных анимаций. */
 
 @property --rise { syntax: '<number>'; inherits: false; initial-value: 1; }
 
@@ -15,7 +15,6 @@
   --wall-top: rgba(225, 236, 255, .75);
   --wall-face: rgba(170, 200, 255, .16);
   --wall-face-2: rgba(170, 200, 255, .02);
-  --slab: rgba(255, 255, 255, .04);
   --route: #ffd66d;
   --route-glow: rgba(255, 214, 109, .55);
   --column: rgba(160, 200, 255, .3);
@@ -32,7 +31,6 @@ html[data-theme='dark'] .home-hero-scene {
   --wall-top: rgba(190, 210, 255, .55);
   --wall-face: rgba(123, 164, 255, .12);
   --wall-face-2: rgba(123, 164, 255, .01);
-  --slab: rgba(255, 255, 255, .025);
   --route: #7ba4ff;
   --route-glow: rgba(91, 140, 255, .6);
   --column: rgba(123, 164, 255, .26);
@@ -74,26 +72,16 @@ html[data-theme='dark'] .home-hero-scene {
 }
 .hs-camera {
   position: absolute;
-  top: 60%;
-  left: 70%;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
   transform-style: preserve-3d;
-  transform: translate(-50%, -50%) rotateX(58deg) rotateZ(-24deg) scale(1.12);
-  animation: hs-intro 1.6s cubic-bezier(.2, .8, .2, 1) both, hs-orbit 22s ease-in-out 1.6s infinite alternate;
-}
-@keyframes hs-intro {
-  from { transform: translate(-50%, -42%) rotateX(66deg) rotateZ(-10deg) scale(.9); }
-  to { transform: translate(-50%, -50%) rotateX(58deg) rotateZ(-24deg) scale(1.12); }
-}
-@keyframes hs-orbit {
-  from { transform: translate(-50%, -50%) rotateX(58deg) rotateZ(-24deg) scale(1.12); }
-  to { transform: translate(-50%, -50%) rotateX(54deg) rotateZ(-16deg) scale(1.12); }
+  will-change: transform;
 }
 
 .hs-floor { position: absolute; inset: 0; transform-style: preserve-3d; }
-.hs-floor-2 { transform: translateZ(var(--gap)); animation: hs-lift 1.8s cubic-bezier(.2, .8, .2, 1) .3s both; }
-@keyframes hs-lift { from { transform: translateZ(0); } to { transform: translateZ(var(--gap)); } }
-.hs-slab { position: absolute; inset: -6px; border: 1px solid rgba(255, 255, 255, .06); border-radius: 4px; background: var(--slab); }
-.hs-floor-1 .hs-slab { background: transparent; border-color: transparent; }
+.hs-floor-2 { transform: translateZ(var(--gap)); }
+.hs-floor-2 > * { opacity: var(--floor-alpha, 1); }
 
 /* ---------- Пол: план как чертёж ---------- */
 .hs-plate { position: absolute; inset: 0; }
@@ -109,7 +97,7 @@ html[data-theme='dark'] .home-hero-scene {
 .hs-plate svg :is(rect, path)[fill='#0000FF'], .hs-plate svg > path[fill^='url(#paint'] { fill: var(--scene-icon); }
 .hs-plate svg g path[stroke='#0000FF'] { stroke: var(--scene-icon); }
 .hs-plate svg > rect[height='2'] { fill: var(--route); opacity: .5; }
-.hs-floor-2 .hs-plate { opacity: .85; }
+.hs-floor-2 .hs-plate { opacity: calc(var(--floor-alpha, 1) * .85); }
 
 /* Скан-свет: полоса проходит по полу, как луч сканера. */
 .hs-sweep {
@@ -148,7 +136,7 @@ html[data-theme='dark'] .home-hero-scene {
   opacity: .8;
   animation: hs-door 4s ease-in-out infinite alternate;
 }
-@keyframes hs-door { from { opacity: .45; } to { opacity: .9; } }
+@keyframes hs-door { from { opacity: calc(var(--floor-alpha, 1) * .45); } to { opacity: calc(var(--floor-alpha, 1) * .9); } }
 
 /* ---------- Колонны лестниц и лифта ---------- */
 .hs-column { position: absolute; transform-style: preserve-3d; }
@@ -171,29 +159,26 @@ html[data-theme='dark'] .home-hero-scene {
 .hs-route-glow { stroke: var(--route-glow); stroke-width: 12; filter: blur(5px); }
 .hs-route-base { stroke: var(--route); stroke-width: 4; opacity: .18; }
 .hs-route-line { stroke: var(--route); stroke-width: 4.5; stroke-dasharray: 1; stroke-dashoffset: 1; }
-.hs-route-lower { animation: hs-draw-lower 10s cubic-bezier(.4, 0, .3, 1) infinite; }
-.hs-route-upper { animation: hs-draw-upper 10s cubic-bezier(.4, 0, .3, 1) infinite; }
-@keyframes hs-draw-lower { 0% { stroke-dashoffset: 1; opacity: 1; } 32%, 92% { stroke-dashoffset: 0; opacity: 1; } 100% { stroke-dashoffset: 0; opacity: 0; } }
-@keyframes hs-draw-upper { 0%, 44% { stroke-dashoffset: 1; opacity: 1; } 80%, 92% { stroke-dashoffset: 0; opacity: 1; } 100% { stroke-dashoffset: 0; opacity: 0; } }
 
-.hs-walker {
+.hs-walker { position: absolute; top: 0; left: 0; opacity: 0; transition: opacity .3s; }
+.hs-walker i {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 10px;
-  height: 10px;
+  top: -6px;
+  left: -6px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
   background: #fff;
-  box-shadow: 0 0 0 3px var(--route), 0 0 18px 6px var(--route-glow);
-  offset-rotate: 0deg;
-  offset-anchor: center;
-  transform: translateZ(3px);
-  opacity: 0;
+  box-shadow: 0 0 0 3px var(--route), 0 0 22px 8px var(--route-glow);
 }
-.hs-walker-1 { animation: hs-walk-lower 10s cubic-bezier(.4, 0, .3, 1) infinite; }
-.hs-walker-2 { animation: hs-walk-upper 10s cubic-bezier(.4, 0, .3, 1) infinite; }
-@keyframes hs-walk-lower { 0% { offset-distance: 0%; opacity: 1; } 32% { offset-distance: 100%; opacity: 1; } 33%, 100% { offset-distance: 100%; opacity: 0; } }
-@keyframes hs-walk-upper { 0%, 43% { offset-distance: 0%; opacity: 0; } 44% { opacity: 1; } 80% { offset-distance: 100%; opacity: 1; } 84%, 100% { offset-distance: 100%; opacity: 0; } }
+.hs-walker i::after {
+  position: absolute;
+  inset: -3px;
+  border: 2px solid var(--route);
+  border-radius: 50%;
+  content: '';
+  animation: hs-ring 1.6s ease-out infinite;
+}
 
 /* Подъём по лестнице: луч между этажами и точка, которая по нему едет. */
 .hs-climb { position: absolute; transform-style: preserve-3d; }
@@ -208,22 +193,7 @@ html[data-theme='dark'] .home-hero-scene {
   box-shadow: 0 0 14px var(--route-glow);
   transform: rotateZ(90deg) rotateX(90deg);
   opacity: 0;
-  animation: hs-beam 10s linear infinite;
 }
-@keyframes hs-beam { 0%, 31% { opacity: 0; } 34%, 92% { opacity: .9; } 100% { opacity: 0; } }
-.hs-climb-dot {
-  position: absolute;
-  top: -6px;
-  left: -6px;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 0 0 3px var(--route), 0 0 20px 8px var(--route-glow);
-  opacity: 0;
-  animation: hs-climb 10s cubic-bezier(.5, 0, .5, 1) infinite;
-}
-@keyframes hs-climb { 0%, 31% { transform: translateZ(0); opacity: 0; } 32% { opacity: 1; } 44% { transform: translateZ(var(--gap)); opacity: 1; } 45%, 100% { transform: translateZ(var(--gap)); opacity: 0; } }
 
 /* Маяк над целью: вертикальный луч света и кольцо на полу второго этажа. */
 .hs-beacon { position: absolute; transform-style: preserve-3d; transform: translateZ(var(--gap)); }
@@ -236,7 +206,7 @@ html[data-theme='dark'] .home-hero-scene {
   transform-origin: 10px 0;
   background: linear-gradient(180deg, color-mix(in srgb, var(--route) 70%, transparent), transparent);
   transform: rotateX(90deg);
-  animation: hs-beacon 10s ease-in-out infinite;
+  opacity: .25;
 }
 .hs-beacon i + i { transform: rotateZ(90deg) rotateX(90deg); }
 .hs-beacon b {
@@ -249,7 +219,6 @@ html[data-theme='dark'] .home-hero-scene {
   border-radius: 50%;
   animation: hs-ring 2s ease-out infinite;
 }
-@keyframes hs-beacon { 0%, 76% { opacity: .25; } 82%, 94% { opacity: 1; } 100% { opacity: .25; } }
 @keyframes hs-ring { from { opacity: .9; transform: scale(.5); } to { opacity: 0; transform: scale(2.4); } }
 
 /* ---------- Глубина резкости, пылинки ---------- */
@@ -304,21 +273,14 @@ html[data-theme='dark'] .hero-scene-caption { border-color: var(--line); backgro
 html[data-theme='dark'] .hero-scene-caption small { color: var(--muted); }
 
 /* ---------- Адаптив ---------- */
-@media (max-width: 1100px) {
-  .hs-camera { left: 74%; }
-}
 @media (max-width: 860px) {
   .home-hero-scene .home-hero-inner { min-height: 0; }
   .hero-scene { opacity: .85; }
   .hero-scene::after { background: linear-gradient(180deg, var(--shade-mid) 0%, var(--shade) 58%); }
-  .hs-camera { top: 24%; left: 60%; }
   .hs-dof, .hs-particles, .hs-door, .hero-scene-caption { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hero-scene, .hs-camera, .hs-floor-2, .hs-wall, .hs-door, .hs-sweep, .hs-particles i, .hs-beacon i, .hs-beacon b, .hs-climb-dot { animation: none; }
-  .hs-route-line { animation: none; stroke-dashoffset: 0; }
-  .hs-walker, .hs-climb-dot { display: none; }
-  .hs-climb-beam { animation: none; opacity: .9; }
+  .hero-scene, .hs-wall, .hs-door, .hs-sweep, .hs-particles i, .hs-beacon b, .hs-walker i::after { animation: none; }
   .hs-parallax { transition: none; }
 }
