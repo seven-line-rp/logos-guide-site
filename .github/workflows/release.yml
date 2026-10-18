@@ -1,0 +1,63 @@
+# Публикация релиза по тегу: git tag v1.0.0-alpha.beta && git push origin v1.0.0-alpha.beta
+# Проверяет сайт, собирает его, берёт описание версии из CHANGELOG.md и
+# создаёт релиз GitHub с архивом готовой сборки. Версии с дефисом
+# (alpha, beta, rc) публикуются как pre-release.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm test
+      - run: npm run lint
+      - run: npm run build
+
+      - name: Проверить, что тег совпадает с версией в package.json
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          if [ "v$VERSION" != "$GITHUB_REF_NAME" ]; then
+            echo "Тег $GITHUB_REF_NAME не совпадает с версией v$VERSION в package.json" >&2
+            exit 1
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Описание релиза из CHANGELOG.md
+        run: |
+          awk -v version="## $VERSION" '
+            $0 == version { found = 1; next }
+            found && /^## / { exit }
+            found { print }
+          ' CHANGELOG.md > release-notes.md
+          if [ ! -s release-notes.md ]; then
+            echo "В CHANGELOG.md нет раздела ## $VERSION" >&2
+            exit 1
+          fi
+          TITLE="$(grep -m1 '^\*\*' release-notes.md | sed 's/\*\*//g')"
+          echo "TITLE=${TITLE:-$GITHUB_REF_NAME}" >> "$GITHUB_ENV"
+
+      - name: Архив сборки
+        run: cd dist && zip -qr "../logos-guide-site-$GITHUB_REF_NAME.zip" .
+
+      - name: Создать релиз
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PRERELEASE=""
+          case "$VERSION" in *-*) PRERELEASE="--prerelease" ;; esac
+          gh release create "$GITHUB_REF_NAME" "logos-guide-site-$GITHUB_REF_NAME.zip" \
+            --title "$TITLE" --notes-file release-notes.md $PRERELEASE

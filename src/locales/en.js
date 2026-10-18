@@ -222,3 +222,5 @@ Object.assign(english, {
 Object.assign(english, {
   'Главный вход → кабинет физики 211': 'Main entrance → physics room 211', 'Пример маршрута · по западной лестнице на 2 этаж': 'Sample route · west stairs up to floor 2',
 })
+
+Object.assign(english, { 'Версия': 'Version', 'альфа-бета': 'alpha-beta' })
