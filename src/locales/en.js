@@ -224,3 +224,24 @@ Object.assign(english, {
 })
 
 Object.assign(english, { 'Версия': 'Version', 'альфа-бета': 'alpha-beta' })
+
+Object.assign(english, {
+  // Страница «Маршрут».
+  'Куда идём?': 'Where to?', 'Выберите, откуда и куда. Путь построится по коридорам, с лестницами и лифтом, и его можно пройти по шагам с голосом.': 'Choose where from and where to. The route follows corridors, stairs and the lift, and you can walk it step by step with voice guidance.',
+  'Параметры маршрута': 'Route settings', 'Откуда': 'From', 'Куда': 'To', 'Поменять старт и цель местами': 'Swap start and destination', 'Поменять местами': 'Swap',
+  'Изменить свою отметку на плане': 'Change your pin on the map', 'Начать от своей точки на плане': 'Start from your own point on the map', 'Ваша отметка': 'Your pin',
+  'Вы уже на месте': 'You are already there', 'минута': 'minute', 'минуты': 'minutes', 'минут': 'minutes', 'пешком': 'on foot',
+  'Расстояние': 'Distance', 'Шагов пешком': 'Footsteps', 'Путь': 'Way', 'по одному этажу': 'on one floor',
+  'по северной лестнице': 'by the north stairs', 'по центральной лестнице': 'by the central stairs', 'по лестнице западного крыла': 'by the west wing stairs', 'на лифте': 'by lift',
+  'Начать': 'Start', 'Сбросить': 'Reset', 'Вернуть маршрут по умолчанию': 'Restore the default route',
+  'Как подняться': 'How to go up', ' и спуститься': ' and down', 'Варианты маршрута': 'Route options', 'Быстрее': 'Faster', 'меньше минуты': 'less than a minute',
+  'По северной лестнице': 'By the north stairs', 'По центральной лестнице': 'By the central stairs', 'Через лифт': 'By lift', 'По лестнице западного крыла': 'By the west wing stairs',
+  'По шагам': 'Step by step', 'Озвучка': 'Voice', 'выключена': 'off', 'Подсказки голосом': 'Voice prompts', 'Голос озвучки': 'Narration voice', 'Прослушать': 'Listen',
+  'На iPhone сначала нажмите «Прослушать» — так браузер разрешит звук. Если тихо, проверьте громкость и беззвучный режим.': 'On iPhone, tap “Listen” first so the browser allows sound. If it is quiet, check the volume and silent mode.',
+  'Карта маршрута': 'Route map', 'Этаж на карте': 'Floor on the map', 'Вид карты': 'Map view', 'Сверху': 'Top-down', 'Вернуться к шагу': 'Back to step',
+  'Предыдущий шаг': 'Previous step', 'Повторить подсказку голосом': 'Repeat the prompt aloud', 'Повторить голосом': 'Repeat aloud', 'Дальше': 'Next', 'На карте': 'On the map',
+  'Маршрут — ориентир по плану: если проход закрыт, следуйте указателям в здании.': 'The route is a guide based on the plan: if a passage is closed, follow the signs in the building.',
+  'Стрелки ← → на клавиатуре листают шаги.': 'Use the ← → keys to move between steps.',
+})
+
+Object.assign(english, { 'м': 'm' })

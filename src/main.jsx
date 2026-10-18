@@ -16,6 +16,7 @@ import './tour.css'
 import './site-docs.css'
 import './hero-scene.css'
 import './about.css'
+import './route.css'
 import './dark-theme.css'
 import './interactions.js'
 
