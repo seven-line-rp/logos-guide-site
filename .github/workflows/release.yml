@@ -1,15 +1,23 @@
-# Публикация релиза по тегу: git tag v1.0.0-alpha.beta && git push origin v1.0.0-alpha.beta
-# Проверяет сайт, собирает его, берёт описание версии из CHANGELOG.md и
-# создаёт релиз GitHub с архивом готовой сборки. Версии с дефисом
-# (alpha, beta, rc) публикуются как pre-release.
+# Публикация релиза GitHub для версии из package.json.
+# Запускается сама, когда в main меняются package.json, CHANGELOG.md или этот
+# файл, по тегу v* и вручную (Actions → Release → Run workflow). Если релиз
+# для текущей версии уже есть, ничего не делает. Тег v<версия> создаётся на
+# проверенном коммите. Версии с дефисом (alpha, beta, rc) — pre-release.
 name: Release
 
 on:
   push:
+    branches: [main]
+    paths: ['package.json', 'CHANGELOG.md', '.github/workflows/release.yml']
     tags: ['v*']
+  workflow_dispatch:
 
 permissions:
   contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
   release:
@@ -17,26 +25,39 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Версия и тег
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          TAG="v$VERSION"
+          if [ "$GITHUB_REF_TYPE" = "tag" ] && [ "$GITHUB_REF_NAME" != "$TAG" ]; then
+            echo "Тег $GITHUB_REF_NAME не совпадает с версией $TAG в package.json" >&2
+            exit 1
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Релиз $TAG уже опубликован — пропускаем."
+            echo "SKIP=1" >> "$GITHUB_ENV"
+          fi
+
       - uses: actions/setup-node@v4
+        if: env.SKIP != '1'
         with:
           node-version: 22
           cache: npm
 
-      - run: npm ci
-      - run: npm test
-      - run: npm run lint
-      - run: npm run build
-
-      - name: Проверить, что тег совпадает с версией в package.json
+      - name: Проверка и сборка
+        if: env.SKIP != '1'
         run: |
-          VERSION="$(node -p "require('./package.json').version")"
-          if [ "v$VERSION" != "$GITHUB_REF_NAME" ]; then
-            echo "Тег $GITHUB_REF_NAME не совпадает с версией v$VERSION в package.json" >&2
-            exit 1
-          fi
-          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          npm ci
+          npm test
+          npm run lint
+          npm run build
 
       - name: Описание релиза из CHANGELOG.md
+        if: env.SKIP != '1'
         run: |
           awk -v version="## $VERSION" '
             $0 == version { found = 1; next }
@@ -48,16 +69,15 @@ jobs:
             exit 1
           fi
           TITLE="$(grep -m1 '^\*\*' release-notes.md | sed 's/\*\*//g')"
-          echo "TITLE=${TITLE:-$GITHUB_REF_NAME}" >> "$GITHUB_ENV"
-
-      - name: Архив сборки
-        run: cd dist && zip -qr "../logos-guide-site-$GITHUB_REF_NAME.zip" .
+          echo "TITLE=${TITLE:-$TAG}" >> "$GITHUB_ENV"
+          cd dist && zip -qr "../logos-guide-site-$TAG.zip" .
 
       - name: Создать релиз
+        if: env.SKIP != '1'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           PRERELEASE=""
           case "$VERSION" in *-*) PRERELEASE="--prerelease" ;; esac
-          gh release create "$GITHUB_REF_NAME" "logos-guide-site-$GITHUB_REF_NAME.zip" \
-            --title "$TITLE" --notes-file release-notes.md $PRERELEASE
+          gh release create "$TAG" "logos-guide-site-$TAG.zip" \
+            --target "$GITHUB_SHA" --title "$TITLE" --notes-file release-notes.md $PRERELEASE
