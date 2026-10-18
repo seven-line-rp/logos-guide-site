@@ -1,11 +1,11 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
-import { ArrowRight, ArrowUpRight, Check, MapPin, Moon, PartyPopper, Search, Sun, X } from 'lucide-react'
+import { ArrowRight, ArrowUpRight, Check, MapPin, Moon, Search, Sparkles, Sun, X } from 'lucide-react'
 import { navigation, rooms } from '../data'
 import { lockBodyScroll, storageGet, storageSet } from '../storage'
-import { useOpenDay } from '../useOpenDay'
 import { setLanguage, useLanguage, searchableRoom } from '../i18n.js'
 import { isSearchShortcut } from '../shortcuts.js'
+import { openAssistant } from '../assistant-bus.js'
 
 const ToastContext = createContext(() => {})
 
@@ -91,11 +91,11 @@ export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const menuToggleRef = useRef(null)
   const [theme, setTheme] = useState(() => storageGet('site-theme') || 'light')
-  const [openDay, toggleOpenDay] = useOpenDay()
   const location = useLocation()
   const closeSearch = useCallback(() => setSearchOpen(false), [])
   const changeTheme = () => setTheme((value) => value === 'dark' ? 'light' : 'dark')
   const openSearch = () => { setMobileOpen(false); setSearchOpen(true) }
+  const askAssistant = () => { setMobileOpen(false); openAssistant('full') }
 
   useEffect(() => setMobileOpen(false), [location.pathname])
   useEffect(() => {
@@ -127,7 +127,7 @@ export function Header() {
           {navigation.map((item) => <NavLink end key={item.to} to={item.to} className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}>{item.label}</NavLink>)}
         </nav>
         <div className="header-actions">
-          <button className={`open-day-toggle header-open-day ${openDay ? 'open-day-toggle-on' : ''}`} type="button" onClick={() => toggleOpenDay()} aria-pressed={openDay} title={openDay ? 'Режим дня открытых дверей включён — нажмите, чтобы выключить' : 'Режим дня открытых дверей выключен — нажмите, чтобы включить'}><PartyPopper size={15} /><span>День открытых дверей</span><i className="open-day-switch" aria-hidden="true"><b /></i></button>
+          <button className="header-assistant" type="button" onClick={askAssistant} aria-label="Открыть помощника LOGOS AI" title="LOGOS AI — помощник по сайту"><span className="header-assistant-icon"><Sparkles size={16} /></span><span className="header-assistant-copy"><strong>LOGOS AI</strong><small>Помощник по сайту</small></span><i className="header-assistant-dot" aria-hidden="true" /></button>
           <button className="theme-toggle header-theme" type="button" onClick={changeTheme} aria-label={theme === 'dark' ? 'Включить светлую тему' : 'Включить тёмную тему'} title={theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}>{theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}</button>
           <button className="search-trigger" type="button" aria-keyshortcuts="K" onClick={openSearch} aria-label="Найти кабинет"><Search size={18} /><span>Найти место</span><kbd>K</kbd></button>
           <Link className="header-cta" to="/map">Открыть карту <ArrowUpRight size={15} /></Link>
@@ -139,7 +139,7 @@ export function Header() {
         <div className="mobile-nav-language"><span>Язык интерфейса</span><div className="language-switch" role="group" aria-label="Язык сайта">{['ru', 'en'].map((locale) => <button key={locale} type="button" lang={locale} aria-pressed={language === locale} onClick={() => setLanguage(locale)} title={locale === 'ru' ? 'Русская версия' : 'English version'}>{locale.toUpperCase()}</button>)}</div></div>
         <div className="mobile-nav-links">{navigation.map((item, index) => <NavLink end key={item.to} to={item.to} onClick={() => setMobileOpen(false)} className={({ isActive }) => `mobile-nav-link ${isActive ? 'mobile-nav-link-active' : ''}`}><span className="mobile-nav-index">0{index + 1}</span>{item.label}<ArrowRight size={17} /></NavLink>)}</div>
         <div className="mobile-nav-bottom"><span>Найдите нужное место</span><button type="button" onClick={openSearch}><Search size={17} /> Поиск кабинета</button></div>
-        <div className="mobile-nav-bottom"><span>Режим мероприятия</span><button className={`open-day-toggle ${openDay ? 'open-day-toggle-on' : ''}`} type="button" onClick={() => toggleOpenDay()} aria-pressed={openDay}><PartyPopper size={16} /> День открытых дверей <i className="open-day-switch" aria-hidden="true"><b /></i></button></div>
+        <div className="mobile-nav-bottom"><span>ИИ-помощник</span><button className="mobile-assistant-button" type="button" onClick={askAssistant}><Sparkles size={16} /> LOGOS AI — спросить или пройти обучение</button></div>
         <div className="mobile-nav-bottom"><span>Оформление</span><button type="button" onClick={changeTheme}>{theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}{theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}</button></div>
       </nav>
     </header>

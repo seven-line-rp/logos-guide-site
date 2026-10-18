@@ -54,7 +54,7 @@ function validateMessages(value) {
 }
 
 export async function handleAssistantApiRequest(request, {
-  apiKey = process.env.DEEPSEEK_API_KEY,
+  apiKey = process.env.LOGOS_AI_API_KEY || process.env.DEEPSEEK_API_KEY,
   fetchImpl = globalThis.fetch,
   now = Date.now(),
   clientKey,
@@ -65,7 +65,7 @@ export async function handleAssistantApiRequest(request, {
 
   if (url.pathname === '/api/chat/status') {
     if (request.method !== 'GET') return json(405, { code: 'method_not_allowed' })
-    return json(200, { configured: Boolean(key), provider: 'DeepSeek', model: API_MODEL })
+    return json(200, { configured: Boolean(key), assistant: 'LOGOS AI' })
   }
 
   if (url.pathname !== '/api/chat') return json(404, { code: 'not_found' })
@@ -109,20 +109,20 @@ export async function handleAssistantApiRequest(request, {
 
     if (!upstream.ok) {
       if (upstream.status === 429) return json(429, { code: 'rate_limited' })
-      console.warn(`[assistant] DeepSeek returned HTTP ${upstream.status}`)
+      console.warn(`[logos-ai] Model provider returned HTTP ${upstream.status}`)
       return json(502, { code: 'provider_error' })
     }
 
     const data = await upstream.json().catch(() => null)
     const reply = data?.choices?.[0]?.message?.content
     if (typeof reply !== 'string' || !reply.trim()) {
-      console.warn('[assistant] DeepSeek returned an empty response')
+      console.warn('[logos-ai] Model provider returned an empty response')
       return json(502, { code: 'provider_error' })
     }
     return json(200, { reply: reply.trim() })
   } catch (error) {
     if (error?.name === 'AbortError') return json(504, { code: 'timeout' })
-    console.warn('[assistant] DeepSeek request failed')
+    console.warn('[logos-ai] Model provider request failed')
     return json(502, { code: 'provider_error' })
   } finally {
     clearTimeout(timeout)
@@ -205,7 +205,7 @@ export function createAssistantApiMiddleware(options = {}) {
     } catch (error) {
       if (error?.statusCode === 413) return writeError(res, 413, 'request_too_large')
       if (error?.name === 'AbortError') return writeError(res, 400, 'request_aborted')
-      console.error('[assistant] Failed to handle API request')
+      console.error('[logos-ai] Failed to handle API request')
       return writeError(res, 500, 'server_error')
     }
   }

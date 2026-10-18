@@ -6,7 +6,7 @@ import { roomOutline, planSizes } from '../map-geometry.js'
 import { calculateIndoorRoute } from '../map-routing.js'
 import { zoomFrame } from '../map-zoom.js'
 
-function FloorRoom({ room, selected, onSelect, onFloorRequest, gameTargetId, gameFeedback, filterCategory, venue }) {
+function FloorRoom({ room, selected, onSelect, onFloorRequest, gameTargetId, gameFeedback, filterCategory }) {
   const isTarget = gameTargetId === room.id
   const className = [
     'plan-room',
@@ -63,13 +63,6 @@ function FloorRoom({ room, selected, onSelect, onFloorRequest, gameTargetId, gam
   return <g className={className} role={onSelect ? 'button' : 'presentation'} tabIndex={onSelect ? 0 : undefined} aria-label={onSelect ? `${room.name}${room.number ? `, кабинет ${room.number}` : ''}, ${room.floor} этаж${stair ? '. Дважды нажмите, чтобы перейти на другой этаж' : ''}` : undefined} aria-pressed={onSelect ? selected : undefined} onClick={onSelect ? activate : undefined} onDoubleClick={onFloorRequest ? onDoubleClick : undefined} onKeyDown={onSelect ? onKeyDown : undefined} onPointerDown={stair && onFloorRequest ? onPointerDown : undefined} onPointerUp={stair && onFloorRequest ? onPointerUp : undefined}>
     <title>{`${room.name}${room.number ? ` · ${room.number}` : ''} · ${room.floor} этаж`}</title>
     <polygon className="plan-room-shape" points={roomOutline(room.id).map((point) => point.join(',')).join(' ')} />
-    {venue && (() => {
-      const outline = roomOutline(room.id)
-      const cx = outline.reduce((sum, point) => sum + point[0], 0) / outline.length
-      const top = Math.min(...outline.map((point) => point[1]))
-      const cy = top + 15
-      return <g className="plan-venue-badge" aria-hidden="true"><circle className="plan-venue-dot" cx={cx} cy={cy} r="11" /><text className="plan-venue-star" x={cx} y={cy + 4.5} textAnchor="middle">★</text></g>
-    })()}
     {isTarget && <circle className="plan-target-halo" cx={roomOutline(room.id).reduce((sum, point) => sum + point[0], 0) / roomOutline(room.id).length} cy={roomOutline(room.id).reduce((sum, point) => sum + point[1], 0) / roomOutline(room.id).length} r="18" />}
   </g>
 }
@@ -142,7 +135,7 @@ function RouteLayer({ points, markerId, progress = null, is3d = false }) {
   </g>
 }
 
-export default function FloorMap({ floor = 1, selectedId = '', onSelect, onFloorRequest, onPointSelect, picking = false, gameTargetId = '', gameFeedback = '', filterCategory = 'Все места', compact = false, zoomed = false, showLabels = true, showDoorMarks = true, routeStart = '', routeTargetId = '', manualPoint = null, gpsMarker = null, transition = 'lift', venueRoomIds = [], routeProgress = null, navMode3d = false, onToggle3d = null, activeStepPoint = null, swoopActive = false }) {
+export default function FloorMap({ floor = 1, selectedId = '', onSelect, onFloorRequest, onPointSelect, picking = false, gameTargetId = '', gameFeedback = '', filterCategory = 'Все места', compact = false, zoomed = false, showLabels = true, showDoorMarks = true, routeStart = '', routeTargetId = '', manualPoint = null, gpsMarker = null, transition = 'lift', routeProgress = null, navMode3d = false, onToggle3d = null, activeStepPoint = null, swoopActive = false }) {
   const floorRooms = rooms.filter((room) => room.floor === floor)
   const plan = floor === 1 ? floorOnePlan : floorTwoPlan
   const route = routeStart && routeTargetId ? calculateIndoorRoute(routeStart, routeTargetId, floor, transition) : null
@@ -337,7 +330,7 @@ export default function FloorMap({ floor = 1, selectedId = '', onSelect, onFloor
       <svg className="floor-plan-svg" viewBox={`0 0 ${width} ${height}`} role="group" aria-label={`Интерактивная карта, ${floor} этаж`} onClickCapture={onMapClickCapture}>
         <title>{`${floor} этаж колледжа`}</title>
         <desc>{picking ? 'Коснитесь точки на плане, чтобы установить отметку.' : 'Выберите помещение, чтобы открыть описание. Двойной щелчок по лестнице переключает этаж.'}</desc>
-        {floorRooms.map((room) => <FloorRoom key={room.id} room={room} selected={selectedId === room.id} onSelect={onSelect} onFloorRequest={onFloorRequest} gameTargetId={gameTargetId} gameFeedback={gameFeedback} filterCategory={filterCategory} venue={venueRoomIds.includes(room.id)} />)}
+        {floorRooms.map((room) => <FloorRoom key={room.id} room={room} selected={selectedId === room.id} onSelect={onSelect} onFloorRequest={onFloorRequest} gameTargetId={gameTargetId} gameFeedback={gameFeedback} filterCategory={filterCategory} />)}
         {route?.points.length > 1 && <RouteLayer points={route.points} markerId={markerId} progress={routeProgress} is3d={navMode3d} />}
         {floor === 2 && onFloorRequest && <g className="plan-downstairs-link" role="button" tabIndex={0} aria-label="Актовый зал на первом этаже. Открыть первый этаж" onClick={showLowerFloor} onKeyDown={onGhostKeyDown}><rect x="610" y="94" width="156" height="150" rx="2" /></g>}
         {manualPoint?.floor === floor && <LocationMarker point={[manualPoint.x, manualPoint.y]} kind="manual" />}

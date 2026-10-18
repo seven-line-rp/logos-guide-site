@@ -102,7 +102,7 @@ async function serveStatic(req, res) {
 }
 
 const assistantApi = createAssistantApiMiddleware({
-  apiKey: process.env.DEEPSEEK_API_KEY,
+  apiKey: process.env.LOGOS_AI_API_KEY || process.env.DEEPSEEK_API_KEY,
   trustProxy: process.env.TRUST_PROXY === 'true',
 })
 
@@ -112,5 +112,6 @@ const server = createServer((req, res) => {
 server.requestTimeout = 35_000
 server.headersTimeout = 40_000
 server.listen(port, '0.0.0.0', () => {
-  console.log(`LOGOS guide listening on http://0.0.0.0:${port}; DeepSeek ${process.env.DEEPSEEK_API_KEY ? 'configured' : 'not configured'}`)
+  const assistantKey = process.env.LOGOS_AI_API_KEY || process.env.DEEPSEEK_API_KEY
+  console.log(`LOGOS guide listening on http://0.0.0.0:${port}; LOGOS AI ${assistantKey ? 'configured' : 'not configured'}`)
 })

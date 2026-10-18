@@ -109,9 +109,6 @@ html[data-theme='dark'] .map-panel-foot { background: #0b2c63; }
 html[data-theme='dark'] .floor-tab-active,
 html[data-theme='dark'] .map-filter-active,
 html[data-theme='dark'] .route-mode-select button.route-mode-active { background: #17479e; }
-html[data-theme='dark'] .open-day-band {
-  background: linear-gradient(180deg, #0c2a66 0%, #071a3d 100%);
-}
 html[data-theme='dark'] .button-primary,
 html[data-theme='dark'] .route-submit { background: #1f5fe0; }
 html[data-theme='dark'] .button-primary:hover { background: #3b78f5; }
