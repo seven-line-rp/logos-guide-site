@@ -3,6 +3,7 @@ import { BrowserRouter, Link, Route, Routes, useLocation } from 'react-router-do
 import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { Footer, Header, ToastProvider } from './components/Shell'
 import WelcomeDialog from './components/WelcomeDialog'
+import AssistantChat from './components/AssistantChat.jsx'
 import HomePage from './pages/HomePage'
 import { translate, useLanguage } from './i18n.js'
 
@@ -44,7 +45,7 @@ function NotFoundPage() {
 function Site() {
   useLanguage()
   const location = useLocation()
-  return <><RouteEffects /><Header /><main id="main-content" className="site-main page-transition" key={location.pathname}><Suspense fallback={<div className="page-loading container" role="status"><span className="shimmer" style={{display:"inline-block",width:"120px",height:"14px",borderRadius:"6px"}} /> Открываем раздел…</div>}><Routes location={location}><Route path="/" element={<HomePage />} /><Route path="/map" element={<MapPage />} /><Route path="/rooms" element={<RoomsPage />} /><Route path="/route" element={<RoutePage />} /><Route path="/games" element={<GamesPage />} /><Route path="/services" element={<ServicesPage />} /><Route path="/about" element={<AboutPage />} /><Route path="*" element={<NotFoundPage />} /></Routes></Suspense></main><Footer /><WelcomeDialog /></>
+  return <><RouteEffects /><Header /><main id="main-content" className="site-main page-transition" key={location.pathname}><Suspense fallback={<div className="page-loading container" role="status"><span className="shimmer" style={{display:"inline-block",width:"120px",height:"14px",borderRadius:"6px"}} /> Открываем раздел…</div>}><Routes location={location}><Route path="/" element={<HomePage />} /><Route path="/map" element={<MapPage />} /><Route path="/rooms" element={<RoomsPage />} /><Route path="/route" element={<RoutePage />} /><Route path="/games" element={<GamesPage />} /><Route path="/services" element={<ServicesPage />} /><Route path="/about" element={<AboutPage />} /><Route path="*" element={<NotFoundPage />} /></Routes></Suspense></main><Footer /><WelcomeDialog /><AssistantChat /></>
 }
 
 export default function App() {

@@ -12,6 +12,7 @@ import './navigator.css'
 import './contrast.css'
 import './mobile.css'
 import './home-hero.css'
+import './assistant.css'
 import './interactions.js'
 
 createRoot(document.getElementById('root')).render(
