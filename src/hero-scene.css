@@ -1,0 +1,147 @@
+/* 3D-сцена первого экрана: план корпуса в перспективе с маршрутом.
+   Сцена лежит под текстом на всю ширину; план нарисован «чертежом»
+   (полупрозрачные стены и комнаты), чтобы работать на синем фоне светлой
+   темы и на графитовом фоне тёмной. Цвета — через переменные ниже. */
+
+.home-hero-scene {
+  --scene-room: rgba(255, 255, 255, .07);
+  --scene-shaft: rgba(255, 255, 255, .03);
+  --scene-wall: rgba(220, 232, 255, .42);
+  --scene-corridor: rgba(255, 255, 255, .02);
+  --scene-label: rgba(235, 242, 255, .62);
+  --scene-icon: rgba(235, 242, 255, .7);
+  --route: #ffd66d;
+  --route-glow: rgba(255, 214, 109, .55);
+  isolation: isolate;
+}
+html[data-theme='dark'] .home-hero-scene {
+  --scene-room: rgba(255, 255, 255, .045);
+  --scene-shaft: rgba(255, 255, 255, .02);
+  --scene-wall: rgba(255, 255, 255, .2);
+  --scene-label: rgba(236, 235, 230, .5);
+  --scene-icon: rgba(150, 182, 255, .7);
+  --route: #7ba4ff;
+  --route-glow: rgba(91, 140, 255, .55);
+}
+
+.home-hero-scene .home-hero-inner { position: relative; z-index: 2; grid-template-columns: minmax(0, 1fr); min-height: 640px; align-content: center; }
+.home-hero-scene .home-hero-copy { max-width: 560px; }
+.home-hero-scene .home-hero-edge { position: relative; z-index: 2; }
+
+/* ---------- Сцена ---------- */
+.hero-scene {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  perspective: 1500px;
+  perspective-origin: 70% 30%;
+}
+/* Затемнение под текстом слева: план не спорит с заголовком. */
+.hero-scene::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, var(--hero-shade, rgba(9, 29, 80, .92)) 0%, var(--hero-shade-mid, rgba(9, 29, 80, .55)) 38%, transparent 62%);
+  content: '';
+}
+html[data-theme='dark'] .hero-scene::after { --hero-shade: rgba(33, 33, 32, .95); --hero-shade-mid: rgba(33, 33, 32, .55); }
+
+.hero-scene-stage {
+  position: absolute;
+  top: 48%;
+  left: 71%;
+  width: 960px;
+  aspect-ratio: 758 / 552;
+  transform-style: preserve-3d;
+  transform: translate(-50%, -50%) rotateX(55deg) rotateZ(-22deg);
+  animation: hero-scene-in 1.4s cubic-bezier(.2, .8, .2, 1) both;
+}
+@keyframes hero-scene-in {
+  from { opacity: 0; transform: translate(-50%, -44%) rotateX(62deg) rotateZ(-14deg) scale(.94); }
+  to { opacity: 1; transform: translate(-50%, -50%) rotateX(55deg) rotateZ(-22deg); }
+}
+.hero-scene-floor { position: absolute; inset: 0; transform-style: preserve-3d; }
+.hero-scene-floor-upper { transform: translateZ(170px); opacity: .5; animation: hero-floor-float 9s ease-in-out infinite alternate; }
+@keyframes hero-floor-float { from { transform: translateZ(160px); } to { transform: translateZ(185px); } }
+
+.hero-scene-plan, .hero-scene-focus, .hero-scene-route { position: absolute; inset: 0; width: 100%; height: 100%; }
+.hero-scene-plan svg { width: 100%; height: 100%; display: block; overflow: visible; }
+
+/* Глубина резкости: размытая копия плана целиком и резкая — только у маршрута. */
+.hero-scene-plan-upper { filter: blur(3.5px); -webkit-mask-image: radial-gradient(60% 60% at 45% 55%, #000 30%, transparent 75%); mask-image: radial-gradient(60% 60% at 45% 55%, #000 30%, transparent 75%); }
+.hero-scene-plan-blur { filter: blur(4px); opacity: .75; -webkit-mask-image: radial-gradient(75% 75% at 45% 50%, #000 35%, transparent 80%); mask-image: radial-gradient(75% 75% at 45% 50%, #000 35%, transparent 80%); }
+.hero-scene-focus { -webkit-mask-image: radial-gradient(42% 52% at 42% 56%, #000 45%, transparent 100%); mask-image: radial-gradient(42% 52% at 42% 56%, #000 45%, transparent 100%); }
+
+/* Перекраска плана в «чертёж». */
+.hero-scene-plan svg > :is(rect, path)[fill='#D9D9D9'] { fill: transparent; }
+.hero-scene-plan svg > :is(rect, path)[fill='white'] { fill: var(--scene-corridor); }
+.hero-scene-plan svg > :is(rect, path)[fill='#DFE6FF'] { fill: var(--scene-room); }
+.hero-scene-plan svg > :is(rect, path)[fill='#878DA2'] { fill: var(--scene-shaft); }
+.hero-scene-plan svg > :is(rect, path)[stroke='#ACAEB3'] { stroke: var(--scene-wall); stroke-width: 1.1; }
+.hero-scene-plan svg > path[fill='#ACAEB3'] { fill: var(--scene-wall); }
+.hero-scene-plan svg > path[fill='black'][opacity='0.2'] { fill: var(--scene-label); opacity: 1; }
+.hero-scene-plan .plan-art-text { fill: var(--scene-label); font-family: inherit; letter-spacing: .04em; }
+.hero-scene-plan svg :is(rect, path)[fill='#0000FF'], .hero-scene-plan svg > path[fill^='url(#paint'] { fill: var(--scene-icon); }
+.hero-scene-plan svg g path[stroke='#0000FF'] { stroke: var(--scene-icon); }
+.hero-scene-plan svg > rect[width='15'][height='2'], .hero-scene-plan svg > rect[width='8'][height='2'], .hero-scene-plan svg > rect[width='31'][height='2'] { fill: var(--route); opacity: .55; }
+
+/* ---------- Маршрут ---------- */
+.hero-scene-route { overflow: visible; }
+.hero-scene-route path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.hero-route-glow { stroke: var(--route-glow); stroke-width: 14; filter: blur(6px); }
+.hero-route-base { stroke: var(--route); stroke-width: 5; opacity: .22; }
+.hero-route-line { stroke: var(--route); stroke-width: 5; stroke-dasharray: 1; stroke-dashoffset: 1; animation: hero-route-draw 7s cubic-bezier(.45, 0, .25, 1) infinite; }
+@keyframes hero-route-draw {
+  0% { stroke-dashoffset: 1; }
+  75%, 92% { stroke-dashoffset: 0; opacity: 1; }
+  100% { stroke-dashoffset: 0; opacity: 0; }
+}
+.hero-route-start { fill: #fff; stroke: var(--route); stroke-width: 3; }
+.hero-route-end { fill: var(--route); stroke: #fff; stroke-width: 2.5; }
+.hero-route-pulse { fill: none; stroke: var(--route); stroke-width: 2; transform-box: fill-box; transform-origin: center; animation: hero-route-pulse 2s ease-out infinite; }
+@keyframes hero-route-pulse { from { opacity: .9; transform: scale(1); } to { opacity: 0; transform: scale(3); } }
+.hero-route-walker { fill: #fff; filter: drop-shadow(0 0 6px var(--route)); }
+
+/* ---------- Подпись маршрута ---------- */
+.hero-scene-caption {
+  position: absolute;
+  z-index: 3;
+  right: max(24px, calc((100vw - var(--container)) / 2));
+  bottom: 90px;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px 11px 13px;
+  border: 1px solid rgba(255, 255, 255, .22);
+  border-radius: 14px;
+  color: #fff;
+  background: rgba(10, 24, 60, .45);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  transition: background .2s, border-color .2s;
+}
+.hero-scene-caption:hover { border-color: rgba(255, 255, 255, .45); background: rgba(10, 24, 60, .62); }
+.hero-scene-caption span:not(.hero-scene-caption-dot) { display: flex; flex-direction: column; gap: 2px; }
+.hero-scene-caption strong { font-size: 13.5px; font-weight: 700; }
+.hero-scene-caption small { color: rgba(235, 242, 255, .72); font-size: 11.5px; }
+.hero-scene-caption-dot { width: 10px; height: 10px; flex: 0 0 auto; border-radius: 50%; background: var(--route); box-shadow: 0 0 0 4px color-mix(in srgb, var(--route) 30%, transparent); }
+html[data-theme='dark'] .hero-scene-caption { border-color: var(--line); background: rgba(38, 38, 37, .6); }
+html[data-theme='dark'] .hero-scene-caption small { color: var(--muted); }
+
+/* ---------- Адаптив ---------- */
+@media (max-width: 1100px) {
+  .hero-scene-stage { left: 74%; width: 860px; }
+}
+@media (max-width: 860px) {
+  .home-hero-scene .home-hero-inner { min-height: 0; }
+  .hero-scene { opacity: .8; }
+  .hero-scene::after { background: linear-gradient(180deg, var(--hero-shade-mid, rgba(9, 29, 80, .55)) 0%, var(--hero-shade, rgba(9, 29, 80, .92)) 55%); }
+  .hero-scene-stage { top: 18%; left: 64%; width: 720px; }
+  .hero-scene-caption { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-scene-stage, .hero-scene-floor-upper, .hero-route-pulse { animation: none; }
+  .hero-route-line { animation: none; stroke-dashoffset: 0; }
+}

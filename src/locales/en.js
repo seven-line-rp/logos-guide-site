@@ -214,3 +214,7 @@ Object.assign(english, {
   'Нашли неточность на плане?': 'Spotted a mistake on the plan?', 'Расскажите любому из команды: номер кабинета, этаж и что не так. Каждое уточнение делает карту точнее для следующего курса.': 'Tell anyone on the team: the room number, floor and what is wrong. Every fix makes the map better for the next intake.',
   'Открыть карту': 'Open map',
 })
+
+Object.assign(english, {
+  'Главный вход → кабинет 138': 'Main entrance → room 138', 'Пример маршрута по коридорам · 1 этаж': 'Sample corridor route · floor 1',
+})
