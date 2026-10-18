@@ -383,3 +383,64 @@ html[data-theme='dark'] .route-single-strip { background: var(--surface); }
 html[data-theme='dark'] .route-option-card { border-color: var(--line); background: var(--surface); }
 html[data-theme='dark'] .route-option-active { border-color: #2f6fd6; background: rgba(39, 90, 159, 0.25); }
 html[data-theme='dark'] .route-option-body strong { color: var(--ink); }
+
+/* Маршрут, собранный помощником LOGOS AI (переход из чата по ?ai=1). */
+.route-ai-banner {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 14px;
+  padding: 11px 13px;
+  border: 1px solid rgba(33, 88, 224, .26);
+  border-radius: 13px;
+  background: linear-gradient(120deg, rgba(33, 88, 224, .12), rgba(255, 215, 102, .14));
+  animation: route-ai-in .45s cubic-bezier(.2, .75, .25, 1) both;
+}
+@keyframes route-ai-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+.route-ai-icon {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 10px;
+  color: #fff;
+  background: linear-gradient(135deg, #2462e6, #1745b5);
+  box-shadow: 0 6px 16px rgba(23, 69, 181, .26);
+}
+.route-ai-copy { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.route-ai-copy strong { color: var(--ink); font-size: 12.5px; font-weight: 760; }
+.route-ai-copy small { color: var(--muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.route-ai-chat {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  padding: 0 11px;
+  border: 1px solid rgba(33, 88, 224, .32);
+  border-radius: 10px;
+  color: var(--blue);
+  background: var(--surface);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .18s, color .18s;
+}
+.route-ai-chat:hover { color: #fff; background: var(--blue); }
+.route-result-ai { animation: route-ai-glow 1.6s ease-out both; }
+@keyframes route-ai-glow {
+  0% { box-shadow: 0 0 0 0 rgba(33, 88, 224, .3); }
+  45% { box-shadow: 0 0 0 7px rgba(33, 88, 224, .12); }
+  100% { box-shadow: 0 0 0 0 rgba(33, 88, 224, 0); }
+}
+html[data-theme='dark'] .route-ai-banner { background: linear-gradient(120deg, rgba(126, 166, 255, .14), rgba(255, 215, 102, .1)); border-color: rgba(126, 166, 255, .3); }
+html[data-theme='dark'] .route-ai-chat { background: rgba(126, 166, 255, .12); border-color: rgba(126, 166, 255, .32); color: #9fc0ff; }
+html[data-theme='dark'] .route-ai-chat:hover { color: #0d1c3b; background: #9fc0ff; }
+@media (max-width: 620px) {
+  .route-ai-banner { flex-wrap: wrap; }
+  .route-ai-chat { margin-left: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .route-ai-banner, .route-result-ai { animation: none !important; }
+}

@@ -71,6 +71,30 @@ test('a chat can be renamed and falls back to the first question', () => {
   assert.equal(renameChat([chat], 'other', 'Имя')[0].title, EMPTY_CHAT_TITLE)
 })
 
+test('a route card survives the reload with the message', () => {
+  const store = createMemoryStore()
+  const route = {
+    fromId: 'canteen', toId: 'library-214', fromLabel: 'Столовая', toLabel: 'Библиотека (читальный зал) №214',
+    fromFloor: 1, toFloor: 2, crossFloor: true, samePlace: false, meters: 78, minutes: 2, footsteps: 111,
+    transfer: 'лифт', variants: 4, link: '/route?from=canteen&to=library-214&ai=1',
+  }
+  const chat = { ...createChat(), messages: [message('user', 'Построй маршрут'), { ...message('assistant', 'Строю'), route }] }
+  writeChats([chat], store)
+  const restored = readChats(store)[0]
+  assert.equal(restored.messages[1].route.fromId, 'canteen')
+  assert.equal(restored.messages[1].route.meters, 78)
+  assert.equal(restored.messages[1].route.link, '/route?from=canteen&to=library-214&ai=1')
+
+  store.setItem(CHATS_STORAGE_KEY, JSON.stringify([{
+    id: 'broken',
+    messages: [{ role: 'assistant', content: 'Строю', route: { fromId: 'canteen' } }, { role: 'user', content: 'привет', route: { fromId: 'a', toId: 'b' } }],
+  }]))
+  const cleaned = readChats(store)[0]
+  assert.equal(cleaned.messages.length, 2)
+  assert.equal(cleaned.messages[0].route, undefined, 'неполная карточка отбрасывается')
+  assert.equal(cleaned.messages[1].route, undefined, 'у пользовательских сообщений карточки не бывает')
+})
+
 test('only a short tail of the conversation is sent to the model', () => {
   const messages = Array.from({ length: HISTORY_SENT_TO_MODEL + 8 }, (_, index) => message(index % 2 ? 'assistant' : 'user', `сообщение ${index}`))
   const history = historyForModel(messages)

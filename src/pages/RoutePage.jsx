@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, ArrowUp, ArrowUpRight, Check, Footprints, Info, MapPin, MoveDown, MoveUp, Play, Volume2, VolumeX, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ArrowUp, ArrowUpRight, Check, Footprints, Info, MapPin, MoveDown, MessageCircle, MoveUp, Play, Sparkles, Volume2, VolumeX, X } from 'lucide-react'
 import { rooms } from '../data.js'
 import { FloorTag, PageHeading, Reveal } from '../components/Primitives.jsx'
 import FloorMap from '../components/FloorMap.jsx'
 import RoomSearchSelect from '../components/RoomSearchSelect.jsx'
 import { buildRouteOptions, pickRoute } from '../map-routing.js'
+import { openAssistant } from '../assistant-bus.js'
 import { buildRouteSteps } from '../route-steps.js'
 import { readManualLocation } from '../map-location.js'
 import { VOICE_PRESETS, getStoredPreset, setVoicePreset, speakText, stopSpeech } from '../speech.js'
@@ -47,6 +48,8 @@ export default function RoutePage() {
     sameRoom,
   })
 
+  // Пришли из чата LOGOS AI — показываем, что маршрут собрал помощник.
+  const aiBuilt = params.get('ai') === '1'
   const routeKey = [startId, target.id, route.kind || 'same'].join('|')
   const [nav, setNav] = useState({ key: routeKey, index: 0 })
   const stepIndex = nav.key === routeKey ? Math.min(nav.index, steps.length - 1) : 0
@@ -173,7 +176,9 @@ export default function RoutePage() {
         />
         <button className="button button-primary route-submit" type="submit">Посмотреть маршрут <ArrowRight size={16} /></button>
       </form></Reveal>
-      <Reveal id="route-result" className="route-result-panel" delay={100}><div className="route-result-top"><span className="eyebrow">Ваш маршрут</span><div className="route-top-actions"><button className="route-reset" type="button" onClick={resetRoute}><X size={14} /> Сбросить</button></div></div>
+      <Reveal id="route-result" className={`route-result-panel ${aiBuilt ? 'route-result-ai' : ''}`} delay={100}>
+        {aiBuilt && <div className="route-ai-banner"><span className="route-ai-icon"><Sparkles size={15} /></span><span className="route-ai-copy"><strong>LOGOS AI построил маршрут</strong><small>{startLabel} → {roomName(target)}{crossFloor ? ` · ${route.transfer?.label || 'переход между этажами'}` : ' · один этаж'}</small></span><button className="route-ai-chat" type="button" onClick={() => openAssistant('full')}><MessageCircle size={14} /> Спросить помощника</button></div>}
+        <div className="route-result-top"><span className="eyebrow">Ваш маршрут</span><div className="route-top-actions"><button className="route-reset" type="button" onClick={resetRoute}><X size={14} /> Сбросить</button></div></div>
         
         {/* Два записанных Логос-голоса и проверка озвучки */}
         <div className="route-voice-bar">

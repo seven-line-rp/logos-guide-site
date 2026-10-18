@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   Bot, Check, ChevronRight, CircleHelp, GraduationCap, History, LoaderCircle, MessageCircle,
   MessageSquarePlus, PanelLeft, Pencil, Send, Sparkles, Trash2, X,
@@ -11,11 +11,15 @@ import {
   upsertChat, writeActiveChatId, writeChats,
 } from '../assistant-chat-store.js'
 import { TUTORIAL_COMMAND, isTutorialCommand } from '../tutorial.js'
+import { parseIntent } from '../assistant-intents.js'
+import RouteBuildCard from './RouteBuildCard.jsx'
 
 const LINK_PATTERN = /\[([^\]]+)\]\((\/[^)\s]*)\)/g
+// Подсказки подобраны так, чтобы отвечать на них мгновенно и без модели:
+// их разбирает локальный слой src/assistant-intents.js.
 const SUGGESTIONS = [
+  'Построй маршрут от Столовой до Библиотеки',
   'Где находится библиотека?',
-  'Как построить маршрут между этажами?',
   'Что умеет этот сайт?',
 ]
 const TOUR_REPLY = 'Запускаю обучение по сайту: подсвечу главные элементы и подскажу, что делать на каждом шаге. '
@@ -148,6 +152,8 @@ export default function AssistantChat() {
   const scrollRef = useRef(null)
   const formRef = useRef(null)
   const requestRef = useRef(null)
+  const pendingRouteRef = useRef('')
+  const navigate = useNavigate()
   const open = mode !== 'closed'
 
   const activeChat = useMemo(
@@ -270,6 +276,19 @@ export default function AssistantChat() {
       return
     }
 
+    // Поиск кабинета, частые вопросы и построение маршрута помощник умеет сам:
+    // это быстрее, работает без ключа и не тратит лимит модели.
+    const intent = parseIntent(text)
+    if (intent) {
+      const reply = makeMessage('assistant', intent.kind === 'route' ? intent.content : intent.answer)
+      if (intent.kind === 'route') {
+        reply.route = intent.route
+        pendingRouteRef.current = reply.id
+      }
+      appendMessage(chatId, reply)
+      return
+    }
+
     setBusy(true)
     const controller = new AbortController()
     requestRef.current = controller
@@ -307,6 +326,31 @@ export default function AssistantChat() {
     event.preventDefault()
     void sendMessage(draft)
   }
+
+  // Отмечаем карточку построенной, чтобы после перезагрузки диалога она
+  // открывалась готовой, а не проигрывала построение заново.
+  const settleRoute = useCallback((messageId) => {
+    setChats((current) => current.map((chat) => (chat.messages.some((message) => message.id === messageId)
+      ? {
+        ...chat,
+        messages: chat.messages.map((message) => (message.id === messageId && message.route
+          ? { ...message, route: { ...message.route, settled: true } }
+          : message)),
+      }
+      : chat)))
+  }, [])
+
+  // Карточка маршрута сама открывает страницу маршрута, когда построение
+  // «дошло до конца»; по кнопке переходим сразу.
+  const openRoute = useCallback((route) => {
+    pendingRouteRef.current = ''
+    setMode('closed')
+    setListOpen(false)
+    navigate(route.link)
+    window.setTimeout(() => {
+      document.getElementById('route-result')?.scrollIntoView({ block: 'start', behavior: 'smooth' })
+    }, 420)
+  }, [navigate])
 
   const startNewChat = () => {
     requestRef.current?.abort()
@@ -380,7 +424,15 @@ export default function AssistantChat() {
         </div> : <div className="ai-message-list">
           {messages.map((message) => <article key={message.id} className={`ai-message ai-message-${message.role}`}>
             {message.role === 'assistant' && <span className="ai-message-avatar" aria-hidden="true"><Sparkles size={13} /></span>}
-            <div className="ai-message-content"><MessageContent content={message.content} /></div>
+            <div className="ai-message-content">
+              <MessageContent content={message.content} />
+              {message.route && <RouteBuildCard
+                route={message.route}
+                autoOpen={pendingRouteRef.current === message.id}
+                onOpen={openRoute}
+                onSettled={() => settleRoute(message.id)}
+              />}
+            </div>
           </article>)}
           {busy && <div className="ai-message ai-message-assistant ai-message-pending" aria-label="Помощник печатает">
             <span className="ai-message-avatar" aria-hidden="true"><Sparkles size={13} /></span>

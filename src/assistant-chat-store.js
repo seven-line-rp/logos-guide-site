@@ -51,16 +51,46 @@ export function createChat(now = new Date().toISOString()) {
   return { id: createChatId(), title: EMPTY_CHAT_TITLE, createdAt: now, updatedAt: now, messages: [] }
 }
 
+// Карточка маршрута, которую помощник собрал локально: храним её вместе с
+// сообщением, чтобы после перезагрузки диалог выглядел так же.
+function normalizeRoute(value) {
+  if (!value || typeof value !== 'object') return null
+  const fromId = typeof value.fromId === 'string' ? value.fromId : ''
+  const toId = typeof value.toId === 'string' ? value.toId : ''
+  if (!fromId || !toId) return null
+  const text = (item) => (typeof item === 'string' ? item.slice(0, 120) : '')
+  const number = (item) => (Number.isFinite(item) ? Math.max(0, Math.round(item)) : 0)
+  return {
+    fromId,
+    toId,
+    fromLabel: text(value.fromLabel),
+    toLabel: text(value.toLabel),
+    fromFloor: number(value.fromFloor),
+    toFloor: number(value.toFloor),
+    crossFloor: Boolean(value.crossFloor),
+    samePlace: Boolean(value.samePlace),
+    meters: number(value.meters),
+    minutes: number(value.minutes),
+    footsteps: number(value.footsteps),
+    transfer: text(value.transfer),
+    variants: number(value.variants),
+    settled: Boolean(value.settled),
+    link: `/route?from=${encodeURIComponent(fromId)}&to=${encodeURIComponent(toId)}&ai=1`,
+  }
+}
+
 export function normalizeMessage(message) {
   if (!message || typeof message !== 'object') return null
   const role = message.role === 'user' ? 'user' : message.role === 'assistant' ? 'assistant' : ''
   const content = typeof message.content === 'string' ? message.content.trim() : ''
   if (!role || !content) return null
+  const route = role === 'assistant' ? normalizeRoute(message.route) : null
   return {
     id: typeof message.id === 'string' && message.id ? message.id : createChatId(),
     role,
     content: content.slice(0, MAX_MESSAGE_LENGTH * 2),
     at: typeof message.at === 'string' ? message.at : new Date().toISOString(),
+    ...(route ? { route } : {}),
   }
 }
 
