@@ -43,3 +43,25 @@ test('the showcase route exists and crosses floors by its staircase', () => {
   assert.ok(option, 'route option exists')
   assert.ok(option.byFloor[1].points.length > 1 && option.byFloor[2].points.length > 1)
 })
+
+test('the camera flight is continuous and loops back to the opening shot', async () => {
+  const { buildFlight } = await import('./hero-scene-model.js')
+  const option = buildRouteOptions(HERO_ROUTE.from, HERO_ROUTE.to).find((item) => item.kind === HERO_ROUTE.via)
+  const flight = buildFlight(option.byFloor[1].points, option.byFloor[2].points)
+  const steps = 2000
+  let previous = flight(0).camera
+  for (let index = 1; index <= steps; index += 1) {
+    const frame = flight(index / steps)
+    const camera = frame.camera
+    for (const key of ['x', 'y', 'z', 'zoom', 'tilt', 'yaw']) assert.ok(Number.isFinite(camera[key]), key)
+    // Ни одного рывка: за 1/2000 цикла (10 мс) камера сдвигается плавно.
+    assert.ok(Math.hypot(camera.x - previous.x, camera.y - previous.y) < 8, `jump at ${index}`)
+    assert.ok(Math.abs(camera.yaw - previous.yaw) < 6 || index === steps, `spin at ${index}`)
+    assert.ok(frame.lower >= 0 && frame.lower <= 1 && frame.upper >= 0 && frame.upper <= 1)
+    previous = camera
+  }
+  const start = flight(0).camera
+  const end = flight(0.99999).camera
+  assert.ok(Math.abs(start.x - end.x) < 1 && Math.abs(start.zoom - end.zoom) < 0.01, 'loop closes on the wide shot')
+  assert.ok(Math.abs(((start.yaw - end.yaw) % 360 + 360) % 360) < 1 || Math.abs(((start.yaw - end.yaw) % 360 + 360) % 360 - 360) < 1)
+})
