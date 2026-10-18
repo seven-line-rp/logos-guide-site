@@ -27,6 +27,8 @@ npm run dev
 
 Ключ модели хранится только на сервере (`LOGOS_AI_API_KEY`, старое имя `DEEPSEEK_API_KEY` тоже читается). Подробная настройка и ограничения — в [`deploy/ai-assistant.md`](deploy/ai-assistant.md).
 
+**Сборка с внешним API.** Если фронт (`dist/`) лежит на статическом хостинге, а серверный `server.mjs` — отдельно (Railway/Render/VPS), передайте при сборке `VITE_ASSISTANT_API_URL=https://…` — фронт будет ходить за `/api/chat` на этот адрес. Без переменной — на свой origin, как раньше.
+
 Для локальной разработки скопируйте `.env.example` в `.env`, укажите ключ и запустите `npm run dev`. Для production-варианта используйте `npm run build && npm start`. Обычная статическая публикация на Apache/reg.ru не запускает API — нужен Node.js-хостинг или серверный proxy.
 
 ## Публикация и перезагрузка страниц

@@ -14,6 +14,8 @@ import { TUTORIAL_COMMAND, isTutorialCommand } from '../tutorial.js'
 import { parseIntent } from '../assistant-intents.js'
 import RouteBuildCard from './RouteBuildCard.jsx'
 
+const ASSISTANT_API_URL = (import.meta.env.VITE_ASSISTANT_API_URL || '').replace(/\/+$/, '')
+const chatUrl = (path) => ASSISTANT_API_URL ? `${ASSISTANT_API_URL}${path}` : path
 const LINK_PATTERN = /\[([^\]]+)\]\((\/[^)\s]*)\)/g
 // Подсказки подобраны так, чтобы отвечать на них мгновенно и без модели:
 // их разбирает локальный слой src/assistant-intents.js.
@@ -189,7 +191,7 @@ export default function AssistantChat() {
 
   useEffect(() => {
     const controller = new AbortController()
-    fetch('/api/chat/status', { signal: controller.signal })
+    fetch(chatUrl('/api/chat/status'), { signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error('status_unavailable')
         return response.json()
@@ -293,7 +295,7 @@ export default function AssistantChat() {
     const controller = new AbortController()
     requestRef.current = controller
     try {
-      const response = await fetch('/api/chat', {
+      const response = await fetch(chatUrl('/api/chat'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         signal: controller.signal,
