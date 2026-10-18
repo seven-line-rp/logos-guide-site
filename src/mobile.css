@@ -80,8 +80,8 @@ html, body { overflow-x: clip; }
   color: #fff;
   border-color: var(--action-bg, #1854e8);
 }
-.mobile-nav-bottom .mobile-assistant-button,
-html[data-theme='dark'] .mobile-nav-bottom .mobile-assistant-button {
+.mobile-nav-bottom .mobile-tour-button,
+html[data-theme='dark'] .mobile-nav-bottom .mobile-tour-button {
   color: #fff;
   background: linear-gradient(125deg, #13294f 0%, #1a4fb6 100%);
   border-color: transparent;
@@ -213,7 +213,7 @@ html[data-theme='dark'] .mobile-nav-bottom .mobile-assistant-button {
   .mobile-nav-link { min-height: 52px; }
   .mobile-nav-language { margin-bottom: 4px; }
   .mobile-nav-bottom { gap: 7px 12px; }
-  .mobile-nav-bottom .mobile-assistant-button {
+  .mobile-nav-bottom .mobile-tour-button {
     width: auto;
     min-height: 44px;
     justify-content: flex-start;

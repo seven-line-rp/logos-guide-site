@@ -160,10 +160,13 @@ button, a { touch-action: manipulation; }
 .floor-map-zoomed .floor-map-stage { min-width: 950px; }
 .floor-map-art svg > rect[fill="#DFE6FF"], .floor-map-art svg > path[fill="#DFE6FF"] { fill: var(--map-room); }
 .floor-map-art svg > rect[fill="#D9D9D9"] { fill: #e0e5e4; }
-.floor-map-art svg > rect[fill="#878DA2"] { fill: #bdc9ce; }
+.floor-map-art svg > :is(rect, path)[fill="#878DA2"] { fill: #bdc9ce; }
 .floor-map-art svg > :is(rect,path)[fill="white"] { fill: #fffefa; }
 .floor-map-art svg > :is(rect,path)[stroke="#ACAEB3"] { stroke: var(--map-wall); }
 .floor-map-art svg > path[fill="black"][opacity="0.2"] { fill: var(--map-label); opacity: .78; }
+.floor-map-art .plan-art-text { fill: var(--map-label); opacity: .78; font-family: inherit; font-weight: 400; letter-spacing: .03em; }
+.floor-map-art svg g path[stroke="#0000FF"] { stroke: var(--map-door); }
+.floor-map-labels-hidden .floor-map-art .plan-art-text { opacity: 0; }
 .floor-map-art svg > :is(rect,path)[fill="#0000FF"], .floor-map-art svg > g path[fill="#0000FF"], .floor-map-art svg > path[fill^="url(#paint"] { fill: var(--map-door); }
 .floor-map-art svg > :is(rect,path)[stroke="#0000FF"] { stroke: var(--map-door); }
 .floor-map-doors-hidden .floor-map-art svg > rect[fill="#0000FF"] { opacity: 0 !important; }
@@ -438,9 +441,10 @@ html[data-theme='dark'] .map-panel-heading, html[data-theme='dark'] .map-panel-f
 html[data-theme='dark'] .map-panel-heading small, html[data-theme='dark'] .map-panel-foot { color: var(--muted); }
 html[data-theme='dark'] .floor-map-viewport, html[data-theme='dark'] .floor-map-stage, html[data-theme='dark'] .mini-plan-wrap .floor-map-viewport { background: var(--map-bg); }
 html[data-theme='dark'] .floor-map-art svg > rect[fill="#D9D9D9"] { fill: #1b2d3f; }
-html[data-theme='dark'] .floor-map-art svg > rect[fill="#878DA2"] { fill: #283748; }
+html[data-theme='dark'] .floor-map-art svg > :is(rect, path)[fill="#878DA2"] { fill: #283748; }
 html[data-theme='dark'] .floor-map-art svg > :is(rect,path)[fill="white"] { fill: #132b3d; }
 html[data-theme='dark'] .floor-map-art svg > path[fill="black"][opacity="0.2"] { fill: #e6f1fa; opacity: .9; }
+html[data-theme="dark"] .floor-map-art .plan-art-text { fill: #e6f1fa; opacity: .9; }
 html[data-theme='dark'] .floor-map-art svg > :is(rect,path)[stroke="#ACAEB3"] { stroke: #83a0b3; }
 html[data-theme='dark'] .plan-position text { fill: #fff; stroke: #102236; }
 html[data-theme='dark'] .route-preview-panel { border-color: var(--line); }

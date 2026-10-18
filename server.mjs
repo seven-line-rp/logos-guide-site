@@ -2,7 +2,6 @@ import { createReadStream } from 'node:fs'
 import { readFile, stat } from 'node:fs/promises'
 import { createServer } from 'node:http'
 import { extname, resolve, sep } from 'node:path'
-import { createAssistantApiMiddleware } from './server/assistant-api.mjs'
 
 async function loadLocalEnvironment() {
   let contents
@@ -101,17 +100,9 @@ async function serveStatic(req, res) {
   return createReadStream(file).pipe(res)
 }
 
-const assistantApi = createAssistantApiMiddleware({
-  apiKey: process.env.LOGOS_AI_API_KEY || process.env.DEEPSEEK_API_KEY,
-  trustProxy: process.env.TRUST_PROXY === 'true',
-})
-
-const server = createServer((req, res) => {
-  void assistantApi(req, res, () => { void serveStatic(req, res) })
-})
+const server = createServer((req, res) => { void serveStatic(req, res) })
 server.requestTimeout = 35_000
 server.headersTimeout = 40_000
 server.listen(port, '0.0.0.0', () => {
-  const assistantKey = process.env.LOGOS_AI_API_KEY || process.env.DEEPSEEK_API_KEY
-  console.log(`LOGOS guide listening on http://0.0.0.0:${port}; LOGOS AI ${assistantKey ? 'configured' : 'not configured'}`)
+  console.log(`LOGOS guide listening on http://0.0.0.0:${port}`)
 })

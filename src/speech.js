@@ -9,6 +9,8 @@
 //   3. Пока говорит предыдущая фраза, новая не стартует — отменяем её и ждём
 //      события end, иначе половина шагов остаётся без звука.
 
+import { functionalStorageAllowed } from './consent.js'
+
 const VOICE_KEY = 'route-voice-name'
 const PRESET_KEY = 'route-voice-preset'
 
@@ -27,7 +29,7 @@ export function getStoredPreset() {
 }
 
 export function setVoicePreset(presetId) {
-  if (typeof localStorage !== 'undefined') {
+  if (typeof localStorage !== 'undefined' && functionalStorageAllowed()) {
     try { localStorage.setItem(PRESET_KEY, presetId) } catch { /* private mode */ }
   }
 }
@@ -243,5 +245,6 @@ export async function speakText(text, { preset = null, rate = null, pitch = null
 }
 
 export function rememberVoice(name) {
+  if (!functionalStorageAllowed()) return
   try { localStorage.setItem(VOICE_KEY, name) } catch { /* приватный режим */ }
 }

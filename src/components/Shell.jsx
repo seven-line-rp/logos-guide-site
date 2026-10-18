@@ -1,11 +1,12 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
-import { ArrowRight, ArrowUpRight, Check, MapPin, Moon, Search, Sparkles, Sun, X } from 'lucide-react'
+import { ArrowRight, ArrowUpRight, BookOpen, Check, MapPin, Moon, Search, Sparkles, Sun, X } from 'lucide-react'
 import { navigation, rooms } from '../data'
 import { lockBodyScroll, storageGet, storageSet } from '../storage'
 import { setLanguage, useLanguage, searchableRoom } from '../i18n.js'
 import { isSearchShortcut } from '../shortcuts.js'
-import { openAssistant } from '../assistant-bus.js'
+import { startTour } from '../tour-bus.js'
+import { openCookieSettings } from '../consent.js'
 
 const ToastContext = createContext(() => {})
 
@@ -95,13 +96,13 @@ export function Header() {
   const closeSearch = useCallback(() => setSearchOpen(false), [])
   const changeTheme = () => setTheme((value) => value === 'dark' ? 'light' : 'dark')
   const openSearch = () => { setMobileOpen(false); setSearchOpen(true) }
-  const askAssistant = () => { setMobileOpen(false); openAssistant('full') }
+  const takeTour = () => { setMobileOpen(false); startTour() }
 
   useEffect(() => setMobileOpen(false), [location.pathname])
   useEffect(() => {
     document.documentElement.dataset.theme = theme
     storageSet('site-theme', theme)
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#07172e' : '#1854e8')
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#1d1d1c' : '#1854e8')
   }, [theme])
   useEffect(() => {
     const onKeyDown = (event) => {
@@ -127,7 +128,7 @@ export function Header() {
           {navigation.map((item) => <NavLink end key={item.to} to={item.to} className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}>{item.label}</NavLink>)}
         </nav>
         <div className="header-actions">
-          <button className="header-assistant" type="button" onClick={askAssistant} aria-label="Открыть помощника LOGOS AI" title="LOGOS AI — помощник по сайту"><span className="header-assistant-icon"><Sparkles size={16} /></span><span className="header-assistant-copy"><strong>LOGOS AI</strong><small>Помощник по сайту</small></span><i className="header-assistant-dot" aria-hidden="true" /></button>
+          <NavLink className={({ isActive }) => `header-docs ${isActive ? 'header-docs-active' : ''}`} to="/docs" title="Документация по сайту"><BookOpen size={16} /><span>Документация</span></NavLink>
           <button className="theme-toggle header-theme" type="button" onClick={changeTheme} aria-label={theme === 'dark' ? 'Включить светлую тему' : 'Включить тёмную тему'} title={theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}>{theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}</button>
           <button className="search-trigger" type="button" aria-keyshortcuts="K" onClick={openSearch} aria-label="Найти кабинет"><Search size={18} /><span>Найти место</span><kbd>K</kbd></button>
           <Link className="header-cta" to="/map">Открыть карту <ArrowUpRight size={15} /></Link>
@@ -139,7 +140,7 @@ export function Header() {
         <div className="mobile-nav-language"><span>Язык интерфейса</span><div className="language-switch" role="group" aria-label="Язык сайта">{['ru', 'en'].map((locale) => <button key={locale} type="button" lang={locale} aria-pressed={language === locale} onClick={() => setLanguage(locale)} title={locale === 'ru' ? 'Русская версия' : 'English version'}>{locale.toUpperCase()}</button>)}</div></div>
         <div className="mobile-nav-links">{navigation.map((item, index) => <NavLink end key={item.to} to={item.to} onClick={() => setMobileOpen(false)} className={({ isActive }) => `mobile-nav-link ${isActive ? 'mobile-nav-link-active' : ''}`}><span className="mobile-nav-index">0{index + 1}</span>{item.label}<ArrowRight size={17} /></NavLink>)}</div>
         <div className="mobile-nav-bottom"><span>Найдите нужное место</span><button type="button" onClick={openSearch}><Search size={17} /> Поиск кабинета</button></div>
-        <div className="mobile-nav-bottom"><span>ИИ-помощник</span><button className="mobile-assistant-button" type="button" onClick={askAssistant}><Sparkles size={16} /> LOGOS AI — спросить или пройти обучение</button></div>
+        <div className="mobile-nav-bottom"><span>Впервые на сайте?</span><NavLink to="/docs" className="mobile-docs-link"><BookOpen size={16} /> Документация</NavLink><button className="mobile-tour-button" type="button" onClick={takeTour}><Sparkles size={16} /> Пройти обучение</button></div>
         <div className="mobile-nav-bottom"><span>Оформление</span><button type="button" onClick={changeTheme}>{theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}{theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}</button></div>
       </nav>
     </header>
@@ -149,5 +150,5 @@ export function Header() {
 }
 
 export function Footer() {
-  return <footer className="site-footer"><div className="footer-top container"><div className="footer-brand-block"><Brand /><p>План двух этажей,<br />кабинеты и маршруты.</p></div><div className="footer-links-group"><span className="footer-label">НАВИГАЦИЯ</span><Link to="/map">Карта этажей</Link><Link to="/rooms">Кабинеты</Link><Link to="/route">Маршрут</Link></div><div className="footer-links-group"><span className="footer-label">ПОЛЕЗНОЕ</span><Link to="/services">Пространства</Link><Link to="/games">Игры</Link><Link to="/about">О путеводителе</Link></div><div className="footer-note"><span className="footer-label">БЫСТРЫЙ СТАРТ</span><p>Не знаете номер кабинета? Найдите его по названию или отметьте на карте.</p><Link className="footer-about-link" to="/rooms">Найти кабинет <ArrowUpRight size={14} /></Link></div></div><div className="footer-bottom container"><span>ПУТЕВОДИТЕЛЬ КОЛЛЕДЖА</span><span>План и справочник помещений</span><a href="#top" onClick={(event) => { event.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>Наверх ↑</a></div></footer>
+  return <footer className="site-footer"><div className="footer-top container"><div className="footer-brand-block"><Brand /><p>План двух этажей,<br />кабинеты и маршруты.</p></div><div className="footer-links-group"><span className="footer-label">НАВИГАЦИЯ</span><Link to="/map">Карта этажей</Link><Link to="/rooms">Кабинеты</Link><Link to="/route">Маршрут</Link></div><div className="footer-links-group"><span className="footer-label">ПОЛЕЗНОЕ</span><Link to="/services">Пространства</Link><Link to="/games">Игры</Link><Link to="/about">О путеводителе</Link><Link to="/docs">Документация</Link></div><div className="footer-note"><span className="footer-label">БЫСТРЫЙ СТАРТ</span><p>Не знаете номер кабинета? Найдите его по названию или отметьте на карте.</p><Link className="footer-about-link" to="/rooms">Найти кабинет <ArrowUpRight size={14} /></Link></div></div><div className="footer-bottom container"><span>ПУТЕВОДИТЕЛЬ КОЛЛЕДЖА</span><nav className="footer-legal" aria-label="Правовая информация"><Link to="/privacy">Политика конфиденциальности</Link><Link to="/privacy#cookies">Cookie</Link><button type="button" onClick={openCookieSettings}>Настройки cookie</button></nav><a href="#top" onClick={(event) => { event.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>Наверх ↑</a></div></footer>
 }

@@ -1,72 +1,76 @@
 // Coordinates are in the viewBox of the original floor SVGs. Keep these bounds,
 // the clickable areas and the routing doorways in sync when changing the plan.
 //
-// Every box below is the centre line of the wall that is actually drawn on the
-// plan (a stroked shape in the SVG straddles its own outline, so the hit area
-// and the drawn wall line coincide). Fractional values are intentional: rounded
-// boxes used to drift 1-3 px away from the drawing, and the middle staircase of
-// the first floor even swallowed the shaft next to it. When the plan changes,
-// take the new numbers from the SVG paths instead of eyeballing them.
+// The room shapes on the plan are drawn from these boxes (see map-art.js), so
+// they are the single source of truth for every wall: neighbouring rooms share
+// one exact edge and never overlap. The coordinates are snapped to a handful of
+// wall lines per floor (corridor edges, row tops and bottoms, wing columns);
+// when the plan changes, move the shared line for every room on it at once.
+//
+// Floor 1: top row y=93.5…155.5, corridor 155.5…179.5, second row 179.5…241.5,
+//   west wing columns x=0…62 and x=86…149.3 around the corridor x=62…86.
+// Floor 2: top row y=95.5…156.5, corridor 156.5…182.2, second row 182.2…244.9,
+//   west wing columns x=0…62 and x=86…148.
 export const planSizes = {
   1: { width: 758, height: 552 },
   2: { width: 767, height: 561 },
 }
 
 export const planRoomBounds = {
-  canteen: [0.7, 0.7, 146.9, 154.4],
-  'workshop-115': [147.7, 94.2, 109.6, 61.1],
-  'simulator-114': [256, 93.5, 85, 62.5],
-  'academic-office': [339.9, 93.5, 184.1, 62.5],
-  'lift-1': [524, 93.5, 25, 62.5],
-  'stairs-north-1': [549, 93, 60.7, 62.8],
-  'auditorium-104': [609.7, 93, 147.4, 148.8],
-  'class-119': [0, 179.5, 61.4, 72.6],
-  'class-118': [0, 252.1, 61.4, 73.9],
-  'toilet-men-1': [86, 178.9, 83.6, 32],
-  'toilet-women-1': [86, 209.9, 83.6, 32],
-  'language-148': [167.9, 179, 77.2, 62.8],
-  'aerodynamics-120': [243.7, 179, 74.4, 62.8],
+  canteen: [0, 0, 147.7, 155.5],
+  'workshop-115': [147.7, 93.5, 108.3, 62],
+  'simulator-114': [256, 93.5, 84, 62],
+  'academic-office': [340, 93.5, 184, 62],
+  'lift-1': [524, 93.5, 25, 62],
+  'stairs-north-1': [549, 93.5, 60.7, 62],
+  'auditorium-104': [609.7, 93.5, 147.3, 148],
+  'class-119': [0, 179.5, 62, 72.5],
+  'class-118': [0, 252, 62, 70],
+  'toilet-men-1': [86, 179.5, 81.9, 31],
+  'toilet-women-1': [86, 210.5, 81.9, 31],
+  'language-148': [167.9, 179.5, 76.1, 62],
+  'aerodynamics-120': [244, 179.5, 73.6, 62],
   // The central staircase on the first floor covers the landing shaft
-  // (x=317.6…336.5, y=179.7…241.1) and the lower flight (x=336.5…383.4, y=209.7…241.1).
-  // The director's office wraps around it: top cell "КАБ." (x=336.5…383.4, y=179.7…209.7)
-  // plus the main office "ДИРЕКТОРА" (x=383.4…449.7, y=179.7…241.1).
-  'stairs-middle-1': [317.6, 179.7, 65.8, 61.4],
-  'director-149': [336.5, 179.7, 113.2, 61.4],
-  'changing-room': [448.8, 179, 99.9, 62.8],
-  'hall-1': [548, 179, 62, 63],
-  'entrance-1': [547.8, 239.5, 61.9, 24.2],
-  'stairs-west-1': [0, 322, 62, 64],
-  'class-139': [86, 306, 63.3, 69.8],
+  // (x=317.6…336.5) and the lower flight (x=336.5…383.4, y=209.7…241.5).
+  // The director's office wraps around it: top cell "КАБ." (x=336.5…383.4, y=179.5…209.7)
+  // plus the main office "ДИРЕКТОРА" (x=383.4…449, y=179.5…241.5).
+  'stairs-middle-1': [317.6, 179.5, 65.8, 62],
+  'director-149': [336.5, 179.5, 112.5, 62],
+  'changing-room': [449, 179.5, 99, 62],
+  'hall-1': [548, 179.5, 61.7, 62],
+  'entrance-1': [548, 241.5, 61.7, 22.2],
+  'stairs-west-1': [0, 322, 62, 62],
+  'class-139': [86, 306, 63.3, 68.4],
   'class-138': [86, 374.4, 63.3, 68.3],
   // Медицинский блок под кабинетом 138: медпункт примыкает к коридору
-  // западного крыла, кабинет врача — отдельная комната за медпунктом
-  // (рамки — осевые линии стен, нарисованных на плане).
-  'medical-post': [85, 443, 35, 26],
-  'medical-doctor': [119, 442, 30, 27],
-  'class-162': [0, 419, 61.9, 50.2],
-  'training-centre-113': [0, 467.8, 149.3, 84.2],
+  // западного крыла, кабинет врача — отдельная комната за медпунктом.
+  'medical-post': [86, 442.7, 33, 25.3],
+  'medical-doctor': [119, 442.7, 30.3, 25.3],
+  'class-162': [0, 419, 62, 49],
+  'training-centre-113': [0, 468, 149.3, 84],
 
-  'library-214': [0.7, 0.7, 143.8, 112.7],
-  'radio-lab-228': [144.5, 95.5, 113.6, 61.3],
-  'electro-radio-230': [258.1, 95.5, 98.5, 61.3],
-  'assistant-230': [356.4, 94.8, 69.8, 62.7],
-  'uav-lab-209': [422.6, 95.5, 112.2, 61.3],
-  'lift-2': [534.6, 94.8, 26.4, 62.7],
-  'stairs-north-2': [560.8, 95.5, 49, 61.3],
-  'meteorology-236': [0.7, 181.7, 60.8, 98.6],
-  'toilet-men-2': [87, 182.2, 60.8, 33.9],
-  'toilet-women-2': [87, 213.8, 60.8, 31.1],
-  'physics-211': [168.3, 181.5, 154.2, 64.1],
-  'stairs-middle-2': [322.2, 182.2, 69.8, 62.7],
+  'library-214': [0, 0, 144.5, 113],
+  'radio-lab-228': [144.5, 95.5, 113.6, 61],
+  'electro-radio-230': [258.1, 95.5, 98.5, 61],
+  'assistant-230': [356.6, 95.5, 68.9, 61],
+  'uav-lab-209': [425.5, 95.5, 109.1, 61],
+  'lift-2': [534.6, 95.5, 26.2, 61],
+  'stairs-north-2': [560.8, 95.5, 49, 61],
+  'meteorology-236': [0, 182.2, 62, 98.1],
+  'toilet-men-2': [86, 182.2, 62, 31.6],
+  'toilet-women-2': [86, 213.8, 62, 31.1],
+  'physics-211': [168.3, 182.2, 153.9, 62.7],
+  'stairs-middle-2': [322.2, 182.2, 70.3, 62.7],
   'psychologist-224': [392.5, 182.2, 33, 62.7],
   'class-217': [425.5, 182.2, 54.2, 62.7],
   'class-229': [479.7, 182.2, 32, 62.7],
-  'informatics-222': [511.7, 182.2, 49.5, 62.7],
-  // The western staircase on the second floor starts below the grey shaft.
-  'stairs-west-2': [0.7, 331.2, 60.8, 95.7],
-  'chemistry-biology-202': [87, 244.2, 60.8, 83.8],
-  'assistant-202': [87, 328, 60.8, 55.2],
-  'practical-225': [87, 383.2, 60.8, 33.3],
+  'informatics-222': [511.7, 182.2, 49.1, 62.7],
+  // The western staircase on the second floor starts below the grey shaft
+  // and ends where room 207 begins.
+  'stairs-west-2': [0, 331.2, 62, 85.8],
+  'chemistry-biology-202': [86, 244.9, 62, 83.1],
+  'assistant-202': [86, 328, 62, 55.5],
+  'practical-225': [86, 383.5, 62, 33.5],
   // Room 207 wraps around the corridor's lower end; room 225 is rectangular.
   'electrical-lab-207': [0, 417, 86, 143],
   'biotech-lab-225': [86, 417, 62, 143],
@@ -74,8 +78,23 @@ export const planRoomBounds = {
 
 export const irregularRooms = {
   'electrical-lab-207': [[0, 417], [62, 417], [62, 477], [86, 477], [86, 560], [0, 560]],
-  'stairs-middle-1': [[317.6, 179.7], [336.5, 179.7], [336.5, 209.7], [383.4, 209.7], [383.4, 241.1], [317.6, 241.1]],
-  'director-149': [[336.5, 179.7], [449.7, 179.7], [449.7, 241.1], [383.4, 241.1], [383.4, 209.7], [336.5, 209.7]],
+  'stairs-middle-1': [[317.6, 179.5], [336.5, 179.5], [336.5, 209.7], [383.4, 209.7], [383.4, 241.5], [317.6, 241.5]],
+  'director-149': [[336.5, 179.5], [449, 179.5], [449, 241.5], [383.4, 241.5], [383.4, 209.7], [336.5, 209.7]],
+}
+
+// Drawn parts of the plan that are not places: technical shafts (grey), the
+// eastern staircase of the second floor (it only leads to the entrance hall)
+// and the gallery over the assembly hall. They share wall lines with the rooms.
+export const planDecor = {
+  1: [
+    { kind: 'shaft', box: [86, 241.5, 63.3, 64.5] },
+  ],
+  2: [
+    { kind: 'shaft', box: [148, 182.2, 20.3, 62.7] },
+    { kind: 'shaft', box: [0, 280.3, 62, 50.9] },
+    { kind: 'room', box: [560.8, 182.2, 49, 62.7] },
+    { kind: 'room', box: [609.8, 138.8, 22.1, 62.7] },
+  ],
 }
 
 export function roomOutline(id) {

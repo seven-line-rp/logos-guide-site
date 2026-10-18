@@ -72,6 +72,6 @@ h1 em, h2 em, h3 em, blockquote em, .about-values-quote blockquote,
   stroke-width: 3.2;
 }
 .floor-map-art svg > :is(rect, path)[stroke="#ACAEB3"] { stroke: var(--map-wall); stroke-width: 1.6; }
-.floor-map-art svg > rect[fill="#878DA2"] { fill: #b3c1d4; }
+.floor-map-art svg > :is(rect, path)[fill="#878DA2"] { fill: #b3c1d4; }
 .floor-map-art svg > rect[fill="#D9D9D9"], .floor-map-art svg > path[fill="#D9D9D9"] { fill: #d3dcec; }
 .floor-map-art svg > :is(rect, path)[fill="white"] { fill: #fbfcff; }

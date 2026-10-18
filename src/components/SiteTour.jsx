@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, Check, RotateCcw, Sparkles, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, BookOpen, Check, Compass, Gamepad2, Layers, List, Map as MapIcon, MapPin, RotateCcw, Route, Search, Sparkles, Star, X } from 'lucide-react'
 import { TOUR_STEPS, markTutorialDone } from '../tutorial.js'
-import { onTourStart } from '../assistant-bus.js'
+import { onTourStart } from '../tour-bus.js'
+
+const STEP_ICONS = { compass: Compass, search: Search, map: MapIcon, star: Star, layers: Layers, pin: MapPin, route: Route, list: List, game: Gamepad2, book: BookOpen }
 
 const FIND_TIMEOUT_MS = 5000
 const FIND_INTERVAL_MS = 120
@@ -11,8 +13,8 @@ const HOLE_PAD = 10
 const EDGE = 14
 
 // Подсветка ищет элемент по списку селекторов и берёт первый *видимый*:
-// так шаг про помощника работает и на компьютере (плавающий виджет), и на
-// телефоне, где виджет скрыт и подсвечивать нужно кнопку в шапке.
+// так шаг про документацию работает и на компьютере (кнопка в шапке), и на
+// телефоне, где кнопка спрятана в меню и подсвечивать нужно бургер.
 function findTarget(targets) {
   for (const selector of targets) {
     try {
@@ -240,6 +242,8 @@ export default function SiteTour() {
 
   const step = TOUR_STEPS[index]
   const isDone = phase === 'done'
+  const tone = isDone ? 'green' : step.tone
+  const StepIcon = STEP_ICONS[step.icon] || Sparkles
   const positioned = Boolean(layout?.card)
   const cardStyle = positioned
     ? { top: `${Math.round(layout.card.top)}px`, left: `${Math.round(layout.card.left)}px`, '--tour-arrow-x': `${Math.round(layout.card.arrowX ?? 40)}px` }
@@ -254,6 +258,7 @@ export default function SiteTour() {
   return (
     <div
       className={`tour-layer ${isDone || !layout?.hole ? 'tour-layer-centered' : ''}`}
+      data-tone={tone}
       role="dialog"
       aria-modal="true"
       aria-label={isDone ? 'Обучение завершено' : 'Обучение по сайту'}
@@ -275,31 +280,45 @@ export default function SiteTour() {
         </button>
       )}
 
-      <section className={`tour-card ${positioned ? 'tour-card-placed' : ''} ${layout?.arrow ? `tour-card-arrow-${layout.arrow}` : ''}`} style={cardStyle} ref={cardRef}>
+      <section key={isDone ? 'done' : step.id} className={`tour-card ${positioned ? 'tour-card-placed' : ''} ${layout?.arrow ? `tour-card-arrow-${layout.arrow}` : ''} ${isDone ? 'tour-card-done' : ''}`} style={cardStyle} ref={cardRef}>
         {isDone ? <>
-          <span className="tour-done-icon" aria-hidden="true"><Check size={26} strokeWidth={2.4} /></span>
-          <span className="tour-eyebrow"><Sparkles size={12} /> Обучение завершено</span>
-          <h2>Теперь вы<br /><em>знаете сайт.</em></h2>
-          <p>Команда «Туторил» в чате помощника снова запустит эти подсказки. Остальное подскажет LOGOS AI.</p>
-          <div className="tour-actions">
-            <button type="button" className="tour-ghost" onClick={restart}><RotateCcw size={15} /> Пройти ещё раз</button>
-            <button type="button" ref={actionRef} className="tour-primary" onClick={close}>Понятно</button>
+          <div className="tour-confetti" aria-hidden="true">{Array.from({ length: 14 }, (_, position) => <i key={position} />)}</div>
+          <div className="tour-band">
+            <span className="tour-icon tour-icon-large" aria-hidden="true"><Check size={26} strokeWidth={2.6} /></span>
+            <button type="button" className="tour-skip" onClick={close} aria-label="Закрыть обучение"><X size={15} /></button>
+          </div>
+          <div className="tour-body">
+            <span className="tour-eyebrow">Обучение завершено</span>
+            <h2>Теперь вы <em>знаете сайт.</em></h2>
+            <p>Пройти обучение ещё раз можно в разделе «Документация» или в меню. Там же — подробные ответы на частые вопросы.</p>
+            <ul className="tour-summary" aria-label="Что вы узнали">
+              {TOUR_STEPS.slice(1).map((item) => <li key={item.id} data-tone={item.tone}>{item.eyebrow}</li>)}
+            </ul>
+            <div className="tour-actions">
+              <button type="button" className="tour-ghost" onClick={restart}><RotateCcw size={15} /> Ещё раз</button>
+              <button type="button" ref={actionRef} className="tour-primary" onClick={close}>Понятно</button>
+            </div>
           </div>
         </> : <>
-          <div className="tour-card-top">
-            <span className="tour-eyebrow"><i aria-hidden="true" />{step.eyebrow}</span>
+          <div className="tour-band">
+            <span className={`tour-icon ${index === 0 ? 'tour-icon-large' : ''}`} aria-hidden="true"><StepIcon size={index === 0 ? 26 : 20} strokeWidth={2.2} /></span>
+            <span className="tour-band-copy">
+              <span className="tour-step-label">{index === 0 ? 'Обучение по сайту' : `Шаг ${index} из ${TOUR_STEPS.length - 1}`}</span>
+              <strong>{step.eyebrow}</strong>
+            </span>
             <button type="button" className="tour-skip" onClick={close} aria-label="Пропустить обучение"><X size={15} /></button>
           </div>
-          <h2>{step.title}</h2>
-          <p>{step.text}</p>
-          <div className="tour-progress" aria-hidden="true">
-            {TOUR_STEPS.map((item, position) => <i key={item.id} className={position < index ? 'tour-progress-done' : position === index ? 'tour-progress-active' : ''} />)}
-          </div>
-          <div className="tour-actions">
-            <button type="button" className="tour-ghost" onClick={finish}>Пропустить</button>
-            <span className="tour-counter">{index + 1}/{TOUR_STEPS.length}</span>
-            {index > 0 && <button type="button" className="tour-back" onClick={goPrevious} aria-label="Предыдущий шаг"><ArrowLeft size={16} /></button>}
-            <button type="button" ref={actionRef} className="tour-primary" onClick={goNext}>{step.action}<ArrowRight size={16} /></button>
+          <div className="tour-body">
+            <h2>{step.title}</h2>
+            <p>{step.text}</p>
+            <div className="tour-progress" aria-hidden="true">
+              {TOUR_STEPS.map((item, position) => <i key={item.id} data-tone={item.tone} className={position < index ? 'tour-progress-done' : position === index ? 'tour-progress-active' : ''} />)}
+            </div>
+            <div className="tour-actions">
+              <button type="button" className="tour-ghost" onClick={finish}>Пропустить</button>
+              {index > 0 && <button type="button" className="tour-back" onClick={goPrevious} aria-label="Предыдущий шаг"><ArrowLeft size={16} /></button>}
+              <button type="button" ref={actionRef} className="tour-primary" onClick={goNext}>{step.action}<ArrowRight size={16} /></button>
+            </div>
           </div>
         </>}
       </section>

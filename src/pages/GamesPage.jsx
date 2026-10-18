@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { games, rooms } from '../data'
 import FloorMap from '../components/FloorMap'
 import { PageHeading, Reveal, SectionLabel } from '../components/Primitives'
+import { storageGet, storageSet } from '../storage.js'
 
 const QUIZ_LENGTH = 5
 const RIDDLE_LENGTH = 5
@@ -89,15 +90,15 @@ export default function GamesPage() {
   const [speedScore, setSpeedScore] = useState(0)
   const [speedMiss, setSpeedMiss] = useState(0)
   const [speedFeedback, setSpeedFeedback] = useState('')
-  const [bestQuiz, setBestQuiz] = useState(() => Number(localStorage.getItem('game-quiz-best') || 0))
-  const [bestSpeed, setBestSpeed] = useState(() => Number(localStorage.getItem('game-speed-best') || 0))
+  const [bestQuiz, setBestQuiz] = useState(() => Number(storageGet('game-quiz-best') || 0))
+  const [bestSpeed, setBestSpeed] = useState(() => Number(storageGet('game-speed-best') || 0))
 
   const quizRoom = quizRound[quizIndex]?.room
   const quizFinished = quizIndex >= quizRound.length
   useEffect(() => {
     if (quizFinished && quizScore > bestQuiz) {
       setBestQuiz(quizScore)
-      localStorage.setItem('game-quiz-best', String(quizScore))
+      storageSet('game-quiz-best', String(quizScore))
     }
   }, [quizFinished, quizScore, bestQuiz])
   const riddle = riddleRound[riddleIndex]
@@ -107,7 +108,7 @@ export default function GamesPage() {
   useEffect(() => {
     if (speedFinished && speedScore > bestSpeed) {
       setBestSpeed(speedScore)
-      localStorage.setItem('game-speed-best', String(speedScore))
+      storageSet('game-speed-best', String(speedScore))
     }
   }, [speedFinished, speedScore, bestSpeed])
 

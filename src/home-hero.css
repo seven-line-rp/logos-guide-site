@@ -179,7 +179,7 @@ html[data-theme='dark'] .mini-plan-wrap .plan-room:hover .plan-room-shape,
 html[data-theme='dark'] .mini-plan-wrap .plan-room:focus-visible .plan-room-shape { fill: rgba(128, 170, 255, .24); stroke: #9fc1ff; }
 html[data-theme='dark'] .mini-plan-wrap .floor-map-art svg > :is(rect, path)[fill='white'] { fill: #1e427d; }
 html[data-theme='dark'] .mini-plan-wrap .floor-map-art svg > :is(rect, path)[fill='#D9D9D9'] { fill: #31578e; }
-html[data-theme='dark'] .mini-plan-wrap .floor-map-art svg > rect[fill='#878DA2'] { fill: #6287c2; }
+html[data-theme='dark'] .mini-plan-wrap .floor-map-art svg > :is(rect, path)[fill="#878DA2"] { fill: #6287c2; }
 html[data-theme='dark'] .mini-plan-top { color: #f3f7ff; }
 html[data-theme='dark'] .mini-plan-top svg { color: #9fc1ff; }
 html[data-theme='dark'] .mini-plan-tabs { border-color: #5976b1; background: #0c204b; }

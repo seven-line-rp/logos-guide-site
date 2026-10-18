@@ -65,7 +65,7 @@ test('server 404 page hands the requested address back to the app', () => {
 })
 
 test('every routed page survives a hard reload without a server rewrite', () => {
-  for (const path of ['/map', '/rooms', '/games', '/services', '/about', '/route?mode=lift', '/creators']) {
+  for (const path of ['/map', '/rooms', '/games', '/services', '/about', '/docs', '/privacy', '/route?mode=lift', '/creators']) {
     const captured = runScript(captureScript, SITE + path)
     const restored = runScript(restoreScript, SITE + captured.replaced[0])
     assert.equal(current(restored), path, path)
