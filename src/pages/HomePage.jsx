@@ -46,7 +46,7 @@ export default function HomePage() {
             <Link className="home-plain-link" to="/route" aria-label="Построить маршрут"><span className="home-route-long">Построить маршрут</span><span className="home-route-short">Маршрут</span><ArrowUpRight size={16} /></Link>
           </div>
         </div>
-        <Link className="hero-scene-caption" to="/route?from=entrance-1&to=class-138"><span className="hero-scene-caption-dot" aria-hidden="true" /><span><strong>Главный вход → кабинет 138</strong><small>Пример маршрута по коридорам · 1 этаж</small></span><ArrowUpRight size={15} /></Link>
+        <Link className="hero-scene-caption" to="/route?from=entrance-1&to=physics-211&mode=stairs-west"><span className="hero-scene-caption-dot" aria-hidden="true" /><span><strong>Главный вход → кабинет физики 211</strong><small>Пример маршрута · по западной лестнице на 2 этаж</small></span><ArrowUpRight size={15} /></Link>
       </div>
       <div className="home-hero-edge container"><span>План корпуса · 1 и 2 этажи</span><a href="#quick-places" onClick={(event) => { event.preventDefault(); document.getElementById('quick-places')?.scrollIntoView({ behavior: 'smooth' }) }}>Часто ищут <ArrowDownRight size={14} /></a></div>
     </section>

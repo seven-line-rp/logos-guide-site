@@ -1,112 +1,286 @@
-/* 3D-сцена первого экрана: план корпуса в перспективе с маршрутом.
-   Сцена лежит под текстом на всю ширину; план нарисован «чертежом»
-   (полупрозрачные стены и комнаты), чтобы работать на синем фоне светлой
-   темы и на графитовом фоне тёмной. Цвета — через переменные ниже. */
+/* 3D-корпус на первом экране. Пол — настоящий план («чертёж»), стены, двери
+   и колонны лестниц стоят в CSS 3D. Один цикл маршрута длится 10 секунд:
+   0–32% — путь по первому этажу, 32–44% — подъём по лестнице,
+   44–80% — путь по второму этажу, дальше маяк над целью. */
+
+@property --rise { syntax: '<number>'; inherits: false; initial-value: 1; }
 
 .home-hero-scene {
-  --scene-room: rgba(255, 255, 255, .07);
+  --scene-room: rgba(255, 255, 255, .06);
   --scene-shaft: rgba(255, 255, 255, .03);
-  --scene-wall: rgba(220, 232, 255, .42);
+  --scene-wall: rgba(220, 232, 255, .4);
   --scene-corridor: rgba(255, 255, 255, .02);
-  --scene-label: rgba(235, 242, 255, .62);
+  --scene-label: rgba(235, 242, 255, .6);
   --scene-icon: rgba(235, 242, 255, .7);
+  --wall-top: rgba(225, 236, 255, .75);
+  --wall-face: rgba(170, 200, 255, .16);
+  --wall-face-2: rgba(170, 200, 255, .02);
+  --slab: rgba(255, 255, 255, .04);
   --route: #ffd66d;
   --route-glow: rgba(255, 214, 109, .55);
+  --column: rgba(160, 200, 255, .3);
+  --shade: rgba(9, 29, 80, .94);
+  --shade-mid: rgba(9, 29, 80, .5);
   isolation: isolate;
 }
 html[data-theme='dark'] .home-hero-scene {
-  --scene-room: rgba(255, 255, 255, .045);
+  --scene-room: rgba(255, 255, 255, .04);
   --scene-shaft: rgba(255, 255, 255, .02);
   --scene-wall: rgba(255, 255, 255, .2);
   --scene-label: rgba(236, 235, 230, .5);
   --scene-icon: rgba(150, 182, 255, .7);
+  --wall-top: rgba(190, 210, 255, .55);
+  --wall-face: rgba(123, 164, 255, .12);
+  --wall-face-2: rgba(123, 164, 255, .01);
+  --slab: rgba(255, 255, 255, .025);
   --route: #7ba4ff;
-  --route-glow: rgba(91, 140, 255, .55);
+  --route-glow: rgba(91, 140, 255, .6);
+  --column: rgba(123, 164, 255, .26);
+  --shade: rgba(33, 33, 32, .96);
+  --shade-mid: rgba(33, 33, 32, .5);
 }
 
-.home-hero-scene .home-hero-inner { position: relative; z-index: 2; grid-template-columns: minmax(0, 1fr); min-height: 640px; align-content: center; }
+.home-hero-scene .home-hero-inner { position: relative; z-index: 2; grid-template-columns: minmax(0, 1fr); min-height: 660px; align-content: center; }
 .home-hero-scene .home-hero-copy { max-width: 560px; }
 .home-hero-scene .home-hero-edge { position: relative; z-index: 2; }
 
-/* ---------- Сцена ---------- */
+/* ---------- Каркас сцены ---------- */
 .hero-scene {
   position: absolute;
   z-index: 0;
   inset: 0;
   overflow: hidden;
   pointer-events: none;
-  perspective: 1500px;
-  perspective-origin: 70% 30%;
+  perspective: 1600px;
+  perspective-origin: 68% 35%;
+  animation: hs-fade 1.2s ease both;
 }
-/* Затемнение под текстом слева: план не спорит с заголовком. */
+/* Прозрачность анимируем только здесь: на элементах с preserve-3d она
+   заставляет браузер «сплющить» сцену в плоскость. */
+@keyframes hs-fade { from { opacity: 0; } to { opacity: 1; } }
 .hero-scene::after {
   position: absolute;
+  z-index: 3;
   inset: 0;
-  background: linear-gradient(90deg, var(--hero-shade, rgba(9, 29, 80, .92)) 0%, var(--hero-shade-mid, rgba(9, 29, 80, .55)) 38%, transparent 62%);
+  background: linear-gradient(90deg, var(--shade) 0%, var(--shade-mid) 36%, transparent 58%);
   content: '';
 }
-html[data-theme='dark'] .hero-scene::after { --hero-shade: rgba(33, 33, 32, .95); --hero-shade-mid: rgba(33, 33, 32, .55); }
-
-.hero-scene-stage {
+.hs-parallax {
   position: absolute;
-  top: 48%;
-  left: 71%;
-  width: 960px;
-  aspect-ratio: 758 / 552;
+  inset: 0;
   transform-style: preserve-3d;
-  transform: translate(-50%, -50%) rotateX(55deg) rotateZ(-22deg);
-  animation: hero-scene-in 1.4s cubic-bezier(.2, .8, .2, 1) both;
+  transform: rotateX(calc(var(--py, 0) * -5deg)) rotateY(calc(var(--px, 0) * 7deg));
+  transition: transform .8s cubic-bezier(.2, .8, .2, 1);
 }
-@keyframes hero-scene-in {
-  from { opacity: 0; transform: translate(-50%, -44%) rotateX(62deg) rotateZ(-14deg) scale(.94); }
-  to { opacity: 1; transform: translate(-50%, -50%) rotateX(55deg) rotateZ(-22deg); }
+.hs-camera {
+  position: absolute;
+  top: 60%;
+  left: 70%;
+  transform-style: preserve-3d;
+  transform: translate(-50%, -50%) rotateX(58deg) rotateZ(-24deg) scale(1.12);
+  animation: hs-intro 1.6s cubic-bezier(.2, .8, .2, 1) both, hs-orbit 22s ease-in-out 1.6s infinite alternate;
 }
-.hero-scene-floor { position: absolute; inset: 0; transform-style: preserve-3d; }
-.hero-scene-floor-upper { transform: translateZ(170px); opacity: .5; animation: hero-floor-float 9s ease-in-out infinite alternate; }
-@keyframes hero-floor-float { from { transform: translateZ(160px); } to { transform: translateZ(185px); } }
+@keyframes hs-intro {
+  from { transform: translate(-50%, -42%) rotateX(66deg) rotateZ(-10deg) scale(.9); }
+  to { transform: translate(-50%, -50%) rotateX(58deg) rotateZ(-24deg) scale(1.12); }
+}
+@keyframes hs-orbit {
+  from { transform: translate(-50%, -50%) rotateX(58deg) rotateZ(-24deg) scale(1.12); }
+  to { transform: translate(-50%, -50%) rotateX(54deg) rotateZ(-16deg) scale(1.12); }
+}
 
-.hero-scene-plan, .hero-scene-focus, .hero-scene-route { position: absolute; inset: 0; width: 100%; height: 100%; }
-.hero-scene-plan svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.hs-floor { position: absolute; inset: 0; transform-style: preserve-3d; }
+.hs-floor-2 { transform: translateZ(var(--gap)); animation: hs-lift 1.8s cubic-bezier(.2, .8, .2, 1) .3s both; }
+@keyframes hs-lift { from { transform: translateZ(0); } to { transform: translateZ(var(--gap)); } }
+.hs-slab { position: absolute; inset: -6px; border: 1px solid rgba(255, 255, 255, .06); border-radius: 4px; background: var(--slab); }
+.hs-floor-1 .hs-slab { background: transparent; border-color: transparent; }
 
-/* Глубина резкости: размытая копия плана целиком и резкая — только у маршрута. */
-.hero-scene-plan-upper { filter: blur(3.5px); -webkit-mask-image: radial-gradient(60% 60% at 45% 55%, #000 30%, transparent 75%); mask-image: radial-gradient(60% 60% at 45% 55%, #000 30%, transparent 75%); }
-.hero-scene-plan-blur { filter: blur(4px); opacity: .75; -webkit-mask-image: radial-gradient(75% 75% at 45% 50%, #000 35%, transparent 80%); mask-image: radial-gradient(75% 75% at 45% 50%, #000 35%, transparent 80%); }
-.hero-scene-focus { -webkit-mask-image: radial-gradient(42% 52% at 42% 56%, #000 45%, transparent 100%); mask-image: radial-gradient(42% 52% at 42% 56%, #000 45%, transparent 100%); }
+/* ---------- Пол: план как чертёж ---------- */
+.hs-plate { position: absolute; inset: 0; }
+.hs-plate svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.hs-plate svg > :is(rect, path)[fill='#D9D9D9'] { fill: transparent; }
+.hs-plate svg > :is(rect, path)[fill='white'] { fill: var(--scene-corridor); }
+.hs-plate svg > :is(rect, path)[fill='#DFE6FF'] { fill: var(--scene-room); }
+.hs-plate svg > :is(rect, path)[fill='#878DA2'] { fill: var(--scene-shaft); }
+.hs-plate svg > :is(rect, path)[stroke='#ACAEB3'] { stroke: var(--scene-wall); stroke-width: 1; }
+.hs-plate svg > path[fill='#ACAEB3'] { fill: var(--scene-wall); }
+.hs-plate svg > path[fill='black'][opacity='0.2'] { fill: var(--scene-label); opacity: 1; }
+.hs-plate .plan-art-text { fill: var(--scene-label); font-family: inherit; letter-spacing: .04em; }
+.hs-plate svg :is(rect, path)[fill='#0000FF'], .hs-plate svg > path[fill^='url(#paint'] { fill: var(--scene-icon); }
+.hs-plate svg g path[stroke='#0000FF'] { stroke: var(--scene-icon); }
+.hs-plate svg > rect[height='2'] { fill: var(--route); opacity: .5; }
+.hs-floor-2 .hs-plate { opacity: .85; }
 
-/* Перекраска плана в «чертёж». */
-.hero-scene-plan svg > :is(rect, path)[fill='#D9D9D9'] { fill: transparent; }
-.hero-scene-plan svg > :is(rect, path)[fill='white'] { fill: var(--scene-corridor); }
-.hero-scene-plan svg > :is(rect, path)[fill='#DFE6FF'] { fill: var(--scene-room); }
-.hero-scene-plan svg > :is(rect, path)[fill='#878DA2'] { fill: var(--scene-shaft); }
-.hero-scene-plan svg > :is(rect, path)[stroke='#ACAEB3'] { stroke: var(--scene-wall); stroke-width: 1.1; }
-.hero-scene-plan svg > path[fill='#ACAEB3'] { fill: var(--scene-wall); }
-.hero-scene-plan svg > path[fill='black'][opacity='0.2'] { fill: var(--scene-label); opacity: 1; }
-.hero-scene-plan .plan-art-text { fill: var(--scene-label); font-family: inherit; letter-spacing: .04em; }
-.hero-scene-plan svg :is(rect, path)[fill='#0000FF'], .hero-scene-plan svg > path[fill^='url(#paint'] { fill: var(--scene-icon); }
-.hero-scene-plan svg g path[stroke='#0000FF'] { stroke: var(--scene-icon); }
-.hero-scene-plan svg > rect[width='15'][height='2'], .hero-scene-plan svg > rect[width='8'][height='2'], .hero-scene-plan svg > rect[width='31'][height='2'] { fill: var(--route); opacity: .55; }
+/* Скан-свет: полоса проходит по полу, как луч сканера. */
+.hs-sweep {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 42%, color-mix(in srgb, var(--route) 14%, transparent) 50%, transparent 58%);
+  background-size: 300% 100%;
+  animation: hs-sweep 7s linear infinite;
+}
+.hs-floor-2 .hs-sweep { animation-delay: -3.5s; }
+@keyframes hs-sweep { from { background-position: 120% 0; } to { background-position: -20% 0; } }
+
+/* ---------- Стены и двери ---------- */
+.hs-wall, .hs-door {
+  position: absolute;
+  display: block;
+  transform-origin: 0 0;
+  backface-visibility: visible;
+}
+.hs-wall {
+  height: var(--wall-h);
+  border-bottom: 1px solid var(--wall-top);
+  background: linear-gradient(180deg, var(--wall-face), var(--wall-face-2));
+  transform: rotateZ(var(--a)) rotateX(90deg) scaleY(var(--rise));
+  animation: hs-rise 1.1s cubic-bezier(.2, .8, .2, 1) both;
+  animation-delay: calc(.4s + var(--i) * 9ms);
+}
+.hs-floor-2 .hs-wall { animation-delay: calc(1s + var(--i) * 9ms); }
+@keyframes hs-rise { from { --rise: 0; } to { --rise: 1; } }
+.hs-door {
+  height: calc(var(--wall-h) * .78);
+  border-radius: 2px 2px 0 0;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--route) 70%, transparent), color-mix(in srgb, var(--route) 8%, transparent));
+  box-shadow: 0 0 10px var(--route-glow);
+  transform: rotateZ(var(--a)) rotateX(90deg) translateZ(.6px);
+  opacity: .8;
+  animation: hs-door 4s ease-in-out infinite alternate;
+}
+@keyframes hs-door { from { opacity: .45; } to { opacity: .9; } }
+
+/* ---------- Колонны лестниц и лифта ---------- */
+.hs-column { position: absolute; transform-style: preserve-3d; }
+.hs-column i {
+  position: absolute;
+  top: 0;
+  left: -14px;
+  width: 28px;
+  height: calc(var(--gap) + var(--wall-h));
+  transform-origin: 14px 0;
+  background: linear-gradient(180deg, var(--column), transparent 85%);
+  transform: rotateX(90deg);
+}
+.hs-column i + i { transform: rotateZ(90deg) rotateX(90deg); }
+.hs-column-lift i { left: -9px; width: 18px; transform-origin: 9px 0; background: repeating-linear-gradient(180deg, var(--column) 0 3px, transparent 3px 9px); }
 
 /* ---------- Маршрут ---------- */
-.hero-scene-route { overflow: visible; }
-.hero-scene-route path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
-.hero-route-glow { stroke: var(--route-glow); stroke-width: 14; filter: blur(6px); }
-.hero-route-base { stroke: var(--route); stroke-width: 5; opacity: .22; }
-.hero-route-line { stroke: var(--route); stroke-width: 5; stroke-dasharray: 1; stroke-dashoffset: 1; animation: hero-route-draw 7s cubic-bezier(.45, 0, .25, 1) infinite; }
-@keyframes hero-route-draw {
-  0% { stroke-dashoffset: 1; }
-  75%, 92% { stroke-dashoffset: 0; opacity: 1; }
-  100% { stroke-dashoffset: 0; opacity: 0; }
+.hs-route { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; transform: translateZ(1px); }
+.hs-route path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.hs-route-glow { stroke: var(--route-glow); stroke-width: 12; filter: blur(5px); }
+.hs-route-base { stroke: var(--route); stroke-width: 4; opacity: .18; }
+.hs-route-line { stroke: var(--route); stroke-width: 4.5; stroke-dasharray: 1; stroke-dashoffset: 1; }
+.hs-route-lower { animation: hs-draw-lower 10s cubic-bezier(.4, 0, .3, 1) infinite; }
+.hs-route-upper { animation: hs-draw-upper 10s cubic-bezier(.4, 0, .3, 1) infinite; }
+@keyframes hs-draw-lower { 0% { stroke-dashoffset: 1; opacity: 1; } 32%, 92% { stroke-dashoffset: 0; opacity: 1; } 100% { stroke-dashoffset: 0; opacity: 0; } }
+@keyframes hs-draw-upper { 0%, 44% { stroke-dashoffset: 1; opacity: 1; } 80%, 92% { stroke-dashoffset: 0; opacity: 1; } 100% { stroke-dashoffset: 0; opacity: 0; } }
+
+.hs-walker {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 3px var(--route), 0 0 18px 6px var(--route-glow);
+  offset-rotate: 0deg;
+  offset-anchor: center;
+  transform: translateZ(3px);
+  opacity: 0;
 }
-.hero-route-start { fill: #fff; stroke: var(--route); stroke-width: 3; }
-.hero-route-end { fill: var(--route); stroke: #fff; stroke-width: 2.5; }
-.hero-route-pulse { fill: none; stroke: var(--route); stroke-width: 2; transform-box: fill-box; transform-origin: center; animation: hero-route-pulse 2s ease-out infinite; }
-@keyframes hero-route-pulse { from { opacity: .9; transform: scale(1); } to { opacity: 0; transform: scale(3); } }
-.hero-route-walker { fill: #fff; filter: drop-shadow(0 0 6px var(--route)); }
+.hs-walker-1 { animation: hs-walk-lower 10s cubic-bezier(.4, 0, .3, 1) infinite; }
+.hs-walker-2 { animation: hs-walk-upper 10s cubic-bezier(.4, 0, .3, 1) infinite; }
+@keyframes hs-walk-lower { 0% { offset-distance: 0%; opacity: 1; } 32% { offset-distance: 100%; opacity: 1; } 33%, 100% { offset-distance: 100%; opacity: 0; } }
+@keyframes hs-walk-upper { 0%, 43% { offset-distance: 0%; opacity: 0; } 44% { opacity: 1; } 80% { offset-distance: 100%; opacity: 1; } 84%, 100% { offset-distance: 100%; opacity: 0; } }
+
+/* Подъём по лестнице: луч между этажами и точка, которая по нему едет. */
+.hs-climb { position: absolute; transform-style: preserve-3d; }
+.hs-climb-beam {
+  position: absolute;
+  top: 0;
+  left: -2px;
+  width: 4px;
+  height: var(--gap);
+  transform-origin: 2px 0;
+  background: linear-gradient(180deg, var(--route), color-mix(in srgb, var(--route) 30%, transparent));
+  box-shadow: 0 0 14px var(--route-glow);
+  transform: rotateZ(90deg) rotateX(90deg);
+  opacity: 0;
+  animation: hs-beam 10s linear infinite;
+}
+@keyframes hs-beam { 0%, 31% { opacity: 0; } 34%, 92% { opacity: .9; } 100% { opacity: 0; } }
+.hs-climb-dot {
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 3px var(--route), 0 0 20px 8px var(--route-glow);
+  opacity: 0;
+  animation: hs-climb 10s cubic-bezier(.5, 0, .5, 1) infinite;
+}
+@keyframes hs-climb { 0%, 31% { transform: translateZ(0); opacity: 0; } 32% { opacity: 1; } 44% { transform: translateZ(var(--gap)); opacity: 1; } 45%, 100% { transform: translateZ(var(--gap)); opacity: 0; } }
+
+/* Маяк над целью: вертикальный луч света и кольцо на полу второго этажа. */
+.hs-beacon { position: absolute; transform-style: preserve-3d; transform: translateZ(var(--gap)); }
+.hs-beacon i {
+  position: absolute;
+  top: 0;
+  left: -10px;
+  width: 20px;
+  height: 130px;
+  transform-origin: 10px 0;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--route) 70%, transparent), transparent);
+  transform: rotateX(90deg);
+  animation: hs-beacon 10s ease-in-out infinite;
+}
+.hs-beacon i + i { transform: rotateZ(90deg) rotateX(90deg); }
+.hs-beacon b {
+  position: absolute;
+  top: -16px;
+  left: -16px;
+  width: 32px;
+  height: 32px;
+  border: 2px solid var(--route);
+  border-radius: 50%;
+  animation: hs-ring 2s ease-out infinite;
+}
+@keyframes hs-beacon { 0%, 76% { opacity: .25; } 82%, 94% { opacity: 1; } 100% { opacity: .25; } }
+@keyframes hs-ring { from { opacity: .9; transform: scale(.5); } to { opacity: 0; transform: scale(2.4); } }
+
+/* ---------- Глубина резкости, пылинки ---------- */
+.hs-dof {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  -webkit-mask-image: radial-gradient(ellipse 30% 40% at 66% 54%, transparent 45%, #000 100%);
+  mask-image: radial-gradient(ellipse 30% 40% at 66% 54%, transparent 45%, #000 100%);
+}
+.hs-particles { position: absolute; z-index: 2; inset: 0; }
+.hs-particles i {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--route);
+  box-shadow: 0 0 8px var(--route-glow);
+  opacity: 0;
+  animation: hs-float 9s ease-in-out infinite;
+}
+@keyframes hs-float {
+  0% { opacity: 0; transform: translateY(20px) scale(.6); }
+  30% { opacity: .55; }
+  100% { opacity: 0; transform: translateY(-90px) scale(1); }
+}
 
 /* ---------- Подпись маршрута ---------- */
 .hero-scene-caption {
   position: absolute;
-  z-index: 3;
+  z-index: 4;
   right: max(24px, calc((100vw - var(--container)) / 2));
   bottom: 90px;
   display: inline-flex;
@@ -131,17 +305,20 @@ html[data-theme='dark'] .hero-scene-caption small { color: var(--muted); }
 
 /* ---------- Адаптив ---------- */
 @media (max-width: 1100px) {
-  .hero-scene-stage { left: 74%; width: 860px; }
+  .hs-camera { left: 74%; }
 }
 @media (max-width: 860px) {
   .home-hero-scene .home-hero-inner { min-height: 0; }
-  .hero-scene { opacity: .8; }
-  .hero-scene::after { background: linear-gradient(180deg, var(--hero-shade-mid, rgba(9, 29, 80, .55)) 0%, var(--hero-shade, rgba(9, 29, 80, .92)) 55%); }
-  .hero-scene-stage { top: 18%; left: 64%; width: 720px; }
-  .hero-scene-caption { display: none; }
+  .hero-scene { opacity: .85; }
+  .hero-scene::after { background: linear-gradient(180deg, var(--shade-mid) 0%, var(--shade) 58%); }
+  .hs-camera { top: 24%; left: 60%; }
+  .hs-dof, .hs-particles, .hs-door, .hero-scene-caption { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hero-scene-stage, .hero-scene-floor-upper, .hero-route-pulse { animation: none; }
-  .hero-route-line { animation: none; stroke-dashoffset: 0; }
+  .hero-scene, .hs-camera, .hs-floor-2, .hs-wall, .hs-door, .hs-sweep, .hs-particles i, .hs-beacon i, .hs-beacon b, .hs-climb-dot { animation: none; }
+  .hs-route-line { animation: none; stroke-dashoffset: 0; }
+  .hs-walker, .hs-climb-dot { display: none; }
+  .hs-climb-beam { animation: none; opacity: .9; }
+  .hs-parallax { transition: none; }
 }

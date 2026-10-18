@@ -218,3 +218,7 @@ Object.assign(english, {
 Object.assign(english, {
   'Главный вход → кабинет 138': 'Main entrance → room 138', 'Пример маршрута по коридорам · 1 этаж': 'Sample corridor route · floor 1',
 })
+
+Object.assign(english, {
+  'Главный вход → кабинет физики 211': 'Main entrance → physics room 211', 'Пример маршрута · по западной лестнице на 2 этаж': 'Sample route · west stairs up to floor 2',
+})
