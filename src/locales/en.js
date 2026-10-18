@@ -188,3 +188,29 @@ Object.assign(english, {
   'Открыть квиз «Узнай этаж»': 'Open the “Guess the floor” quiz', 'Вопрос 1 из 5': 'Question 1 of 5', 'На каком этаже библиотека?': 'Which floor is the library on?',
   'Без оценок · около минуты': 'No grades · about a minute',
 })
+
+Object.assign(english, {
+  // Страница «О проекте».
+  'Путеводитель, который сделали': 'A campus guide made', 'студенты для студентов.': 'by students, for students.',
+  'В первые недели учёбы проще всего опоздать не из-за расписания, а из-за коридоров. Мы перенесли план корпуса на сайт, добавили поиск и маршруты — чтобы найти кабинет можно было за минуту, а не за перемену.': 'In the first weeks it is the corridors, not the timetable, that make you late. We put the building plan online and added search and routes, so finding a room takes a minute, not a whole break.',
+  'помещений на плане': 'rooms on the plan', 'этажа корпуса': 'floors', 'лестницы между этажами': 'staircases between floors', 'игры для тренировки': 'practice games',
+  '01 · Подход': '01 · Approach', 'Три правила, по которым устроен сайт': 'Three rules behind the site',
+  'Только по коридорам': 'Corridors only', 'Маршрут строится по нарисованным коридорам и дверям. Путь «сквозь стену» или через чужой кабинет сайт не предложит.': 'Routes follow the drawn corridors and doors. The site never sends you through a wall or someone else’s room.',
+  'Номер не обязателен': 'No number needed', 'Кабинет находится по номеру, по названию или по слову-подсказке: «еда» приведёт в столовую, «дрон» — в лабораторию БПЛА.': 'Find a room by number, name or a hint word: “food” leads to the canteen, “drone” to the UAV lab.',
+  'Честно о точности': 'Honest about accuracy', 'План — ориентир. GPS внутри здания ошибается, поэтому стартовую точку можно поставить на плане вручную.': 'The plan is a guide. GPS is unreliable indoors, so you can drop your starting point on the plan by hand.',
+  '02 · Что внутри': '02 · What’s inside', 'Пять разделов — одна задача': 'Five sections, one job',
+  'План двух этажей: кабинеты, двери, лестницы и лифт.': 'Both floors: rooms, doors, stairs and the lift.', 'Путь по шагам с озвучкой и выбором лестницы или лифта.': 'Step-by-step directions with voice and a choice of stairs or lift.',
+  'Все помещения с фильтрами по этажу и назначению.': 'Every room, filtered by floor and purpose.', 'Короткие квизы, чтобы запомнить план без зубрёжки.': 'Short quizzes to learn the plan without cramming.',
+  'Как пользоваться сайтом и интерактивное обучение.': 'How to use the site, plus an interactive tour.', 'Приложение для Android': 'Android app',
+  'Тот же путеводитель в телефоне. QR-код для установки — в приветственном окне сайта.': 'The same guide on your phone. The install QR code is in the site’s welcome window.',
+  '03 · Команда': '03 · Team', 'Кто сделал путеводитель': 'Who made the guide', 'Учебный проект четырёх человек: от идеи и плана корпуса до сайта и приложения.': 'A student project by four people — from the idea and building plan to the site and the app.',
+  'Вдохновитель проекта': 'Project inspirer', 'Разработчик приложения для Android': 'Android app developer', 'Бодян Тимофей': 'Timofey Bodyan', 'Брекин Артем': 'Artem Brekin',
+  '04 · Вопросы': '04 · Questions', 'Коротко о том, что умеет и чего не умеет сайт': 'What the site can and cannot do',
+  'Схема — ориентир, а не замена указателям. Если проход закрыт, следуйте табличкам в здании.': 'The plan is a guide, not a substitute for signs. If a passage is closed, follow the signs in the building.',
+  'Можно ли проложить путь между этажами?': 'Can I plan a route between floors?', 'Да. Выберите начальную точку и кабинет — сайт предложит лифт и каждую из лестниц, отметит самый быстрый вариант и проведёт по коридорам обоих этажей.': 'Yes. Pick a start and a room — the site offers the lift and each staircase, marks the fastest and guides you along both floors.',
+  'GPS покажет кабинет автоматически?': 'Will GPS find the room automatically?', 'Нет. Телефон не определяет этаж и внутри здания может ошибаться на десятки метров. Для примерной GPS-метки нужно привязать два известных места на этаже; без привязки надёжнее поставить метку вручную.': 'No. Phones cannot detect the floor and can be tens of metres off indoors. For an approximate GPS pin, anchor two known places on the floor; otherwise drop a pin by hand.',
+  'Если проход закрыт или нужен доступный маршрут?': 'What if a passage is closed or I need an accessible route?', 'Схема не знает о временных закрытиях и не подтверждает доступность всех проходов. Лифт показан на плане, но его работу лучше заранее уточнить у сотрудников колледжа.': 'The plan does not know about temporary closures or confirm accessibility. The lift is shown, but check with college staff that it is working.',
+  'Что делать, если кабинет не найден?': 'What if I cannot find a room?', 'Попробуйте номер или часть названия в справочнике. Если надпись на двери отличается от схемы, ориентируйтесь на указатели и сообщите об этом команде проекта.': 'Try the number or part of the name in the directory. If the door sign differs from the plan, follow the signs and let the project team know.',
+  'Нашли неточность на плане?': 'Spotted a mistake on the plan?', 'Расскажите любому из команды: номер кабинета, этаж и что не так. Каждое уточнение делает карту точнее для следующего курса.': 'Tell anyone on the team: the room number, floor and what is wrong. Every fix makes the map better for the next intake.',
+  'Открыть карту': 'Open map',
+})

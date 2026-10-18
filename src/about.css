@@ -1,0 +1,156 @@
+/* Страница «О проекте». Отдельные классы ab-*, чтобы не зависеть от старых
+   слоёв стилей. Всё на токенах темы (--ink, --surface, --line…), поэтому
+   светлая и тёмная темы работают без отдельных правил, кроме пары акцентов. */
+
+.ab { padding-bottom: 32px; }
+
+/* ---------- Первый экран ---------- */
+.ab-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(300px, 1fr);
+  align-items: end;
+  gap: 56px;
+  padding-block: 80px 64px;
+  border-bottom: 1px solid var(--line);
+}
+.ab-hero h1 {
+  max-width: 760px;
+  margin: 18px 0 0;
+  color: var(--ink);
+  font-size: clamp(36px, 4.6vw, 60px);
+  font-weight: 780;
+  letter-spacing: -.04em;
+  line-height: 1.04;
+}
+.ab-hero h1 em { color: var(--blue); font-style: normal; }
+.ab-hero-copy > p { max-width: 600px; margin: 22px 0 0; color: var(--muted); font-size: 17px; line-height: 1.65; }
+
+.ab-facts { display: grid; grid-template-columns: 1fr 1fr; margin: 0; border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
+.ab-facts > div { display: flex; flex-direction: column-reverse; justify-content: flex-end; gap: 6px; padding: 18px 20px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.ab-facts dd { margin: 0; color: var(--ink); font-size: 44px; font-weight: 760; font-variant-numeric: tabular-nums; letter-spacing: -.04em; line-height: 1; }
+.ab-facts dt { color: var(--muted); font-size: 13px; line-height: 1.35; }
+
+/* ---------- Секции ---------- */
+.ab-section { padding-block: 72px 8px; }
+.ab-section-head { max-width: 640px; }
+.ab-section-head-split { max-width: none; display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 16px 40px; }
+.ab-section-head-split > p { max-width: 380px; margin: 0; color: var(--muted); font-size: 15px; line-height: 1.6; }
+.ab-tag { color: var(--blue); font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.ab-section-head h2 { margin: 10px 0 0; color: var(--ink); font-size: clamp(26px, 3vw, 36px); font-weight: 760; letter-spacing: -.03em; line-height: 1.15; }
+
+.ab-principles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; margin: 32px 0 0; padding: 0; list-style: none; border-top: 1px solid var(--ink); }
+.ab-principles li { padding: 22px 28px 8px 0; }
+.ab-principles li + li { padding-left: 28px; border-left: 1px solid var(--line); }
+.ab-principle-num { color: var(--muted-2); font-family: var(--mono); font-size: 12px; font-weight: 700; }
+.ab-principles h3 { margin: 14px 0 0; color: var(--ink); font-size: 19px; font-weight: 720; letter-spacing: -.015em; }
+.ab-principles p { margin: 10px 0 0; color: var(--muted); font-size: 14.5px; line-height: 1.65; }
+
+.ab-parts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 32px; }
+.ab-part {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 150px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  color: var(--ink);
+  background: var(--surface);
+  transition: border-color .18s, transform .18s;
+}
+a.ab-part:hover { border-color: color-mix(in srgb, var(--blue) 55%, var(--line)); transform: translateY(-2px); }
+.ab-part-icon { width: 36px; height: 36px; display: grid; place-items: center; margin-bottom: 10px; border-radius: 10px; color: var(--blue); background: var(--surface-soft); }
+.ab-part strong { font-size: 16px; font-weight: 720; }
+.ab-part-text { color: var(--muted); font-size: 13.5px; line-height: 1.55; }
+.ab-part-arrow { position: absolute; top: 20px; right: 20px; color: var(--muted-2); transition: color .18s, transform .18s; }
+a.ab-part:hover .ab-part-arrow { color: var(--blue); transform: translate(2px, -2px); }
+.ab-part-app { border-style: dashed; background: transparent; }
+
+/* ---------- Команда ---------- */
+.ab-team { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; margin: 32px 0 0; padding: 0; list-style: none; }
+.ab-photo {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  background: var(--tone-soft, var(--surface-soft));
+}
+.ab-photo-initials { color: var(--tone-ink, var(--blue)); font-size: 44px; font-weight: 700; letter-spacing: -.03em; }
+.ab-photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .3s; }
+.ab-photo img.ab-photo-loaded { opacity: 1; }
+.ab-person h3 { margin: 14px 0 0; color: var(--ink); font-size: 16px; font-weight: 720; }
+.ab-person p { margin: 4px 0 0; color: var(--muted); font-size: 13.5px; line-height: 1.5; }
+
+/* ---------- Вопросы ---------- */
+.ab-split { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); align-items: start; gap: 56px; }
+.ab-note { margin: 20px 0 0; padding-left: 14px; border-left: 2px solid var(--blue); color: var(--muted); font-size: 14.5px; line-height: 1.6; }
+.ab-faq { border-top: 1px solid var(--line); }
+.ab-faq details { border-bottom: 1px solid var(--line); }
+.ab-faq summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 0;
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 650;
+  list-style: none;
+  cursor: pointer;
+}
+.ab-faq summary::-webkit-details-marker { display: none; }
+.ab-faq summary::after { flex: 0 0 auto; color: var(--muted); font-size: 20px; font-weight: 300; content: '+'; transition: transform .2s; }
+.ab-faq details[open] summary::after { transform: rotate(45deg); }
+.ab-faq details p { margin: 0; padding: 0 32px 18px 0; color: var(--muted); font-size: 14.5px; line-height: 1.65; }
+
+/* ---------- Призыв ---------- */
+.ab-cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px 48px;
+  margin-top: 80px;
+  padding: 36px 40px;
+  border-radius: 20px;
+  background: var(--surface-soft);
+}
+.ab-cta h2 { margin: 0; color: var(--ink); font-size: 26px; font-weight: 760; letter-spacing: -.025em; }
+.ab-cta p { max-width: 560px; margin: 10px 0 0; color: var(--muted); font-size: 15px; line-height: 1.6; }
+.ab-cta-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; }
+.ab-cta-actions .button { gap: 10px; font-size: 13px; }
+.ab-cta-link { display: inline-flex; align-items: center; gap: 7px; color: var(--ink); font-size: 13px; font-weight: 650; }
+.ab-cta-link:hover { color: var(--blue); }
+
+html[data-theme='dark'] .ab-principles { border-top-color: var(--line-strong, var(--line)); }
+html[data-theme='dark'] .ab-photo-initials { color: var(--tone-2, var(--blue)); }
+
+/* ---------- Адаптив ---------- */
+@media (max-width: 1080px) {
+  .ab-hero { grid-template-columns: 1fr; align-items: start; gap: 36px; }
+  .ab-parts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ab-team { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ab-split { grid-template-columns: 1fr; gap: 28px; }
+}
+@media (max-width: 720px) {
+  .ab-hero { padding-block: 48px 40px; }
+  .ab-hero-copy > p { font-size: 15.5px; }
+  .ab-facts dd { font-size: 34px; }
+  .ab-facts > div { padding: 14px 16px; }
+  .ab-section { padding-top: 52px; }
+  .ab-principles { grid-template-columns: 1fr; }
+  .ab-principles li, .ab-principles li + li { padding: 20px 0 16px; border-left: 0; }
+  .ab-principles li + li { border-top: 1px solid var(--line); }
+  .ab-parts { grid-template-columns: 1fr; }
+  .ab-part { min-height: 0; }
+  .ab-team { gap: 14px; }
+  .ab-photo-initials { font-size: 32px; }
+  .ab-cta { margin-top: 56px; padding: 26px 22px; }
+  .ab-cta h2 { font-size: 22px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ab-part, .ab-part-arrow, .ab-photo img { transition: none; }
+}
