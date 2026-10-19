@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, ArrowUpDown, ArrowUpRight, Check, ChevronDown, Footprints, Info, Map as MapIcon, MapPin, MoveDown, MoveUp, Navigation, Play, RotateCcw, Volume2, VolumeX } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ArrowUpDown, ArrowUpRight, Check, ChevronDown, Flag, Footprints, Info, Map as MapIcon, MapPin, MoveDown, MoveUp, Navigation, Play, RotateCcw, Volume2, VolumeX, X } from 'lucide-react'
 import { rooms } from '../data.js'
-import FloorMap from '../components/FloorMap.jsx'
+import RouteScene from '../components/RouteScene.jsx'
 import RoomSearchSelect from '../components/RoomSearchSelect.jsx'
 import { buildRouteOptions, pickRoute } from '../map-routing.js'
 import { buildRouteSteps } from '../route-steps.js'
@@ -70,8 +70,13 @@ export default function RoutePage() {
   const [voiceNotice, setVoiceNotice] = useState('')
   const [voicePreset, setVoicePresetState] = useState(getStoredPreset)
   const voiceRequest = useRef(0)
-  const [mode3d, setMode3d] = useState(() => !prefersFlatMap())
-  const [swoop, setSwoop] = useState(false)
+  const [mode3d, setMode3d] = useState(true)
+  // Камера летит за шагом, когда человек начал маршрут или листает шаги;
+  // до этого и после ручного управления картой показан весь путь.
+  const [follow, setFollow] = useState({ key: '', on: false })
+  const following = follow.key === routeKey && follow.on
+  const setFollowing = (on) => setFollow({ key: routeKey, on })
+  const [picked, setPicked] = useState(null)
   const stageRef = useRef(null)
 
   // Любое новое действие отменяет и воспроизведение, и отложенный запасной синтез.
@@ -106,6 +111,7 @@ export default function RoutePage() {
   const goToStep = (index, withVoice = true) => {
     const next = Math.max(0, Math.min(steps.length - 1, index))
     setNav({ key: routeKey, index: next })
+    setFollowing(true)
     if (withVoice && voiceOn) void playPrompt(steps[next].voiceCue || [], steps[next].say)
   }
   const enableVoice = () => { setVoiceOn(true); storageSet('route-voice', 'on') }
@@ -129,11 +135,9 @@ export default function RoutePage() {
   const startNavigation = () => {
     cancelVoice()
     setNav({ key: routeKey, index: 0 })
-    const largeScreen = !prefersFlatMap()
-    setMode3d(largeScreen)
-    setSwoop(largeScreen)
-    window.setTimeout(() => setSwoop(false), 1100)
-    if (!largeScreen) stageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    setFollowing(true)
+    setPeek({ key: '', floor: null })
+    if (prefersFlatMap()) stageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     if (voiceOn) void playPrompt([...new Set(['route-built', ...(steps[0].voiceCue || [])])], `Маршрут построен. ${steps[0].say}`)
   }
   const canSwap = startId !== 'manual'
@@ -150,24 +154,28 @@ export default function RoutePage() {
     const onKeyDown = (event) => {
       if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return
       if (event.target?.closest?.('input, textarea, select, [contenteditable="true"]')) return
-      if (event.key === 'ArrowRight') { event.preventDefault(); setNav((value) => ({ key: routeKey, index: Math.min(steps.length - 1, (value.key === routeKey ? value.index : 0) + 1) })) }
-      if (event.key === 'ArrowLeft') { event.preventDefault(); setNav((value) => ({ key: routeKey, index: Math.max(0, (value.key === routeKey ? value.index : 0) - 1) })) }
+      if (event.key === 'ArrowRight') { event.preventDefault(); setFollow({ key: routeKey, on: true }); setNav((value) => ({ key: routeKey, index: Math.min(steps.length - 1, (value.key === routeKey ? value.index : 0) + 1) })) }
+      if (event.key === 'ArrowLeft') { event.preventDefault(); setFollow({ key: routeKey, on: true }); setNav((value) => ({ key: routeKey, index: Math.max(0, (value.key === routeKey ? value.index : 0) - 1) })) }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [routeKey, steps.length])
 
-  const activeStepPoint = useMemo(() => {
-    const leg = route.byFloor[current.floor]
-    if (current.progress !== null && leg?.points?.[current.progress]) return leg.points[current.progress]
-    return leg?.points?.[0] || null
-  }, [current.floor, current.progress, route.byFloor])
-
-  const onStartFloor = shownFloor === start.floor
-  const mapProps = onStartFloor
-    ? { selectedId: crossFloor ? route.transfer?.startId : target.id, routeStart: startId === 'manual' ? manualPoint : start.id, routeTargetId: crossFloor ? route.transfer?.startId : target.id, manualPoint: startId === 'manual' ? manualPoint : null }
-    : { selectedId: target.id, routeStart: route.transfer?.endId, routeTargetId: target.id, manualPoint: null }
   const followsStep = shownFloor === current.floor
+  const leg = route.byFloor[shownFloor]
+  const transferMarks = crossFloor && route.transfer ? {
+    floor: start.floor,
+    label: `${route.transfer.kind === 'lift' ? 'Лифт' : 'Лестница'} ${target.floor > start.floor ? '↑' : '↓'} ${target.floor} этаж`,
+    arrival: target.floor,
+    arrivalLabel: `${start.floor > target.floor ? '↓' : '↑'} с ${start.floor} этажа`,
+  } : null
+  const pickRoom = (room) => setPicked(room)
+  const pickAs = (kind) => {
+    if (!picked) return
+    if (kind === 'to') setTargetId(picked.id)
+    else setStartId(picked.id)
+    setPicked(null)
+  }
   const progress = steps.length > 1 ? stepIndex / (steps.length - 1) : 1
   const viaLabel = crossFloor ? route.transfer?.method || route.transfer?.label : 'по одному этажу'
 
@@ -267,17 +275,30 @@ export default function RoutePage() {
         </div>
 
         <div className="nv-map">
-          <FloorMap
-            key={shownFloor}
+          <RouteScene
             floor={shownFloor}
-            compact
-            transition={transition}
-            routeProgress={followsStep ? current.progress : null}
-            navMode3d={mode3d && followsStep}
-            activeStepPoint={followsStep ? activeStepPoint : null}
-            swoopActive={swoop && followsStep}
-            {...mapProps}
+            points={leg?.points || []}
+            progress={followsStep ? current.progress : null}
+            following={following && followsStep}
+            mode={mode3d ? '3d' : 'top'}
+            selectedId={picked?.floor === shownFloor ? picked.id : ''}
+            targetId={target.id}
+            transfer={transferMarks}
+            onRoomClick={pickRoom}
+            onFollowChange={setFollowing}
           />
+          {picked && <div className="nv-pick" role="dialog" aria-label={`${picked.name}`}>
+            <div className="nv-pick-head">
+              <span className="nv-pick-icon" aria-hidden="true"><MapPin size={16} /></span>
+              <span className="nv-pick-text"><strong>{roomName(picked)}</strong><small>{picked.category} · {picked.floor} этаж</small></span>
+              <button type="button" className="nv-pick-close" onClick={() => setPicked(null)} aria-label="Закрыть"><X size={16} /></button>
+            </div>
+            <div className="nv-pick-actions">
+              <button type="button" className="nv-pick-go" onClick={() => pickAs('to')} disabled={picked.id === target.id}><Flag size={14} /> Сюда</button>
+              <button type="button" onClick={() => pickAs('from')} disabled={picked.id === startId}><Navigation size={14} /> Отсюда</button>
+              <Link to={`/map?floor=${picked.floor}&room=${encodeURIComponent(picked.id)}`}><MapIcon size={14} /> На карте</Link>
+            </div>
+          </div>}
           <div className="nv-map-tools">
             {crossFloor && <div className="nv-floors" role="group" aria-label="Этаж на карте">
               {[start.floor, target.floor].map((floor) => <button type="button" key={floor} aria-pressed={shownFloor === floor} onClick={() => setPeek({ key: peekKey, floor })}>{`${floor} этаж`}</button>)}

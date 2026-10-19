@@ -107,7 +107,7 @@ function RouteLayer({ points, markerId, progress = null, is3d = false }) {
       </marker>
     </defs>
     <polyline className="plan-route-halo" points={toLine(points)} />
-    <polyline className="plan-route-line" points={toLine(ahead)} markerMid={`url(#${markerId})`} />
+    <polyline className="plan-route-line" points={toLine(ahead)} markerMid={`url(#${markerId})`} pathLength="1" />
     <polyline className="plan-route-flow" points={toLine(ahead)} />
     {passedIndex > 0 && <polyline className="plan-route-passed" points={toLine(passed)} />}
     <circle cx={points[0][0]} cy={points[0][1]} r="7" />
@@ -257,17 +257,24 @@ export default function FloorMap({ floor = 1, selectedId = '', onSelect, onFloor
     viewport.scrollTop = frame.top
     zoomRef.current = frame.zoom
   }, [])
-  const zoomByButton = (factor) => {
+  // Кнопки масштабируют плавно: несколько кадров вместо одного скачка.
+  const zoomAnimation = useRef(0)
+  useEffect(() => () => cancelAnimationFrame(zoomAnimation.current), [])
+  const animateZoom = (to) => {
     const viewport = viewportRef.current
     if (!viewport) return
-    applyZoom(zoomRef.current * factor, viewport.clientWidth / 2, viewport.clientHeight / 2)
+    cancelAnimationFrame(zoomAnimation.current)
+    const from = zoomRef.current
+    const startedAt = performance.now()
+    const step = (now) => {
+      const k = Math.min(1, (now - startedAt) / 260)
+      applyZoom(from + (to - from) * (1 - (1 - k) ** 3), viewport.clientWidth / 2, viewport.clientHeight / 2)
+      if (k < 1) zoomAnimation.current = requestAnimationFrame(step)
+    }
+    zoomAnimation.current = requestAnimationFrame(step)
   }
-  const resetZoom = () => {
-    const viewport = viewportRef.current
-    if (stageRef.current) stageRef.current.style.width = ''
-    zoomRef.current = 1
-    if (viewport) { viewport.scrollLeft = 0; viewport.scrollTop = 0 }
-  }
+  const zoomByButton = (factor) => animateZoom(zoomRef.current * factor)
+  const resetZoom = () => animateZoom(1)
 
   // Safari often cancels pointer events when a scrollable element is panned.
   // Native touch events with a non-passive two-finger listener keep one-finger
@@ -334,7 +341,7 @@ export default function FloorMap({ floor = 1, selectedId = '', onSelect, onFloor
         <title>{`${floor} этаж колледжа`}</title>
         <desc>{picking ? 'Коснитесь точки на плане, чтобы установить отметку.' : 'Выберите помещение, чтобы открыть описание. Двойной щелчок по лестнице переключает этаж.'}</desc>
         {floorRooms.map((room) => <FloorRoom key={room.id} room={room} selected={selectedId === room.id} onSelect={onSelect} onFloorRequest={onFloorRequest} gameTargetId={gameTargetId} gameFeedback={gameFeedback} filterCategory={filterCategory} />)}
-        {route?.points.length > 1 && <RouteLayer points={route.points} markerId={markerId} progress={routeProgress} is3d={navMode3d} />}
+        {route?.points.length > 1 && <RouteLayer key={`${floor}|${route.points.join(';')}`} points={route.points} markerId={markerId} progress={routeProgress} is3d={navMode3d} />}
         {floor === 2 && onFloorRequest && <g className="plan-downstairs-link" role="button" tabIndex={0} aria-label="Актовый зал на первом этаже. Открыть первый этаж" onClick={showLowerFloor} onKeyDown={onGhostKeyDown}><rect x="610" y="94" width="156" height="150" rx="2" /></g>}
         {manualPoint?.floor === floor && <LocationMarker point={[manualPoint.x, manualPoint.y]} kind="manual" />}
         {gpsMarker?.floor === floor && <LocationMarker point={gpsMarker.point} radius={gpsMarker.radius} kind={gpsMarker.mode} />}
