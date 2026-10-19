@@ -7,6 +7,8 @@
 
 declare(strict_types=1);
 
+date_default_timezone_set('Europe/Moscow');
+
 const AI_DEFAULTS = [
     'api_key' => '',
     'model' => 'deepseek-v4-flash',
@@ -20,10 +22,19 @@ const AI_DEFAULTS = [
     'college_site' => 'https://xn--c1abcfrgadvgb0b.xn--p1ai',
     'college_cache_hours' => 12,
     'college_max_chars' => 30000,
+    // Картинки: пробуем отправить их модели; если DeepSeek их не принимает,
+    // агент ответит без них и честно скажет, что не видит изображение.
+    // vision_model — отдельная модель для запросов с картинками (если есть).
+    'vision' => true,
+    'vision_model' => '',
+    // «Подумать глубже»: режим рассуждений DeepSeek, отвечает дольше и точнее.
+    'deep_max_tokens' => 4000,
 ];
 
 const MAX_MESSAGES = 16;
 const MAX_MESSAGE_CHARS = 2000;
+const MAX_IMAGES = 3;
+const MAX_IMAGE_BYTES = 1500000;
 
 header('Content-Type: application/json; charset=utf-8');
 header('X-Content-Type-Options: nosniff');
@@ -204,9 +215,10 @@ function system_prompt(array $config): string
 {
     $knowledge = is_file(__DIR__ . '/ai-knowledge.txt') ? (string) file_get_contents(__DIR__ . '/ai-knowledge.txt') : '';
     $college = college_context($config);
-    $today = date('d.m.Y');
+    $days = ['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота'];
+    $today = date('d.m.Y') . ', ' . $days[(int) date('w')] . ', ' . date('H:i');
     $prompt = <<<TXT
-Ты — ИИ-агент сайта «ЛОГОС: Путеводитель» (тестовая версия). Сегодня {$today}.
+Ты — ЛОГОС AI, ИИ-помощник сайта «ЛОГОС: Путеводитель» (тестовая версия). Сейчас {$today} (время московское).
 Помогаешь студентам, абитуриентам, родителям и гостям Технического колледжа «Логос» в Боровске: подсказываешь, где находятся кабинеты и как пройти, объясняешь разделы сайта, рассказываешь о колледже, поступлении и специальностях, а также просто поддерживаешь дружескую беседу.
 
 Правила:
@@ -215,6 +227,8 @@ function system_prompt(array $config): string
 - Давай ссылки на разделы путеводителя относительными адресами, например [маршрут до актового зала](/route?from=entrance-1&to=auditorium-104) или [кабинет 214 на карте](/map?floor=2&room=library-214). Используй только id из базы знаний.
 - Если точного ответа в материалах нет (сроки приёма, расписание, стоимость, документы, телефоны), честно скажи об этом и посоветуй уточнить на колледжлогос.рф или в приёмной комиссии. Не выдумывай факты, номера кабинетов, имена и даты.
 - Не проси и не собирай персональные данные. Если человек пишет о проблеме со здоровьем или безопасностью, посоветуй обратиться к сотрудникам колледжа, в медпункт или по номеру 112.
+- Если прислали картинку (расписание, объявление, фото таблички или плана, задачу), сначала коротко опиши, что на ней важного, затем ответь на вопрос. Номер кабинета с картинки сразу свяжи с картой и маршрутом.
+- Помогай и с учёбой: объясняй темы простыми словами и по шагам, но не выдавай готовые работы за студента — подталкивай к решению.
 - Ты ИИ и можешь ошибаться — при важных решениях советуй проверить информацию у колледжа.
 
 # База знаний путеводителя
@@ -224,27 +238,66 @@ TXT;
     return $prompt;
 }
 
-function read_messages(): array
+function valid_image($image): bool
 {
-    $raw = file_get_contents('php://input', false, null, 0, 200000);
+    return is_string($image) && strlen($image) <= MAX_IMAGE_BYTES * 4 / 3 + 100
+        && preg_match('~^data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$~', $image) === 1;
+}
+
+function read_request(): array
+{
+    $raw = file_get_contents('php://input', false, null, 0, 6000000);
+    if (strlen((string) $raw) >= 6000000) respond(413, ['error' => 'Картинки слишком большие. Попробуйте одну или поменьше.']);
     $body = json_decode($raw ?: '', true);
     if (!is_array($body) || !isset($body['messages']) || !is_array($body['messages'])) respond(400, ['error' => 'Пустой запрос.']);
     $messages = [];
-    foreach (array_slice($body['messages'], -MAX_MESSAGES) as $message) {
+    $images = [];
+    $list = array_slice($body['messages'], -MAX_MESSAGES);
+    foreach ($list as $index => $message) {
         $role = $message['role'] ?? '';
         $content = $message['content'] ?? '';
         if (!in_array($role, ['user', 'assistant'], true) || !is_string($content)) continue;
         $content = trim(mb_substr($content, 0, MAX_MESSAGE_CHARS));
-        if ($content !== '') $messages[] = ['role' => $role, 'content' => $content];
+        $last = $index === count($list) - 1;
+        if ($last && $role === 'user' && isset($message['images']) && is_array($message['images'])) {
+            $images = array_values(array_filter(array_slice($message['images'], 0, MAX_IMAGES), 'valid_image'));
+        }
+        if ($content === '' && !($last && $images)) continue;
+        $messages[] = ['role' => $role, 'content' => $content];
     }
     while ($messages && $messages[0]['role'] !== 'user') array_shift($messages);
     if (!$messages || end($messages)['role'] !== 'user') respond(400, ['error' => 'Напишите сообщение.']);
-    return $messages;
+    return ['messages' => $messages, 'images' => $images, 'deep' => !empty($body['deep'])];
+}
+
+function deepseek(array $config, array $payload, int $timeout): array
+{
+    $curl = curl_init($config['endpoint']);
+    curl_setopt_array($curl, [
+        CURLOPT_POST => true,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_CONNECTTIMEOUT => 10,
+        CURLOPT_TIMEOUT => $timeout,
+        CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Authorization: Bearer ' . $config['api_key']],
+        CURLOPT_POSTFIELDS => json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+    ]);
+    $raw = curl_exec($curl);
+    $status = (int) curl_getinfo($curl, CURLINFO_HTTP_CODE);
+    $error = curl_error($curl);
+    curl_close($curl);
+    $data = is_string($raw) ? json_decode($raw, true) : null;
+    $message = is_array($data) ? ($data['choices'][0]['message'] ?? []) : [];
+    return [
+        'status' => $status,
+        'reply' => trim((string) ($message['content'] ?? '')),
+        'reasoning' => trim((string) ($message['reasoning_content'] ?? '')),
+        'log' => $error ?: substr((string) $raw, 0, 300),
+    ];
 }
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'GET' && isset($_GET['health'])) {
     $config = load_config();
-    respond(200, ['ok' => $config['api_key'] !== '', 'model' => $config['model'], 'knowledge' => is_file(__DIR__ . '/ai-knowledge.txt'), 'curl' => function_exists('curl_init')]);
+    respond(200, ['ok' => $config['api_key'] !== '', 'model' => $config['model'], 'vision' => (bool) $config['vision'], 'knowledge' => is_file(__DIR__ . '/ai-knowledge.txt'), 'curl' => function_exists('curl_init')]);
 }
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') respond(405, ['error' => 'Метод не поддерживается.']);
 
@@ -255,39 +308,58 @@ if ($origin !== '' && parse_url($origin, PHP_URL_HOST) !== $host) respond(403, [
 
 $config = load_config();
 if ($config['api_key'] === '' || !function_exists('curl_init')) respond(503, ['error' => 'ИИ-агент ещё не настроен на сервере.']);
-$messages = read_messages();
+$request = read_request();
 if (!within_limits($config)) respond(429, ['error' => 'Слишком много сообщений подряд. Подождите несколько минут.']);
 
-array_unshift($messages, ['role' => 'system', 'content' => system_prompt($config)]);
-$curl = curl_init($config['endpoint']);
-curl_setopt_array($curl, [
-    CURLOPT_POST => true,
-    CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_CONNECTTIMEOUT => 10,
-    CURLOPT_TIMEOUT => 90,
-    CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Authorization: Bearer ' . $config['api_key']],
-    CURLOPT_POSTFIELDS => json_encode([
-        'model' => $config['model'],
-        'messages' => $messages,
-        'max_tokens' => (int) $config['max_tokens'],
-        'temperature' => (float) $config['temperature'],
-        'stream' => false,
-    ], JSON_UNESCAPED_UNICODE),
-]);
-$raw = curl_exec($curl);
-$status = (int) curl_getinfo($curl, CURLINFO_HTTP_CODE);
-$curlError = curl_error($curl);
-curl_close($curl);
+$messages = $request['messages'];
+$images = $config['vision'] ? $request['images'] : [];
+$deep = $request['deep'];
+$system = ['role' => 'system', 'content' => system_prompt($config)];
+$lastIndex = count($messages) - 1;
+$question = $messages[$lastIndex]['content'];
 
-$data = is_string($raw) ? json_decode($raw, true) : null;
-$reply = is_array($data) ? trim((string) ($data['choices'][0]['message']['content'] ?? '')) : '';
-if ($status === 200 && $reply !== '') respond(200, ['reply' => $reply]);
+// Варианты запроса от полного к простому: если DeepSeek отвечает 400/422
+// (не знает параметр thinking или не принимает картинки), пробуем следующий.
+$withImages = $messages;
+if ($images) {
+    $parts = [['type' => 'text', 'text' => $question !== '' ? $question : 'Что на этой картинке?']];
+    foreach ($images as $image) $parts[] = ['type' => 'image_url', 'image_url' => ['url' => $image]];
+    $withImages[$lastIndex]['content'] = $parts;
+}
+$textOnly = $messages;
+if ($request['images']) {
+    $textOnly[$lastIndex]['content'] = trim($question . "\n\n[Пользователь приложил изображение (" . count($request['images']) . " шт.), но ты не можешь его видеть. Скажи об этом одной фразой и попроси описать словами или переписать текст с картинки, затем помоги по описанию.]");
+}
+$thinking = ['type' => $deep ? 'enabled' : 'disabled'];
+$base = [
+    'max_tokens' => (int) ($deep ? $config['deep_max_tokens'] : $config['max_tokens']),
+    'stream' => false,
+];
+if (!$deep) $base['temperature'] = (float) $config['temperature'];
+$variants = [];
+if ($images) {
+    $model = $config['vision_model'] ?: $config['model'];
+    $variants[] = ['vision' => true, 'payload' => $base + ['model' => $model, 'messages' => array_merge([$system], $withImages), 'thinking' => $thinking]];
+    $variants[] = ['vision' => true, 'payload' => $base + ['model' => $model, 'messages' => array_merge([$system], $withImages)]];
+}
+$variants[] = ['vision' => !$request['images'], 'payload' => $base + ['model' => $config['model'], 'messages' => array_merge([$system], $textOnly), 'thinking' => $thinking]];
+$variants[] = ['vision' => !$request['images'], 'payload' => $base + ['model' => $config['model'], 'messages' => array_merge([$system], $textOnly)]];
 
-error_log('logos-ai: DeepSeek ' . $status . ' ' . ($curlError ?: substr((string) $raw, 0, 300)));
+foreach ($variants as $variant) {
+    $result = deepseek($config, $variant['payload'], $deep ? 150 : 90);
+    if ($result['status'] === 200 && $result['reply'] !== '') {
+        $body = ['reply' => $result['reply'], 'vision' => $variant['vision']];
+        if ($deep && $result['reasoning'] !== '') $body['reasoning'] = mb_substr($result['reasoning'], 0, 8000);
+        respond(200, $body);
+    }
+    error_log('logos-ai: DeepSeek ' . $result['status'] . ' ' . $result['log']);
+    if (!in_array($result['status'], [400, 422], true)) break;
+}
+
 $messagesByStatus = [
     0 => 'Не удалось связаться с DeepSeek. Попробуйте позже.',
     401 => 'Сервер ИИ отклонил ключ API — сообщите команде сайта.',
     402 => 'На счёте DeepSeek закончились средства — сообщите команде сайта.',
     429 => 'ИИ сейчас перегружен. Попробуйте через минуту.',
 ];
-respond(502, ['error' => $messagesByStatus[$status] ?? 'ИИ не ответил. Попробуйте ещё раз.']);
+respond(502, ['error' => $messagesByStatus[$result['status']] ?? 'ИИ не ответил. Попробуйте ещё раз.']);

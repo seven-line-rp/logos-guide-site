@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
-import { askAgent, historyForRequest, MAX_HISTORY, parseBlocks, parseInline, safeHref } from './ai-chat.js'
+import { answerActions, askAgent, chatTitle, CHATS_KEY, containsProfanity, historyForRequest, loadChats, maskProfanity, MAX_HISTORY, parseBlocks, parseChats, parseInline, plainText, safeHref, saveChats } from './ai-chat.js'
 import { buildKnowledge } from './ai-knowledge.js'
 import { rooms } from './data.js'
 
@@ -18,9 +18,9 @@ test('request history keeps only real turns and caps length', () => {
 test('askAgent posts history and surfaces server errors', async () => {
   let sent
   const ok = async (url, init) => { sent = { url, body: JSON.parse(init.body) }; return { ok: true, status: 200, json: async () => ({ reply: 'Библиотека — кабинет 214.' }) } }
-  assert.equal(await askAgent([{ role: 'user', content: 'Где библиотека?' }], { fetchImpl: ok }), 'Библиотека — кабинет 214.')
+  assert.deepEqual(await askAgent([{ role: 'user', content: 'Где библиотека?' }], { fetchImpl: ok, deep: true }), { reply: 'Библиотека — кабинет 214.', reasoning: '', vision: true })
   assert.equal(sent.url, '/api/ai-chat.php')
-  assert.deepEqual(sent.body.messages, [{ role: 'user', content: 'Где библиотека?' }])
+  assert.deepEqual(sent.body, { messages: [{ role: 'user', content: 'Где библиотека?' }], deep: true })
 
   const limited = async () => ({ ok: false, status: 429, json: async () => ({ error: 'Слишком много сообщений подряд.' }) })
   await assert.rejects(askAgent([{ role: 'user', content: 'x' }], { fetchImpl: limited }), /Слишком много/)
@@ -59,4 +59,61 @@ test('no API key is committed to the site sources', () => {
   })
   const files = [...walk('public'), ...walk('src'), ...walk('deploy')].filter((f) => /\.(php|js|jsx|txt|md|json|htaccess)$|\.htaccess$/.test(f))
   for (const file of files) assert.doesNotMatch(readFileSync(file, 'utf8'), /sk-[a-f0-9]{24,}/, file)
+})
+
+test('only the latest question carries images; curator replies never reach the model', () => {
+  const history = historyForRequest([
+    { role: 'user', content: 'Что тут?', images: ['data:image/jpeg;base64,AAA'] },
+    { role: 'assistant', content: 'Расписание.' },
+    { role: 'user', content: 'блин', at: 1 },
+    { role: 'curator', content: 'Сообщение передано куратору' },
+    { role: 'user', content: 'А это?', images: ['data:image/jpeg;base64,BBB', 'x', 'y', 'z'] },
+  ])
+  assert.equal(history.length, 4)
+  assert.match(history[0].content, /приложено изображение/)
+  assert.equal(history[0].images, undefined)
+  assert.equal(history.at(-1).images.length, 3)
+  assert.ok(history.every((m) => m.role !== 'curator'))
+})
+
+test('profanity filter catches mat but not ordinary words', () => {
+  for (const word of ['бля', 'Сука!', 'пиздец', 'нахуй', 'охуенно', 'заебись', 'долбоёб', 'мудак', 'пидор', 'херня', 'xуй', 'бляяяя']) assert.ok(containsProfanity(`ну ${word} же`), word)
+  for (const word of ['оскорблять', 'употреблять', 'небо', 'себя', 'мудрый', 'мандарин', 'хулиган', 'рубля', 'сукно', 'художник', 'страхуй', 'колебания', 'хуже', 'потребовал', 'облако']) assert.equal(containsProfanity(word), false, word)
+  assert.equal(maskProfanity('ну ты и сука, правда'), 'ну ты и с***, правда')
+})
+
+test('chats are saved, trimmed when storage is full and not saved after opt-out', () => {
+  const data = {}
+  let limit = Infinity
+  const store = {
+    getItem: (key) => data[key] ?? null,
+    setItem: (key, value) => { if (value.length > limit) throw new Error('QuotaExceeded'); data[key] = value },
+    removeItem: (key) => { delete data[key] },
+  }
+  const image = `data:image/jpeg;base64,${'A'.repeat(2000)}`
+  const chats = [
+    { id: 'old', title: 'Старый', created: 1, updated: 1, messages: [{ role: 'user', content: 'фото', images: [image] }] },
+    { id: 'new', title: 'Новый', created: 2, updated: 2, messages: [{ role: 'user', content: 'привет' }, { role: 'assistant', content: 'Привет!' }] },
+    { id: 'empty', title: 'Новый чат', created: 3, updated: 3, messages: [] },
+  ]
+  assert.equal(saveChats(chats, 'new', store), 'saved')
+  assert.deepEqual(loadChats(store).chats.map((c) => c.id), ['new', 'old'])
+  limit = 1000
+  assert.equal(saveChats(chats, 'new', store), 'trimmed')
+  const old = loadChats(store).chats.find((c) => c.id === 'old')
+  assert.equal(old.messages[0].images, undefined)
+  assert.match(old.messages[0].content, /изображение/)
+  data['logos-cookie-consent'] = JSON.stringify({ v: 1, functional: false, at: '' })
+  delete data[CHATS_KEY]
+  assert.equal(saveChats(chats, 'new', store), 'disabled')
+  assert.equal(data[CHATS_KEY], undefined)
+  assert.deepEqual(parseChats('{broken'), { chats: [], activeId: '' })
+  assert.equal(chatTitle('  Где   библиотека?  '), 'Где библиотека?')
+  assert.ok(chatTitle('а'.repeat(80)).endsWith('…'))
+})
+
+test('answers become route and map buttons and plain text', () => {
+  const text = 'Библиотека — **214**.\n- [Маршрут](/route?from=entrance-1&to=library-214)\n- [На карте](/map?floor=2&room=library-214)\n[Сайт](https://колледжлогос.рф)'
+  assert.deepEqual(answerActions(text).map((a) => a.kind), ['route', 'map'])
+  assert.equal(plainText(text), 'Библиотека — 214.\n— Маршрут\n— На карте\nСайт')
 })
