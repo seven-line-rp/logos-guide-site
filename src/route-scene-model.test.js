@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { cameraTransform, clampCamera, projectPoint, fitCamera, headingYaw, nearestAngle, panCamera, pathData, pathHeading, screenToPlanDelta, zoomCamera, ZOOM_MAX, ZOOM_MIN } from './route-scene-model.js'
+import { cameraTransform, clampCamera, flyDuration, flyFrame, projectPoint, fitCamera, headingYaw, nearestAngle, panCamera, pathData, pathHeading, screenToPlanDelta, zoomCamera, ZOOM_MAX, ZOOM_MIN } from './route-scene-model.js'
 
 const size = { width: 758, height: 552 }
 const near = (a, b, eps = 1e-6) => assert.ok(Math.abs(a - b) < eps, `${a} ≈ ${b}`)
@@ -65,4 +65,18 @@ test('labels are projected to the same place as the 3D floor point', () => {
   assert.ok(y < 250) // поднятая над полом точка на наклонённом плане выше на экране
   const [farX] = projectPoint({ ...flat, tilt: 60 }, center, [100, 50], { origin: [400, 200] })
   near(farX, 400)
+})
+
+test('camera flight starts and ends exactly, eases, and lifts on long jumps', () => {
+  const from = { x: 0, y: 0, zoom: 2, tilt: 52, yaw: 170 }
+  const to = { x: 600, y: 0, zoom: 2, tilt: 52, yaw: -170 }
+  assert.deepEqual(flyFrame(from, to, 0), from)
+  const end = flyFrame(from, to, 1)
+  assert.deepEqual([end.x, end.zoom, end.yaw], [600, 2, 190]) // поворот на 20°, а не на 340°
+  const mid = flyFrame(from, to, 0.5)
+  near(mid.x, 300)
+  assert.ok(mid.zoom < 2) // в середине перелёта камера отдаляется
+  assert.ok(flyFrame(from, to, 0.1).x < 60) // мягкий разгон
+  assert.ok(flyDuration(from, to) > flyDuration(from, { ...from, x: 10 }))
+  assert.ok(flyDuration(from, to) <= 1700)
 })

@@ -16,6 +16,7 @@ function FloorRoom({ room, selected, onSelect, onFloorRequest, gameTargetId, gam
     isTarget ? 'plan-room-target' : '',
     gameFeedback === room.id ? 'plan-room-correct' : '',
     filterCategory !== 'Все места' && room.category !== filterCategory ? 'plan-room-muted' : '',
+    filterCategory !== 'Все места' && room.category === filterCategory ? 'plan-room-match' : '',
   ].filter(Boolean).join(' ')
   const stair = room.id.match(/^(stairs-(?:north|middle|west))-[12]$/)
   const touchStart = useRef(null)
@@ -137,7 +138,7 @@ function RouteLayer({ points, markerId, progress = null, is3d = false }) {
   </g>
 }
 
-export default function FloorMap({ floor = 1, selectedId = '', onSelect, onFloorRequest, onPointSelect, picking = false, gameTargetId = '', gameFeedback = '', filterCategory = 'Все места', compact = false, zoomed = false, showLabels = true, showDoorMarks = true, routeStart = '', routeTargetId = '', manualPoint = null, gpsMarker = null, transition = 'lift', routeProgress = null, navMode3d = false, onToggle3d = null, activeStepPoint = null, swoopActive = false }) {
+export default function FloorMap({ floor = 1, selectedId = '', onSelect, onFloorRequest, onPointSelect, picking = false, gameTargetId = '', gameFeedback = '', filterCategory = 'Все места', compact = false, zoomed = false, showLabels = true, showDoorMarks = true, routeStart = '', routeTargetId = '', manualPoint = null, gpsMarker = null, transition = 'lift', routeProgress = null, navMode3d = false, onToggle3d = null, activeStepPoint = null, swoopActive = false, notices = [] }) {
   const floorRooms = rooms.filter((room) => room.floor === floor)
   const language = useLanguage()
   const plan = composePlanArt(floor === 1 ? floorOnePlan : floorTwoPlan, floor, language)
@@ -343,6 +344,7 @@ export default function FloorMap({ floor = 1, selectedId = '', onSelect, onFloor
         {floorRooms.map((room) => <FloorRoom key={room.id} room={room} selected={selectedId === room.id} onSelect={onSelect} onFloorRequest={onFloorRequest} gameTargetId={gameTargetId} gameFeedback={gameFeedback} filterCategory={filterCategory} />)}
         {route?.points.length > 1 && <RouteLayer key={`${floor}|${route.points.join(';')}`} points={route.points} markerId={markerId} progress={routeProgress} is3d={navMode3d} />}
         {floor === 2 && onFloorRequest && <g className="plan-downstairs-link" role="button" tabIndex={0} aria-label="Актовый зал на первом этаже. Открыть первый этаж" onClick={showLowerFloor} onKeyDown={onGhostKeyDown}><rect x="610" y="94" width="156" height="150" rx="2" /></g>}
+        {notices.map((notice) => { const outline = roomOutline(notice.roomId); const cx = outline.reduce((sum, p) => sum + p[0], 0) / outline.length; const cy = outline.reduce((sum, p) => sum + p[1], 0) / outline.length; return <g key={`${notice.roomId}-${notice.title}`} className={`plan-notice plan-notice-${notice.type}`} transform={`translate(${cx} ${cy})`} aria-hidden="true"><circle r="11" /><text y="4">{notice.type === 'closed' ? '!' : notice.type === 'event' ? '★' : 'i'}</text></g> })}
         {manualPoint?.floor === floor && <LocationMarker point={[manualPoint.x, manualPoint.y]} kind="manual" />}
         {gpsMarker?.floor === floor && <LocationMarker point={gpsMarker.point} radius={gpsMarker.radius} kind={gpsMarker.mode} />}
       </svg>

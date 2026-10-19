@@ -82,3 +82,24 @@
 @media (prefers-reduced-motion: reduce) {
   .plan-route .plan-route-line, .plan-route .plan-route-flow, .plan-route .plan-route-destination, .plan-route .plan-route-halo, .plan-room-selected .plan-room-shape { animation-duration: .01s; animation-delay: 0s; }
 }
+
+/* Фильтр помещений: подходящие подсвечены, остальные «выцветают» под белой
+   вуалью (сами помещения нарисованы в плане, поэтому прозрачность области
+   нажатия ничего бы не дала). */
+.plan-room-muted { opacity: 1; }
+.plan-room-muted .plan-room-shape { fill: color-mix(in srgb, var(--map-bg) 74%, transparent); stroke: transparent; }
+.plan-room-match .plan-room-shape { fill: color-mix(in srgb, var(--map-route) 16%, transparent); stroke: var(--map-route); stroke-width: 2; animation: plan-match .6s var(--map-ease) both; }
+@keyframes plan-match { from { fill: color-mix(in srgb, var(--map-route) 40%, transparent); stroke-width: 5; } }
+.rs-room.is-muted { fill: color-mix(in srgb, var(--rs-floor) 72%, transparent); }
+.rs-room.is-match { fill: color-mix(in srgb, var(--rs-route) 18%, transparent); stroke: color-mix(in srgb, var(--rs-route) 70%, transparent); }
+.rs-room.is-match.is-selected { fill: color-mix(in srgb, var(--rs-route) 28%, transparent); }
+
+.map-filter { display: inline-flex; align-items: center; gap: 7px; transition: background .2s var(--map-ease), color .2s, border-color .2s; }
+.map-filter:disabled { opacity: .4; cursor: default; }
+.map-filter-count { min-width: 20px; height: 20px; padding: 0 6px; display: inline-grid; place-items: center; border-radius: 999px; color: var(--muted); background: color-mix(in srgb, var(--ink) 7%, transparent); font-size: 11px; font-weight: 700; }
+.map-filter-active .map-filter-count { color: inherit; background: rgba(255, 255, 255, .25); }
+.map-filter-results { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; animation: plan-fade .3s ease both; }
+.map-filter-results button { min-height: 32px; padding: 0 12px; border: 1px solid color-mix(in srgb, var(--map-route) 30%, var(--line)); border-radius: 999px; color: var(--ink); background: color-mix(in srgb, var(--map-route) 6%, var(--surface)); font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; transition: all .2s var(--map-ease); }
+.map-filter-results button:hover, .map-filter-results button.is-on { border-color: var(--map-route); color: #fff; background: var(--map-route); }
+.map-filter-results .map-filter-reset { border-style: dashed; color: var(--muted); background: transparent; }
+.map-filter-results .map-filter-reset:hover { color: var(--ink); background: transparent; border-color: var(--muted); }

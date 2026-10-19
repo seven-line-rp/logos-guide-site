@@ -92,8 +92,21 @@ export default function HeroScene() {
     let center = frameCenter(root.getBoundingClientRect())
     const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => { center = frameCenter(root.getBoundingClientRect()) })
     observer?.observe(root)
-    const apply = (frame) => {
-      camera.style.transform = cameraTransform(frame.camera, center)
+    // Камера мягко догоняет сценарий (экспоненциальное сглаживание): на
+    // стыках фаз пролёта — спуск, подъём, разворот — нет рывков скорости.
+    let smooth = null
+    let lastTime = 0
+    const follow = (target, now) => {
+      if (!smooth || !lastTime) { smooth = { ...target }; lastTime = now; return smooth }
+      const k = 1 - Math.exp(-Math.min(0.1, (now - lastTime) / 1000) / 0.22)
+      lastTime = now
+      const yaw = target.yaw + 360 * Math.round((smooth.yaw - target.yaw) / 360)
+      for (const key of ['x', 'y', 'z', 'zoom', 'tilt']) smooth[key] += (target[key] - smooth[key]) * k
+      smooth.yaw += (yaw - smooth.yaw) * k
+      return smooth
+    }
+    const apply = (frame, now = 0) => {
+      camera.style.transform = cameraTransform(now ? follow(frame.camera, now) : frame.camera, center)
       if (lowerRef.current) lowerRef.current.style.strokeDashoffset = String(1 - frame.lower)
       if (upperRef.current) upperRef.current.style.strokeDashoffset = String(1 - frame.upper)
       if (lowerRouteRef.current) lowerRouteRef.current.style.opacity = String(frame.routeOpacity)
@@ -121,7 +134,7 @@ export default function HeroScene() {
     let frameId = 0
     const startedAt = performance.now()
     const tick = (now) => {
-      apply(scene.flight((now - startedAt) / 1000 / FLIGHT_SECONDS))
+      apply(scene.flight((now - startedAt) / 1000 / FLIGHT_SECONDS), now)
       frameId = requestAnimationFrame(tick)
     }
     frameId = requestAnimationFrame(tick)

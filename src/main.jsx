@@ -21,6 +21,7 @@ import './route-scene.css'
 import './ai-agent.css'
 import './dark-theme.css'
 import './maps-modern.css'
+import './features.css'
 import './interactions.js'
 
 createRoot(document.getElementById('root')).render(

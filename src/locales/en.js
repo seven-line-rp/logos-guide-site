@@ -284,3 +284,37 @@ Object.assign(english, {
   'ЛОГОС AI может ошибаться — важное уточняйте в колледже ·': 'LOGOS AI can make mistakes — check anything important with the college ·', 'Конфиденциальность': 'Privacy',
   'Ваши чаты с ЛОГОС AI и приложенные к ним картинки': 'Your LOGOS AI chats and the pictures attached to them',
 })
+
+// Мой день, расписание, ближайшее, избранное, «Поделиться», объявления, экскурсии.
+Object.assign(english, {
+  'Мой день': 'My day', 'Всё под': 'Everything at', 'рукой.': 'hand.',
+  'Добавьте своё расписание': 'Add your timetable', 'Покажем следующую пару, сколько до неё осталось и как дойти.': 'We’ll show your next class, how long until it starts and how to get there.',
+  'Всё расписание': 'Full timetable', 'Заполнить расписание': 'Fill in timetable', 'Мои места': 'My places',
+  'Нажмите ★ у кабинета на карте или в маршруте — он появится здесь. Недавние маршруты сохраняются сами.': 'Tap ★ on a room on the map or in a route and it will appear here. Recent routes are saved automatically.',
+  'Где ближайший': 'Nearest', 'От главного входа — или от вашей точки на странице маршрута.': 'From the main entrance, or from your own point on the route page.',
+  'Экскурсия в 3D': '3D tour', 'остановок': 'stops', 'Ближайший:': 'Nearest:',
+  'Туалет': 'Toilet', 'Выход': 'Exit', 'Медпункт': 'Medical centre', 'Учебная часть': 'Academic office',
+  'Следующая пара': 'Next class', 'Идёт сейчас': 'In progress', 'Маршрут': 'Route',
+  'Моё расписание': 'My timetable', 'Пары и': 'Classes and', 'маршруты к ним.': 'routes to them.',
+  'Добавьте свои пары — на главной появится следующая пара с маршрутом, а навигатор подскажет, успеваете ли вы. Расписание хранится только в этом браузере.': 'Add your classes: the home page will show the next one with a route, and the navigator will tell you whether you’ll make it. The timetable stays in this browser only.',
+  'В этот день пар нет. Добавьте первую справа.': 'No classes on this day. Add the first one on the right.',
+  'Добавить пару ·': 'Add a class ·', 'Начало': 'Start', 'Конец': 'End', 'Предмет': 'Subject', 'Добавить': 'Add',
+  'Например, Физика': 'For example, Physics',
+  'Время звонков подставлено типовое — если в колледже оно другое, поправьте начало и конец вручную.': 'Bell times are typical defaults. If your college uses different times, adjust the start and end manually.',
+  'Понедельник': 'Monday', 'Вторник': 'Tuesday', 'Среда': 'Wednesday', 'Четверг': 'Thursday', 'Пятница': 'Friday', 'Суббота': 'Saturday',
+  'Пн': 'Mon', 'Вт': 'Tue', 'Ср': 'Wed', 'Чт': 'Thu', 'Пт': 'Fri', 'Сб': 'Sat',
+  'Пара через': 'Class in', 'Выбрать': 'Choose', 'В избранное': 'Add to favourites', 'В избранном': 'In favourites', 'Убрать из избранного': 'Remove from favourites', 'Добавить в избранное': 'Add to favourites',
+  'Поделиться маршрутом': 'Share route', 'Отправить': 'Send', 'Распечатать': 'Print', 'Скопировать ссылку': 'Copy link', 'Ссылка скопирована': 'Link copied',
+  'Наведите камеру телефона на код — маршрут откроется сразу.': 'Point your phone camera at the code and the route opens straight away.',
+  'Спросить ИИ': 'Ask AI', 'Спросить': 'Ask', 'Сюда': 'Here', 'Отсюда': 'From here',
+  'Экскурсия': 'Tour', 'Остановки': 'Stops', 'Остановка': 'Stop', 'Дальше': 'Next', 'Маршрут сюда': 'Route here',
+  'Первый день': 'First day', 'День открытых дверей': 'Open day', 'Открыть маршрут': 'Open route',
+})
+
+Object.assign(english, {
+  'Приложение для Android': 'Android app', 'Сейчас на техническом обслуживании и пока не поддерживается. Пользуйтесь сайтом — он удобно работает и на телефоне.': 'Currently under maintenance and not supported yet. Please use the website — it works well on phones too.',
+  'Сбросить фильтр': 'Clear filter', 'Звонки ·': 'Bells ·', 'Сегодня': 'Today', 'Завтра': 'Tomorrow', 'Послезавтра': 'Day after tomorrow',
+  'Очистить день': 'Clear day', 'Воскресенье — выходной.': 'Sunday is a day off.', 'Сегодня выходной': 'Day off today',
+  'Новых пар пока нет': 'No upcoming classes', 'Расписание каждый день новое — добавьте пары на завтра.': 'The timetable changes daily — add tomorrow’s classes.',
+  'Пары на сегодня закончились': 'Classes are over for today',
+})

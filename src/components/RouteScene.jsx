@@ -7,7 +7,7 @@ import { composePlanArt } from '../map-art.js'
 import { planSizes, roomOutline } from '../map-geometry.js'
 import { floorDoors, floorWalls } from '../hero-scene-model.js'
 import { useLanguage } from '../i18n.js'
-import { FOLLOW_ZOOM, TILT_3D, cameraTransform, clampCamera, fitCamera, headingYaw, panCamera, pathData, pathHeading, projectPoint, zoomCamera } from '../route-scene-model.js'
+import { FOLLOW_ZOOM, TILT_3D, cameraTransform, clampCamera, fitCamera, flyDuration, flyFrame, headingYaw, panCamera, pathData, pathHeading, projectPoint, zoomCamera } from '../route-scene-model.js'
 
 // Интерактивная карта маршрута. Пол — настоящий план, стены и двери подняты
 // в CSS 3D из той же геометрии, что и кликабельные помещения
@@ -34,7 +34,7 @@ function floorScene(floor) {
 const PERSPECTIVE = 1500
 const ORIGIN_Y = 0.4 // perspective-origin в route-scene.css
 
-export default function RouteScene({ floor, points = [], progress = null, following = false, mode = '3d', selectedId = '', targetId = '', transfer = null, onRoomClick, onFollowChange }) {
+export default function RouteScene({ floor, points = [], progress = null, following = false, mode = '3d', selectedId = '', targetId = '', transfer = null, notices = [], filterCategory = '', onRoomClick, onFollowChange }) {
   const language = useLanguage()
   const size = planSizes[floor]
   const scene = floorScene(floor)
@@ -82,7 +82,50 @@ export default function RouteScene({ floor, points = [], progress = null, follow
   }, [following, active?.[0], active?.[1], mode, pointsKey, viewport.width, viewport.height])
 
   const cam = camera || autoCamera()
-  const takeControl = () => { setAnimated(false); if (following) onFollowChange?.(false) }
+  // shown — камера, которая сейчас на экране. Когда цель меняется, она
+  // летит к ней покадрово (flyFrame); transform камеры, подписи и компас
+  // обновляются напрямую, без перерисовки сотен стен через React.
+  const shown = useRef(null)
+  const cameraRef = useRef(null)
+  const compassRef = useRef(null)
+  const markRefs = useRef(new Map())
+  const marksRef = useRef([])
+  const flight = useRef(0)
+  const drawRef = useRef(null)
+  drawRef.current = (view) => {
+    shown.current = view
+    const center = [viewport.width / 2, viewport.height / 2]
+    if (cameraRef.current) cameraRef.current.style.transform = cameraTransform(view, center)
+    if (compassRef.current) compassRef.current.style.transform = `rotate(${view.yaw - 45}deg)`
+    for (const mark of marksRef.current) {
+      const element = markRefs.current.get(mark.key)
+      if (!element) continue
+      const [x, y] = projectPoint(view, center, [mark.point[0], mark.point[1], 0], { perspective: PERSPECTIVE, origin: [viewport.width / 2, viewport.height * ORIGIN_Y] })
+      element.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`
+    }
+  }
+  useLayoutEffect(() => {
+    cancelAnimationFrame(flight.current)
+    const from = shown.current
+    const reduced = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    if (!animated || !from || reduced) { drawRef.current(cam); return undefined }
+    const duration = flyDuration(from, cam)
+    const startedAt = performance.now()
+    const tick = (now) => {
+      const t = Math.min(1, (now - startedAt) / duration)
+      drawRef.current(flyFrame(from, cam, t))
+      if (t < 1) flight.current = requestAnimationFrame(tick)
+    }
+    flight.current = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(flight.current)
+  }, [cam.x, cam.y, cam.zoom, cam.tilt, cam.yaw, animated, viewport.width, viewport.height]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Ручное управление начинается с того места, где камера сейчас, даже посреди полёта.
+  const takeControl = () => {
+    cancelAnimationFrame(flight.current)
+    if (shown.current) setCamera(shown.current)
+    setAnimated(false)
+    if (following) onFollowChange?.(false)
+  }
 
   // ---------- Жесты ----------
   const onPointerDown = (event) => {
@@ -160,8 +203,8 @@ export default function RouteScene({ floor, points = [], progress = null, follow
     return () => root.removeEventListener('wheel', onWheel)
   }, [autoCamera, onFollowChange, size])
 
-  const zoomBy = (factor) => { setAnimated(true); onFollowChange?.(false); setCamera((current) => zoomCamera(current || cam, factor, [0, 0], size)) }
-  const resetNorth = () => { setAnimated(true); onFollowChange?.(false); setCamera((current) => ({ ...(current || cam), yaw: nearestYaw(0, (current || cam).yaw) })) }
+  const zoomBy = (factor) => { setAnimated(true); onFollowChange?.(false); setCamera(zoomCamera(shown.current || cam, factor, [0, 0], size)) }
+  const resetNorth = () => { setAnimated(true); onFollowChange?.(false); const from = shown.current || cam; setCamera({ ...from, yaw: nearestYaw(0, from.yaw) }) }
   const recenter = () => {
     setAnimated(true)
     if (active && !following) onFollowChange?.(true)
@@ -186,15 +229,25 @@ export default function RouteScene({ floor, points = [], progress = null, follow
   if (end && transferHere) marks.push({ key: `t-${routeKey}`, point: end, label: transfer.label, kind: 'transfer' })
   else if (end && target) marks.push({ key: `e-${routeKey}`, point: end, label: target.number || '★', kind: 'target' })
   if (start && points.length > 1 && transfer?.arrival === floor) marks.push({ key: `a-${routeKey}`, point: start, label: transfer.arrivalLabel, kind: 'arrival' })
+  // Объявления (public/notices.json): значок над помещением.
+  for (const notice of notices) {
+    const room = scene.rooms.find((item) => item.room.id === notice.roomId)
+    if (!room) continue
+    const outline = roomOutline(notice.roomId)
+    const point = [outline.reduce((sum, p) => sum + p[0], 0) / outline.length, outline.reduce((sum, p) => sum + p[1], 0) / outline.length]
+    marks.push({ key: `n-${notice.roomId}-${notice.title}`, point, label: `${notice.type === 'closed' ? '⛔' : notice.type === 'event' ? '★' : 'ℹ'} ${notice.title}`, kind: `notice rs-mark-notice-${notice.type}` })
+  }
+
+  marksRef.current = marks
 
   return <div ref={rootRef} className={`rs rs-${mode} ${animated ? 'rs-animated' : ''}`} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp} onContextMenu={(event) => event.preventDefault()}
     style={{ '--wall-h': `${WALL_HEIGHT}px` }}>
-    <div className="rs-camera" style={{ width: size.width, height: size.height, transform: cameraTransform(cam, center) }}>
+    <div className="rs-camera" ref={cameraRef} style={{ width: size.width, height: size.height, transform: cameraTransform(shown.current || cam, center) }}>
       <div className="rs-ground" />
       <div className="rs-plate" aria-hidden="true" dangerouslySetInnerHTML={{ __html: plan }} />
       <svg className="rs-rooms" viewBox={`0 0 ${size.width} ${size.height}`} role="group" aria-label={`План, ${floor} этаж`}>
         {scene.rooms.map(({ room, points: outline }) => <polygon key={room.id} points={outline}
-          className={`rs-room ${room.id === selectedId ? 'is-selected' : ''} ${room.id === targetId ? 'is-target' : ''}`}
+          className={`rs-room ${room.id === selectedId ? 'is-selected' : ''} ${room.id === targetId ? 'is-target' : ''} ${filterCategory && filterCategory !== 'Все места' ? (room.category === filterCategory ? 'is-match' : 'is-muted') : ''}`}
           role="button" tabIndex={0} aria-label={`${room.name}${room.number ? `, кабинет ${room.number}` : ''}`}
           onClick={() => clickRoom(room)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onRoomClick?.(room) } }}><title>{`${room.name}${room.number ? ` · ${room.number}` : ''}`}</title></polygon>)}
       </svg>
@@ -219,15 +272,15 @@ export default function RouteScene({ floor, points = [], progress = null, follow
 
     <div className="rs-marks" aria-hidden="true">
       {marks.map((mark) => {
-        const [x, y] = projectPoint(cam, center, [mark.point[0], mark.point[1], 0], { perspective: PERSPECTIVE, origin: [viewport.width / 2, viewport.height * ORIGIN_Y] })
-        return <div key={mark.key} className={`rs-mark rs-mark-${mark.kind}`} style={{ transform: `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)` }}><span className="rs-mark-head">{mark.label}</span><span className="rs-mark-stem" /></div>
+        const [x, y] = projectPoint(shown.current || cam, center, [mark.point[0], mark.point[1], 0], { perspective: PERSPECTIVE, origin: [viewport.width / 2, viewport.height * ORIGIN_Y] })
+        return <div key={mark.key} ref={(element) => { if (element) markRefs.current.set(mark.key, element); else markRefs.current.delete(mark.key) }} className={`rs-mark rs-mark-${mark.kind}`} style={{ transform: `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)` }}><span className="rs-mark-head">{mark.label}</span><span className="rs-mark-stem" /></div>
       })}
     </div>
 
     <div className="rs-controls" onPointerDown={(event) => event.stopPropagation()}>
       <button type="button" onClick={() => zoomBy(1.35)} aria-label="Приблизить"><Plus size={17} /></button>
       <button type="button" onClick={() => zoomBy(1 / 1.35)} aria-label="Отдалить"><Minus size={17} /></button>
-      <button type="button" onClick={resetNorth} aria-label="Повернуть на север" title="Север вверху"><Compass size={17} style={{ transform: `rotate(${cam.yaw - 45}deg)` }} /></button>
+      <button type="button" onClick={resetNorth} aria-label="Повернуть на север" title="Север вверху"><span ref={compassRef} className="rs-compass" style={{ transform: `rotate(${(shown.current || cam).yaw - 45}deg)` }}><Compass size={17} /></span></button>
       <button type="button" className={following ? 'is-on' : ''} onClick={recenter} aria-label={active ? 'Следовать за маршрутом' : 'Показать весь маршрут'} title={active ? 'Следовать за маршрутом' : 'Весь маршрут'}><Crosshair size={17} /></button>
     </div>
     <span className="rs-hint" aria-hidden="true">{mode === '3d' ? 'Тяните — двигать · Shift или правая кнопка — вращать · колесо — масштаб' : 'Тяните — двигать · колесо или щипок — масштаб'}</span>

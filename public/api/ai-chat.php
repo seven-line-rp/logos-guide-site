@@ -275,6 +275,24 @@ function college_context(array $config): string
     return $out;
 }
 
+// Объявления из public/notices.json (лежит в корне сайта, на уровень выше api/).
+function notices_text(): string
+{
+    $file = dirname(__DIR__) . '/notices.json';
+    $list = is_file($file) ? json_decode((string) file_get_contents($file), true) : null;
+    if (!is_array($list)) return '';
+    $now = time();
+    $lines = [];
+    foreach (array_slice($list, 0, 30) as $notice) {
+        if (!is_array($notice) || empty($notice['title']) || empty($notice['roomId'])) continue;
+        if (!empty($notice['from']) && strtotime((string) $notice['from']) > $now) continue;
+        if (!empty($notice['to']) && strtotime((string) $notice['to']) < $now) continue;
+        $type = ['closed' => 'ЗАКРЫТО', 'event' => 'СОБЫТИЕ', 'info' => 'ВАЖНО'][$notice['type'] ?? ''] ?? 'ВАЖНО';
+        $lines[] = '- ' . $type . ' [id: ' . mb_substr((string) $notice['roomId'], 0, 40) . '] ' . mb_substr((string) $notice['title'], 0, 120) . (empty($notice['text']) ? '' : ' — ' . mb_substr((string) $notice['text'], 0, 240));
+    }
+    return implode("\n", $lines);
+}
+
 function system_prompt(array $config): string
 {
     $knowledge = is_file(__DIR__ . '/ai-knowledge.txt') ? (string) file_get_contents(__DIR__ . '/ai-knowledge.txt') : '';
@@ -291,13 +309,18 @@ function system_prompt(array $config): string
 - Давай ссылки на разделы путеводителя относительными адресами, например [маршрут до актового зала](/route?from=entrance-1&to=auditorium-104) или [кабинет 214 на карте](/map?floor=2&room=library-214). Используй только id из базы знаний.
 - Если точного ответа в материалах нет (сроки приёма, расписание, стоимость, документы, телефоны), честно скажи об этом и посоветуй уточнить на колледжлогос.рф или в приёмной комиссии. Не выдумывай факты, номера кабинетов, имена и даты.
 - Не проси и не собирай персональные данные. Если человек пишет о проблеме со здоровьем или безопасностью, посоветуй обратиться к сотрудникам колледжа, в медпункт или по номеру 112.
-- Если прислали картинку (расписание, объявление, фото таблички или плана, задачу), сначала коротко опиши, что на ней важного, затем ответь на вопрос. Номер кабинета с картинки сразу свяжи с картой и маршрутом.
+- Когда спрашивают, где место или как пройти, ВСЕГДА дай ссылку на маршрут вида [Маршрут до …](/route?from=entrance-1&to=<id>) — на сайте под ответом появится 3D-карта с этим путём. Если человек назвал, откуда идёт, подставь это помещение в from.
+- Если прислали фото расписания, перечисли пары списком: «время — предмет — [кабинет N](/route?from=entrance-1&to=<id>)» для каждой пары, где кабинет есть в базе знаний, и предложи добавить пары в «Моё расписание» (/schedule).
+- Если прислали другую картинку (объявление, табличку, план, задачу), сначала коротко опиши, что на ней важного, затем ответь на вопрос. Номер кабинета с картинки сразу свяжи с картой и маршрутом.
+- Учитывай «Объявления» ниже: если помещение закрыто или там событие, предупреди об этом.
 - Помогай и с учёбой: объясняй темы простыми словами и по шагам, но не выдавай готовые работы за студента — подталкивай к решению.
 - Ты ИИ и можешь ошибаться — при важных решениях советуй проверить информацию у колледжа.
 
 # База знаний путеводителя
 {$knowledge}
 TXT;
+    $notices = notices_text();
+    if ($notices !== '') $prompt .= "\n\n# Объявления на карте (действуют сейчас)\n" . $notices;
     if ($college !== '') $prompt .= "\n\n# Текст сайта колледжлогос.рф (обновляется раз в " . (int) $config['college_cache_hours'] . " ч.)\n" . $college;
     return $prompt;
 }

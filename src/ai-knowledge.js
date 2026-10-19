@@ -1,4 +1,5 @@
 import { floors, games, navigation, rooms } from './data.js'
+import { BELLS, LUNCH } from './schedule.js'
 
 // База знаний ИИ-агента. Vite при сборке кладёт её в dist/api/ai-knowledge.txt,
 // а public/api/ai-chat.php добавляет в системную подсказку вместе с текстом
@@ -22,13 +23,15 @@ const siteSections = {
   '/': 'главная: поиск кабинета, популярные места, 3D-модель корпуса',
   '/map': 'карта двух этажей; параметры ?floor=1|2&room=<id> выделяют помещение',
   '/rooms': 'справочник кабинетов с фильтрами по этажу и назначению',
-  '/route': 'маршрут по коридорам; параметры ?from=<id>&to=<id>, ?mode=lift|stairs; между этажами — лифт или одна из трёх лестниц, пошаговые подсказки и озвучка',
+  '/route': 'маршрут по коридорам; параметры ?from=<id>&to=<id>, ?mode=lift|stairs, ?nearest=toilet|exit|stairs|lift|medical|canteen|library|office (ближайшее место); 3D-карта со стенами, пошаговые подсказки, озвучка, «успеть на пару», QR-код и печать маршрута',
   '/games': 'игры по плану колледжа',
   '/services': 'пространства: столовая, библиотека, актовый зал, мастерские',
   '/about': 'о проекте и команде студентов, которая сделала путеводитель',
   '/docs': 'документация по сайту и кнопка «Пройти обучение»',
   '/privacy': 'политика конфиденциальности и настройки cookie',
   '/ai': 'этот чат с ИИ-агентом (тестовый режим)',
+  '/schedule': '«Моё расписание»: студент добавляет свои пары, главная показывает следующую пару с маршрутом',
+  '/tour': 'экскурсия по колледжу в 3D: «Первый день» (?id=first-day) и «День открытых дверей» (?id=open-day)',
 }
 
 function roomLine(room) {
@@ -37,7 +40,7 @@ function roomLine(room) {
 }
 
 export function buildKnowledge() {
-  const sections = navigation.map((item) => item.to).concat(['/', '/docs', '/privacy'])
+  const sections = navigation.map((item) => item.to).concat(['/', '/schedule', '/tour', '/docs', '/privacy'])
   const unique = [...new Set(sections)]
   return [
     '# Сайт «ЛОГОС: Путеводитель»',
@@ -52,6 +55,12 @@ export function buildKnowledge() {
     `## Помещения на карте (${rooms.length})`,
     'Ссылка на помещение: /map?floor=<этаж>&room=<id>; маршрут: /route?from=entrance-1&to=<id>.',
     ...rooms.map(roomLine),
+    '',
+    '## Расписание звонков (2026–2027, начало занятий в 9:00)',
+    'Расписание пар каждый день новое — его выкладывает колледж; на сайте студент может вести своё в «Моём расписании» (/schedule).',
+    `- Понедельник: ${BELLS.monday.map((bell) => `${bell.label} ${bell.start}–${bell.end}`).join('; ')}. Обед: ${LUNCH.monday.map((item) => `${item.course} курс ${item.start}–${item.end}`).join(', ')}.`,
+    `- Вторник–пятница: ${BELLS.weekday.map((bell) => `${bell.label} ${bell.start}–${bell.end}`).join('; ')}. Обед: ${LUNCH.weekday.map((item) => `${item.course} курс ${item.start}–${item.end}`).join(', ')}.`,
+    '- РОВ — «Разговоры о важном», только в понедельник перед первой парой.',
     '',
     '## Игры',
     ...games.map((game) => `- «${game.title}» — ${game.description}`),
