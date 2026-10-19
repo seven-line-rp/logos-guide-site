@@ -7,7 +7,9 @@
 return [
     'api_key' => 'sk-…',                 // ключ DeepSeek: platform.deepseek.com → API keys
     'model' => 'deepseek-v4-flash',      // или deepseek-v4-pro
-    // 'per_ip_limit' => 20,             // сообщений с одного IP за 10 минут
-    // 'daily_limit' => 1500,            // сообщений на весь сайт за сутки
-    // 'max_tokens' => 1200,             // предел длины ответа
+    // 'monthly_budget_usd' => 2.0,      // бюджет на месяц, делится на дни
+    // 'per_ip_daily' => 8,              // вопросов в день с одного IP
+    // 'deep_per_ip_daily' => 2,         // из них «Подумать глубже»
+    // 'per_ip_limit' => 5,              // вопросов с одного IP за 10 минут
+    // 'max_tokens' => 800,              // предел длины ответа
 ];
