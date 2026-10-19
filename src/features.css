@@ -319,3 +319,4 @@
 @media (max-width: 620px) {
   .schedule-days { grid-template-columns: repeat(4, 1fr) !important; }
 }
+

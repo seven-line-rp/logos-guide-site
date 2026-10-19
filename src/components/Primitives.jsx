@@ -22,11 +22,11 @@ export function Reveal({ children, className = '', delay = 0, as: Tag = 'div', s
 }
 
 export function PageHeading({ eyebrow, title, description, aside, className = '' }) {
-  return <section className={`page-heading container ${className}`}><div className="page-heading-main"><span className="eyebrow"><i className="eyebrow-dot" />{eyebrow}</span><h1>{title}</h1>{description && <p>{description}</p>}</div>{aside && <div className="page-heading-aside">{aside}</div>}</section>
+  return <section className={`page-heading container ${className}`}><div className="page-heading-main"><span className="eyebrow">{eyebrow}</span><h1>{title}</h1>{description && <p>{description}</p>}</div>{aside && <div className="page-heading-aside">{aside}</div>}</section>
 }
 
-export function SectionLabel({ children, index }) {
-  return <div className="section-label"><span className="section-label-dot" />{index && <span className="section-label-index">{index}</span>}<span>{children}</span></div>
+export function SectionLabel({ children }) {
+  return <div className="section-label"><span>{children}</span></div>
 }
 
 export function TextLink({ to, children, className = '' }) {

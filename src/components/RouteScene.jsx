@@ -249,7 +249,7 @@ export default function RouteScene({ floor, points = [], progress = null, follow
         {scene.rooms.map(({ room, points: outline }) => <polygon key={room.id} points={outline}
           className={`rs-room ${room.id === selectedId ? 'is-selected' : ''} ${room.id === targetId ? 'is-target' : ''} ${filterCategory && filterCategory !== 'Все места' ? (room.category === filterCategory ? 'is-match' : 'is-muted') : ''}`}
           role="button" tabIndex={0} aria-label={`${room.name}${room.number ? `, кабинет ${room.number}` : ''}`}
-          onClick={() => clickRoom(room)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onRoomClick?.(room) } }}><title>{`${room.name}${room.number ? ` · ${room.number}` : ''}`}</title></polygon>)}
+          onClick={() => clickRoom(room)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onRoomClick?.(room) } }}><title>{`${room.name}${room.number ? `, ${room.number}` : ''}`}</title></polygon>)}
       </svg>
       {points.length > 1 && <svg key={routeKey} className="rs-route" viewBox={`0 0 ${size.width} ${size.height}`} aria-hidden="true">
         <path className="rs-route-shadow" d={pathData(points)} />
@@ -283,7 +283,7 @@ export default function RouteScene({ floor, points = [], progress = null, follow
       <button type="button" onClick={resetNorth} aria-label="Повернуть на север" title="Север вверху"><span ref={compassRef} className="rs-compass" style={{ transform: `rotate(${(shown.current || cam).yaw - 45}deg)` }}><Compass size={17} /></span></button>
       <button type="button" className={following ? 'is-on' : ''} onClick={recenter} aria-label={active ? 'Следовать за маршрутом' : 'Показать весь маршрут'} title={active ? 'Следовать за маршрутом' : 'Весь маршрут'}><Crosshair size={17} /></button>
     </div>
-    <span className="rs-hint" aria-hidden="true">{mode === '3d' ? 'Тяните — двигать · Shift или правая кнопка — вращать · колесо — масштаб' : 'Тяните — двигать · колесо или щипок — масштаб'}</span>
+    <span className="rs-hint" aria-hidden="true">{mode === '3d' ? 'Тяните, чтобы двигать. Shift или правая кнопка: поворот. Колесо: масштаб' : 'Тяните, чтобы двигать. Колесо или щипок: масштаб'}</span>
   </div>
 }
 

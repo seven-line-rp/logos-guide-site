@@ -9,8 +9,8 @@ export const navigation = [
 ]
 
 export const floors = [
-  { id: 1, label: 'Первый этаж', short: '01', hint: 'Столовая · актовый зал · учебные кабинеты' },
-  { id: 2, label: 'Второй этаж', short: '02', hint: 'Библиотека · лаборатории · кабинет физики' },
+  { id: 1, label: 'Первый этаж', hint: 'Столовая, актовый зал, учебные кабинеты' },
+  { id: 2, label: 'Второй этаж', hint: 'Библиотека, лаборатории, кабинет физики' },
 ]
 
 const room = (id, floor, name, number, category, description, aliases, map) => ({
@@ -71,14 +71,14 @@ export const rooms = [
 export const categoryLabels = ['Все места', 'Учебные кабинеты', 'Мастерские и лаборатории', 'Общие пространства', 'Администрация']
 
 export const quickPlaces = [
-  { roomId: 'auditorium-104', label: 'Актовый зал', meta: '104 · 1 этаж', tone: 'blue' },
-  { roomId: 'library-214', label: 'Библиотека', meta: '214 · 2 этаж', tone: 'lavender' },
-  { roomId: 'physics-211', label: 'Кабинет физики', meta: '211 · 2 этаж', tone: 'sky' },
-  { roomId: 'canteen', label: 'Столовая', meta: '1 этаж · левое крыло', tone: 'yellow' },
+  { roomId: 'auditorium-104', label: 'Актовый зал', meta: '104, 1 этаж', tone: 'blue' },
+  { roomId: 'library-214', label: 'Библиотека', meta: '214, 2 этаж', tone: 'lavender' },
+  { roomId: 'physics-211', label: 'Кабинет физики', meta: '211, 2 этаж', tone: 'sky' },
+  { roomId: 'canteen', label: 'Столовая', meta: '1 этаж, левое крыло', tone: 'yellow' },
 ]
 
 export const games = [
-  { id: 'floor-quiz', title: 'Узнай этаж', description: 'Вспомни, где находится кабинет. Пять быстрых вопросов.', tag: 'МИНИ-КВИЗ', icon: 'compass' },
-  { id: 'find-room', title: 'Найди по описанию', description: 'Прочитай подсказку и найди, о каком месте идёт речь, на плане.', tag: 'ЗАГАДКИ', icon: 'target' },
-  { id: 'speed-run', title: 'Забег по карте', description: 'За 60 секунд найди как можно больше мест по названию.', tag: 'НА ВРЕМЯ', icon: 'timer' },
+  { id: 'floor-quiz', title: 'Узнай этаж', description: 'Вспомни, где находится кабинет. Пять быстрых вопросов.', tag: 'Мини-квиз', icon: 'compass' },
+  { id: 'find-room', title: 'Найди по описанию', description: 'Прочитай подсказку и найди, о каком месте идёт речь, на плане.', tag: 'Загадки', icon: 'target' },
+  { id: 'speed-run', title: 'Забег по карте', description: 'За 60 секунд найди как можно больше мест по названию.', tag: 'На время', icon: 'timer' },
 ]

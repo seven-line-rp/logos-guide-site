@@ -1,0 +1,61 @@
+/* Финальный слой дизайна: один спокойный шрифт вместо смеси моноширинного,
+   засечек и системного; подписи без капса, разрядки и точек. Подключается
+   последним, поэтому перекрывает старые слои. */
+
+:root, :root[data-theme] {
+  --font: 'Onest Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --serif: var(--font);
+  --mono: var(--font);
+}
+
+html, body, button, input, select, textarea { font-family: var(--font); }
+code, pre, kbd { font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace; }
+
+/* Акцент в заголовках: тот же шрифт, просто цветом. */
+h1 em, h2 em, h3 em {
+  font-family: inherit !important;
+  font-style: normal !important;
+  font-weight: inherit !important;
+  letter-spacing: inherit !important;
+  font-size: inherit !important;
+}
+
+/* Надзаголовки и подписи: обычный текст, без капса и разрядки. */
+.eyebrow, .section-label, .home-eyebrow, [class*="-kicker"], [class*="-label"], [class*="-eyebrow"],
+.quick-place-num, .floor-switch-copy small, .search-result-copy small, .brand-copy small,
+.home-proof, .home-hero-edge, .search-foot, .score-ring small, .hero-float-card small,
+.mini-plan-top, .mobile-nav-bottom, .quiz-question-index {
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+}
+
+.eyebrow, .section-label {
+  gap: 0;
+  color: var(--blue);
+  font-size: 13px;
+  font-weight: 600;
+}
+:root[data-theme='dark'] .eyebrow, :root[data-theme='dark'] .section-label { color: #8fb0ff; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .eyebrow, :root:not([data-theme='light']) .section-label { color: #8fb0ff; }
+}
+.home-eyebrow { font-size: 13px; font-weight: 600; }
+.home-eyebrow i, .eyebrow-dot, .section-label-dot, .section-label-index { display: none !important; }
+
+/* Вертикальные служебные надписи в герое выглядели как декор ради декора. */
+.hero-visual-index { display: none; }
+
+h1, h2 { letter-spacing: -.03em; }
+
+.eyebrow, .section-label, .home-eyebrow { font-size: 14px !important; }
+
+/* Раньше эти заголовки были тонкими засечками; без них нужен вес. */
+.quiz-question h3, .score-ring strong, .floor-switch-number, .not-found strong { font-weight: 600; }
+
+/* Остатки капса из старых слоёв. Подписи на самих планах этажей не трогаем. */
+.ab-tag, .route-options-label, .game-best, .tour-eyebrow, .docs-toc-title, .legal-table thead th,
+.privacy-consent-copy small, .quiz-preview-top, .footer-bottom, .footer-bottom .footer-legal :is(a, button) {
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+}
+.ab-tag { font-size: 14px !important; font-weight: 600; }

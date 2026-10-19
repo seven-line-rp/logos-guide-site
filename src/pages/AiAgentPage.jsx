@@ -63,7 +63,7 @@ function CuratorCard({ animate }) {
     </div>
     <strong>{curatorStages[stage]}</strong>
     <div className="ai-curator-progress" aria-hidden="true"><span style={{ width: `${(stage + 1) * 25}%` }} /></div>
-    {done && <p className="ai-curator-joke">Шутка 🙂 Никуда ничего не ушло. Но давайте без мата — так я помогу быстрее. Переформулируйте вопрос, и продолжим.</p>}
+    {done && <p className="ai-curator-joke">Шутка 🙂 Никуда ничего не ушло. Но давайте без мата: так я помогу быстрее. Переформулируйте вопрос, и продолжим.</p>}
   </div>
 }
 
@@ -148,7 +148,7 @@ export default function AiAgentPage() {
   useEffect(() => {
     const result = saveChats(chats, activeId)
     if (result === 'trimmed') setNotice('Память браузера почти заполнена: из старых чатов убраны картинки.')
-    if (result === 'full') setNotice('Память браузера заполнена — удалите старые чаты, чтобы сохранять новые.')
+    if (result === 'full') setNotice('Память браузера заполнена. Удалите старые чаты, чтобы сохранять новые.')
   }, [chats, activeId, saving])
   useEffect(() => () => { controller.current?.abort(); recognition.current?.abort?.(); stopSpeech() }, [])
   useEffect(() => {
@@ -170,7 +170,7 @@ export default function AiAgentPage() {
     controller.current = new AbortController()
     try {
       const answer = await askAgent(next, { signal: controller.current.signal, deep: useDeep })
-      if (!answer.vision) setNotice('Модель пока не видит картинки — ответ по тексту вопроса.')
+      if (!answer.vision) setNotice('Модель пока не видит картинки, поэтому отвечает по тексту вопроса.')
       if (answer.left !== null) setLeft(answer.left)
       updateChat(chatId, (item) => ({ ...item, messages: [...item.messages, { role: 'assistant', content: answer.reply, reasoning: answer.reasoning || undefined, at: Date.now() }] }))
     } catch (error) {
@@ -261,7 +261,7 @@ export default function AiAgentPage() {
     if (!images.length) return
     const room = MAX_IMAGES - attachments.length
     if (room <= 0) { setNotice(`Можно приложить до ${MAX_IMAGES} картинок.`); return }
-    if (images.length > room) setNotice(`Можно приложить до ${MAX_IMAGES} картинок — лишние пропущены.`)
+    if (images.length > room) setNotice(`Можно приложить до ${MAX_IMAGES} картинок. Лишние пропущены.`)
     const added = []
     for (const file of images.slice(0, room)) {
       try { added.push(await compressImage(file)) } catch (error) { setNotice(error.message) }
@@ -375,7 +375,7 @@ export default function AiAgentPage() {
         {composer}
       </div>}
       {!messages.length && notice && <div className="ai-dock"><div className="ai-notice" role="status"><span>{notice}</span><button type="button" onClick={() => setNotice('')} aria-label="Закрыть"><X size={14} /></button></div></div>}
-      <div className="ai-disclaimer">{left !== null && <span className={`ai-left ${left <= 2 ? 'is-low' : ''}`}>{left > 0 ? `Осталось вопросов сегодня: ${left}` : 'Вопросы на сегодня закончились'}</span>}ЛОГОС AI может ошибаться — важное уточняйте в колледже · <Link to="/privacy#ai">Конфиденциальность</Link></div>
+      <div className="ai-disclaimer">{left !== null && <span className={`ai-left ${left <= 2 ? 'is-low' : ''}`}>{left > 0 ? `Осталось вопросов сегодня: ${left}` : 'Вопросы на сегодня закончились'}</span>}ЛОГОС AI может ошибаться, важное уточняйте в колледже. <Link to="/privacy#ai">Конфиденциальность</Link></div>
     </div>
   </section>
 }

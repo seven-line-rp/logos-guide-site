@@ -64,7 +64,7 @@ function FloorRoom({ room, selected, onSelect, onFloorRequest, gameTargetId, gam
   }
 
   return <g className={className} role={onSelect ? 'button' : 'presentation'} tabIndex={onSelect ? 0 : undefined} aria-label={onSelect ? `${room.name}${room.number ? `, кабинет ${room.number}` : ''}, ${room.floor} этаж${stair ? '. Дважды нажмите, чтобы перейти на другой этаж' : ''}` : undefined} aria-pressed={onSelect ? selected : undefined} onClick={onSelect ? activate : undefined} onDoubleClick={onFloorRequest ? onDoubleClick : undefined} onKeyDown={onSelect ? onKeyDown : undefined} onPointerDown={stair && onFloorRequest ? onPointerDown : undefined} onPointerUp={stair && onFloorRequest ? onPointerUp : undefined}>
-    <title>{`${room.name}${room.number ? ` · ${room.number}` : ''} · ${room.floor} этаж`}</title>
+    <title>{`${room.name}${room.number ? `, ${room.number}` : ''}, ${room.floor} этаж`}</title>
     <polygon className="plan-room-shape" points={roomOutline(room.id).map((point) => point.join(',')).join(' ')} />
     {isTarget && <circle className="plan-target-halo" cx={roomOutline(room.id).reduce((sum, point) => sum + point[0], 0) / roomOutline(room.id).length} cy={roomOutline(room.id).reduce((sum, point) => sum + point[1], 0) / roomOutline(room.id).length} r="18" />}
   </g>
@@ -77,7 +77,7 @@ function LocationMarker({ point, kind, radius }) {
     <circle className="plan-position-halo" cx={x} cy={y} r="13" />
     <circle className="plan-position-core" cx={x} cy={y} r="6.5" />
     <circle className="plan-position-center" cx={x} cy={y} r="2" />
-    <text x={x + 12} y={y - 13}>{kind === 'manual' ? 'Ваша отметка' : kind === 'anchor' ? 'Точка привязки' : 'GPS · примерно'}</text>
+    <text x={x + 12} y={y - 13}>{kind === 'manual' ? 'Ваша отметка' : kind === 'anchor' ? 'Точка привязки' : 'GPS (примерно)'}</text>
   </g>
 }
 
@@ -113,7 +113,7 @@ function RouteLayer({ points, markerId, progress = null, is3d = false }) {
     {passedIndex > 0 && <polyline className="plan-route-passed" points={toLine(passed)} />}
     <circle cx={points[0][0]} cy={points[0][1]} r="7" />
     {/* Точка шага: позиция задаётся сдвигом группы, чтобы переход между
-        шагами анимировался, а не прыгал. В 3D-режиме — объёмный курсор навигатора. */}
+        шагами анимировался, а не прыгал. В 3D-режиме, объёмный курсор навигатора. */}
     {progress !== null && (
       is3d ? (
         <g className="plan-route-guide plan-route-guide-3d" transform={`translate(${dot[0]} ${dot[1]})`} style={{ transform: `translate(${dot[0]}px, ${dot[1]}px)` }}>
@@ -371,7 +371,7 @@ export default function FloorMap({ floor = 1, selectedId = '', onSelect, onFloor
       <button type="button" onClick={() => zoomByButton(1 / 1.4)} aria-label="Отдалить"><ZoomMinus /></button>
       <button type="button" onClick={resetZoom} aria-label="Сбросить масштаб" style={{ fontSize: 12, fontWeight: 650 }}>1:1</button>
     </div>}
-    {!navMode3d && <span className="floor-map-hint" aria-hidden="true">Двумя пальцами — масштаб</span>}
+    {!navMode3d && <span className="floor-map-hint" aria-hidden="true">Масштаб двумя пальцами</span>}
   </div>
 }
 

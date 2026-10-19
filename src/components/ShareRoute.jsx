@@ -36,13 +36,13 @@ export default function ShareRoute({ from, to, mode, title, meta, steps, manualS
   return createPortal(<div className="share-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
     <section className="share-dialog" role="dialog" aria-modal="true" aria-labelledby="share-title">
       <button type="button" className="share-close" onClick={onClose} aria-label="Закрыть"><X size={18} /></button>
-      <span className="eyebrow"><i className="eyebrow-dot" />Поделиться маршрутом</span>
+      <span className="eyebrow">Поделиться маршрутом</span>
       <h2 id="share-title">{title}</h2>
       <p className="share-meta">{meta}</p>
       <div className="share-body">
         <div className="share-qr" aria-label="QR-код маршрута" role="img" dangerouslySetInnerHTML={{ __html: svg }} />
         <div className="share-side">
-          <p>Наведите камеру телефона на код — маршрут откроется сразу.{manualStart ? ' Ваша отметка есть только на этом устройстве, поэтому в ссылке старт — главный вход.' : ''}</p>
+          <p>Наведите камеру телефона на код, и маршрут откроется.{manualStart ? ' Ваша отметка есть только на этом устройстве, поэтому в ссылке старт от главного входа.' : ''}</p>
           <div className="share-link"><span>{url.replace(/^https?:\/\//, '')}</span><button type="button" onClick={copy} aria-label="Скопировать ссылку">{status === 'Ссылка скопирована' ? <Check size={15} /> : <Copy size={15} />}</button></div>
           <div className="share-actions">
             <button type="button" className="share-primary" onClick={share}><Share2 size={16} /> Отправить</button>

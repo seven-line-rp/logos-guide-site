@@ -31,7 +31,7 @@ export default function RoutePreview({ from, to, mode = 'auto', live = false }) 
       <span className="ai-route-icon" aria-hidden="true"><Footprints size={16} /></span>
       <span className="ai-route-text">
         <strong><RawText text={roomTitle(start.id)} /> → <RawText text={roomTitle(target.id)} /></strong>
-        <small>≈ {Math.round(route.meters || 0)} м · {minutes} мин{cross ? ` · ${route.transfer?.method || 'между этажами'}` : ''}</small>
+        <small>≈ {Math.round(route.meters || 0)} м, {minutes} мин{cross ? `, ${route.transfer?.method || 'между этажами'}` : ''}</small>
       </span>
     </div>
     {live && <div className="ai-route-map">

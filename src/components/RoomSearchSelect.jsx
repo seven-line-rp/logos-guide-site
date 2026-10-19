@@ -211,7 +211,7 @@ export default function RoomSearchSelect({ label, value, onChange, manualOption 
           </>)
         })}
       </div>)}
-      {flat.length === 0 && <div className="route-room-search-empty">Ничего не нашлось. Попробуйте номер кабинета или слово — например, «физика» или «туалет».</div>}
+      {flat.length === 0 && <div className="route-room-search-empty">Ничего не нашлось. Попробуйте номер кабинета или слово, например «физика» или «туалет».</div>}
     </div>}
   </div>
 }

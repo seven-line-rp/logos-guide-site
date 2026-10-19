@@ -137,9 +137,9 @@ export function nextLesson(lessons, now = new Date()) {
 export function arrivalStatus(routeSeconds, minutesLeft) {
   const walk = Math.max(1, Math.ceil(routeSeconds / 60))
   const spare = minutesLeft - walk
-  if (minutesLeft < 0) return { kind: 'late', walk, spare, text: 'Пара уже идёт — заходите тихо' }
+  if (minutesLeft < 0) return { kind: 'late', walk, spare, text: 'Пара уже идёт. Заходите тихо' }
   if (spare < 0) return { kind: 'late', walk, spare, text: `Опаздываете примерно на ${-spare} мин` }
-  if (spare <= 2) return { kind: 'tight', walk, spare, text: spare === 0 ? 'Впритык — выходите сейчас' : `Впритык: запас ${spare} мин` }
+  if (spare <= 2) return { kind: 'tight', walk, spare, text: spare === 0 ? 'Впритык. Выходите прямо сейчас' : `Впритык: запас ${spare} мин` }
   return { kind: 'ok', walk, spare, text: `Успеваете, запас ${spare} мин` }
 }
 
