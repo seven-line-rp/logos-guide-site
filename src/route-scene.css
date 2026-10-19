@@ -1,0 +1,179 @@
+/* Интерактивная 3D-карта маршрута (RouteScene). Камерой управляет JS, здесь —
+   внешний вид пола, стен, пути и подписей, плавность переходов. */
+
+@property --rs-rise { syntax: '<number>'; inherits: false; initial-value: 1; }
+
+.rs {
+  --rs-bg-1: #f6f8fd;
+  --rs-bg-2: #e6ecf8;
+  --rs-floor: #ffffff;
+  --rs-room: #eef2fb;
+  --rs-shaft: #cfd5e3;
+  --rs-line: #c3cbdc;
+  --rs-label: #66728a;
+  --rs-icon: #5b7bd6;
+  --rs-wall-top: #9fabc4;
+  --rs-wall-1: rgba(255, 255, 255, .96);
+  --rs-wall-2: rgba(214, 222, 240, .92);
+  --rs-door: #3d7bff;
+  --rs-route: #2563eb;
+  --rs-route-2: #5b8cff;
+  --rs-route-glow: rgba(37, 99, 235, .32);
+  --rs-passed: #a9bbe6;
+  --rs-target: #f59e0b;
+  position: relative;
+  height: 100%;
+  min-height: 320px;
+  overflow: hidden;
+  perspective: 1500px;
+  perspective-origin: 50% 40%;
+  background: radial-gradient(120% 90% at 50% 20%, var(--rs-bg-1), var(--rs-bg-2));
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  isolation: isolate;
+}
+.rs:active { cursor: grabbing; }
+:root[data-theme='dark'] .rs {
+  --rs-bg-1: #2a2b30;
+  --rs-bg-2: #1c1d20;
+  --rs-floor: #2c2d31;
+  --rs-room: #34363c;
+  --rs-shaft: #45474f;
+  --rs-line: #50535c;
+  --rs-label: #a3a6b0;
+  --rs-icon: #8fb0ff;
+  --rs-wall-top: #6c7385;
+  --rs-wall-1: rgba(78, 82, 94, .95);
+  --rs-wall-2: rgba(52, 55, 63, .9);
+  --rs-door: #7ba4ff;
+  --rs-route: #6f9bff;
+  --rs-route-2: #9db9ff;
+  --rs-route-glow: rgba(111, 155, 255, .4);
+  --rs-passed: #4d5873;
+}
+
+.rs-camera {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+.rs-animated .rs-camera { transition: transform .9s cubic-bezier(.22, 1, .36, 1); }
+
+/* Пол и тень под зданием */
+.rs-ground { position: absolute; inset: -6px; border-radius: 14px; background: var(--rs-floor); box-shadow: 0 30px 80px rgba(30, 50, 100, .18), 0 0 0 1px var(--rs-line); transform: translateZ(-1px); }
+:root[data-theme='dark'] .rs-ground { box-shadow: 0 30px 80px rgba(0, 0, 0, .45), 0 0 0 1px var(--rs-line); }
+.rs-plate { position: absolute; inset: 0; pointer-events: none; }
+.rs-plate svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.rs-plate svg > :is(rect, path)[fill='#D9D9D9'] { fill: var(--rs-floor); }
+.rs-plate svg > :is(rect, path)[fill='white'] { fill: var(--rs-floor); }
+.rs-plate svg > :is(rect, path)[fill='#DFE6FF'] { fill: var(--rs-room); }
+.rs-plate svg > :is(rect, path)[fill='#878DA2'] { fill: var(--rs-shaft); }
+.rs-plate svg > :is(rect, path)[stroke='#ACAEB3'] { stroke: var(--rs-line); stroke-width: 1; }
+.rs-plate svg > path[fill='#ACAEB3'] { fill: var(--rs-line); }
+.rs-plate svg > path[fill='black'][opacity='0.2'] { fill: var(--rs-label); opacity: .9; }
+.rs-plate .plan-art-text { fill: var(--rs-label); font-family: inherit; font-weight: 600; letter-spacing: .03em; }
+.rs-plate svg :is(rect, path)[fill='#0000FF'], .rs-plate svg > path[fill^='url(#paint'] { fill: var(--rs-icon); }
+.rs-plate svg g path[stroke='#0000FF'] { stroke: var(--rs-icon); }
+.rs-plate svg > rect[height='2'] { fill: var(--rs-door); opacity: .55; }
+
+/* Помещения: кликабельные области поверх пола */
+.rs-rooms { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; transform: translateZ(.4px); }
+.rs-room { fill: transparent; stroke: transparent; stroke-width: 1.5; cursor: pointer; transition: fill .25s, stroke .25s; outline: none; }
+.rs-room:hover, .rs-room:focus-visible { fill: color-mix(in srgb, var(--rs-route) 9%, transparent); }
+.rs-room.is-selected { fill: color-mix(in srgb, var(--rs-route) 14%, transparent); stroke: color-mix(in srgb, var(--rs-route) 55%, transparent); }
+.rs-room.is-target { fill: color-mix(in srgb, var(--rs-target) 16%, transparent); stroke: color-mix(in srgb, var(--rs-target) 70%, transparent); }
+
+/* Путь: подложка, рисующаяся линия и бегущие штрихи */
+.rs-route { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; transform: translateZ(1px); }
+.rs-route path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.rs-route-shadow { stroke: var(--rs-route-glow); stroke-width: 16; filter: blur(5px); animation: rs-fade .6s ease both; }
+.rs-route-base { stroke: var(--rs-floor); stroke-width: 10; animation: rs-fade .4s ease both; }
+.rs-route-passed { stroke: var(--rs-passed); stroke-width: 5.5; }
+.rs-route-line { stroke: var(--rs-route); stroke-width: 6; stroke-dasharray: 1; stroke-dashoffset: 1; animation: rs-draw 1.3s cubic-bezier(.65, 0, .35, 1) .15s forwards; }
+.rs-route-flow { stroke: rgba(255, 255, 255, .85); stroke-width: 2; stroke-dasharray: 2 12; opacity: 0; animation: rs-flow 1.1s linear infinite, rs-fade .4s ease 1.4s forwards; }
+.rs-route-start { fill: var(--rs-floor); stroke: var(--rs-route); stroke-width: 3.5; animation: rs-pop .4s ease both; }
+.rs-route-end { fill: var(--rs-route); stroke: var(--rs-floor); stroke-width: 3; opacity: 0; animation: rs-pop .4s ease 1.35s forwards; }
+@keyframes rs-draw { to { stroke-dashoffset: 0; } }
+@keyframes rs-flow { to { stroke-dashoffset: -14; } }
+@keyframes rs-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes rs-pop { from { opacity: 0; transform: scale(.2); } to { opacity: 1; transform: scale(1); } }
+.rs-route-start, .rs-route-end { transform-box: fill-box; transform-origin: center; }
+
+/* Стены: плоскости, поднятые на ребро, «вырастают» при смене этажа */
+.rs-walls { position: absolute; inset: 0; transform-style: preserve-3d; pointer-events: none; }
+.rs-wall, .rs-door { position: absolute; display: block; transform-origin: 0 0; backface-visibility: visible; }
+.rs-wall {
+  height: var(--wall-h);
+  border-bottom: 1.6px solid var(--rs-wall-top);
+  background: linear-gradient(180deg, var(--rs-wall-2), var(--rs-wall-1));
+  transform: rotateZ(var(--a)) rotateX(90deg) scaleY(var(--rs-rise));
+  animation: rs-rise .9s cubic-bezier(.2, .8, .2, 1) both;
+  animation-delay: calc(var(--i) * 12ms);
+}
+@keyframes rs-rise { from { --rs-rise: 0; } to { --rs-rise: 1; } }
+.rs-door {
+  height: calc(var(--wall-h) * .72);
+  border-radius: 3px 3px 0 0;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--rs-door) 45%, transparent), color-mix(in srgb, var(--rs-door) 8%, transparent));
+  transform: rotateZ(var(--a)) rotateX(90deg) translateZ(.5px);
+}
+.rs-door.is-target { background: linear-gradient(180deg, color-mix(in srgb, var(--rs-target) 85%, transparent), color-mix(in srgb, var(--rs-target) 15%, transparent)); box-shadow: 0 0 14px color-mix(in srgb, var(--rs-target) 60%, transparent); }
+
+/* Точка «вы здесь» со стрелкой по ходу движения */
+.rs-walker { position: absolute; top: 0; left: 0; transform-style: preserve-3d; pointer-events: none; transition: transform .8s cubic-bezier(.22, 1, .36, 1); }
+.rs-walker-ring { position: absolute; top: -20px; left: -20px; width: 40px; height: 40px; border-radius: 50%; background: radial-gradient(circle, var(--rs-route-glow), transparent 70%); animation: rs-pulse 1.8s ease-out infinite; }
+.rs-walker-dot { position: absolute; top: -12px; left: -12px; width: 24px; height: 24px; display: grid; place-items: center; border: 3px solid #fff; border-radius: 50%; background: var(--rs-route); box-shadow: 0 4px 12px rgba(20, 60, 160, .35); transition: transform .8s cubic-bezier(.22, 1, .36, 1); }
+.rs-walker-dot svg { width: 14px; height: 14px; fill: #fff; }
+@keyframes rs-pulse { from { transform: scale(.5); opacity: 1; } to { transform: scale(1.6); opacity: 0; } }
+
+/* Подписи: плоский слой поверх 3D, точку на экране считает projectPoint */
+.rs-marks { position: absolute; z-index: 4; inset: 0; overflow: hidden; pointer-events: none; }
+.rs-mark { position: absolute; top: 0; left: 0; will-change: transform; }
+.rs-animated .rs-mark { transition: transform .9s cubic-bezier(.22, 1, .36, 1); }
+.rs-mark > * { animation: rs-drop .5s cubic-bezier(.3, 1.4, .5, 1) 1.15s both; }
+.rs-mark-head { position: absolute; bottom: 30px; left: 0; padding: 6px 11px; border-radius: 999px; color: #fff; background: #f59e0b; box-shadow: 0 8px 22px rgba(0, 0, 0, .18); font-size: 13.5px; font-weight: 800; line-height: 1; white-space: nowrap; transform: translateX(-50%); }
+.rs-mark-stem { position: absolute; bottom: 0; left: -1px; width: 2px; height: 30px; border-radius: 2px; background: linear-gradient(#f59e0b, transparent); }
+.rs-mark-transfer .rs-mark-head, .rs-mark-arrival .rs-mark-head { background: var(--rs-route); }
+.rs-mark-transfer .rs-mark-stem, .rs-mark-arrival .rs-mark-stem { background: linear-gradient(var(--rs-route), transparent); }
+.rs-mark-arrival .rs-mark-head { padding: 5px 9px; font-size: 12px; }
+@keyframes rs-drop { from { opacity: 0; translate: 0 -12px; } }
+
+/* Кнопки камеры */
+.rs-controls { position: absolute; z-index: 5; right: 12px; bottom: 12px; display: grid; gap: 6px; }
+.rs-controls button { width: 40px; height: 40px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); background: color-mix(in srgb, var(--surface) 88%, transparent); box-shadow: 0 6px 18px rgba(15, 30, 60, .1); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); cursor: pointer; transition: color .15s, border-color .15s, transform .15s; }
+.rs-controls button:hover { color: var(--blue); border-color: var(--blue); }
+.rs-controls button:active { transform: scale(.94); }
+.rs-controls button.is-on { color: #fff; border-color: transparent; background: var(--action-bg, var(--blue)); }
+.rs-controls svg { transition: transform .9s cubic-bezier(.22, 1, .36, 1); }
+.rs-hint { position: absolute; z-index: 5; left: 14px; bottom: 12px; padding: 5px 10px; border-radius: 999px; color: var(--muted); background: color-mix(in srgb, var(--surface) 80%, transparent); font-size: 11.5px; pointer-events: none; }
+@media (max-width: 680px), (pointer: coarse) { .rs-hint { display: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .rs-animated .rs-camera, .rs-walker, .rs-walker-dot { transition: none; }
+  .rs-wall, .rs-route-line, .rs-route-end, .rs-mark > *, .rs-route-flow, .rs-walker-ring { animation-duration: .01s; animation-delay: 0s; }
+}
+
+/* ---------- Карта на странице маршрута ---------- */
+.nv-map .rs { height: clamp(420px, 64vh, 680px); }
+@media (max-width: 680px) { .nv-map .rs { height: min(62vh, 480px); min-height: 360px; } }
+.nv-pick { position: absolute; z-index: 18; left: 12px; bottom: 12px; width: min(340px, calc(100% - 76px)); padding: 12px; display: grid; gap: 10px; border: 1px solid var(--line); border-radius: 16px; background: color-mix(in srgb, var(--surface) 94%, transparent); box-shadow: 0 14px 40px rgba(15, 30, 60, .16); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); animation: nv-pick-in .28s cubic-bezier(.22, 1, .36, 1); }
+@keyframes nv-pick-in { from { opacity: 0; transform: translateY(10px) scale(.98); } }
+.nv-pick-head { display: flex; align-items: center; gap: 10px; }
+.nv-pick-icon { width: 34px; height: 34px; display: grid; flex: 0 0 auto; place-items: center; border-radius: 11px; color: var(--blue); background: var(--surface-soft); }
+.nv-pick-text { min-width: 0; flex: 1; display: grid; line-height: 1.3; }
+.nv-pick-text strong { overflow: hidden; font-size: 14.5px; text-overflow: ellipsis; white-space: nowrap; }
+.nv-pick-text small { color: var(--muted); font-size: 12px; }
+.nv-pick-close { width: 30px; height: 30px; display: grid; place-items: center; border: 0; border-radius: 9px; color: var(--muted); background: none; cursor: pointer; }
+.nv-pick-close:hover { color: var(--ink); background: var(--surface-soft); }
+.nv-pick-actions { display: flex; gap: 6px; }
+.nv-pick-actions > * { min-height: 36px; padding: 0 12px; display: inline-flex; flex: 1; align-items: center; justify-content: center; gap: 6px; border: 1px solid var(--line); border-radius: 11px; color: var(--ink); background: var(--surface); font: inherit; font-size: 13px; font-weight: 650; white-space: nowrap; cursor: pointer; transition: border-color .15s, color .15s; }
+.nv-pick-actions > *:hover:not(:disabled) { border-color: var(--blue); color: var(--blue); }
+.nv-pick-actions > :disabled { opacity: .45; cursor: default; }
+.nv-pick-actions .nv-pick-go { border-color: transparent; color: #fff; background: var(--action-bg, var(--blue)); }
+.nv-pick-actions .nv-pick-go:hover:not(:disabled) { color: #fff; filter: brightness(1.08); }
+@media (max-width: 680px) { .nv-pick .nv-pick-actions > * { padding: 0 8px; } }

@@ -1,0 +1,84 @@
+/* Современный вид всех 2D-карт (страница «Карта», игры, мини-план на
+   главной): мягкие цвета, плавные подсветки, рисующийся путь и стеклянные
+   кнопки. Файл подключается последним и перекрывает старые слои стилей. */
+
+:root {
+  --map-bg: #f3f6fc;
+  --map-room: #e8edf9;
+  --map-wall: #c1c9da;
+  --map-label: #4d5970;
+  --map-door: #3d7bff;
+  --map-route: #2563eb;
+  --map-route-glow: rgba(37, 99, 235, .22);
+  --map-ease: cubic-bezier(.22, 1, .36, 1);
+}
+:root[data-theme='dark'] { --map-route: #6f9bff; --map-route-glow: rgba(111, 155, 255, .3); }
+
+/* Окно карты */
+.floor-map-viewport {
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: radial-gradient(120% 100% at 50% 0%, color-mix(in srgb, var(--map-bg) 70%, #fff), var(--map-bg));
+  scroll-behavior: auto;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--map-wall) 80%, transparent) transparent;
+}
+:root[data-theme='dark'] .floor-map-viewport { background: var(--map-bg); }
+.floor-map-stage { background: transparent; }
+
+/* Пол плана */
+.floor-map-art svg > :is(rect, path)[fill='#D9D9D9'] { fill: color-mix(in srgb, var(--map-bg) 85%, var(--map-wall)); }
+.floor-map-art svg > :is(rect, path)[fill='white'] { fill: #ffffff; }
+:root[data-theme='dark'] .floor-map-art svg > :is(rect, path)[fill='white'] { fill: #2b2c30; }
+.floor-map-art svg > :is(rect, path)[fill='#DFE6FF'] { fill: var(--map-room); }
+.floor-map-art svg > :is(rect, path)[fill='#878DA2'] { fill: color-mix(in srgb, var(--map-wall) 75%, var(--map-bg)); }
+.floor-map-art svg > :is(rect, path)[stroke='#ACAEB3'] { stroke: var(--map-wall); stroke-width: 1.1; }
+.floor-map-art .plan-art-text { fill: var(--map-label); opacity: .85; font-weight: 600; letter-spacing: .04em; }
+.floor-map-art svg > path[fill='black'][opacity='0.2'] { fill: var(--map-label); opacity: .75; }
+
+/* Помещения: плавная подсветка */
+.plan-room-shape { stroke-linejoin: round; transition: fill .3s var(--map-ease), stroke .3s var(--map-ease), stroke-width .3s var(--map-ease); }
+.plan-room:hover .plan-room-shape, .plan-room:focus-visible .plan-room-shape { fill: color-mix(in srgb, var(--map-route) 10%, transparent); stroke: color-mix(in srgb, var(--map-route) 60%, transparent); stroke-width: 2; }
+.plan-room-selected .plan-room-shape { fill: color-mix(in srgb, var(--map-route) 17%, transparent); stroke: var(--map-route); stroke-width: 2.6; }
+.plan-room-selected .plan-room-shape { animation: plan-select .5s var(--map-ease); }
+@keyframes plan-select { from { stroke-width: 7; stroke: color-mix(in srgb, var(--map-route) 30%, transparent); } }
+.plan-room-muted { opacity: .25; transition: opacity .3s var(--map-ease); }
+
+/* Путь: светящаяся подложка, линия прорисовывается от старта к цели */
+.plan-route .plan-route-halo { stroke: var(--map-route-glow); stroke-width: 15; opacity: 1; animation: plan-fade .5s ease both; }
+.plan-route .plan-route-line { stroke: var(--map-route); stroke-width: 5.5; stroke-dasharray: 1; stroke-dashoffset: 1; animation: plan-draw 1.1s cubic-bezier(.65, 0, .35, 1) .1s forwards; }
+.plan-route .plan-route-flow { stroke: rgba(255, 255, 255, .9); stroke-width: 2; stroke-dasharray: 1.5 11; opacity: 0; animation: route-march .9s linear infinite, plan-fade .4s ease 1.2s forwards; }
+.plan-route .plan-route-passed { stroke: var(--map-route); stroke-width: 4; opacity: .25; }
+.plan-route marker path { fill: #fff; stroke: var(--map-route); }
+.plan-route circle { fill: var(--map-route); }
+.plan-route .plan-route-destination { fill: #f59e0b; opacity: 0; animation: plan-fade .35s ease 1.1s forwards; }
+.plan-route .plan-route-pulse { stroke: #f59e0b; }
+.plan-route .plan-route-guide { transition: transform .6s var(--map-ease); }
+.plan-route .plan-route-guide-core { fill: var(--map-route); }
+.plan-route .plan-route-guide-pulse { stroke: var(--map-route); }
+@keyframes plan-draw { to { stroke-dashoffset: 0; } }
+@keyframes plan-fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* Отметки «вы здесь» */
+.plan-position-core { transition: transform .4s var(--map-ease); }
+
+/* Кнопки масштаба — стеклянная панель */
+.floor-map-zoom-controls { gap: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 14px; background: color-mix(in srgb, var(--surface) 86%, transparent); box-shadow: 0 10px 28px rgba(15, 30, 60, .12); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+.floor-map-zoom-controls button { width: 42px; height: 40px; border: 0; border-radius: 0; color: var(--ink); background: transparent; box-shadow: none; transition: background .15s, color .15s; }
+.floor-map-zoom-controls button + button { border-top: 1px solid var(--line); }
+.floor-map-zoom-controls button:hover { color: var(--blue); background: color-mix(in srgb, var(--blue) 8%, transparent); }
+:root[data-theme='dark'] .floor-map-zoom-controls button { color: var(--ink); background: transparent; }
+.floor-map-hint { border-radius: 999px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+
+/* Переключатель 2D / 3D на странице карты */
+.map-view-actions { display: inline-flex; align-items: center; gap: 8px; }
+.map-view-switch { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.map-view-switch button { min-height: 32px; padding: 0 11px; display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 9px; color: var(--muted); background: transparent; font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; transition: background .2s var(--map-ease), color .2s; }
+.map-view-switch button[aria-pressed='true'] { color: #fff; background: var(--action-bg, var(--blue)); }
+.map-scene { overflow: hidden; border: 1px solid var(--line); border-radius: 20px; }
+.map-scene .rs { height: clamp(420px, 66vh, 680px); }
+@media (max-width: 680px) { .map-scene .rs { height: min(64vh, 480px); min-height: 340px; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .plan-route .plan-route-line, .plan-route .plan-route-flow, .plan-route .plan-route-destination, .plan-route .plan-route-halo, .plan-room-selected .plan-room-shape { animation-duration: .01s; animation-delay: 0s; }
+}

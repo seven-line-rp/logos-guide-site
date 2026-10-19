@@ -18,12 +18,14 @@ test('request history keeps only real turns and caps length', () => {
 test('askAgent posts history and surfaces server errors', async () => {
   let sent
   const ok = async (url, init) => { sent = { url, body: JSON.parse(init.body) }; return { ok: true, status: 200, json: async () => ({ reply: 'Библиотека — кабинет 214.' }) } }
-  assert.deepEqual(await askAgent([{ role: 'user', content: 'Где библиотека?' }], { fetchImpl: ok, deep: true }), { reply: 'Библиотека — кабинет 214.', reasoning: '', vision: true })
+  assert.deepEqual(await askAgent([{ role: 'user', content: 'Где библиотека?' }], { fetchImpl: ok, deep: true }), { reply: 'Библиотека — кабинет 214.', reasoning: '', vision: true, left: null })
   assert.equal(sent.url, '/api/ai-chat.php')
   assert.deepEqual(sent.body, { messages: [{ role: 'user', content: 'Где библиотека?' }], deep: true })
 
-  const limited = async () => ({ ok: false, status: 429, json: async () => ({ error: 'Слишком много сообщений подряд.' }) })
-  await assert.rejects(askAgent([{ role: 'user', content: 'x' }], { fetchImpl: limited }), /Слишком много/)
+  const limited = async () => ({ ok: false, status: 429, json: async () => ({ error: 'Вы задали все 8 вопросов на сегодня.', left: 0 }) })
+  await assert.rejects(askAgent([{ role: 'user', content: 'x' }], { fetchImpl: limited }), (error) => error.left === 0 && /8 вопросов/.test(error.message))
+  const counted = async () => ({ ok: true, status: 200, json: async () => ({ reply: 'Ок', left: 5 }) })
+  assert.equal((await askAgent([{ role: 'user', content: 'x' }], { fetchImpl: counted })).left, 5)
   const missing = async () => ({ ok: false, status: 404, json: async () => { throw new Error('html') } })
   await assert.rejects(askAgent([{ role: 'user', content: 'x' }], { fetchImpl: missing }), /не загружен/)
   const offline = async () => { throw new TypeError('Failed to fetch') }

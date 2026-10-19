@@ -124,6 +124,8 @@ export default function AiAgentPage() {
   const [collapsed, setCollapsed] = useState(false)
   const [dragging, setDragging] = useState(false)
   const [notice, setNotice] = useState('')
+  // Сколько вопросов осталось сегодня — сервер сообщает с каждым ответом.
+  const [left, setLeft] = useState(null)
   const [listening, setListening] = useState(false)
   const [saving, setSaving] = useState(() => functionalStorageAllowed())
   const [confirmDelete, setConfirmDelete] = useState('')
@@ -167,8 +169,10 @@ export default function AiAgentPage() {
     try {
       const answer = await askAgent(next, { signal: controller.current.signal, deep: useDeep })
       if (!answer.vision) setNotice('Модель пока не видит картинки — ответ по тексту вопроса.')
+      if (answer.left !== null) setLeft(answer.left)
       updateChat(chatId, (item) => ({ ...item, messages: [...item.messages, { role: 'assistant', content: answer.reply, reasoning: answer.reasoning || undefined, at: Date.now() }] }))
     } catch (error) {
+      if (error.left !== null && error.left !== undefined) setLeft(error.left)
       if (error.name !== 'AbortError') updateChat(chatId, (item) => ({ ...item, messages: [...item.messages, { role: 'assistant', content: error.message, error: true, at: Date.now() }] }))
     } finally {
       controller.current = null
@@ -348,7 +352,7 @@ export default function AiAgentPage() {
         {composer}
       </div>}
       {!messages.length && notice && <div className="ai-dock"><div className="ai-notice" role="status"><span>{notice}</span><button type="button" onClick={() => setNotice('')} aria-label="Закрыть"><X size={14} /></button></div></div>}
-      <div className="ai-disclaimer">ЛОГОС AI может ошибаться — важное уточняйте в колледже · <Link to="/privacy#ai">Конфиденциальность</Link></div>
+      <div className="ai-disclaimer">{left !== null && <span className={`ai-left ${left <= 2 ? 'is-low' : ''}`}>{left > 0 ? `Осталось вопросов сегодня: ${left}` : 'Вопросы на сегодня закончились'}</span>}ЛОГОС AI может ошибаться — важное уточняйте в колледже · <Link to="/privacy#ai">Конфиденциальность</Link></div>
     </div>
   </section>
 }

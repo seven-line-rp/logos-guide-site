@@ -13,25 +13,38 @@ const AI_DEFAULTS = [
     'api_key' => '',
     'model' => 'deepseek-v4-flash',
     'endpoint' => 'https://api.deepseek.com/chat/completions',
-    'max_tokens' => 1200,
+    'max_tokens' => 800,
     'temperature' => 0.6,
-    // Ограничения, чтобы чужой скрипт не выжег баланс: запросов с одного IP
-    // за 10 минут и всего за сутки.
-    'per_ip_limit' => 20,
-    'daily_limit' => 1500,
+    // Бюджет: $2 в месяц на ~200 человек. Каждый ответ считается по
+    // настоящему расходу токенов (usage от DeepSeek) и ценам ниже — за
+    // 1 млн токенов, по дорогому «пиковому» тарифу Flash. Месячный бюджет
+    // делится на дни; когда дневная доля потрачена, агент отдыхает до полуночи
+    // (по Москве). Подробный расчёт — deploy/ai-agent.md.
+    'monthly_budget_usd' => 2.0,
+    'price_input_miss' => 0.30,
+    'price_input_hit' => 0.006,
+    'price_output' => 1.20,
+    // Лимиты на человека (по IP): сообщений в день, из них «Подумать
+    // глубже», и не больше per_ip_limit сообщений за 10 минут.
+    'per_ip_daily' => 8,
+    'deep_per_ip_daily' => 2,
+    'per_ip_limit' => 5,
+    // Жёсткий потолок сообщений за сутки на весь сайт — страховка, если
+    // DeepSeek не прислал расход.
+    'daily_limit' => 250,
     'college_site' => 'https://xn--c1abcfrgadvgb0b.xn--p1ai',
     'college_cache_hours' => 12,
-    'college_max_chars' => 30000,
+    'college_max_chars' => 15000,
     // Картинки: пробуем отправить их модели; если DeepSeek их не принимает,
     // агент ответит без них и честно скажет, что не видит изображение.
     // vision_model — отдельная модель для запросов с картинками (если есть).
     'vision' => true,
     'vision_model' => '',
     // «Подумать глубже»: режим рассуждений DeepSeek, отвечает дольше и точнее.
-    'deep_max_tokens' => 4000,
+    'deep_max_tokens' => 2500,
 ];
 
-const MAX_MESSAGES = 16;
+const MAX_MESSAGES = 12;
 const MAX_MESSAGE_CHARS = 2000;
 const MAX_IMAGES = 3;
 const MAX_IMAGE_BYTES = 1500000;
@@ -72,37 +85,88 @@ function storage_dir(): string
     return $dir;
 }
 
-// Скользящее окно запросов в файле с блокировкой: без базы данных.
-function within_limits(array $config): bool
+// Состояние лимитов на сегодня — файл с блокировкой, без базы данных:
+// потрачено долларов, сообщений всего и по каждому IP (обезличенный хеш).
+function with_limits(callable $change)
 {
-    $file = storage_dir() . '/limits.json';
-    $handle = @fopen($file, 'c+');
-    if (!$handle) return true;
+    $handle = @fopen(storage_dir() . '/limits.json', 'c+');
+    if (!$handle) { $none = null; return $change($none); }
     flock($handle, LOCK_EX);
-    $raw = stream_get_contents($handle);
-    $state = json_decode($raw ?: '{}', true);
-    if (!is_array($state)) $state = [];
-    $now = time();
-    $day = gmdate('Y-m-d');
-    if (($state['day'] ?? '') !== $day) $state = ['day' => $day, 'total' => 0, 'ips' => []];
-
-    $ip = hash('sha256', ($_SERVER['REMOTE_ADDR'] ?? '') . __DIR__);
-    $recent = array_values(array_filter($state['ips'][$ip] ?? [], function ($t) use ($now) { return $now - $t < 600; }));
-    $allowed = count($recent) < (int) $config['per_ip_limit'] && $state['total'] < (int) $config['daily_limit'];
-    if ($allowed) {
-        $recent[] = $now;
-        $state['total']++;
-    }
-    $state['ips'][$ip] = $recent;
-    foreach ($state['ips'] as $key => $times) {
-        if (!$times || $now - end($times) >= 600) unset($state['ips'][$key]);
-    }
+    $state = json_decode(stream_get_contents($handle) ?: '{}', true);
+    $day = date('Y-m-d');
+    if (!is_array($state) || ($state['day'] ?? '') !== $day) $state = ['day' => $day, 'total' => 0, 'spent' => 0.0, 'ips' => []];
+    $result = $change($state);
     ftruncate($handle, 0);
     rewind($handle);
     fwrite($handle, json_encode($state));
     flock($handle, LOCK_UN);
     fclose($handle);
-    return $allowed;
+    return $result;
+}
+
+function daily_budget(array $config): float
+{
+    return (float) $config['monthly_budget_usd'] / (int) date('t');
+}
+
+function visitor_key(): string
+{
+    return substr(hash('sha256', ($_SERVER['REMOTE_ADDR'] ?? '') . __DIR__), 0, 16);
+}
+
+// Проверка до запроса к DeepSeek. Возвращает [ошибка или '', осталось сообщений].
+function take_limit(array $config, bool $deep): array
+{
+    return with_limits(function (&$state) use ($config, $deep) {
+        if ($state === null) return ['', null];
+        $now = time();
+        $key = visitor_key();
+        $me = $state['ips'][$key] ?? ['r' => [], 'n' => 0, 'd' => 0];
+        $me['r'] = array_values(array_filter($me['r'], function ($t) use ($now) { return $now - $t < 600; }));
+        $left = (int) $config['per_ip_daily'] - $me['n'];
+        // Запас на один ответ: обычный ≈ $0.0015, «глубже» ≈ $0.005.
+        $reserve = $deep ? 0.005 : 0.0015;
+        if ($state['spent'] + $reserve > daily_budget($config) || $state['total'] >= (int) $config['daily_limit']) {
+            return ['Лимит ИИ-агента на сегодня исчерпан — он отдыхает до полуночи. Загляните завтра!', 0];
+        }
+        if ($left <= 0) return ['Вы задали все ' . (int) $config['per_ip_daily'] . ' вопросов на сегодня. Новые — завтра, после полуночи.', 0];
+        if ($deep && $me['d'] >= (int) $config['deep_per_ip_daily']) return ['«Подумать глубже» на сегодня закончилось. Выключите его — обычный режим ещё работает.', $left];
+        if (count($me['r']) >= (int) $config['per_ip_limit']) return ['Слишком много сообщений подряд. Подождите несколько минут.', $left];
+        $me['r'][] = $now;
+        $me['n'] += 1;
+        if ($deep) $me['d'] += 1;
+        $state['ips'][$key] = $me;
+        $state['total'] += 1;
+        return ['', $left - 1];
+    });
+}
+
+// Если DeepSeek не ответил, сообщение человеку не засчитываем.
+function refund_limit(bool $deep): void
+{
+    with_limits(function (&$state) use ($deep) {
+        $key = visitor_key();
+        if ($state === null || !isset($state['ips'][$key])) return;
+        $state['ips'][$key]['n'] = max(0, $state['ips'][$key]['n'] - 1);
+        if ($deep) $state['ips'][$key]['d'] = max(0, $state['ips'][$key]['d'] - 1);
+        array_pop($state['ips'][$key]['r']);
+        $state['total'] = max(0, $state['total'] - 1);
+    });
+}
+
+function request_cost(array $config, array $usage): float
+{
+    $hit = (int) ($usage['prompt_cache_hit_tokens'] ?? 0);
+    $miss = (int) ($usage['prompt_cache_miss_tokens'] ?? max(0, (int) ($usage['prompt_tokens'] ?? 0) - $hit));
+    $out = (int) ($usage['completion_tokens'] ?? 0);
+    return ($hit * (float) $config['price_input_hit'] + $miss * (float) $config['price_input_miss'] + $out * (float) $config['price_output']) / 1000000;
+}
+
+function record_cost(float $usd): void
+{
+    with_limits(function (&$state) use ($usd) {
+        if ($state !== null) $state['spent'] = round($state['spent'] + $usd, 6);
+    });
 }
 
 function http_get(string $url, int $timeout = 8): string
@@ -291,13 +355,15 @@ function deepseek(array $config, array $payload, int $timeout): array
         'status' => $status,
         'reply' => trim((string) ($message['content'] ?? '')),
         'reasoning' => trim((string) ($message['reasoning_content'] ?? '')),
+        'usage' => is_array($data['usage'] ?? null) ? $data['usage'] : null,
         'log' => $error ?: substr((string) $raw, 0, 300),
     ];
 }
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'GET' && isset($_GET['health'])) {
     $config = load_config();
-    respond(200, ['ok' => $config['api_key'] !== '', 'model' => $config['model'], 'vision' => (bool) $config['vision'], 'knowledge' => is_file(__DIR__ . '/ai-knowledge.txt'), 'curl' => function_exists('curl_init')]);
+    $today = with_limits(function (&$state) { return $state === null ? null : ['messages' => $state['total'], 'spent_usd' => round($state['spent'], 4)]; });
+    respond(200, ['ok' => $config['api_key'] !== '', 'model' => $config['model'], 'vision' => (bool) $config['vision'], 'knowledge' => is_file(__DIR__ . '/ai-knowledge.txt'), 'curl' => function_exists('curl_init'), 'today' => $today, 'daily_budget_usd' => round(daily_budget($config), 4)]);
 }
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') respond(405, ['error' => 'Метод не поддерживается.']);
 
@@ -309,7 +375,8 @@ if ($origin !== '' && parse_url($origin, PHP_URL_HOST) !== $host) respond(403, [
 $config = load_config();
 if ($config['api_key'] === '' || !function_exists('curl_init')) respond(503, ['error' => 'ИИ-агент ещё не настроен на сервере.']);
 $request = read_request();
-if (!within_limits($config)) respond(429, ['error' => 'Слишком много сообщений подряд. Подождите несколько минут.']);
+[$limitError, $left] = take_limit($config, $request['deep']);
+if ($limitError !== '') respond(429, ['error' => $limitError, 'left' => $left]);
 
 $messages = $request['messages'];
 $images = $config['vision'] ? $request['images'] : [];
@@ -347,8 +414,11 @@ $variants[] = ['vision' => !$request['images'], 'payload' => $base + ['model' =>
 
 foreach ($variants as $variant) {
     $result = deepseek($config, $variant['payload'], $deep ? 150 : 90);
+    // Платим и за неудачные попытки, если DeepSeek прислал расход.
+    if ($result['usage']) record_cost(request_cost($config, $result['usage']));
+    elseif ($result['status'] === 200) record_cost($deep ? 0.005 : 0.0015);
     if ($result['status'] === 200 && $result['reply'] !== '') {
-        $body = ['reply' => $result['reply'], 'vision' => $variant['vision']];
+        $body = ['reply' => $result['reply'], 'vision' => $variant['vision'], 'left' => $left];
         if ($deep && $result['reasoning'] !== '') $body['reasoning'] = mb_substr($result['reasoning'], 0, 8000);
         respond(200, $body);
     }
@@ -356,6 +426,7 @@ foreach ($variants as $variant) {
     if (!in_array($result['status'], [400, 422], true)) break;
 }
 
+refund_limit($deep);
 $messagesByStatus = [
     0 => 'Не удалось связаться с DeepSeek. Попробуйте позже.',
     401 => 'Сервер ИИ отклонил ключ API — сообщите команде сайта.',

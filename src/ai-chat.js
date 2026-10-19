@@ -46,9 +46,9 @@ export async function askAgent(messages, { signal, deep = false, fetchImpl = fet
   }
   const data = await response.json().catch(() => null)
   if (response.ok && typeof data?.reply === 'string') {
-    return { reply: data.reply, reasoning: typeof data.reasoning === 'string' ? data.reasoning : '', vision: data.vision !== false }
+    return { reply: data.reply, reasoning: typeof data.reasoning === 'string' ? data.reasoning : '', vision: data.vision !== false, left: Number.isFinite(data.left) ? data.left : null }
   }
-  if (data?.error) throw new Error(data.error)
+  if (data?.error) throw Object.assign(new Error(data.error), { left: Number.isFinite(data.left) ? data.left : null })
   if (response.status === 404) throw new Error('ИИ-агент ещё не загружен на этот сервер.')
   if (response.status === 413) throw new Error('Картинки слишком большие. Попробуйте одну или поменьше.')
   throw new Error('ИИ не ответил. Попробуйте ещё раз.')
