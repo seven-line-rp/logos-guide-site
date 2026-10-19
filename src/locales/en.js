@@ -319,12 +319,10 @@ Object.assign(english, {
   'Пары на сегодня закончились': 'Classes are over for today',
 })
 
-// Новое меню и озвучка экскурсии.
+// Новое меню.
 Object.assign(english, {
   'Меню': 'Menu', 'Меню сайта': 'Site menu', 'Язык': 'Language', 'Тема': 'Theme', 'Светлая': 'Light', 'Тёмная': 'Dark', 'Тема оформления': 'Colour theme',
   'План 1 и 2 этажа в 2D и 3D': 'Floors 1 and 2 in 2D and 3D', 'Путь по шагам с голосом': 'Step-by-step with voice', 'Справочник помещений': 'Room directory',
   'Пары и звонки': 'Classes and bells', 'Спросите ЛОГОС AI': 'Ask LOGOS AI', 'Прогулка по колледжу': 'A walk around the college', 'Квизы по плану': 'Map quizzes',
   'Столовая, библиотека, залы': 'Canteen, library, halls', 'Команда и идея': 'Team and idea',
-  'Озвучка экскурсии': 'Tour narration', 'Женский': 'Female', 'Мужской': 'Male', 'Без озвучки': 'No narration', 'Прослушать остановку': 'Listen to this stop', 'Прослушать ещё раз': 'Listen again',
-  'Голос озвучки экскурсии': 'Tour narration voice',
 })
