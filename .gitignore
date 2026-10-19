@@ -6,3 +6,5 @@ coverage/
 .env
 .env.*
 !.env.example
+public/api/ai-config.php
+logos-ai-config.php

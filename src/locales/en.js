@@ -172,10 +172,10 @@ Object.assign(english, {
   'Сайт работает без регистрации и не собирает персональные данные. Настройки хранятся только в вашем браузере, от них можно отказаться в любой момент.': 'The site needs no sign-up and collects no personal data. Settings live only in your browser and you can opt out at any time.',
 
   // Политика конфиденциальности (основные заголовки и пункты).
-  'Политика': 'Privacy', 'конфиденциальности': 'policy', 'Редакция от': 'Version of', '18 октября 2026 г.': '18 October 2026',
-  'Коротко: путеводитель работает без регистрации, не собирает персональные данные и не использует рекламу или аналитику. Ниже — подробно, что и где хранится.': 'In short: the guide needs no sign-up, collects no personal data and uses no ads or analytics. Below is exactly what is stored and where.',
+  'Политика': 'Privacy', 'конфиденциальности': 'policy', 'Редакция от': 'Version of', '18 октября 2026 г.': '18 October 2026', '19 октября 2026 г.': '19 October 2026',
+  'Коротко: путеводитель работает без регистрации, не собирает персональные данные и не использует рекламу или аналитику. Единственное, что уходит со страницы наружу, — сообщения в тестовый ИИ-агент (раздел 6). Ниже — подробно, что и где хранится.': 'In short: the guide needs no sign-up, collects no personal data and uses no ads or analytics The only thing that leaves the page is what you send to the test AI agent (section 6). Below is exactly what is stored and where.',
   '1. Общие положения': '1. General', '2. Какие данные мы не собираем': '2. Data we do not collect', '3. Что хранится в вашем браузере': '3. What your browser keeps',
-  '4. Cookie': '4. Cookies', '5. Геолокация': '5. Location', '6. Озвучка маршрута': '6. Route voice', '7. Технические журналы сервера': '7. Server logs', '8. Изменения и контакты': '8. Changes and contacts',
+  '4. Cookie': '4. Cookies', '5. Геолокация': '5. Location', '6. ИИ-Агент (тестовый режим)': '6. AI agent (test mode)', '7. Озвучка маршрута': '7. Route voice', '8. Технические журналы сервера': '8. Server logs', '9. Изменения и контакты': '9. Changes and contacts',
   'Что хранится': 'Stored item', 'Зачем': 'Purpose', 'Категория': 'Category', 'Ваш выбор': 'Your choice', 'Изменить': 'Change',
   'Вы ещё не выбрали — настройки пока сохраняются': 'No choice yet — settings are being saved for now',
   'Функциональные cookie разрешены': 'Functional cookies allowed', 'Разрешены только необходимые': 'Only necessary cookies allowed',
@@ -245,3 +245,19 @@ Object.assign(english, {
 })
 
 Object.assign(english, { 'м': 'm' })
+
+// ИИ-агент (страница /ai). Ответы модели не переводятся — см. src/components/ai-message.js.
+Object.assign(english, {
+  'ИИ-Агент': 'AI agent', 'ТЕСТ': 'TEST', 'ИИ-Агент — Путеводитель колледжа': 'AI agent — Campus guide',
+  'ИИ-АГЕНТ · ТЕСТОВЫЙ РЕЖИМ': 'AI AGENT · TEST MODE', 'Спросите': 'Ask', 'путеводитель.': 'the guide.',
+  'Ассистент знает план корпуса, разделы сайта и материалы с': 'The assistant knows the floor plan, the site sections and the materials from',
+  '. Отвечает нейросеть DeepSeek — она может ошибаться, поэтому важное уточняйте в колледже.': '. Answers come from the DeepSeek model — it can be wrong, so check anything important with the college.',
+  'колледжлогос.рф': 'колледжлогос.рф', 'печатает…': 'typing…', 'на связи': 'online', 'Новый чат': 'New chat', 'Начать новый разговор': 'Start a new conversation',
+  'Сообщения': 'Messages', 'ИИ печатает': 'AI is typing', 'Примеры вопросов': 'Example questions', 'Сообщение ИИ-агенту': 'Message to the AI agent',
+  'Спросите о кабинете, сайте или колледже…': 'Ask about a room, the site or the college…', 'Остановить ответ': 'Stop the answer', 'Остановить': 'Stop', 'Отправить': 'Send', 'Отправить (Enter)': 'Send (Enter)',
+  'Enter — отправить, Shift+Enter — новая строка. Не пишите личные данные: сообщения уходят в DeepSeek, подробнее — в': 'Enter sends, Shift+Enter adds a line. Do not share personal data: messages go to DeepSeek, see the',
+  'политике конфиденциальности': 'privacy policy',
+  'Привет! Я ИИ-агент путеводителя. Подскажу, где кабинет и как пройти, расскажу о разделах сайта и о колледже «Логос». Можно и просто поболтать.': 'Hi! I am the guide’s AI agent. I can tell you where a room is and how to get there, explain the site and talk about LOGOS College — or just chat.',
+  'Где библиотека и как до неё дойти?': 'Where is the library and how do I get there?', 'Какие специальности есть в колледже?': 'Which programmes does the college offer?',
+  'Как пользоваться маршрутом на сайте?': 'How do I use the route planner?', 'Расскажи о колледже «Логос»': 'Tell me about LOGOS College',
+})

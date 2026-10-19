@@ -5,6 +5,7 @@ export const navigation = [
   { label: 'Игры', to: '/games' },
   { label: 'Пространства', to: '/services' },
   { label: 'О проекте', to: '/about' },
+  { label: 'ИИ-Агент', to: '/ai', badge: 'ТЕСТ' },
 ]
 
 export const floors = [

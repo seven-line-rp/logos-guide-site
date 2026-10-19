@@ -16,6 +16,7 @@ const ServicesPage = lazy(() => import('./pages/ServicesPage'))
 const AboutPage = lazy(() => import('./pages/AboutPage'))
 const DocsPage = lazy(() => import('./pages/DocsPage'))
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage'))
+const AiAgentPage = lazy(() => import('./pages/AiAgentPage'))
 
 const titles = {
   '/': 'Путеводитель по колледжу',
@@ -27,6 +28,7 @@ const titles = {
   '/about': 'О путеводителе — Колледж',
   '/docs': 'Документация — Путеводитель колледжа',
   '/privacy': 'Политика конфиденциальности — Путеводитель колледжа',
+  '/ai': 'ИИ-Агент — Путеводитель колледжа',
 }
 
 // Адрес вне списка выше — это страница приложения «404»: показываем это и в заголовке вкладки,
@@ -50,7 +52,7 @@ function NotFoundPage() {
 function Site() {
   useLanguage()
   const location = useLocation()
-  return <><RouteEffects /><Header /><main id="main-content" className="site-main page-transition" key={location.pathname}><Suspense fallback={<div className="page-loading container" role="status"><span className="shimmer" style={{display:"inline-block",width:"120px",height:"14px",borderRadius:"6px"}} /> Открываем раздел…</div>}><Routes location={location}><Route path="/" element={<HomePage />} /><Route path="/map" element={<MapPage />} /><Route path="/rooms" element={<RoomsPage />} /><Route path="/route" element={<RoutePage />} /><Route path="/games" element={<GamesPage />} /><Route path="/services" element={<ServicesPage />} /><Route path="/about" element={<AboutPage />} /><Route path="/docs" element={<DocsPage />} /><Route path="/privacy" element={<PrivacyPage />} /><Route path="*" element={<NotFoundPage />} /></Routes></Suspense></main><Footer /><WelcomeDialog /><SiteTour /><CookieBanner /></>
+  return <><RouteEffects /><Header /><main id="main-content" className="site-main page-transition" key={location.pathname}><Suspense fallback={<div className="page-loading container" role="status"><span className="shimmer" style={{display:"inline-block",width:"120px",height:"14px",borderRadius:"6px"}} /> Открываем раздел…</div>}><Routes location={location}><Route path="/" element={<HomePage />} /><Route path="/map" element={<MapPage />} /><Route path="/rooms" element={<RoomsPage />} /><Route path="/route" element={<RoutePage />} /><Route path="/games" element={<GamesPage />} /><Route path="/services" element={<ServicesPage />} /><Route path="/about" element={<AboutPage />} /><Route path="/docs" element={<DocsPage />} /><Route path="/privacy" element={<PrivacyPage />} /><Route path="/ai" element={<AiAgentPage />} /><Route path="*" element={<NotFoundPage />} /></Routes></Suspense></main><Footer /><WelcomeDialog /><SiteTour /><CookieBanner /></>
 }
 
 export default function App() {
