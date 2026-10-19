@@ -16,8 +16,8 @@ const facts = [
 
 const principles = [
   { title: 'Только по коридорам', text: 'Маршрут строится по нарисованным коридорам и дверям. Путь «сквозь стену» или через чужой кабинет сайт не предложит.' },
-  { title: 'Номер не обязателен', text: 'Кабинет находится по номеру, по названию или по слову-подсказке: «еда» приведёт в столовую, «дрон» — в лабораторию БПЛА.' },
-  { title: 'Честно о точности', text: 'План — ориентир. GPS внутри здания ошибается, поэтому стартовую точку можно поставить на плане вручную.' },
+  { title: 'Номер не обязателен', text: 'Кабинет находится по номеру, по названию или по слову-подсказке: «еда» приведёт в столовую, «дрон» в лабораторию БПЛА.' },
+  { title: 'Честно о точности', text: 'План помогает сориентироваться. GPS внутри здания ошибается, поэтому стартовую точку можно поставить на плане вручную.' },
 ]
 
 const parts = [
@@ -37,7 +37,7 @@ const team = [
 ]
 
 const questions = [
-  { title: 'Можно ли проложить путь между этажами?', answer: 'Да. Выберите начальную точку и кабинет — сайт предложит лифт и каждую из лестниц, отметит самый быстрый вариант и проведёт по коридорам обоих этажей.' },
+  { title: 'Можно ли проложить путь между этажами?', answer: 'Да. Выберите начальную точку и кабинет, и сайт предложит лифт и каждую из лестниц, отметит самый быстрый вариант и проведёт по коридорам обоих этажей.' },
   { title: 'GPS покажет кабинет автоматически?', answer: 'Нет. Телефон не определяет этаж и внутри здания может ошибаться на десятки метров. Для примерной GPS-метки нужно привязать два известных места на этаже; без привязки надёжнее поставить метку вручную.' },
   { title: 'Если проход закрыт или нужен доступный маршрут?', answer: 'Схема не знает о временных закрытиях и не подтверждает доступность всех проходов. Лифт показан на плане, но его работу лучше заранее уточнить у сотрудников колледжа.' },
   { title: 'Что делать, если кабинет не найден?', answer: 'Попробуйте номер или часть названия в справочнике. Если надпись на двери отличается от схемы, ориентируйтесь на указатели и сообщите об этом команде проекта.' },
@@ -55,9 +55,9 @@ export default function AboutPage() {
   return <div className="ab">
     <section className="ab-hero container">
       <div className="ab-hero-copy">
-        <span className="eyebrow"><i className="eyebrow-dot" />О проекте</span>
+        <span className="eyebrow">О проекте</span>
         <h1>Путеводитель, который сделали <em>студенты для студентов.</em></h1>
-        <p>В первые недели учёбы проще всего опоздать не из-за расписания, а из-за коридоров. Мы перенесли план корпуса на сайт, добавили поиск и маршруты — чтобы найти кабинет можно было за минуту, а не за перемену.</p>
+        <p>В первые недели учёбы проще всего опоздать не из-за расписания, а из-за коридоров. Мы перенесли план корпуса на сайт, добавили поиск и маршруты, чтобы найти кабинет можно было за минуту, а не за перемену.</p>
       </div>
       <dl className="ab-facts">
         {facts.map((fact) => <div key={fact.label}><dt>{fact.label}</dt><dd>{fact.value}</dd></div>)}
@@ -66,12 +66,11 @@ export default function AboutPage() {
 
     <section className="ab-section container" aria-labelledby="ab-principles">
       <header className="ab-section-head">
-        <span className="ab-tag">01 · Подход</span>
+        <span className="ab-tag">Подход</span>
         <h2 id="ab-principles">Три правила, по которым устроен сайт</h2>
       </header>
       <ol className="ab-principles">
         {principles.map((item, index) => <Reveal as="li" key={item.title} delay={index * 60}>
-          <span className="ab-principle-num">{String(index + 1).padStart(2, '0')}</span>
           <h3>{item.title}</h3>
           <p>{item.text}</p>
         </Reveal>)}
@@ -80,8 +79,8 @@ export default function AboutPage() {
 
     <section className="ab-section container" aria-labelledby="ab-parts">
       <header className="ab-section-head">
-        <span className="ab-tag">02 · Что внутри</span>
-        <h2 id="ab-parts">Пять разделов — одна задача</h2>
+        <span className="ab-tag">Что внутри</span>
+        <h2 id="ab-parts">Пять разделов, одна задача</h2>
       </header>
       <div className="ab-parts">
         {parts.map((part) => {
@@ -96,7 +95,7 @@ export default function AboutPage() {
         <div className="ab-part ab-part-app">
           <span className="ab-part-icon" aria-hidden="true"><Smartphone size={18} /></span>
           <strong>Приложение для Android</strong>
-          <span className="ab-part-text">Сейчас на техническом обслуживании и пока не поддерживается — пользуйтесь сайтом, он работает на телефоне.</span>
+          <span className="ab-part-text">Сейчас на техническом обслуживании и пока не поддерживается. Пользуйтесь сайтом, он работает на телефоне.</span>
         </div>
       </div>
     </section>
@@ -104,7 +103,7 @@ export default function AboutPage() {
     <section className="ab-section container" aria-labelledby="ab-team">
       <header className="ab-section-head ab-section-head-split">
         <div>
-          <span className="ab-tag">03 · Команда</span>
+          <span className="ab-tag">Команда</span>
           <h2 id="ab-team">Кто сделал путеводитель</h2>
         </div>
         <p>Учебный проект четырёх человек: от идеи и плана корпуса до сайта и приложения.</p>
@@ -120,9 +119,9 @@ export default function AboutPage() {
 
     <section className="ab-section container ab-split" aria-labelledby="ab-faq">
       <header className="ab-section-head">
-        <span className="ab-tag">04 · Вопросы</span>
+        <span className="ab-tag">Вопросы</span>
         <h2 id="ab-faq">Коротко о том, что умеет и чего не умеет сайт</h2>
-        <p className="ab-note">Схема — ориентир, а не замена указателям. Если проход закрыт, следуйте табличкам в здании.</p>
+        <p className="ab-note">Схема помогает сориентироваться, но не заменяет указатели. Если проход закрыт, следуйте табличкам в здании.</p>
       </header>
       <div className="ab-faq">
         {questions.map((item, index) => <details key={item.title} open={index === 0}><summary>{item.title}</summary><p>{item.answer}</p></details>)}

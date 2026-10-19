@@ -10,7 +10,7 @@ test('language switches both ways without altering source data', () => {
   assert.equal(translate('Язык интерфейса'), 'Interface language')
   assert.equal(translate('Оформление'), 'Appearance')
   assert.equal(translate('Поиск по колледжу'), 'Search the campus')
-  assert.equal(translate('Найдите кабинет по номеру или названию — покажем его на карте и подскажем маршрут.'), 'Find a room by number or name — see it on the map and get directions.')
+  assert.equal(translate('Найдите кабинет по номеру или названию. Покажем его на карте и подскажем маршрут.'), 'Find a room by number or name, see it on the map and get directions.')
   assert.equal(translate('Обучение по сайту'), 'Site tour')
   assert.equal(translate('Библиотека (читальный зал) №214'), 'Library (reading room) №214')
   assert.equal(translate('2 этаж · Библиотека'), 'Floor 2 · Library')

@@ -39,8 +39,8 @@ export function NextLessonCard({ lessons, now, compact = false }) {
   return <div className={`lesson-next ${next.ongoing ? 'is-ongoing' : next.offset === 0 && next.minutes <= 15 ? 'is-soon' : ''} ${compact ? 'lesson-next-compact' : ''}`}>
     <span className="lesson-next-badge">{next.ongoing ? 'Идёт сейчас' : 'Следующая пара'}</span>
     <strong className="lesson-next-subject">{next.lesson.subject}</strong>
-    <span className="lesson-next-meta"><Clock size={14} /> {next.lesson.start}–{next.lesson.end} · {when}</span>
-    <span className="lesson-next-meta"><MapPin size={14} /> {roomLabel(room)} · {room.floor} этаж</span>
+    <span className="lesson-next-meta"><Clock size={14} /> {next.lesson.start}–{next.lesson.end}, {when}</span>
+    <span className="lesson-next-meta"><MapPin size={14} /> {roomLabel(room)}, {room.floor} этаж</span>
     <Link className="lesson-next-go" to={`/route?from=entrance-1&to=${encodeURIComponent(room.id)}`}><Navigation size={15} /> Маршрут</Link>
   </div>
 }
@@ -49,9 +49,9 @@ function BellsCard({ dayKey }) {
   const { bells, lunch } = bellsFor(dayKey)
   if (!bells.length) return null
   return <div className="bells-card">
-    <h2><BellRing size={17} /> Звонки · {dayLabel(dayKey).weekday}</h2>
+    <h2><BellRing size={17} /> Звонки: {dayLabel(dayKey).weekday}</h2>
     <ol>{bells.map((bell) => <li key={bell.label}><span>{bell.label}</span><strong>{bell.start}–{bell.end}</strong></li>)}</ol>
-    <div className="bells-lunch">{lunch.map((item) => <span key={item.course}><UtensilsCrossed size={13} /> Обед {item.course} курса · {item.start}–{item.end}</span>)}</div>
+    <div className="bells-lunch">{lunch.map((item) => <span key={item.course}><UtensilsCrossed size={13} /> Обед {item.course} курса, {item.start}–{item.end}</span>)}</div>
   </div>
 }
 
@@ -100,9 +100,9 @@ export default function SchedulePage() {
 
   return <section className="schedule-page container">
     <header className="schedule-head">
-      <span className="eyebrow"><i className="eyebrow-dot" />Моё расписание</span>
+      <span className="eyebrow">Моё расписание</span>
       <h1>Пары и <em>маршруты к ним.</em></h1>
-      <p>Расписание в колледже каждый день новое — добавляйте пары на нужный день. На главной появится следующая пара с маршрутом, а навигатор подскажет, успеваете ли вы. Всё хранится только в этом браузере.</p>
+      <p>Расписание в колледже каждый день новое, поэтому пары добавляются на конкретный день. На главной появится следующая пара с маршрутом, а навигатор подскажет, успеваете ли вы. Всё хранится только в этом браузере.</p>
       {!saving && <p className="schedule-warn">Вы отказались от функциональных cookie, поэтому расписание не сохранится после перезагрузки.</p>}
     </header>
 
@@ -125,13 +125,13 @@ export default function SchedulePage() {
             {dayLessons.length > 0 && <button type="button" onClick={clearDay}><Trash2 size={14} /> Очистить день</button>}
           </div>
         </div>
-        {!bells.length ? <p className="schedule-empty">Воскресенье — выходной.</p> : dayLessons.length ? <ol className="schedule-list">
+        {!bells.length ? <p className="schedule-empty">Воскресенье. Выходной, можно выдохнуть.</p> : dayLessons.length ? <ol className="schedule-list">
           {dayLessons.map((lesson) => {
             const room = rooms.find((item) => item.id === lesson.roomId)
             const bell = bells.find((item) => item.start === lesson.start)
             return <li key={lesson.id || `${lesson.start}-${lesson.subject}`}>
               <span className="schedule-time"><strong>{lesson.start}</strong><small>{lesson.end}</small></span>
-              <span className="schedule-info"><strong>{lesson.subject}</strong><small>{bell ? `${bell.label} · ` : ''}{roomLabel(room)} · {room.floor} этаж</small></span>
+              <span className="schedule-info"><strong>{lesson.subject}</strong><small>{bell ? `${bell.label}, ` : ''}{roomLabel(room)}, {room.floor} этаж</small></span>
               <Link className="schedule-route" to={`/route?from=entrance-1&to=${encodeURIComponent(room.id)}`} aria-label={`Маршрут: ${lesson.subject}`}><ArrowRight size={16} /></Link>
               <button type="button" className="schedule-remove" onClick={() => remove(lesson)} aria-label={`Удалить пару ${lesson.subject}`}><Trash2 size={15} /></button>
             </li>
@@ -142,7 +142,7 @@ export default function SchedulePage() {
       <aside className="schedule-side">
         <NextLessonCard lessons={lessons} now={now} />
         {bells.length > 0 && <form className="schedule-form" onSubmit={add}>
-          <h2><Plus size={18} /> Добавить пару · {dayLabel(day, today).name.toLowerCase()}</h2>
+          <h2><Plus size={18} /> Добавить пару на {dayLabel(day, today).name.toLowerCase()}</h2>
           <div className="schedule-bells" role="group" aria-label="Пара по звонкам" style={{ gridTemplateColumns: `repeat(${bells.length}, 1fr)` }}>
             {bells.map((bell) => <button type="button" key={bell.start} aria-pressed={pair === bell.pair && start === bell.start} onClick={() => choosePair(bell)}><strong>{bell.pair === 0 ? 'РОВ' : bell.pair}</strong><small>{bell.start}</small></button>)}
           </div>

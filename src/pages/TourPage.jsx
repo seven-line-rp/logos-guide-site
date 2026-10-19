@@ -43,9 +43,9 @@ export default function TourPage() {
   return <section className="ex-page container">
     <header className="ex-head">
       <div>
-        <span className="eyebrow"><i className="eyebrow-dot" />Экскурсия в 3D</span>
+        <span className="eyebrow">Экскурсия в 3D</span>
         <h1>{tour.title}</h1>
-        <p>{tour.subtitle} · {tour.stops.length} остановок · ~{tour.minutes} мин</p>
+        <p>{tour.subtitle}, {tour.stops.length} остановок, ~{tour.minutes} мин</p>
       </div>
       <div className="ex-switch" role="tablist" aria-label="Экскурсия">
         {tours.map((item) => <button type="button" role="tab" key={item.id} aria-selected={item.id === tour.id} onClick={() => setParams({ id: item.id })}>{item.title}</button>)}
@@ -56,10 +56,10 @@ export default function TourPage() {
       <div className="ex-stage">
         <RouteScene floor={leg.floor} points={leg.points} progress={leg.points.length - 1} following={following} onFollowChange={setFollowing} mode="3d" targetId={stop.roomId} selectedId={stop.roomId} transfer={transfer} />
         <div className="ex-card" key={`${tour.id}-${index}`} aria-live="polite">
-          <span className="ex-card-step">Остановка {index + 1} из {tour.stops.length} · {leg.floor} этаж</span>
+          <span className="ex-card-step">Остановка {index + 1} из {tour.stops.length}, {leg.floor} этаж</span>
           <h2>{stop.title}</h2>
           <p>{stop.text}</p>
-          <span className="ex-card-room"><MapPin size={14} /> {roomLabel(leg.room)}{leg.meters ? ` · ≈ ${Math.round(leg.meters)} м от прошлой остановки` : ''}</span>
+          <span className="ex-card-room"><MapPin size={14} /> {roomLabel(leg.room)}{leg.meters ? `, ≈ ${Math.round(leg.meters)} м от прошлой остановки` : ''}</span>
           <div className="ex-controls">
             <button type="button" className="ex-ctl" onClick={() => setIndex(Math.max(0, index - 1))} disabled={index === 0} aria-label="Предыдущая остановка"><ArrowLeft size={17} /></button>
             <button type="button" className="ex-ctl" onClick={() => (last ? (setIndex(0), setPlaying(true)) : setPlaying((value) => !value))} aria-label={playing ? 'Пауза' : last ? 'Смотреть заново' : 'Смотреть автоматически'} title={playing ? 'Пауза' : 'Смотреть автоматически'}>{playing ? <Pause size={17} /> : last ? <RotateCcw size={16} /> : <Play size={16} />}</button>

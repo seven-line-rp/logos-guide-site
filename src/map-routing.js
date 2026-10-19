@@ -156,7 +156,7 @@ function buildGuides(points, floor = 1) {
       push({
         index: at,
         kind: 'main-corridor',
-        title: `Главный коридор · ${landmark.title}`,
+        title: `Главный коридор, ${landmark.title}`,
         detail: east ? 'Двери кабинетов по правой стороне' : 'Двери кабинетов по левой стороне',
         say: `Идите по главному коридору ${landmark.say}, до нужной двери.`,
         voiceKey: `corridor-${floor}-${east ? 'east' : 'west'}`,

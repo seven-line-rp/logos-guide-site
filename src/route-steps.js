@@ -64,7 +64,7 @@ export function buildRouteSteps({ startLabel, startFloor, targetFloor, targetNam
   steps.push({
     kind: 'arrive',
     title: `Приход: ${targetName}`,
-    detail: `${targetFloor} этаж · дверь помещения на плане`,
+    detail: `${targetFloor} этаж, дверь отмечена на плане`,
     say: `Вы пришли: ${targetName}.`,
     voiceCue: ['arrive'],
     floor: targetFloor,

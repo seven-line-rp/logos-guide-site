@@ -290,7 +290,7 @@ export default function SiteTour() {
           <div className="tour-body">
             <span className="tour-eyebrow">Обучение завершено</span>
             <h2>Теперь вы <em>знаете сайт.</em></h2>
-            <p>Пройти обучение ещё раз можно в разделе «Документация» или в меню. Там же — подробные ответы на частые вопросы.</p>
+            <p>Пройти обучение ещё раз можно в разделе «Документация» или в меню. Там же есть ответы на частые вопросы.</p>
             <ul className="tour-summary" aria-label="Что вы узнали">
               {TOUR_STEPS.slice(1).map((item) => <li key={item.id} data-tone={item.tone}>{item.eyebrow}</li>)}
             </ul>

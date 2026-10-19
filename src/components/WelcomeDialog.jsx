@@ -47,7 +47,7 @@ export default function WelcomeDialog() {
         <h2 id="welcome-title">Добро пожаловать в «ЛОГОС»!</h2>
         <p id="welcome-text">
           Путеводитель ещё дорабатывается, поэтому иногда могут встречаться ошибки.
-          Если заметите баг или неточность на карте — пожалуйста, сообщите{' '}
+          Если заметите баг или неточность на карте, сообщите{' '}
           <Link to="/about" onClick={close}>команде проекта</Link>: так мы быстрее всё исправим.
         </p>
 
@@ -55,7 +55,7 @@ export default function WelcomeDialog() {
           <span className="welcome-app-icon" aria-hidden="true"><Wrench size={20} /></span>
           <div className="welcome-app-copy">
             <span className="welcome-app-title"><Smartphone size={17} /> Приложение для Android</span>
-            <p>Сейчас на техническом обслуживании и пока не поддерживается. Пользуйтесь сайтом — он удобно работает и на телефоне.</p>
+            <p>Сейчас на техническом обслуживании и пока не поддерживается. Пользуйтесь сайтом, он удобно работает и на телефоне.</p>
           </div>
         </div>
 

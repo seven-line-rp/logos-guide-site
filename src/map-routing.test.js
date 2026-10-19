@@ -92,7 +92,7 @@ test('corridor guides name the wing and never repeat the same vertex twice', () 
   assert.deepEqual(cross.guides.map((guide) => guide.index), [1, 2, 3])
   assert.equal(cross.guides[0].kind, 'west-corridor')
   assert.deepEqual(cross.points[cross.guides[0].index], [73, 450], 'точка стоит там, где начинается поворот')
-  assert.match(cross.guides[1].title, /Главный коридор · к холлу/)
+  assert.match(cross.guides[1].title, /Главный коридор, к холлу/)
   assert.match(cross.guides[2].say, /актового зала/)
   assert.deepEqual(cross.points[cross.guides[1].index], [73, 168], 'главный коридор начинается от западного перекрёстка')
   const secondFloor = buildIndoorRoute('radio-lab-228', 'canteen', 'stairs').byFloor[2]

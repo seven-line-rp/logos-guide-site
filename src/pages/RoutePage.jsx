@@ -215,7 +215,7 @@ export default function RoutePage() {
   return <div className="nv">
     <header className="nv-head container">
       <div>
-        <span className="eyebrow"><i className="eyebrow-dot" />Маршрут</span>
+        <span className="eyebrow">Маршрут</span>
         <h1>Куда идём?</h1>
         <p>Выберите, откуда и куда. Путь построится по коридорам, с лестницами и лифтом, и его можно пройти по шагам с голосом.</p>
       </div>
@@ -227,7 +227,7 @@ export default function RoutePage() {
         <section className="nv-card nv-places">
           <div className="nv-place-rail" aria-hidden="true"><i className="nv-dot-start" /><span /><i className="nv-dot-end" /></div>
           <div className="nv-place-fields">
-            <RoomSearchSelect label="Откуда" value={startId} onChange={setStartId} manualOption={manualPoint ? { value: 'manual', label: `Ваша отметка · ${manualPoint.floor} этаж` } : null} />
+            <RoomSearchSelect label="Откуда" value={startId} onChange={setStartId} manualOption={manualPoint ? { value: 'manual', label: `Ваша отметка, ${manualPoint.floor} этаж` } : null} />
             <RoomSearchSelect label="Куда" value={targetId} onChange={setTargetId} />
           </div>
           <button type="button" className="nv-swap" onClick={swapPoints} disabled={!canSwap} aria-label="Поменять старт и цель местами" title="Поменять местами"><ArrowUpDown size={16} /></button>
@@ -264,7 +264,7 @@ export default function RoutePage() {
             </div>
             {arrival && <div className={`nv-arrive-status nv-arrive-${arrival.kind}`} role="status">
               <strong>{arrival.text}</strong>
-              <small>Путь ≈ {arrival.walk} мин{arrival.kind === 'late' && fastest && fastest !== route ? ` · быстрее: ${fastest.label.toLowerCase()}` : ''}</small>
+              <small>Путь ≈ {arrival.walk} мин{arrival.kind === 'late' && fastest && fastest !== route ? `, быстрее: ${fastest.label.toLowerCase()}` : ''}</small>
               {arrival.kind === 'late' && fastest && fastest !== route && <button type="button" onClick={() => setRoutePreference(fastest.kind)}>Выбрать</button>}
             </div>}
           </div>}
@@ -281,7 +281,7 @@ export default function RoutePage() {
           <div className="nv-options" role="radiogroup" aria-label="Варианты маршрута">
             {routeOptions.map((option, index) => <button type="button" role="radio" key={option.kind} aria-checked={route === option} className={`nv-option ${route === option ? 'nv-option-on' : ''}`} onClick={() => setRoutePreference(option.kind)}>
               <span className="nv-option-icon" aria-hidden="true">{option.kind === 'lift' ? <MoveUp size={15} /> : <ArrowUpDown size={15} />}</span>
-              <span className="nv-option-body"><strong>{option.label}</strong><span>≈ {Math.round(option.meters)} м · {option.seconds < 60 ? 'меньше минуты' : `${minutes(option.seconds)} мин`}</span></span>
+              <span className="nv-option-body"><strong>{option.label}</strong><span>≈ {Math.round(option.meters)} м, {option.seconds < 60 ? 'меньше минуты' : `${minutes(option.seconds)} мин`}</span></span>
               {index === 0 && <em>Быстрее</em>}
             </button>)}
           </div>
@@ -315,7 +315,7 @@ export default function RoutePage() {
               {VOICE_PRESETS.map((preset) => <button type="button" role="radio" key={preset.id} aria-checked={voicePreset === preset.id} className={voicePreset === preset.id ? 'nv-voice-on' : ''} onClick={() => changePreset(preset.id)}>{preset.label}</button>)}
             </div>
             <button type="button" className="nv-ghost" onClick={testVoice}><Play size={13} fill="currentColor" /> Прослушать</button>
-            <p>На iPhone сначала нажмите «Прослушать» — так браузер разрешит звук. Если тихо, проверьте громкость и беззвучный режим.</p>
+            <p>На iPhone сначала нажмите «Прослушать»: так браузер разрешит звук. Если тихо, проверьте громкость и беззвучный режим.</p>
           </div>
         </details>
         {voiceNotice && <p className="nv-notice" role="status"><Info size={14} /> {voiceNotice}</p>}
@@ -325,7 +325,7 @@ export default function RoutePage() {
         <div className="nv-now-card" aria-live="polite">
           <span className="nv-now-icon" aria-hidden="true"><CurrentIcon size={22} /></span>
           <div className="nv-now-text">
-            <span>{`Шаг ${stepIndex + 1} из ${steps.length}`} · {`${current.floor} этаж`}</span>
+            <span>{`Шаг ${stepIndex + 1} из ${steps.length}`}, {`${current.floor} этаж`}</span>
             <strong>{current.title}</strong>
             <em>{current.detail}</em>
           </div>
@@ -348,7 +348,7 @@ export default function RoutePage() {
           {picked && <div className="nv-pick" role="dialog" aria-label={`${picked.name}`}>
             <div className="nv-pick-head">
               <span className="nv-pick-icon" aria-hidden="true"><MapPin size={16} /></span>
-              <span className="nv-pick-text"><strong>{roomName(picked)}</strong><small>{picked.category} · {picked.floor} этаж</small></span>
+              <span className="nv-pick-text"><strong>{roomName(picked)}</strong><small>{picked.category}, {picked.floor} этаж</small></span>
               <button type="button" className="nv-pick-close" onClick={() => setPicked(null)} aria-label="Закрыть"><X size={16} /></button>
             </div>
             <div className="nv-pick-actions">
@@ -377,9 +377,9 @@ export default function RoutePage() {
             ? <button type="button" className="nv-next" onClick={() => goToStep(stepIndex + 1)}>Дальше <ArrowRight size={17} /></button>
             : <Link className="nv-next nv-next-done" to={mapUrl}>На карте <ArrowUpRight size={16} /></Link>}
         </div>
-        <p className="nv-footnote">Маршрут — ориентир по плану: если проход закрыт, следуйте указателям в здании.<span className="nv-keys"> Стрелки ← → на клавиатуре листают шаги.</span></p>
+        <p className="nv-footnote">Маршрут построен по плану. Если проход закрыт, следуйте указателям в здании.<span className="nv-keys"> Стрелки ← → на клавиатуре листают шаги.</span></p>
       </section>
     </div>
-    {sharing && <ShareRoute onClose={() => setSharing(false)} from={startId === 'manual' ? 'entrance-1' : startId} to={target.id} mode={routePreference} title={`${startLabel} → ${roomName(target)}`} meta={`${sameRoom ? 'Вы уже на месте' : `≈ ${Math.round(route.meters)} м · ${route.seconds < 60 ? 'меньше минуты' : `${minutes(route.seconds)} мин`}`}${crossFloor ? ` · ${viaLabel}` : ''}`} steps={steps} manualStart={startId === 'manual'} />}
+    {sharing && <ShareRoute onClose={() => setSharing(false)} from={startId === 'manual' ? 'entrance-1' : startId} to={target.id} mode={routePreference} title={`${startLabel} → ${roomName(target)}`} meta={`${sameRoom ? 'Вы уже на месте' : `≈ ${Math.round(route.meters)} м, ${route.seconds < 60 ? 'меньше минуты' : `${minutes(route.seconds)} мин`}`}${crossFloor ? `, ${viaLabel}` : ''}`} steps={steps} manualStart={startId === 'manual'} />}
   </div>
 }
