@@ -10,5 +10,6 @@ export const storedItems = [
   { key: 'map-manual-point, map-gps-anchors', purpose: 'Ваша метка на плане и точки привязки GPS', kind: 'Функциональные' },
   { key: 'route-voice, route-voice-preset, route-voice-name', purpose: 'Озвучка маршрута и выбранный голос', kind: 'Функциональные' },
   { key: 'game-quiz-best, game-speed-best', purpose: 'Лучшие результаты в играх', kind: 'Функциональные' },
+  { key: 'logos-ai-chats', purpose: 'Ваши чаты с ЛОГОС AI и приложенные к ним картинки', kind: 'Функциональные' },
   { key: 'logos-welcome-hidden, logos-tour-done', purpose: 'Не показывать приветствие, обучение пройдено', kind: 'Функциональные' },
 ]

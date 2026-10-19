@@ -4,6 +4,7 @@ import { ArrowDownRight, ArrowRight, ArrowUpRight, Check, MapPin, Search } from 
 import { Link, useNavigate } from 'react-router-dom'
 import { rooms, quickPlaces } from '../data.js'
 import HeroScene from '../components/HeroScene.jsx'
+import AiPromoBanner from '../components/AiPromoBanner.jsx'
 import { Reveal, SectionLabel } from '../components/Primitives.jsx'
 
 function HomeSearch() {
@@ -52,6 +53,8 @@ export default function HomePage() {
     </section>
 
     <section className="quick-places container section-pad" id="quick-places"><div className="section-top"><div><SectionLabel>Часто ищут</SectionLabel><h2>Начните <em>здесь.</em></h2></div><Link className="text-link" to="/rooms">Все помещения <span><ArrowRight size={15} /></span></Link></div><div className="quick-place-grid">{quickPlaces.map((place, index) => { const room = rooms.find((item) => item.id === place.roomId); return <Reveal key={place.roomId} delay={index * 60} variant="up"><Link className={`quick-place-card quick-place-${place.tone}`} to={`/map?floor=${room.floor}&room=${room.id}`}><span className="quick-place-num">0{index + 1} / {room.floor} этаж</span><span className="quick-place-copy"><strong>{place.label}</strong><small>{place.meta}</small></span><span className="quick-place-arrow"><ArrowUpRight size={16} /></span></Link></Reveal> })}</div></section>
+
+    <AiPromoBanner />
 
     <section className="floor-preview-band"><div className="container floor-preview-inner"><Reveal className="floor-preview-copy" variant="left"><SectionLabel>Планы этажей</SectionLabel><h2>Первый<br />или <em>второй?</em></h2><p>Переключайтесь между этажами, выбирайте помещения и находите ближайшую лестницу.</p><Link className="button button-white" to="/map">Открыть карту <ArrowRight size={15} /></Link></Reveal><Reveal className="floor-switch-cards" delay={90} variant="right">{[1, 2].map((floor) => <Link key={floor} to={`/map?floor=${floor}`} className={`floor-switch-card floor-switch-${floor}`}><span className="floor-switch-number">0{floor}</span><span className="floor-switch-copy"><small>{floor === 1 ? 'ПЕРВЫЙ ЭТАЖ' : 'ВТОРОЙ ЭТАЖ'}</small><strong>{floor === 1 ? 'Столовая, актовый зал, учебная часть' : 'Библиотека, лаборатории, кабинеты'}</strong></span><ArrowUpRight size={17} /></Link>)}</Reveal></div></section>
 

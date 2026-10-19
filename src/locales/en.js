@@ -246,18 +246,38 @@ Object.assign(english, {
 
 Object.assign(english, { 'м': 'm' })
 
-// ИИ-агент (страница /ai). Ответы модели не переводятся — см. src/components/ai-message.js.
+// ЛОГОС AI (страница /ai и баннер на главной). Реплики чата и названия
+// чатов не переводятся — см. src/components/ai-message.js.
 Object.assign(english, {
   'ИИ-Агент': 'AI agent', 'ТЕСТ': 'TEST', 'ИИ-Агент — Путеводитель колледжа': 'AI agent — Campus guide',
-  'ИИ-АГЕНТ · ТЕСТОВЫЙ РЕЖИМ': 'AI AGENT · TEST MODE', 'Спросите': 'Ask', 'путеводитель.': 'the guide.',
-  'Ассистент знает план корпуса, разделы сайта и материалы с': 'The assistant knows the floor plan, the site sections and the materials from',
-  '. Отвечает нейросеть DeepSeek — она может ошибаться, поэтому важное уточняйте в колледже.': '. Answers come from the DeepSeek model — it can be wrong, so check anything important with the college.',
-  'колледжлогос.рф': 'колледжлогос.рф', 'печатает…': 'typing…', 'на связи': 'online', 'Новый чат': 'New chat', 'Начать новый разговор': 'Start a new conversation',
-  'Сообщения': 'Messages', 'ИИ печатает': 'AI is typing', 'Примеры вопросов': 'Example questions', 'Сообщение ИИ-агенту': 'Message to the AI agent',
-  'Спросите о кабинете, сайте или колледже…': 'Ask about a room, the site or the college…', 'Остановить ответ': 'Stop the answer', 'Остановить': 'Stop', 'Отправить': 'Send', 'Отправить (Enter)': 'Send (Enter)',
+  'ЛОГОС AI': 'LOGOS AI', 'ЛОГОС AI · ТЕСТОВЫЙ РЕЖИМ': 'LOGOS AI · TEST MODE', 'Спросите': 'Ask', 'путеводитель.': 'the guide.',
+  'Знает план корпуса, разделы сайта и материалы с': 'Knows the floor plan, the site sections and the materials from',
+  '. Понимает картинки, строит маршруты и помогает с учёбой. Отвечает нейросеть DeepSeek — она может ошибаться, важное уточняйте в колледже.': '. Understands pictures, plans routes and helps with studies. Answers come from the DeepSeek model — it can be wrong, so check anything important with the college.',
+  'колледжлогос.рф': 'колледжлогос.рф', 'думает…': 'thinking…', 'на связи': 'online',
+  'Чаты': 'Chats', 'Новый чат': 'New chat', 'Скачать': 'Download', 'Скачать чат (.md)': 'Download chat (.md)', 'Начать новый разговор': 'Start a new conversation',
+  'Закрыть список чатов': 'Close chat list', 'Открыть список чатов': 'Open chat list', 'Удалить чат': 'Delete chat', 'Подтвердить удаление': 'Confirm deletion', 'Нажмите ещё раз, чтобы удалить': 'Click again to delete',
+  'вопр.': 'q.', 'Здесь появятся ваши разговоры.': 'Your conversations will appear here.',
+  'Чаты хранятся только в этом браузере.': 'Chats are stored only in this browser.', 'Чаты не сохраняются: вы отказались от функциональных cookie.': 'Chats are not saved: you declined functional cookies.',
+  'Сообщения': 'Messages', 'Закрыть': 'Close',
+  'Привет! Я ЛОГОС AI. Подскажу, где кабинет, и построю маршрут, расскажу о сайте и о колледже, разберу фото расписания или объявления, помогу с учёбой. Можно и просто поболтать.': 'Hi! I am LOGOS AI. I can find a room and plan a route, explain the site and the college, read a photo of a timetable or a notice and help with your studies — or just chat.',
+  'О колледже': 'About the college', 'Учёба и помощь': 'Study and help',
+  'Где библиотека и как до неё дойти?': 'Where is the library and how do I get there?', 'Как пройти от входа до кабинета 211?': 'How do I get from the entrance to room 211?', 'Где ближайший туалет на втором этаже?': 'Where is the nearest toilet on floor 2?',
+  'Какие специальности есть в колледже?': 'Which programmes does the college offer?', 'Что нужно для поступления?': 'What do I need to apply?', 'Расскажи о колледже «Логос»': 'Tell me about LOGOS College',
+  'Как пользоваться маршрутом на сайте?': 'How do I use the route planner?', 'Объясни простыми словами, что такое IP-адрес': 'Explain in simple words what an IP address is', 'Составь план подготовки к зачёту на неделю': 'Make a one-week study plan for a test',
+  'Читаю вопрос': 'Reading the question', 'Ищу в плане корпуса': 'Searching the floor plan', 'Сверяюсь с колледжлогос.рф': 'Checking колледжлогос.рф', 'Собираю ответ': 'Putting the answer together',
+  'Размышляю над вопросом': 'Thinking it over', 'Перебираю варианты': 'Weighing the options', 'Проверяю себя': 'Double-checking', 'Собираю подробный ответ': 'Writing a detailed answer',
+  'Рассматриваю картинку': 'Looking at the picture', 'Ищу важное на снимке': 'Finding what matters in the image', 'Связываю с планом корпуса': 'Matching it with the floor plan',
+  'Режим «Подумать глубже»': 'Deep thinking mode', 'ЛОГОС AI думает': 'LOGOS AI is thinking',
+  'Упаковываем сообщение…': 'Packing your message…', 'Отправляем куратору…': 'Sending it to your curator…', 'Куратор читает…': 'The curator is reading…', 'Доставлено куратору': 'Delivered to your curator',
+  'Шутка 🙂 Никуда ничего не ушло. Но давайте без мата — так я помогу быстрее. Переформулируйте вопрос, и продолжим.': 'Just kidding 🙂 Nothing was sent anywhere. But let’s keep it clean — I can help faster that way. Rephrase your question and we’ll carry on.',
+  'Ход мыслей': 'Reasoning', 'Скопировать ответ': 'Copy answer', 'Озвучить ответ': 'Read aloud', 'Остановить озвучку': 'Stop reading', 'Ответить заново': 'Regenerate',
+  'Приложенная картинка': 'Attached picture', 'Убрать картинку': 'Remove picture', 'Картинка': 'Picture',
+  'Отпустите, чтобы приложить картинку': 'Drop to attach the picture', 'Приложить картинку': 'Attach a picture', 'Приложить картинку (можно вставить Ctrl+V или перетащить)': 'Attach a picture (you can also paste or drag it)',
+  'Сообщение для ЛОГОС AI': 'Message to LOGOS AI', 'Говорите…': 'Speak…', 'Спросите о кабинете, сайте или колледже…': 'Ask about a room, the site or the college…',
+  'Остановить запись': 'Stop recording', 'Сказать голосом': 'Speak instead of typing', 'Остановить ответ': 'Stop the answer', 'Остановить': 'Stop', 'Отправить': 'Send', 'Отправить (Enter)': 'Send (Enter)',
+  'Подумать глубже': 'Think deeper', 'Модель рассуждает дольше, но точнее: для сложных вопросов и задач': 'The model reasons longer but more accurately: for hard questions and tasks',
   'Enter — отправить, Shift+Enter — новая строка. Не пишите личные данные: сообщения уходят в DeepSeek, подробнее — в': 'Enter sends, Shift+Enter adds a line. Do not share personal data: messages go to DeepSeek, see the',
   'политике конфиденциальности': 'privacy policy',
-  'Привет! Я ИИ-агент путеводителя. Подскажу, где кабинет и как пройти, расскажу о разделах сайта и о колледже «Логос». Можно и просто поболтать.': 'Hi! I am the guide’s AI agent. I can tell you where a room is and how to get there, explain the site and talk about LOGOS College — or just chat.',
-  'Где библиотека и как до неё дойти?': 'Where is the library and how do I get there?', 'Какие специальности есть в колледже?': 'Which programmes does the college offer?',
-  'Как пользоваться маршрутом на сайте?': 'How do I use the route planner?', 'Расскажи о колледже «Логос»': 'Tell me about LOGOS College',
+  'На сайте появился': 'Meet the new', 'ИИ-помощник': 'AI assistant', 'Задайте вопрос — и получите ответ': 'Ask a question and get an answer', 'Перейти в чат': 'Open the chat',
+  'Ваши чаты с ЛОГОС AI и приложенные к ним картинки': 'Your LOGOS AI chats and the pictures attached to them',
 })

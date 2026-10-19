@@ -29,3 +29,8 @@ export function AiMessageText({ text, plain = false }) {
     return h('p', { key }, inline(block.text, key))
   })
 }
+
+// Пользовательский текст вне сообщений (названия чатов): тоже без перевода.
+export function RawText({ text }) {
+  return text
+}
