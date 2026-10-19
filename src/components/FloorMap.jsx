@@ -16,6 +16,7 @@ function FloorRoom({ room, selected, onSelect, onFloorRequest, gameTargetId, gam
     isTarget ? 'plan-room-target' : '',
     gameFeedback === room.id ? 'plan-room-correct' : '',
     filterCategory !== 'Все места' && room.category !== filterCategory ? 'plan-room-muted' : '',
+    filterCategory !== 'Все места' && room.category === filterCategory ? 'plan-room-match' : '',
   ].filter(Boolean).join(' ')
   const stair = room.id.match(/^(stairs-(?:north|middle|west))-[12]$/)
   const touchStart = useRef(null)

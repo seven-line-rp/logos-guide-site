@@ -1,11 +1,25 @@
 import { Link } from 'react-router-dom'
-import { ArrowRight, ArrowUpRight, CalendarPlus, Compass, History, LocateFixed, Star } from 'lucide-react'
+import { ArrowRight, ArrowUpRight, BellRing, CalendarPlus, Compass, History, LocateFixed, Star } from 'lucide-react'
 import { rooms } from '../data.js'
 import { nearbyKinds, roomTitle } from '../places.js'
 import { tours } from '../tours.js'
+import { bellState, nextLesson } from '../schedule.js'
 import { useFavorites, useRecentRoutes } from './FavoriteButton.jsx'
 import { NextLessonCard, useNow, useSchedule } from '../pages/SchedulePage.jsx'
 import { RawText } from './ai-message.js'
+
+// Что сейчас по звонкам — видно и без своего расписания.
+function BellNow({ now }) {
+  const state = bellState(now)
+  if (!state) return <div className="bell-now"><BellRing size={15} /><span>Сегодня выходной</span></div>
+  const next = state.next ? `${state.next.label} в ${state.next.start}` : ''
+  const text = state.kind === 'lesson' ? `Идёт ${state.bell.label === 'РОВ' ? 'РОВ' : state.bell.label}, звонок через ${state.left} мин`
+    : state.kind === 'lunch' ? `Обед ${state.course} курса, ещё ${state.left} мин`
+    : state.kind === 'break' ? `Перемена, ${next} — через ${state.left} мин`
+    : state.kind === 'before' ? `Занятия начнутся в ${state.next.start}`
+    : 'Пары на сегодня закончились'
+  return <div className={`bell-now bell-now-${state.kind}`}><BellRing size={15} /><span>{text}</span></div>
+}
 
 // «Мой день» на главной: следующая пара с маршрутом, избранные места и
 // недавние маршруты, «где ближайший…» и экскурсии. Всё личное — из браузера.
@@ -19,10 +33,11 @@ export default function HomeDashboard() {
     <div className="section-top"><div><span className="section-label"><span className="section-label-dot" /><span>Мой день</span></span><h2 id="home-day-title">Всё под <em>рукой.</em></h2></div></div>
     <div className="home-day-grid">
       <article className="day-card day-card-lesson">
-        {lessons.length ? <NextLessonCard lessons={lessons} now={now} compact /> : <div className="day-empty">
+        <BellNow now={now} />
+        {nextLesson(lessons, now) ? <NextLessonCard lessons={lessons} now={now} compact /> : <div className="day-empty">
           <span className="day-icon"><CalendarPlus size={20} /></span>
-          <strong>Добавьте своё расписание</strong>
-          <p>Покажем следующую пару, сколько до неё осталось и как дойти.</p>
+          <strong>{lessons.length ? 'Новых пар пока нет' : 'Добавьте своё расписание'}</strong>
+          <p>{lessons.length ? 'Расписание каждый день новое — добавьте пары на завтра.' : 'Покажем следующую пару, сколько до неё осталось и как дойти.'}</p>
         </div>}
         <Link className="day-link" to="/schedule">{lessons.length ? 'Всё расписание' : 'Заполнить расписание'} <ArrowRight size={15} /></Link>
       </article>

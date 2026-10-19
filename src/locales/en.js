@@ -310,3 +310,11 @@ Object.assign(english, {
   'Экскурсия': 'Tour', 'Остановки': 'Stops', 'Остановка': 'Stop', 'Дальше': 'Next', 'Маршрут сюда': 'Route here',
   'Первый день': 'First day', 'День открытых дверей': 'Open day', 'Открыть маршрут': 'Open route',
 })
+
+Object.assign(english, {
+  'Приложение для Android': 'Android app', 'Сейчас на техническом обслуживании и пока не поддерживается. Пользуйтесь сайтом — он удобно работает и на телефоне.': 'Currently under maintenance and not supported yet. Please use the website — it works well on phones too.',
+  'Сбросить фильтр': 'Clear filter', 'Звонки ·': 'Bells ·', 'Сегодня': 'Today', 'Завтра': 'Tomorrow', 'Послезавтра': 'Day after tomorrow',
+  'Очистить день': 'Clear day', 'Воскресенье — выходной.': 'Sunday is a day off.', 'Сегодня выходной': 'Day off today',
+  'Новых пар пока нет': 'No upcoming classes', 'Расписание каждый день новое — добавьте пары на завтра.': 'The timetable changes daily — add tomorrow’s classes.',
+  'Пары на сегодня закончились': 'Classes are over for today',
+})

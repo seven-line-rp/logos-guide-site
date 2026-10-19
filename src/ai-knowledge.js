@@ -1,4 +1,5 @@
 import { floors, games, navigation, rooms } from './data.js'
+import { BELLS, LUNCH } from './schedule.js'
 
 // База знаний ИИ-агента. Vite при сборке кладёт её в dist/api/ai-knowledge.txt,
 // а public/api/ai-chat.php добавляет в системную подсказку вместе с текстом
@@ -54,6 +55,12 @@ export function buildKnowledge() {
     `## Помещения на карте (${rooms.length})`,
     'Ссылка на помещение: /map?floor=<этаж>&room=<id>; маршрут: /route?from=entrance-1&to=<id>.',
     ...rooms.map(roomLine),
+    '',
+    '## Расписание звонков (2026–2027, начало занятий в 9:00)',
+    'Расписание пар каждый день новое — его выкладывает колледж; на сайте студент может вести своё в «Моём расписании» (/schedule).',
+    `- Понедельник: ${BELLS.monday.map((bell) => `${bell.label} ${bell.start}–${bell.end}`).join('; ')}. Обед: ${LUNCH.monday.map((item) => `${item.course} курс ${item.start}–${item.end}`).join(', ')}.`,
+    `- Вторник–пятница: ${BELLS.weekday.map((bell) => `${bell.label} ${bell.start}–${bell.end}`).join('; ')}. Обед: ${LUNCH.weekday.map((item) => `${item.course} курс ${item.start}–${item.end}`).join(', ')}.`,
+    '- РОВ — «Разговоры о важном», только в понедельник перед первой парой.',
     '',
     '## Игры',
     ...games.map((game) => `- «${game.title}» — ${game.description}`),

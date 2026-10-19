@@ -96,7 +96,7 @@ export default function AboutPage() {
         <div className="ab-part ab-part-app">
           <span className="ab-part-icon" aria-hidden="true"><Smartphone size={18} /></span>
           <strong>Приложение для Android</strong>
-          <span className="ab-part-text">Тот же путеводитель в телефоне. QR-код для установки — в приветственном окне сайта.</span>
+          <span className="ab-part-text">Сейчас на техническом обслуживании и пока не поддерживается — пользуйтесь сайтом, он работает на телефоне.</span>
         </div>
       </div>
     </section>

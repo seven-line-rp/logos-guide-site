@@ -287,3 +287,35 @@
 .ai-route-go { padding: 11px 14px; display: flex; align-items: center; justify-content: center; gap: 8px; border-top: 1px solid var(--line); color: var(--blue); font-size: 14px; font-weight: 700; transition: background .2s; }
 .ai-route-go:hover { background: var(--surface-soft); }
 .nv-panel > .nv-card.nv-notices { order: 1; }
+
+/* Звонки: что идёт сейчас и таблица дня */
+.bell-now { align-self: stretch; padding: 8px 12px; display: flex; align-items: center; gap: 8px; border-radius: 12px; color: var(--muted); background: var(--surface-soft); font-size: 13px; font-weight: 600; }
+.bell-now svg { flex: 0 0 auto; color: var(--blue); }
+.bell-now-lesson { color: #1e3a8a; background: #dbeafe; }
+.bell-now-lunch { color: #92400e; background: #fef3c7; }
+.bell-now-break { color: #166534; background: #dcfce7; }
+:root[data-theme='dark'] .bell-now-lesson { color: #93c5fd; background: rgba(59, 130, 246, .14); }
+:root[data-theme='dark'] .bell-now-lunch { color: #fcd34d; background: rgba(217, 119, 6, .14); }
+:root[data-theme='dark'] .bell-now-break { color: #86efac; background: rgba(22, 163, 74, .14); }
+.bells-card { padding: 18px; border: 1px solid var(--line); border-radius: 20px; background: var(--surface); }
+.bells-card h2 { margin: 0 0 10px; display: flex; align-items: center; gap: 8px; font-size: 15px; }
+.bells-card h2 svg { color: var(--blue); }
+.bells-card ol { margin: 0; padding: 0; display: grid; gap: 2px; list-style: none; }
+.bells-card li { padding: 7px 10px; display: flex; justify-content: space-between; border-radius: 10px; font-size: 13.5px; }
+.bells-card li:nth-child(odd) { background: var(--surface-soft); }
+.bells-card li span { color: var(--muted); }
+.bells-card li strong { font-variant-numeric: tabular-nums; }
+.bells-lunch { margin-top: 10px; display: grid; gap: 4px; }
+.bells-lunch span { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12.5px; }
+.schedule-days { grid-template-columns: repeat(7, 1fr) !important; }
+.schedule-days button { min-height: 50px !important; display: grid; align-content: center; gap: 1px; padding: 4px 2px !important; }
+.schedule-days button span { font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.schedule-days button small { color: var(--muted); font-size: 10.5px; font-weight: 600; }
+.schedule-days button.is-off { opacity: .5; }
+.schedule-day-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.schedule-day-actions { display: flex; gap: 6px; }
+.schedule-day-actions button { min-height: 32px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: 999px; color: var(--ink); background: var(--surface); font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; transition: all .2s var(--ease); }
+.schedule-day-actions button:hover { border-color: var(--blue); color: var(--blue); }
+@media (max-width: 620px) {
+  .schedule-days { grid-template-columns: repeat(4, 1fr) !important; }
+}

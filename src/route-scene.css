@@ -62,7 +62,6 @@
   transform-style: preserve-3d;
   will-change: transform;
 }
-.rs-animated .rs-camera { transition: transform .9s cubic-bezier(.22, 1, .36, 1); }
 
 /* Пол и тень под зданием */
 .rs-ground { position: absolute; inset: -6px; border-radius: 14px; background: var(--rs-floor); box-shadow: 0 30px 80px rgba(30, 50, 100, .18), 0 0 0 1px var(--rs-line); transform: translateZ(-1px); }
@@ -134,7 +133,6 @@
 /* Подписи: плоский слой поверх 3D, точку на экране считает projectPoint */
 .rs-marks { position: absolute; z-index: 4; inset: 0; overflow: hidden; pointer-events: none; }
 .rs-mark { position: absolute; top: 0; left: 0; will-change: transform; }
-.rs-animated .rs-mark { transition: transform .9s cubic-bezier(.22, 1, .36, 1); }
 .rs-mark > * { animation: rs-drop .5s cubic-bezier(.3, 1.4, .5, 1) 1.15s both; }
 .rs-mark-head { position: absolute; bottom: 30px; left: 0; padding: 6px 11px; border-radius: 999px; color: #fff; background: #f59e0b; box-shadow: 0 8px 22px rgba(0, 0, 0, .18); font-size: 13.5px; font-weight: 800; line-height: 1; white-space: nowrap; transform: translateX(-50%); }
 .rs-mark-stem { position: absolute; bottom: 0; left: -1px; width: 2px; height: 30px; border-radius: 2px; background: linear-gradient(#f59e0b, transparent); }
@@ -149,12 +147,12 @@
 .rs-controls button:hover { color: var(--blue); border-color: var(--blue); }
 .rs-controls button:active { transform: scale(.94); }
 .rs-controls button.is-on { color: #fff; border-color: transparent; background: var(--action-bg, var(--blue)); }
-.rs-controls svg { transition: transform .9s cubic-bezier(.22, 1, .36, 1); }
+.rs-compass { display: grid; place-items: center; }
 .rs-hint { position: absolute; z-index: 5; left: 14px; bottom: 12px; padding: 5px 10px; border-radius: 999px; color: var(--muted); background: color-mix(in srgb, var(--surface) 80%, transparent); font-size: 11.5px; pointer-events: none; }
 @media (max-width: 680px), (pointer: coarse) { .rs-hint { display: none; } }
 
 @media (prefers-reduced-motion: reduce) {
-  .rs-animated .rs-camera, .rs-walker, .rs-walker-dot { transition: none; }
+  .rs-walker, .rs-walker-dot { transition: none; }
   .rs-wall, .rs-route-line, .rs-route-end, .rs-mark > *, .rs-route-flow, .rs-walker-ring { animation-duration: .01s; animation-delay: 0s; }
 }
 

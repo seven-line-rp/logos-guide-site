@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Bug, Construction, Smartphone, Sparkles, X } from 'lucide-react'
+import { Construction, Smartphone, Sparkles, Wrench, X } from 'lucide-react'
 import { lockBodyScroll, storageGet, storageSet } from '../storage.js'
 import { startTour } from '../tour-bus.js'
 import { readTutorialDone } from '../tutorial.js'
@@ -51,12 +51,11 @@ export default function WelcomeDialog() {
           <Link to="/about" onClick={close}>команде проекта</Link>: так мы быстрее всё исправим.
         </p>
 
-        <div className="welcome-app">
-          <img className="welcome-qr" src="/android-app-qr.png" alt="QR-код для скачивания Android-приложения «ЛОГОС»" width="148" height="148" />
+        <div className="welcome-app welcome-app-paused" role="note">
+          <span className="welcome-app-icon" aria-hidden="true"><Wrench size={20} /></span>
           <div className="welcome-app-copy">
             <span className="welcome-app-title"><Smartphone size={17} /> Приложение для Android</span>
-            <p>Наведите камеру телефона на QR-код, чтобы скачать приложение.</p>
-            <span className="welcome-app-hint"><Bug size={14} /> О багах в приложении тоже сообщайте команде.</span>
+            <p>Сейчас на техническом обслуживании и пока не поддерживается. Пользуйтесь сайтом — он удобно работает и на телефоне.</p>
           </div>
         </div>
 

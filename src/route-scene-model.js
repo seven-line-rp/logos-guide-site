@@ -114,3 +114,32 @@ export function projectPoint(camera, center, [x, y, z = 0], { perspective = 1500
   const k = perspective / Math.max(1, perspective - pz)
   return [origin[0] + (sx - origin[0]) * k, origin[1] + (sy - origin[1]) * k]
 }
+
+// ---------- Плавный полёт камеры ----------
+// Камера не «телепортируется» CSS-переходом между двумя матрицами, а летит
+// покадрово: координаты, поворот и наклон меняются с мягким разгоном и
+// торможением, а на длинных перелётах камера чуть отдаляется в середине пути,
+// как в картах, — так видно, откуда и куда она летит.
+const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2)
+
+export function flyDuration(from, to) {
+  const distance = Math.hypot(to.x - from.x, to.y - from.y) * Math.max(from.zoom, to.zoom)
+  const turn = Math.abs(nearestAngle(to.yaw, from.yaw) - from.yaw)
+  const zoom = Math.abs(Math.log(to.zoom / from.zoom))
+  return clamp(650 + distance * 0.9 + turn * 3 + zoom * 380, 650, 1700)
+}
+
+export function flyFrame(from, to, t) {
+  const k = clamp(t, 0, 1)
+  const e = easeInOut(k)
+  const mix = (a, b) => a + (b - a) * e
+  const distance = Math.hypot(to.x - from.x, to.y - from.y)
+  const lift = Math.min(0.3, distance / 900) * Math.sin(Math.PI * k)
+  return {
+    x: mix(from.x, to.x),
+    y: mix(from.y, to.y),
+    zoom: mix(from.zoom, to.zoom) * (1 - lift),
+    tilt: mix(from.tilt, to.tilt),
+    yaw: mix(from.yaw, nearestAngle(to.yaw, from.yaw)),
+  }
+}
