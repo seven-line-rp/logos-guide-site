@@ -34,7 +34,7 @@ function floorScene(floor) {
 const PERSPECTIVE = 1500
 const ORIGIN_Y = 0.4 // perspective-origin в route-scene.css
 
-export default function RouteScene({ floor, points = [], progress = null, following = false, mode = '3d', selectedId = '', targetId = '', transfer = null, onRoomClick, onFollowChange }) {
+export default function RouteScene({ floor, points = [], progress = null, following = false, mode = '3d', selectedId = '', targetId = '', transfer = null, notices = [], onRoomClick, onFollowChange }) {
   const language = useLanguage()
   const size = planSizes[floor]
   const scene = floorScene(floor)
@@ -186,6 +186,14 @@ export default function RouteScene({ floor, points = [], progress = null, follow
   if (end && transferHere) marks.push({ key: `t-${routeKey}`, point: end, label: transfer.label, kind: 'transfer' })
   else if (end && target) marks.push({ key: `e-${routeKey}`, point: end, label: target.number || '★', kind: 'target' })
   if (start && points.length > 1 && transfer?.arrival === floor) marks.push({ key: `a-${routeKey}`, point: start, label: transfer.arrivalLabel, kind: 'arrival' })
+  // Объявления (public/notices.json): значок над помещением.
+  for (const notice of notices) {
+    const room = scene.rooms.find((item) => item.room.id === notice.roomId)
+    if (!room) continue
+    const outline = roomOutline(notice.roomId)
+    const point = [outline.reduce((sum, p) => sum + p[0], 0) / outline.length, outline.reduce((sum, p) => sum + p[1], 0) / outline.length]
+    marks.push({ key: `n-${notice.roomId}-${notice.title}`, point, label: `${notice.type === 'closed' ? '⛔' : notice.type === 'event' ? '★' : 'ℹ'} ${notice.title}`, kind: `notice rs-mark-notice-${notice.type}` })
+  }
 
   return <div ref={rootRef} className={`rs rs-${mode} ${animated ? 'rs-animated' : ''}`} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp} onContextMenu={(event) => event.preventDefault()}
     style={{ '--wall-h': `${WALL_HEIGHT}px` }}>

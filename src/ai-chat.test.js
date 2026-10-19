@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
-import { answerActions, askAgent, chatTitle, CHATS_KEY, containsProfanity, historyForRequest, loadChats, maskProfanity, MAX_HISTORY, parseBlocks, parseChats, parseInline, plainText, safeHref, saveChats } from './ai-chat.js'
+import { routeFromLink, answerActions, askAgent, chatTitle, CHATS_KEY, containsProfanity, historyForRequest, loadChats, maskProfanity, MAX_HISTORY, parseBlocks, parseChats, parseInline, plainText, safeHref, saveChats } from './ai-chat.js'
 import { buildKnowledge } from './ai-knowledge.js'
 import { rooms } from './data.js'
 
@@ -118,4 +118,11 @@ test('answers become route and map buttons and plain text', () => {
   const text = 'Библиотека — **214**.\n- [Маршрут](/route?from=entrance-1&to=library-214)\n- [На карте](/map?floor=2&room=library-214)\n[Сайт](https://колледжлогос.рф)'
   assert.deepEqual(answerActions(text).map((a) => a.kind), ['route', 'map'])
   assert.equal(plainText(text), 'Библиотека — 214.\n— Маршрут\n— На карте\nСайт')
+})
+
+test('route links from answers are parsed for the inline route card', () => {
+  assert.deepEqual(routeFromLink('/route?from=entrance-1&to=physics-211&mode=lift'), { from: 'entrance-1', to: 'physics-211', mode: 'lift' })
+  assert.deepEqual(routeFromLink('/route?to=library-214'), { from: 'entrance-1', to: 'library-214', mode: 'auto' })
+  assert.equal(routeFromLink('/map?floor=2'), null)
+  assert.equal(routeFromLink('/route?from=x'), null)
 })

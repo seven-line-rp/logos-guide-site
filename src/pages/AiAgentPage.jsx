@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { ArrowUp, Brain, Check, ChevronDown, Copy, Download, GraduationCap, ImagePlus, Lightbulb, MapPin, Mic, MicOff, PanelLeft, RefreshCw, Route, Sparkles, SquarePen, Square, Trash2, TriangleAlert, UserRound, Volume2, VolumeX, X } from 'lucide-react'
-import { answerActions, askAgent, chatTitle, chatToMarkdown, compressImage, containsProfanity, createChat, loadChats, maskProfanity, MAX_IMAGES, MAX_INPUT, plainText, saveChats } from '../ai-chat.js'
+import { answerActions, askAgent, routeFromLink, chatTitle, chatToMarkdown, compressImage, containsProfanity, createChat, loadChats, maskProfanity, MAX_IMAGES, MAX_INPUT, plainText, saveChats } from '../ai-chat.js'
 import { functionalStorageAllowed, onConsentChange } from '../consent.js'
 import { speakText, stopSpeech } from '../speech.js'
 import { AiMessageText, RawText } from '../components/ai-message.js'
+import RoutePreview from '../components/RoutePreview.jsx'
+import { rooms } from '../data.js'
 
 // ЛОГОС AI: чат с DeepSeek через public/api/ai-chat.php. Чаты хранятся в
 // localStorage (ключ logos-ai-chats, если человек не отказался от
@@ -194,6 +196,24 @@ export default function AiAgentPage() {
     if (!rude) await run(chatId, next, deep)
   }
 
+  // «Спросить про это место» с карты и маршрута: /ai?about=<id> сразу задаёт
+  // вопрос в новом чате; /ai?q=<текст> — любой вопрос.
+  const [params, setParams] = useSearchParams()
+  const asked = useRef(false)
+  useEffect(() => {
+    if (asked.current) return
+    const room = rooms.find((item) => item.id === params.get('about'))
+    const question = room
+      ? `Расскажи про «${room.name}${room.number ? ` №${room.number}` : ''}» (${room.floor} этаж): что это за место, что там бывает и как туда пройти от главного входа.`
+      : (params.get('q') || '').slice(0, MAX_INPUT)
+    if (!question) return
+    asked.current = true
+    setParams({}, { replace: true })
+    send(question)
+    // Вопрос задаётся один раз при открытии страницы.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const regenerate = () => {
     const lastUser = messages.findLastIndex((message) => message.role === 'user')
     if (lastUser < 0 || pending) return
@@ -334,10 +354,13 @@ export default function AiAgentPage() {
             if (message.role === 'curator') return <div key={index} className="ai-message ai-message-assistant"><CuratorCard animate={message.at > mountedAt.current} /></div>
             if (message.role === 'user') return <div key={index} className="ai-message ai-message-user">{message.images?.length > 0 && <div className="ai-user-images">{message.images.map((src, i) => <img key={i} src={src} alt="Приложенная картинка" />)}</div>}{message.content && <div className="ai-bubble"><AiMessageText text={message.content} plain /></div>}</div>
             const actions = message.error ? [] : answerActions(message.content)
+            const routeLink = actions.find((action) => action.kind === 'route')
+            const preview = routeLink ? routeFromLink(routeLink.href) : null
             return <div key={index} className={`ai-message ai-message-assistant ${message.error ? 'ai-message-error' : ''}`}>
               {message.reasoning && <Reasoning text={message.reasoning} />}
               <div className="ai-text">{message.error && <TriangleAlert size={16} className="ai-error-icon" />}<AiMessageText text={message.content} /></div>
               {message.error && index === messages.length - 1 && <button type="button" className="ai-chip" onClick={regenerate}>Повторить</button>}
+              {preview && <RoutePreview {...preview} live={index === lastAssistant} />}
               {actions.length > 0 && <div className="ai-actions">{actions.map((action) => <Link key={action.href} to={action.href} className="ai-chip">{action.kind === 'route' ? <Route size={14} /> : <MapPin size={14} />}<RawText text={action.label} /></Link>)}</div>}
               {!message.error && <MessageTools message={message} onRegenerate={index === lastAssistant && !pending ? regenerate : null} />}
             </div>

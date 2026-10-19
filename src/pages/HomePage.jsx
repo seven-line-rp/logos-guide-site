@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { rooms, quickPlaces } from '../data.js'
 import HeroScene from '../components/HeroScene.jsx'
 import AiPromoBanner from '../components/AiPromoBanner.jsx'
+import HomeDashboard from '../components/HomeDashboard.jsx'
 import { Reveal, SectionLabel } from '../components/Primitives.jsx'
 
 function HomeSearch() {
@@ -51,6 +52,8 @@ export default function HomePage() {
       </div>
       <div className="home-hero-edge container"><span>План корпуса · 1 и 2 этажи</span><a href="#quick-places" onClick={(event) => { event.preventDefault(); document.getElementById('quick-places')?.scrollIntoView({ behavior: 'smooth' }) }}>Часто ищут <ArrowDownRight size={14} /></a></div>
     </section>
+
+    <HomeDashboard />
 
     <section className="quick-places container section-pad" id="quick-places"><div className="section-top"><div><SectionLabel>Часто ищут</SectionLabel><h2>Начните <em>здесь.</em></h2></div><Link className="text-link" to="/rooms">Все помещения <span><ArrowRight size={15} /></span></Link></div><div className="quick-place-grid">{quickPlaces.map((place, index) => { const room = rooms.find((item) => item.id === place.roomId); return <Reveal key={place.roomId} delay={index * 60} variant="up"><Link className={`quick-place-card quick-place-${place.tone}`} to={`/map?floor=${room.floor}&room=${room.id}`}><span className="quick-place-num">0{index + 1} / {room.floor} этаж</span><span className="quick-place-copy"><strong>{place.label}</strong><small>{place.meta}</small></span><span className="quick-place-arrow"><ArrowUpRight size={16} /></span></Link></Reveal> })}</div></section>
 

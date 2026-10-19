@@ -243,7 +243,17 @@ export function answerActions(text) {
     seen.add(part.href)
     actions.push({ kind, href: part.href, label: part.text })
   }
-  return actions.slice(0, 3)
+  return actions.slice(0, 6)
+}
+
+// Ссылка маршрута из ответа ИИ → откуда, куда и вариант перехода.
+export function routeFromLink(href) {
+  const match = String(href || '').match(/^\/route\?(.*)$/)
+  if (!match) return null
+  const params = new URLSearchParams(match[1])
+  const to = params.get('to')
+  if (!to) return null
+  return { from: params.get('from') || 'entrance-1', to, mode: params.get('mode') || 'auto' }
 }
 
 // Текст без Markdown: для копирования и озвучки.

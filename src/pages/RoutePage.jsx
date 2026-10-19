@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, ArrowUpDown, ArrowUpRight, Check, ChevronDown, Flag, Footprints, Info, Map as MapIcon, MapPin, MoveDown, MoveUp, Navigation, Play, RotateCcw, Volume2, VolumeX, X } from 'lucide-react'
+import { AlarmClock, ArrowLeft, ArrowRight, ArrowUpDown, ArrowUpRight, Check, ChevronDown, Flag, Footprints, Info, Map as MapIcon, MapPin, MoveDown, MoveUp, Navigation, Play, RotateCcw, Share2, Sparkles, Star, TriangleAlert, Volume2, VolumeX, X } from 'lucide-react'
 import { rooms } from '../data.js'
 import RouteScene from '../components/RouteScene.jsx'
 import RoomSearchSelect from '../components/RoomSearchSelect.jsx'
@@ -10,6 +10,11 @@ import { readManualLocation } from '../map-location.js'
 import { VOICE_PRESETS, getStoredPreset, setVoicePreset, speakText, stopSpeech } from '../speech.js'
 import { VOICE_PACK_MALE_ID, playVoicePack, stopVoicePack, voicePackForPreset } from '../voice-pack.js'
 import { storageGet, storageSet } from '../storage.js'
+import { NOTICE_TYPES, avoidClosed, closedRoomIds, useNotices } from '../notices.js'
+import { findNearest, nearbyKinds, rememberRoute } from '../places.js'
+import { arrivalStatus, formatCountdown, nextLesson, readSchedule } from '../schedule.js'
+import { useFavorite } from '../components/FavoriteButton.jsx'
+import ShareRoute from '../components/ShareRoute.jsx'
 
 // Страница маршрута устроена как навигатор: слева панель (откуда/куда,
 // сводка, варианты, шаги, озвучка), справа большая карта с текущей
@@ -34,7 +39,12 @@ export default function RoutePage() {
   const [params] = useSearchParams()
   const manualPoint = readManualLocation(storageGet('map-manual-point'))
   const [startId, setStartId] = useState(() => params.get('from') === 'manual' && manualPoint ? 'manual' : rooms.some((room) => room.id === params.get('from')) ? params.get('from') : 'entrance-1')
-  const [targetId, setTargetId] = useState(() => rooms.some((room) => room.id === params.get('to')) ? params.get('to') : 'auditorium-104')
+  // ?nearest=toilet — цель выбирается сама: ближайшее место нужного вида.
+  const [targetId, setTargetId] = useState(() => {
+    if (rooms.some((room) => room.id === params.get('to'))) return params.get('to')
+    const from = params.get('from') === 'manual' && manualPoint ? manualPoint : rooms.some((room) => room.id === params.get('from')) ? params.get('from') : 'entrance-1'
+    return findNearest(from, params.get('nearest'), typeof from === 'string' ? from : '')?.room.id || 'auditorium-104'
+  })
   // Вариант маршрута: 'auto' — самый быстрый, 'stairs' — ближайшая лестница,
   // либо точный вид ('lift', 'stairs-west', 'stairs-middle', 'stairs-north').
   const [routePreference, setRoutePreference] = useState(() => {
@@ -45,7 +55,10 @@ export default function RoutePage() {
   const target = rooms.find((room) => room.id === targetId) || rooms[0]
   const startLabel = startId === 'manual' ? 'Ваша отметка' : roomName(start)
   const crossFloor = start.floor !== target.floor
-  const routeOptions = useMemo(() => buildRouteOptions(startId === 'manual' && manualPoint ? manualPoint : start.id, target.id), [startId, start.id, target.id, manualPoint])
+  // Закрытые по объявлениям лестницы и лифт маршрут обходит (public/notices.json).
+  const notices = useNotices()
+  const closed = useMemo(() => closedRoomIds(notices), [notices])
+  const routeOptions = useMemo(() => avoidClosed(buildRouteOptions(startId === 'manual' && manualPoint ? manualPoint : start.id, target.id), closed), [startId, start.id, target.id, manualPoint, closed])
   const route = useMemo(() => pickRoute(routeOptions, routePreference), [routeOptions, routePreference])
   const transition = route.transfer?.kind === 'lift' || !route.transfer ? 'lift' : route.transfer.kind
   const sameRoom = !crossFloor && route.length === 0
@@ -140,6 +153,26 @@ export default function RoutePage() {
     if (prefersFlatMap()) stageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     if (voiceOn) void playPrompt([...new Set(['route-built', ...(steps[0].voiceCue || [])])], `Маршрут построен. ${steps[0].say}`)
   }
+  // Недавние маршруты: запоминаем, если человек задержался на маршруте.
+  useEffect(() => {
+    const timer = window.setTimeout(() => rememberRoute(startId, target.id), 2500)
+    return () => window.clearTimeout(timer)
+  }, [startId, target.id])
+  const [favorite, toggleFavorite] = useFavorite(target.id)
+  const [sharing, setSharing] = useState(false)
+  // «Успеть на пару»: время до начала берём из своего расписания, если
+  // следующая пара — в этом кабинете, иначе человек выбирает его сам.
+  const lessonAhead = useMemo(() => { const next = nextLesson(readSchedule()); return next && next.lesson.roomId === target.id && next.minutes < 180 ? next : null }, [target.id])
+  const [deadline, setDeadline] = useState(null)
+  const minutesLeft = deadline ?? (lessonAhead ? lessonAhead.minutes : null)
+  const arrival = minutesLeft === null || sameRoom ? null : arrivalStatus(route.seconds, minutesLeft)
+  const fastest = routeOptions[0]
+  const nearestFrom = startId === 'manual' && manualPoint ? manualPoint : start.id
+  const goNearest = (kind) => {
+    const found = findNearest(nearestFrom, kind, startId)
+    if (found) { setTargetId(found.room.id); setPicked(null) }
+  }
+  const targetNotices = notices.filter((notice) => notice.roomId === target.id || (route.transfer && (notice.roomId === route.transfer.startId || notice.roomId === route.transfer.endId)))
   const canSwap = startId !== 'manual'
   const swapPoints = () => {
     if (!canSwap) return
@@ -199,7 +232,18 @@ export default function RoutePage() {
           </div>
           <button type="button" className="nv-swap" onClick={swapPoints} disabled={!canSwap} aria-label="Поменять старт и цель местами" title="Поменять местами"><ArrowUpDown size={16} /></button>
           <Link className="nv-manual" to={`/map?floor=${start.floor}&manual=1`}><MapPin size={14} /> {manualPoint ? 'Изменить свою отметку на плане' : 'Начать от своей точки на плане'}</Link>
+          <div className="nv-nearby" role="group" aria-label="Ближайшее место">
+            <span>Ближайший:</span>
+            {nearbyKinds.map((kind) => <button type="button" key={kind.id} onClick={() => goNearest(kind.id)}>{kind.label}</button>)}
+          </div>
         </section>
+
+        {targetNotices.length > 0 && <section className="nv-card nv-notices" aria-live="polite">
+          {targetNotices.map((notice, index) => <div key={index} className={`nv-notice-item nv-notice-${NOTICE_TYPES[notice.type].tone}`}>
+            <TriangleAlert size={16} aria-hidden="true" />
+            <span><strong>{notice.title}</strong>{notice.text && <small>{notice.text}</small>}</span>
+          </div>)}
+        </section>}
 
         <section className="nv-card nv-summary" aria-live="polite">
           {sameRoom ? <div className="nv-same"><Check size={20} /> Вы уже на месте</div> : <>
@@ -213,9 +257,22 @@ export default function RoutePage() {
               <div><dt>Путь</dt><dd>{viaLabel}</dd></div>
             </dl>
           </>}
+          {!sameRoom && <div className="nv-arrive">
+            <span className="nv-arrive-label"><AlarmClock size={15} /> {lessonAhead && deadline === null ? `${lessonAhead.lesson.subject} ${formatCountdown(lessonAhead.minutes)}` : 'Пара через'}</span>
+            <div className="nv-arrive-chips" role="group" aria-label="Сколько минут до пары">
+              {[5, 10, 15, 20].map((value) => <button type="button" key={value} aria-pressed={deadline === value} onClick={() => setDeadline(deadline === value ? null : value)}>{value} мин</button>)}
+            </div>
+            {arrival && <div className={`nv-arrive-status nv-arrive-${arrival.kind}`} role="status">
+              <strong>{arrival.text}</strong>
+              <small>Путь ≈ {arrival.walk} мин{arrival.kind === 'late' && fastest && fastest !== route ? ` · быстрее: ${fastest.label.toLowerCase()}` : ''}</small>
+              {arrival.kind === 'late' && fastest && fastest !== route && <button type="button" onClick={() => setRoutePreference(fastest.kind)}>Выбрать</button>}
+            </div>}
+          </div>}
           <div className="nv-actions">
             <button type="button" className="nv-go" onClick={startNavigation}><Navigation size={16} /> Начать</button>
-            <button type="button" className="nv-ghost" onClick={resetRoute} title="Вернуть маршрут по умолчанию"><RotateCcw size={15} /> Сбросить</button>
+            <button type="button" className={`nv-ghost nv-icon-btn ${favorite ? 'is-on' : ''}`} onClick={toggleFavorite} aria-pressed={favorite} title={favorite ? 'Убрать из избранного' : 'В избранное'} aria-label={favorite ? 'Убрать из избранного' : 'Добавить в избранное'}><Star size={16} fill={favorite ? 'currentColor' : 'none'} /></button>
+            <button type="button" className="nv-ghost nv-icon-btn" onClick={() => setSharing(true)} title="Поделиться маршрутом" aria-label="Поделиться маршрутом"><Share2 size={16} /></button>
+            <button type="button" className="nv-ghost nv-icon-btn" onClick={resetRoute} title="Вернуть маршрут по умолчанию" aria-label="Сбросить маршрут"><RotateCcw size={15} /></button>
           </div>
         </section>
 
@@ -286,6 +343,7 @@ export default function RoutePage() {
             transfer={transferMarks}
             onRoomClick={pickRoom}
             onFollowChange={setFollowing}
+            notices={notices}
           />
           {picked && <div className="nv-pick" role="dialog" aria-label={`${picked.name}`}>
             <div className="nv-pick-head">
@@ -296,7 +354,7 @@ export default function RoutePage() {
             <div className="nv-pick-actions">
               <button type="button" className="nv-pick-go" onClick={() => pickAs('to')} disabled={picked.id === target.id}><Flag size={14} /> Сюда</button>
               <button type="button" onClick={() => pickAs('from')} disabled={picked.id === startId}><Navigation size={14} /> Отсюда</button>
-              <Link to={`/map?floor=${picked.floor}&room=${encodeURIComponent(picked.id)}`}><MapIcon size={14} /> На карте</Link>
+              <Link to={`/ai?about=${encodeURIComponent(picked.id)}`} title="Спросить ЛОГОС AI про это место"><Sparkles size={14} /> Спросить</Link>
             </div>
           </div>}
           <div className="nv-map-tools">
@@ -322,5 +380,6 @@ export default function RoutePage() {
         <p className="nv-footnote">Маршрут — ориентир по плану: если проход закрыт, следуйте указателям в здании.<span className="nv-keys"> Стрелки ← → на клавиатуре листают шаги.</span></p>
       </section>
     </div>
+    {sharing && <ShareRoute onClose={() => setSharing(false)} from={startId === 'manual' ? 'entrance-1' : startId} to={target.id} mode={routePreference} title={`${startLabel} → ${roomName(target)}`} meta={`${sameRoom ? 'Вы уже на месте' : `≈ ${Math.round(route.meters)} м · ${route.seconds < 60 ? 'меньше минуты' : `${minutes(route.seconds)} мин`}`}${crossFloor ? ` · ${viaLabel}` : ''}`} steps={steps} manualStart={startId === 'manual'} />}
   </div>
 }

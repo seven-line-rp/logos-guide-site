@@ -1,0 +1,289 @@
+/* Новые возможности навигатора: «Ближайший…», «Успеть на пару»,
+   избранное, «Поделиться» (QR и печать), объявления, «Мой день» на главной,
+   расписание и экскурсии. Цвета — через переменные темы. */
+
+:root { --ok: #16a34a; --warn: #d97706; --bad: #dc2626; --ease: cubic-bezier(.22, 1, .36, 1); }
+
+/* ---------- Маршрут: ближайшее ---------- */
+.nv-nearby { grid-column: 1 / -1; margin-top: 4px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.nv-nearby > span { margin-right: 2px; color: var(--muted); font-size: 12px; font-weight: 600; }
+.nv-nearby button { min-height: 30px; padding: 0 11px; border: 1px solid var(--line); border-radius: 999px; color: var(--ink); background: var(--surface); font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; transition: border-color .2s var(--ease), color .2s, transform .2s var(--ease); }
+.nv-nearby button:hover { border-color: var(--blue); color: var(--blue); transform: translateY(-1px); }
+
+/* ---------- Маршрут: объявления ---------- */
+.nv-notices { display: grid; gap: 8px; }
+.nv-notice-item { padding: 10px 12px; display: flex; gap: 10px; border-radius: 12px; font-size: 13px; line-height: 1.4; animation: fx-rise .35s var(--ease); }
+.nv-notice-item svg { flex: 0 0 auto; margin-top: 1px; }
+.nv-notice-item span { display: grid; gap: 2px; }
+.nv-notice-item small { color: inherit; opacity: .8; }
+.nv-notice-closed { color: #991b1b; background: #fee2e2; }
+.nv-notice-event { color: #92400e; background: #fef3c7; }
+.nv-notice-info { color: #1e3a8a; background: #dbeafe; }
+:root[data-theme='dark'] .nv-notice-closed { color: #fca5a5; background: rgba(220, 38, 38, .14); }
+:root[data-theme='dark'] .nv-notice-event { color: #fcd34d; background: rgba(217, 119, 6, .14); }
+:root[data-theme='dark'] .nv-notice-info { color: #93c5fd; background: rgba(59, 130, 246, .14); }
+
+/* ---------- Маршрут: успеть на пару ---------- */
+.nv-arrive { margin-top: 12px; padding-top: 12px; display: grid; gap: 8px; border-top: 1px dashed var(--line); }
+.nv-arrive-label { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12.5px; font-weight: 650; }
+.nv-arrive-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.nv-arrive-chips button { min-height: 30px; padding: 0 11px; border: 1px solid var(--line); border-radius: 999px; color: var(--ink); background: var(--surface); font: inherit; font-size: 12.5px; font-weight: 650; cursor: pointer; transition: all .2s var(--ease); }
+.nv-arrive-chips button[aria-pressed='true'] { border-color: transparent; color: #fff; background: var(--action-bg, var(--blue)); }
+.nv-arrive-status { padding: 10px 12px; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 2px 10px; border-radius: 12px; animation: fx-rise .35s var(--ease); }
+.nv-arrive-status strong { font-size: 14px; }
+.nv-arrive-status small { grid-column: 1; color: inherit; font-size: 12px; opacity: .8; }
+.nv-arrive-status button { grid-column: 2; grid-row: 1 / 3; min-height: 32px; padding: 0 12px; border: 0; border-radius: 10px; color: #fff; background: currentColor; font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+.nv-arrive-status button { background: var(--bad); }
+.nv-arrive-ok { color: #166534; background: #dcfce7; }
+.nv-arrive-tight { color: #92400e; background: #fef3c7; }
+.nv-arrive-late { color: #991b1b; background: #fee2e2; }
+:root[data-theme='dark'] .nv-arrive-ok { color: #86efac; background: rgba(22, 163, 74, .14); }
+:root[data-theme='dark'] .nv-arrive-tight { color: #fcd34d; background: rgba(217, 119, 6, .14); }
+:root[data-theme='dark'] .nv-arrive-late { color: #fca5a5; background: rgba(220, 38, 38, .14); }
+.nv-icon-btn { width: 42px; padding: 0 !important; justify-content: center; }
+.nv-icon-btn.is-on { border-color: color-mix(in srgb, #f59e0b 50%, var(--line)); color: #f59e0b; }
+.nv-actions { flex-wrap: nowrap; }
+.nv-actions .nv-go { flex: 1; }
+
+/* Подписи объявлений на 3D-карте */
+.rs-mark-notice .rs-mark-head { background: #2563eb; font-size: 12px; }
+.rs-mark-notice-closed .rs-mark-head { background: var(--bad); }
+.rs-mark-notice-event .rs-mark-head { background: #d97706; }
+.rs-mark-notice .rs-mark-stem { background: linear-gradient(currentColor, transparent); color: var(--muted); }
+
+/* ---------- Избранное ---------- */
+.fav-button { min-height: 38px; padding: 0 14px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); background: var(--surface); font: inherit; font-size: 13px; font-weight: 650; cursor: pointer; transition: all .2s var(--ease); }
+.fav-button:hover { border-color: #f59e0b; color: #b45309; }
+.fav-button.is-on { border-color: color-mix(in srgb, #f59e0b 45%, var(--line)); color: #b45309; background: #fffbeb; }
+:root[data-theme='dark'] .fav-button.is-on { color: #fcd34d; background: rgba(245, 158, 11, .12); }
+.fav-button.is-on svg { animation: fx-pop .35s var(--ease); }
+
+/* ---------- Поделиться ---------- */
+.share-backdrop { position: fixed; z-index: 150; inset: 0; display: grid; place-items: center; padding: 18px; background: rgba(7, 20, 45, .55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); animation: fx-fade .2s ease both; }
+.share-dialog { position: relative; width: min(560px, 100%); max-height: calc(100dvh - 36px); padding: 24px; overflow-y: auto; border: 1px solid var(--line); border-radius: 24px; background: var(--surface); box-shadow: 0 30px 80px rgba(0, 0, 0, .25); animation: fx-rise .35s var(--ease); }
+.share-dialog h2 { margin: 10px 40px 4px 0; font-size: 21px; line-height: 1.25; letter-spacing: -.01em; }
+.share-meta { margin: 0 0 16px; color: var(--muted); }
+.share-close { position: absolute; top: 14px; right: 14px; width: 36px; height: 36px; display: grid; place-items: center; border: 0; border-radius: 10px; color: var(--muted); background: var(--surface-soft); cursor: pointer; }
+.share-body { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 18px; align-items: center; }
+.share-qr { width: 170px; height: 170px; padding: 8px; border: 1px solid var(--line); border-radius: 16px; background: #fff; }
+.share-qr svg { width: 100%; height: 100%; display: block; }
+.share-side { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.share-side > * { min-width: 0; }
+.share-side p { margin: 0; color: var(--muted); font-size: 13.5px !important; }
+.share-link { display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); }
+.share-link span { min-width: 0; flex: 1; overflow: hidden; color: var(--ink); font-family: var(--mono); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.share-link button { width: 32px; height: 32px; display: grid; place-items: center; border: 0; border-radius: 9px; color: var(--blue); background: var(--surface); cursor: pointer; }
+.share-actions { display: flex; gap: 8px; }
+.share-actions button { min-height: 42px; padding: 0 16px; display: inline-flex; flex: 1; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); background: var(--surface); font: inherit; font-size: 14px; font-weight: 650; cursor: pointer; }
+.share-actions .share-primary { border-color: transparent; color: #fff; background: var(--action-bg, var(--blue)); }
+.share-status { color: var(--ok); font-weight: 600; }
+.share-print-steps { display: none; }
+@media (max-width: 520px) {
+  .share-body { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+  .share-side { width: 100%; }
+}
+
+/* Печать: только листок маршрута — QR, сводка и шаги */
+@media print {
+  body:has(.share-dialog) > :not(.share-backdrop) { display: none !important; }
+  .share-backdrop { position: static; padding: 0; background: none; backdrop-filter: none; }
+  .share-dialog { width: 100%; max-height: none; border: 0; box-shadow: none; animation: none; }
+  .share-close, .share-actions, .share-link button, .share-status { display: none !important; }
+  .share-print-steps { margin: 24px 0 0; padding-left: 22px; display: block; font-size: 14px; line-height: 1.6; }
+  .share-print-steps li + li { margin-top: 6px; }
+}
+
+/* ---------- Общие анимации ---------- */
+@keyframes fx-rise { from { opacity: 0; transform: translateY(8px); } }
+@keyframes fx-fade { from { opacity: 0; } }
+@keyframes fx-pop { 50% { transform: scale(1.3) rotate(-12deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .nv-notice-item, .nv-arrive-status, .share-backdrop, .share-dialog, .fav-button.is-on svg { animation: none; }
+}
+
+/* ---------- Карта: избранное, «Спросить ИИ», объявления ---------- */
+.room-detail-extra { margin-top: 10px; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.room-ask-ai { min-height: 38px; padding: 0 14px; display: inline-flex; align-items: center; gap: 7px; border-radius: 12px; color: #fff; background: linear-gradient(135deg, #5b8cff, #1f4ff0); font-size: 13px; font-weight: 650; transition: transform .2s var(--ease), box-shadow .2s; }
+.room-ask-ai:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(31, 79, 240, .25); }
+.room-detail-panel .nv-notice-item { margin-top: 10px; text-align: left; }
+.map-notices { padding: 10px 14px 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.map-notice { padding: 7px 12px 7px 10px; display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: 12px; font: inherit; text-align: left; cursor: pointer; transition: transform .2s var(--ease); }
+.map-notice:hover { transform: translateY(-1px); }
+.map-notice span { display: grid; line-height: 1.25; }
+.map-notice strong { font-size: 13px; }
+.map-notice small { font-size: 11.5px; opacity: .8; }
+.map-notice-closed { color: #991b1b; background: #fee2e2; }
+.map-notice-event { color: #92400e; background: #fef3c7; }
+.map-notice-info { color: #1e3a8a; background: #dbeafe; }
+:root[data-theme='dark'] .map-notice-closed { color: #fca5a5; background: rgba(220, 38, 38, .14); }
+:root[data-theme='dark'] .map-notice-event { color: #fcd34d; background: rgba(217, 119, 6, .14); }
+:root[data-theme='dark'] .map-notice-info { color: #93c5fd; background: rgba(59, 130, 246, .14); }
+.plan-notice { pointer-events: none; }
+.plan-notice circle { fill: #2563eb; stroke: #fff; stroke-width: 2.5; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, .25)); }
+.plan-notice-closed circle { fill: var(--bad); }
+.plan-notice-event circle { fill: #d97706; }
+.plan-notice text { fill: #fff; font-size: 12px; font-weight: 800; text-anchor: middle; }
+.plan-notice circle { animation: fx-pulse-notice 2.2s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes fx-pulse-notice { 50% { transform: scale(1.12); } }
+
+/* ---------- Главная: «Мой день» ---------- */
+.home-day { padding-top: clamp(40px, 6vw, 72px); }
+.home-day-grid { display: grid; grid-template-columns: 1.15fr 1fr 1fr; grid-auto-rows: auto; gap: 14px; }
+.day-card { min-width: 0; padding: 18px; display: flex; flex-direction: column; gap: 12px; border: 1px solid var(--line); border-radius: 20px; background: var(--surface); box-shadow: 0 10px 30px rgba(13, 28, 59, .05); transition: transform .3s var(--ease), box-shadow .3s var(--ease); }
+.day-card:hover { transform: translateY(-2px); box-shadow: 0 16px 40px rgba(13, 28, 59, .08); }
+.day-card h3 { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 15px; }
+.day-card h3 svg { color: var(--blue); }
+.day-card-lesson { grid-row: span 2; background: linear-gradient(160deg, color-mix(in srgb, var(--blue) 7%, var(--surface)), var(--surface) 60%); }
+.day-card-tour { grid-column: span 2; }
+.day-empty { flex: 1; display: grid; align-content: center; justify-items: start; gap: 6px; }
+.day-empty strong { font-size: 18px; }
+.day-empty p, .day-hint { margin: 0; color: var(--muted); font-size: 13.5px !important; }
+.day-icon { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 14px; color: #fff; background: linear-gradient(135deg, #5b8cff, #1f4ff0); box-shadow: 0 10px 22px rgba(31, 79, 240, .25); }
+.day-link { margin-top: auto; display: inline-flex; align-items: center; gap: 6px; color: var(--blue); font-size: 13.5px; font-weight: 700; }
+.day-link svg { transition: transform .2s var(--ease); }
+.day-link:hover svg { transform: translateX(3px); }
+.day-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.day-chip { min-height: 32px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: 999px; color: var(--ink); background: var(--bg); font-size: 13px; font-weight: 600; transition: all .2s var(--ease); }
+.day-chip svg { color: #f59e0b; }
+.day-chip:hover { border-color: var(--blue); color: var(--blue); transform: translateY(-1px); }
+.day-recent { margin: 0; padding: 0; display: grid; gap: 4px; list-style: none; }
+.day-recent a { padding: 8px 10px; display: flex; align-items: center; gap: 8px; border-radius: 12px; color: var(--ink); font-size: 13px; transition: background .2s; }
+.day-recent a:hover { background: var(--surface-soft); }
+.day-recent span { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.day-recent svg { flex: 0 0 auto; color: var(--muted); }
+.day-tours { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.day-tour { position: relative; padding: 14px 40px 14px 14px; display: grid; gap: 3px; border-radius: 16px; color: var(--ink); background: var(--surface-soft); transition: transform .25s var(--ease), background .25s; overflow: hidden; }
+.day-tour::before { position: absolute; right: -30px; bottom: -40px; width: 120px; height: 120px; content: ''; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--blue) 18%, transparent), transparent 70%); }
+.day-tour strong { font-size: 15px; }
+.day-tour small { color: var(--muted); font-size: 12.5px; }
+.day-tour svg { position: absolute; top: 50%; right: 14px; color: var(--blue); transform: translateY(-50%); transition: transform .2s var(--ease); }
+.day-tour:hover { transform: translateY(-2px); }
+.day-tour:hover svg { transform: translate(3px, -50%); }
+@media (max-width: 960px) {
+  .home-day-grid { grid-template-columns: 1fr 1fr; }
+  .day-card-lesson { grid-row: auto; grid-column: span 2; }
+}
+@media (max-width: 620px) {
+  .home-day-grid { grid-template-columns: 1fr; }
+  .day-card-lesson, .day-card-tour { grid-column: auto; }
+  .day-tours { grid-template-columns: 1fr; }
+}
+
+/* Следующая пара */
+.lesson-next { display: grid; justify-items: start; gap: 6px; animation: fx-rise .4s var(--ease); }
+.lesson-next-badge { padding: 4px 10px; border-radius: 999px; color: var(--blue); background: color-mix(in srgb, var(--blue) 12%, transparent); font-size: 12px; font-weight: 700; }
+.lesson-next.is-soon .lesson-next-badge { color: #92400e; background: #fef3c7; }
+.lesson-next.is-ongoing .lesson-next-badge { color: #166534; background: #dcfce7; }
+.lesson-next-subject { margin: 4px 0 2px; font-size: clamp(22px, 2.4vw, 28px); line-height: 1.15; letter-spacing: -.02em; }
+.lesson-next-meta { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13.5px; }
+.lesson-next-go { margin-top: 8px; min-height: 40px; padding: 0 16px; display: inline-flex; align-items: center; gap: 8px; border-radius: 12px; color: #fff; background: var(--action-bg, var(--blue)); font-size: 14px; font-weight: 700; transition: transform .2s var(--ease), box-shadow .2s; }
+.lesson-next-go:hover { transform: translateY(-1px); box-shadow: 0 10px 22px rgba(31, 79, 240, .25); }
+
+/* ---------- Моё расписание ---------- */
+.schedule-page, .ex-page { padding-top: clamp(28px, 5vw, 56px); padding-bottom: clamp(40px, 6vw, 72px); }
+.schedule-head, .ex-head { margin-bottom: 22px; }
+.schedule-head h1, .ex-head h1 { margin: 14px 0 8px; font-size: clamp(32px, 4.6vw, 52px); line-height: 1.04; letter-spacing: -.035em; }
+.schedule-head h1 em { color: var(--blue); font-family: var(--serif); font-weight: 400; }
+.schedule-head p, .ex-head p { max-width: 680px; margin: 0; color: var(--muted); }
+.schedule-warn { margin-top: 10px !important; padding: 8px 12px; border-radius: 10px; color: #92400e !important; background: #fef3c7; }
+.schedule-layout { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 18px; align-items: start; }
+.schedule-main, .schedule-form, .schedule-side .lesson-next { padding: 18px; border: 1px solid var(--line); border-radius: 20px; background: var(--surface); }
+.schedule-side { display: grid; gap: 14px; position: sticky; top: 96px; }
+.schedule-days { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; padding: 4px; border-radius: 14px; background: var(--surface-soft); }
+.schedule-days button { position: relative; min-height: 40px; border: 0; border-radius: 10px; color: var(--muted); background: transparent; font: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer; transition: all .2s var(--ease); }
+.schedule-days button[aria-selected='true'] { color: var(--ink); background: var(--surface); box-shadow: 0 2px 8px rgba(13, 28, 59, .08); }
+.schedule-days i { position: absolute; top: 4px; right: 6px; min-width: 16px; height: 16px; display: grid; place-items: center; border-radius: 999px; color: #fff; background: var(--blue); font-size: 10px; font-style: normal; }
+.schedule-day-title { margin: 18px 0 10px; display: flex; align-items: center; gap: 8px; font-size: 18px; }
+.schedule-day-title svg { color: var(--blue); }
+.schedule-list { margin: 0; padding: 0; display: grid; gap: 8px; list-style: none; }
+.schedule-list li { padding: 12px; display: grid; grid-template-columns: 64px minmax(0, 1fr) auto auto; align-items: center; gap: 12px; border: 1px solid var(--line); border-radius: 16px; animation: fx-rise .3s var(--ease); }
+.schedule-time { display: grid; padding-right: 12px; border-right: 2px solid color-mix(in srgb, var(--blue) 35%, transparent); }
+.schedule-time strong { font-size: 16px; font-variant-numeric: tabular-nums; }
+.schedule-time small { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.schedule-info { min-width: 0; display: grid; }
+.schedule-info strong { overflow: hidden; font-size: 15px; text-overflow: ellipsis; white-space: nowrap; }
+.schedule-info small { color: var(--muted); font-size: 12.5px; }
+.schedule-route, .schedule-remove { width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 11px; color: var(--blue); background: var(--surface); cursor: pointer; transition: all .2s var(--ease); }
+.schedule-route:hover { color: #fff; border-color: transparent; background: var(--blue); }
+.schedule-remove { color: var(--muted); }
+.schedule-remove:hover { color: var(--bad); border-color: var(--bad); }
+.schedule-empty { margin: 8px 0 0; padding: 26px; border: 1px dashed var(--line); border-radius: 16px; color: var(--muted); text-align: center; }
+.schedule-form { display: grid; gap: 12px; }
+.schedule-form h2 { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 16px; }
+.schedule-bells { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
+.schedule-bells button { padding: 6px 0; display: grid; gap: 1px; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); background: var(--surface); font: inherit; cursor: pointer; transition: all .2s var(--ease); }
+.schedule-bells strong { font-size: 14px; }
+.schedule-bells small { color: var(--muted); font-size: 10.5px; }
+.schedule-bells button[aria-pressed='true'] { border-color: transparent; color: #fff; background: var(--action-bg, var(--blue)); }
+.schedule-bells button[aria-pressed='true'] small { color: rgba(255, 255, 255, .8); }
+.schedule-times { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.schedule-times label, .schedule-field { display: grid; gap: 5px; }
+.schedule-times span, .schedule-field span { color: var(--muted); font-size: 12px; font-weight: 650; }
+.schedule-times input, .schedule-field input { min-height: 42px; padding: 0 12px; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); background: var(--bg); font: inherit; font-size: 15px; outline: none; transition: border-color .2s; }
+.schedule-times input:focus, .schedule-field input:focus { border-color: var(--blue); }
+.schedule-add { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 12px; color: #fff; background: var(--action-bg, var(--blue)); font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
+.schedule-error { margin: 0; color: var(--bad); font-size: 13px !important; }
+.schedule-note { margin: 0; color: var(--muted); font-size: 12px !important; }
+@media (max-width: 900px) {
+  .schedule-layout { grid-template-columns: 1fr; }
+  .schedule-side { position: static; order: -1; }
+}
+
+/* ---------- Экскурсия ---------- */
+.ex-head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 16px; }
+.ex-switch { display: inline-flex; gap: 3px; padding: 4px; border-radius: 14px; background: var(--surface-soft); }
+.ex-switch button { min-height: 38px; padding: 0 14px; border: 0; border-radius: 10px; color: var(--muted); background: transparent; font: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer; transition: all .2s var(--ease); }
+.ex-switch button[aria-selected='true'] { color: var(--ink); background: var(--surface); box-shadow: 0 2px 8px rgba(13, 28, 59, .08); }
+.ex-layout { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 16px; align-items: start; }
+.ex-stage { position: relative; overflow: hidden; border: 1px solid var(--line); border-radius: 22px; }
+.ex-stage .rs { height: clamp(460px, 70vh, 720px); }
+.ex-card { position: absolute; z-index: 10; left: 14px; bottom: 14px; width: min(400px, calc(100% - 80px)); padding: 16px 18px; overflow: hidden; border: 1px solid var(--line); border-radius: 20px; background: color-mix(in srgb, var(--surface) 92%, transparent); box-shadow: 0 18px 50px rgba(13, 28, 59, .16); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); animation: fx-rise .45s var(--ease); }
+.ex-card-step { color: var(--blue); font-size: 12px; font-weight: 700; }
+.ex-card h2 { margin: 4px 0 6px; font-size: 22px; line-height: 1.15; letter-spacing: -.02em; }
+.ex-card p { margin: 0 0 8px; color: var(--muted); font-size: 14px !important; }
+.ex-card-room { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12.5px; }
+.ex-controls { margin-top: 12px; display: flex; gap: 8px; }
+.ex-ctl { width: 42px; height: 42px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); background: var(--surface); cursor: pointer; }
+.ex-ctl:disabled { opacity: .4; cursor: default; }
+.ex-next { min-height: 42px; padding: 0 16px; display: inline-flex; flex: 1; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 12px; color: #fff; background: var(--action-bg, var(--blue)); font: inherit; font-size: 14.5px; font-weight: 700; cursor: pointer; }
+.ex-timer { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: var(--blue); transform-origin: left; animation: ex-timer linear both; }
+@keyframes ex-timer { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.ex-stops { margin: 0; padding: 8px; display: grid; gap: 2px; border: 1px solid var(--line); border-radius: 20px; background: var(--surface); list-style: none; counter-reset: stop; }
+.ex-stops button { width: 100%; padding: 8px; display: flex; align-items: center; gap: 10px; border: 0; border-radius: 12px; color: var(--ink); background: none; font: inherit; text-align: left; cursor: pointer; transition: background .2s; }
+.ex-stops button:hover { background: var(--surface-soft); }
+.ex-stops span:last-child { display: grid; line-height: 1.25; }
+.ex-stops strong { font-size: 13.5px; }
+.ex-stops small { color: var(--muted); font-size: 11.5px; }
+.ex-stop-num { width: 26px; height: 26px; display: grid; flex: 0 0 auto; place-items: center; border: 1.5px solid var(--line); border-radius: 50%; color: var(--muted); font-size: 12px; font-weight: 700; transition: all .3s var(--ease); }
+.ex-stops .is-done .ex-stop-num { border-color: transparent; color: var(--blue); background: color-mix(in srgb, var(--blue) 12%, transparent); }
+.ex-stops .is-now button { background: var(--surface-soft); }
+.ex-stops .is-now .ex-stop-num { border-color: transparent; color: #fff; background: var(--action-bg, var(--blue)); box-shadow: 0 0 0 4px color-mix(in srgb, var(--blue) 18%, transparent); }
+@media (max-width: 900px) {
+  .ex-layout { grid-template-columns: 1fr; }
+  .ex-stops { grid-auto-flow: column; grid-auto-columns: max-content; overflow-x: auto; }
+}
+@media (max-width: 620px) {
+  .ex-stage .rs { height: 64vh; min-height: 420px; }
+  .ex-card { right: 12px; left: 12px; bottom: 12px; width: auto; padding: 14px; }
+  .ex-card h2 { font-size: 19px; }
+  .ex-stage .rs-controls { top: 12px; bottom: auto; }
+}
+
+/* ---------- Маршрут в ответе ЛОГОС AI ---------- */
+.ai-route { width: min(520px, 100%); overflow: hidden; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); box-shadow: 0 10px 30px rgba(13, 28, 59, .06); animation: fx-rise .4s var(--ease); }
+.ai-route-head { padding: 12px 14px; display: flex; align-items: center; gap: 10px; }
+.ai-route-icon { width: 34px; height: 34px; display: grid; flex: 0 0 auto; place-items: center; border-radius: 11px; color: #fff; background: linear-gradient(135deg, #5b8cff, #1f4ff0); }
+.ai-route-text { min-width: 0; display: grid; line-height: 1.3; }
+.ai-route-text strong { overflow: hidden; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
+.ai-route-text small { color: var(--muted); font-size: 12.5px; }
+.ai-route-map { position: relative; border-top: 1px solid var(--line); }
+.ai-route-map .rs { height: 260px; min-height: 0; }
+.ai-route-map .rs-hint, .ai-route-map .rs-controls button:nth-child(3) { display: none; }
+.ai-route-map .rs-controls { gap: 4px; }
+.ai-route-map .rs-controls button { width: 34px; height: 34px; }
+.ai-route-floors { position: absolute; z-index: 6; top: 10px; left: 10px; display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: 11px; background: color-mix(in srgb, var(--surface) 90%, transparent); backdrop-filter: blur(8px); }
+.ai-route-floors button { min-height: 28px; padding: 0 10px; border: 0; border-radius: 8px; color: var(--muted); background: transparent; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.ai-route-floors button[aria-pressed='true'] { color: #fff; background: var(--blue); }
+.ai-route-go { padding: 11px 14px; display: flex; align-items: center; justify-content: center; gap: 8px; border-top: 1px solid var(--line); color: var(--blue); font-size: 14px; font-weight: 700; transition: background .2s; }
+.ai-route-go:hover { background: var(--surface-soft); }
+.nv-panel > .nv-card.nv-notices { order: 1; }
