@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
-import { ArrowRight, ArrowUpRight, BookOpen, Check, MapPin, Moon, Search, Sparkles, Sun, X } from 'lucide-react'
+import { ArrowUpRight, BookOpen, Bot, CalendarDays, Check, Compass, Gamepad2, Info, LayoutGrid, Map as MapIcon, MapPin, Moon, Navigation, Search, Sparkles, Sun, X } from 'lucide-react'
 import { navigation, rooms } from '../data'
 import { lockBodyScroll, storageGet, storageSet } from '../storage'
 import { setLanguage, useLanguage, searchableRoom } from '../i18n.js'
@@ -31,6 +31,19 @@ export function ToastProvider({ children }) {
 }
 
 export function useToast() { return useContext(ToastContext) }
+
+// Разделы в меню: карточки с иконкой и подсказкой.
+const menuSections = [
+  { to: '/map', label: 'Карта этажей', hint: 'План 1 и 2 этажа в 2D и 3D', icon: MapIcon, tone: 'blue' },
+  { to: '/route', label: 'Маршрут', hint: 'Путь по шагам с голосом', icon: Navigation, tone: 'violet' },
+  { to: '/rooms', label: 'Кабинеты', hint: 'Справочник помещений', icon: LayoutGrid, tone: 'sky' },
+  { to: '/schedule', label: 'Моё расписание', hint: 'Пары и звонки', icon: CalendarDays, tone: 'green' },
+  { to: '/ai', label: 'ИИ-Агент', badge: 'ТЕСТ', hint: 'Спросите ЛОГОС AI', icon: Bot, tone: 'violet' },
+  { to: '/tour', label: 'Экскурсия в 3D', hint: 'Прогулка по колледжу', icon: Compass, tone: 'amber' },
+  { to: '/games', label: 'Игры', hint: 'Квизы по плану', icon: Gamepad2, tone: 'pink' },
+  { to: '/services', label: 'Пространства', hint: 'Столовая, библиотека, залы', icon: Sparkles, tone: 'sky' },
+  { to: '/about', label: 'О проекте', hint: 'Команда и идея', icon: Info, tone: 'slate' },
+]
 
 function Brand() {
   return <Link className="brand" to="/" aria-label="Колледж — на главную"><img className="brand-mark" src="/logo.svg" alt="" /><span className="brand-copy"><strong>ЛОГОС</strong><small>ПУТЕВОДИТЕЛЬ</small></span></Link>
@@ -122,30 +135,49 @@ export function Header() {
   }, [mobileOpen])
 
   return <>
-    <header className="site-header">
+    <header className="site-header hd">
       <div className="header-inner">
         <Brand />
         <nav className="desktop-nav" aria-label="Основная навигация">
           {navigation.map((item) => <NavLink end key={item.to} to={item.to} className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}>{item.label}{item.badge && <span className="nav-badge">{item.badge}</span>}</NavLink>)}
         </nav>
         <div className="header-actions">
-          <NavLink className={({ isActive }) => `header-docs ${isActive ? 'header-docs-active' : ''}`} to="/docs" title="Документация по сайту"><BookOpen size={16} /><span>Документация</span></NavLink>
-          <button className="theme-toggle header-theme" type="button" onClick={changeTheme} aria-label={theme === 'dark' ? 'Включить светлую тему' : 'Включить тёмную тему'} title={theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}>{theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}</button>
-          <button className="search-trigger" type="button" aria-keyshortcuts="K" onClick={openSearch} aria-label="Найти кабинет"><Search size={18} /><span>Найти место</span><kbd>K</kbd></button>
-          <Link className="header-cta" to="/map">Открыть карту <ArrowUpRight size={15} /></Link>
+          <button className="search-trigger" type="button" aria-keyshortcuts="K" onClick={openSearch} aria-label="Найти кабинет"><Search size={17} /><span>Найти место</span><kbd>K</kbd></button>
+          <NavLink className={({ isActive }) => `header-docs hd-icon ${isActive ? 'header-docs-active' : ''}`} to="/docs" title="Документация по сайту" aria-label="Документация"><BookOpen size={17} /><span>Документация</span></NavLink>
+          <button className="theme-toggle header-theme hd-icon" type="button" onClick={changeTheme} aria-label={theme === 'dark' ? 'Включить светлую тему' : 'Включить тёмную тему'} title={theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}>{theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}</button>
+          <Link className="header-cta" to="/map"><MapPin size={16} /> Открыть карту</Link>
           <NavLink className={({ isActive }) => `mobile-map-link ${isActive ? 'mobile-map-link-active' : ''}`} to="/map" aria-label="Открыть карту"><MapPin size={18} /><span>Карта</span></NavLink>
-          <button ref={menuToggleRef} className={`mobile-menu-toggle ${mobileOpen ? 'is-open' : ''}`} type="button" onClick={() => setMobileOpen((value) => !value)} aria-controls="site-menu" aria-label={mobileOpen ? 'Закрыть меню' : 'Открыть меню'} aria-expanded={mobileOpen}>{mobileOpen ? <X size={23} /> : <span className="menu-lines"><i /><i /><i /></span>}</button>
+          <button ref={menuToggleRef} className={`mobile-menu-toggle hd-burger ${mobileOpen ? 'is-open' : ''}`} type="button" onClick={() => setMobileOpen((value) => !value)} aria-controls="site-menu" aria-label={mobileOpen ? 'Закрыть меню' : 'Открыть меню'} aria-expanded={mobileOpen}><span className="hd-burger-lines" aria-hidden="true"><i /><i /><i /></span><span className="hd-burger-label">Меню</span></button>
         </div>
       </div>
-      <nav id="site-menu" className="mobile-nav-panel" aria-label="Меню сайта" hidden={!mobileOpen}>
-        <div className="mobile-nav-language"><span>Язык интерфейса</span><div className="language-switch" role="group" aria-label="Язык сайта">{['ru', 'en'].map((locale) => <button key={locale} type="button" lang={locale} aria-pressed={language === locale} onClick={() => setLanguage(locale)} title={locale === 'ru' ? 'Русская версия' : 'English version'}>{locale.toUpperCase()}</button>)}</div></div>
-        <div className="mobile-nav-links">{navigation.map((item, index) => <NavLink end key={item.to} to={item.to} onClick={() => setMobileOpen(false)} className={({ isActive }) => `mobile-nav-link ${isActive ? 'mobile-nav-link-active' : ''}`}><span className="mobile-nav-index">0{index + 1}</span>{item.label}{item.badge && <span className="nav-badge">{item.badge}</span>}<ArrowRight size={17} /></NavLink>)}</div>
-        <div className="mobile-nav-bottom"><span>Найдите нужное место</span><button type="button" onClick={openSearch}><Search size={17} /> Поиск кабинета</button></div>
-        <div className="mobile-nav-bottom"><span>Впервые на сайте?</span><NavLink to="/docs" className="mobile-docs-link"><BookOpen size={16} /> Документация</NavLink><button className="mobile-tour-button" type="button" onClick={takeTour}><Sparkles size={16} /> Пройти обучение</button></div>
-        <div className="mobile-nav-bottom"><span>Оформление</span><button type="button" onClick={changeTheme}>{theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}{theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}</button></div>
+      <nav id="site-menu" className="hd-menu" aria-label="Меню сайта" hidden={!mobileOpen}>
+        <div className="hd-menu-inner">
+          <div className="hd-menu-grid">
+            {menuSections.map((item, index) => { const Icon = item.icon; return <NavLink end key={item.to} to={item.to} style={{ '--i': index }} onClick={() => setMobileOpen(false)} className={({ isActive }) => `hd-menu-card hd-tone-${item.tone} ${isActive ? 'is-active' : ''}`}>
+              <span className="hd-menu-icon" aria-hidden="true"><Icon size={19} /></span>
+              <span className="hd-menu-text"><strong>{item.label}{item.badge && <span className="nav-badge">{item.badge}</span>}</strong><small>{item.hint}</small></span>
+              <ArrowUpRight className="hd-menu-arrow" size={16} aria-hidden="true" />
+            </NavLink> })}
+          </div>
+          <div className="hd-menu-side">
+            <button type="button" className="hd-menu-search" onClick={openSearch}><Search size={17} /><span>Найти место</span><kbd>K</kbd></button>
+            <div className="hd-menu-row">
+              <span>Язык</span>
+              <div className="hd-seg" role="group" aria-label="Язык сайта">{['ru', 'en'].map((locale) => <button key={locale} type="button" lang={locale} aria-pressed={language === locale} onClick={() => setLanguage(locale)} title={locale === 'ru' ? 'Русская версия' : 'English version'}>{locale.toUpperCase()}</button>)}</div>
+            </div>
+            <div className="hd-menu-row">
+              <span>Тема</span>
+              <div className="hd-seg" role="group" aria-label="Тема оформления"><button type="button" aria-pressed={theme !== 'dark'} onClick={() => setTheme('light')}><Sun size={14} /> Светлая</button><button type="button" aria-pressed={theme === 'dark'} onClick={() => setTheme('dark')}><Moon size={14} /> Тёмная</button></div>
+            </div>
+            <div className="hd-menu-actions">
+              <NavLink to="/docs" className="hd-menu-link" onClick={() => setMobileOpen(false)}><BookOpen size={16} /> Документация</NavLink>
+              <button type="button" className="hd-menu-link hd-menu-tour" onClick={takeTour}><Sparkles size={16} /> Пройти обучение</button>
+            </div>
+          </div>
+        </div>
       </nav>
     </header>
-    {mobileOpen && <button type="button" className="menu-scrim" onClick={() => setMobileOpen(false)} aria-hidden="true" tabIndex={-1} />}
+    {mobileOpen && <button type="button" className="menu-scrim hd-scrim" onClick={() => setMobileOpen(false)} aria-hidden="true" tabIndex={-1} />}
     <SearchDialog open={searchOpen} onClose={closeSearch} />
   </>
 }
