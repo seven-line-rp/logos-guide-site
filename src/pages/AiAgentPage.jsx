@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
-import { Brain, Check, ChevronDown, Copy, Download, GraduationCap, ImagePlus, Lightbulb, MapPin, Mic, MicOff, PanelLeft, Plus, RefreshCw, Route, SendHorizontal, Sparkles, Square, Trash2, TriangleAlert, UserRound, Volume2, VolumeX, X } from 'lucide-react'
+import { ArrowUp, Brain, Check, ChevronDown, Copy, Download, GraduationCap, ImagePlus, Lightbulb, MapPin, Mic, MicOff, PanelLeft, RefreshCw, Route, Sparkles, SquarePen, Square, Trash2, TriangleAlert, UserRound, Volume2, VolumeX, X } from 'lucide-react'
 import { answerActions, askAgent, chatTitle, chatToMarkdown, compressImage, containsProfanity, createChat, loadChats, maskProfanity, MAX_IMAGES, MAX_INPUT, plainText, saveChats } from '../ai-chat.js'
 import { functionalStorageAllowed, onConsentChange } from '../consent.js'
 import { speakText, stopSpeech } from '../speech.js'
@@ -12,10 +12,11 @@ import { AiMessageText, RawText } from '../components/ai-message.js'
 // функциональных cookie), картинки сжимаются в браузере. Мат не уходит в
 // модель — вместо ответа шуточная «отправка куратору».
 
-const promptGroups = [
-  { icon: MapPin, title: 'Найти место', items: ['Где библиотека и как до неё дойти?', 'Как пройти от входа до кабинета 211?', 'Где ближайший туалет на втором этаже?'] },
-  { icon: GraduationCap, title: 'О колледже', items: ['Какие специальности есть в колледже?', 'Что нужно для поступления?', 'Расскажи о колледже «Логос»'] },
-  { icon: Lightbulb, title: 'Учёба и помощь', items: ['Как пользоваться маршрутом на сайте?', 'Объясни простыми словами, что такое IP-адрес', 'Составь план подготовки к зачёту на неделю'] },
+const suggestions = [
+  { icon: MapPin, text: 'Где библиотека и как до неё дойти?' },
+  { icon: Route, text: 'Как пройти от входа до кабинета 211?' },
+  { icon: GraduationCap, text: 'Какие специальности есть в колледже?' },
+  { icon: Lightbulb, text: 'Составь план подготовки к зачёту на неделю' },
 ]
 
 const thinkingStages = {
@@ -35,12 +36,9 @@ function Thinking({ deep, image }) {
   const stages = thinkingStages[image ? 'image' : deep ? 'deep' : 'normal']
   const stage = Math.min(stages.length - 1, Math.floor(tick / (deep ? 3 : 2)))
   return <div className={`ai-thinking ${deep ? 'ai-thinking-deep' : ''}`} role="status">
-    <span className="ai-thinking-orb" aria-hidden="true"><Sparkles size={15} /></span>
-    <span className="ai-thinking-copy">
-      <strong key={stage} className="ai-thinking-label">{stages[stage]}</strong>
-      <small>{deep ? 'Режим «Подумать глубже»' : 'ЛОГОС AI думает'} · {`${Math.floor(tick / 60)}:${String(tick % 60).padStart(2, '0')}`}</small>
-    </span>
-    <span className="ai-thinking-dots" aria-hidden="true"><i /><i /><i /></span>
+    <span className="ai-thinking-orb" aria-hidden="true"><Sparkles size={14} /></span>
+    <strong key={stage} className="ai-thinking-label">{stages[stage]}</strong>
+    <small>{`${Math.floor(tick / 60)}:${String(tick % 60).padStart(2, '0')}`}</small>
   </div>
 }
 
@@ -123,6 +121,7 @@ export default function AiAgentPage() {
   const [pending, setPending] = useState(null)
   const [deep, setDeep] = useState(false)
   const [sidebar, setSidebar] = useState(false)
+  const [collapsed, setCollapsed] = useState(false)
   const [dragging, setDragging] = useState(false)
   const [notice, setNotice] = useState('')
   const [listening, setListening] = useState(false)
@@ -273,16 +272,18 @@ export default function AiAgentPage() {
   const sidebarView = <>
     <aside className="ai-sidebar" aria-label="Чаты">
       <div className="ai-sidebar-top">
-        <button className="ai-new" type="button" onClick={newChat}><Plus size={16} /> Новый чат</button>
-        <button className="ai-sidebar-close icon-button" type="button" onClick={() => setSidebar(false)} aria-label="Закрыть список чатов"><X size={18} /></button>
+        <span className="ai-brand"><span className="ai-mark" aria-hidden="true"><Sparkles size={14} /></span>ЛОГОС AI<span className="nav-badge">ТЕСТ</span></span>
+        <button className="ai-icon" type="button" onClick={() => (narrow ? setSidebar(false) : setCollapsed(true))} aria-label="Скрыть список чатов" title="Скрыть"><PanelLeft size={18} /></button>
       </div>
+      <button className="ai-new" type="button" onClick={newChat}><SquarePen size={16} /> Новый чат</button>
       <div className="ai-history">
+        {history.length > 0 && <span className="ai-history-label">Недавние</span>}
         {history.length ? history.map((item) => <div key={item.id} className={`ai-history-item ${item.id === chat.id ? 'is-active' : ''}`}>
-          <button type="button" className="ai-history-open" onClick={() => openChat(item.id)}><span><RawText text={item.title} /></span><small>{formatWhen(item.updated)} · {item.messages.filter((m) => m.role === 'user').length} вопр.</small></button>
+          <button type="button" className="ai-history-open" onClick={() => openChat(item.id)} title={formatWhen(item.updated)}><RawText text={item.title} /></button>
           <button type="button" className={`ai-history-delete ${confirmDelete === item.id ? 'is-confirm' : ''}`} onClick={() => removeChat(item.id)} title={confirmDelete === item.id ? 'Нажмите ещё раз, чтобы удалить' : 'Удалить чат'} aria-label={confirmDelete === item.id ? 'Подтвердить удаление' : 'Удалить чат'}>{confirmDelete === item.id ? <Check size={14} /> : <Trash2 size={14} />}</button>
-        </div>) : <p className="ai-history-empty">Здесь появятся ваши разговоры.</p>}
+        </div>) : <div className="ai-history-empty">Здесь появятся ваши разговоры.</div>}
       </div>
-      <p className="ai-sidebar-note">{saving ? 'Чаты хранятся только в этом браузере.' : 'Чаты не сохраняются: вы отказались от функциональных cookie.'}</p>
+      <div className="ai-sidebar-note">{saving ? 'Чаты хранятся только в этом браузере.' : 'Чаты не сохраняются: вы отказались от функциональных cookie.'}</div>
     </aside>
     {sidebar && <button type="button" className="ai-sidebar-scrim" onClick={() => setSidebar(false)} aria-hidden="true" tabIndex={-1} />}
   </>
@@ -290,67 +291,64 @@ export default function AiAgentPage() {
   const busyHere = pending?.chatId === chat.id
   const lastAssistant = messages.findLastIndex((message) => message.role === 'assistant')
 
-  return <section className="ai-page container">
-    <header className="ai-head">
-      <span className="eyebrow"><i className="eyebrow-dot" />ЛОГОС AI · ТЕСТОВЫЙ РЕЖИМ</span>
-      <h1>Спросите <em>путеводитель.</em></h1>
-      <p>Знает план корпуса, разделы сайта и материалы с <a href="https://колледжлогос.рф" target="_blank" rel="noopener noreferrer">колледжлогос.рф</a>. Понимает картинки, строит маршруты и помогает с учёбой. Отвечает нейросеть DeepSeek — она может ошибаться, важное уточняйте в колледже.</p>
-    </header>
+  const composer = <form className="ai-composer" onSubmit={(event) => { event.preventDefault(); send() }}>
+    {attachments.length > 0 && <div className="ai-attachments">{attachments.map((src, index) => <span key={index} className="ai-attachment"><img src={src} alt={`Картинка ${index + 1}`} /><button type="button" onClick={() => setAttachments((current) => current.filter((_, i) => i !== index))} aria-label="Убрать картинку"><X size={12} /></button></span>)}</div>}
+    <label className="visually-hidden" htmlFor="ai-input">Сообщение для ЛОГОС AI</label>
+    <textarea id="ai-input" ref={inputRef} rows={1} value={input} maxLength={MAX_INPUT} onChange={(event) => setInput(event.target.value)} onKeyDown={onKeyDown} onPaste={onPaste} placeholder={listening ? 'Говорите…' : 'Спросите что-нибудь…'} />
+    <div className="ai-composer-bar">
+      <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={(event) => { addFiles(event.target.files); event.target.value = '' }} />
+      <button className="ai-icon" type="button" onClick={() => fileRef.current?.click()} disabled={attachments.length >= MAX_IMAGES} title="Приложить картинку (можно вставить Ctrl+V или перетащить)" aria-label="Приложить картинку"><ImagePlus size={18} /></button>
+      <button type="button" className={`ai-deep ${deep ? 'is-on' : ''}`} onClick={() => setDeep((value) => !value)} aria-pressed={deep} title="Модель рассуждает дольше, но точнее: для сложных вопросов и задач"><Brain size={15} /><span>Подумать глубже</span></button>
+      <span className="ai-composer-gap" />
+      {SpeechRecognition && <button className={`ai-icon ${listening ? 'is-listening' : ''}`} type="button" onClick={toggleVoice} title={listening ? 'Остановить запись' : 'Сказать голосом'} aria-label={listening ? 'Остановить запись' : 'Сказать голосом'}>{listening ? <MicOff size={18} /> : <Mic size={18} />}</button>}
+      {busyHere
+        ? <button className="ai-send" type="button" onClick={stop} aria-label="Остановить ответ" title="Остановить"><Square size={13} fill="currentColor" /></button>
+        : <button className="ai-send" type="submit" disabled={(!input.trim() && !attachments.length) || Boolean(pending)} aria-label="Отправить" title="Отправить (Enter)"><ArrowUp size={18} /></button>}
+    </div>
+  </form>
 
-    <div className={`ai-layout ${sidebar ? 'ai-sidebar-open' : ''}`}>
-      {narrow ? createPortal(<div className={`ai-drawer ${sidebar ? 'ai-sidebar-open' : ''}`}>{sidebarView}</div>, document.body) : sidebarView}
+  return <section className={`ai-page ${collapsed ? 'ai-collapsed' : ''}`}>
+    {narrow ? createPortal(<div className={`ai-drawer ${sidebar ? 'ai-sidebar-open' : ''}`}>{sidebarView}</div>, document.body) : !collapsed && sidebarView}
 
-      <div className={`ai-chat ${dragging ? 'is-dragging' : ''}`} onDragOver={(event) => { if ([...event.dataTransfer.types].includes('Files')) { event.preventDefault(); setDragging(true) } }} onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setDragging(false) }} onDrop={onDrop}>
-        <div className="ai-chat-top">
-          <button className="ai-sidebar-toggle icon-button" type="button" onClick={() => setSidebar(true)} aria-label="Открыть список чатов" title="Чаты"><PanelLeft size={18} /></button>
-          <span className="ai-chat-title"><span className="ai-avatar ai-avatar-brand"><Sparkles size={16} /></span><span><strong>ЛОГОС AI</strong><small>{busyHere ? 'думает…' : 'на связи'}</small></span><span className="nav-badge">ТЕСТ</span></span>
-          <span className="ai-chat-actions">
-            <button className="ai-reset" type="button" onClick={exportChat} disabled={!messages.length} title="Скачать чат (.md)"><Download size={15} /><span>Скачать</span></button>
-            <button className="ai-reset" type="button" onClick={newChat} disabled={!messages.length} title="Начать новый разговор"><Plus size={15} /><span>Новый чат</span></button>
-          </span>
-        </div>
+    <div className={`ai-main ${dragging ? 'is-dragging' : ''} ${messages.length ? '' : 'is-empty'}`} onDragOver={(event) => { if ([...event.dataTransfer.types].includes('Files')) { event.preventDefault(); setDragging(true) } }} onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setDragging(false) }} onDrop={onDrop}>
+      <div className="ai-topbar">
+        {(narrow || collapsed) && <button className="ai-icon" type="button" onClick={() => (narrow ? setSidebar(true) : setCollapsed(false))} aria-label="Открыть список чатов" title="Чаты"><PanelLeft size={18} /></button>}
+        {(narrow || collapsed) && <button className="ai-icon" type="button" onClick={newChat} aria-label="Новый чат" title="Новый чат"><SquarePen size={17} /></button>}
+        <span className="ai-topbar-title">{messages.length ? <RawText text={chat.title} /> : ''}</span>
+        {messages.length > 0 && <button className="ai-icon" type="button" onClick={exportChat} title="Скачать чат (.md)" aria-label="Скачать чат"><Download size={17} /></button>}
+      </div>
 
-        <div className="ai-messages" ref={listRef} role="log" aria-live="polite" aria-label="Сообщения">
-          <div className="ai-message ai-message-assistant"><span className="ai-avatar ai-avatar-brand" aria-hidden="true"><Sparkles size={14} /></span><div className="ai-bubble"><p>Привет! Я ЛОГОС AI. Подскажу, где кабинет, и построю маршрут, расскажу о сайте и о колледже, разберу фото расписания или объявления, помогу с учёбой. Можно и просто поболтать.</p></div></div>
-          {!messages.length && <div className="ai-prompts">{promptGroups.map((group) => { const Icon = group.icon; return <div key={group.title} className="ai-prompt-group"><span className="ai-prompt-title"><Icon size={15} />{group.title}</span>{group.items.map((text) => <button key={text} type="button" onClick={() => send(text)}>{text}</button>)}</div> })}</div>}
+      <div className="ai-scroll" ref={listRef} role="log" aria-live="polite" aria-label="Сообщения">
+        {!messages.length ? <div className="ai-welcome">
+          <span className="ai-mark ai-mark-big" aria-hidden="true"><Sparkles size={22} /></span>
+          <h1>Чем помочь?</h1>
+          <p>Найду кабинет и построю маршрут, расскажу о колледже, разберу фото расписания или помогу с учёбой.</p>
+          {composer}
+          <div className="ai-suggestions">{suggestions.map(({ icon: Icon, text }) => <button key={text} type="button" onClick={() => send(text)}><Icon size={15} />{text}</button>)}</div>
+        </div> : <div className="ai-thread">
           {messages.map((message, index) => {
-            if (message.role === 'curator') return <div key={index} className="ai-message ai-message-assistant"><span className="ai-avatar ai-avatar-curator" aria-hidden="true"><GraduationCap size={14} /></span><CuratorCard animate={message.at > mountedAt.current} /></div>
-            if (message.role === 'user') return <div key={index} className="ai-message ai-message-user"><div className="ai-bubble">{message.images?.length > 0 && <div className="ai-bubble-images">{message.images.map((src, i) => <img key={i} src={src} alt="Приложенная картинка" />)}</div>}{message.content && <AiMessageText text={message.content} plain />}</div></div>
+            if (message.role === 'curator') return <div key={index} className="ai-message ai-message-assistant"><CuratorCard animate={message.at > mountedAt.current} /></div>
+            if (message.role === 'user') return <div key={index} className="ai-message ai-message-user">{message.images?.length > 0 && <div className="ai-user-images">{message.images.map((src, i) => <img key={i} src={src} alt="Приложенная картинка" />)}</div>}{message.content && <div className="ai-bubble"><AiMessageText text={message.content} plain /></div>}</div>
             const actions = message.error ? [] : answerActions(message.content)
             return <div key={index} className={`ai-message ai-message-assistant ${message.error ? 'ai-message-error' : ''}`}>
-              <span className={`ai-avatar ${message.error ? '' : 'ai-avatar-brand'}`} aria-hidden="true">{message.error ? <TriangleAlert size={14} /> : <Sparkles size={14} />}</span>
-              <div className="ai-answer">
-                {message.reasoning && <Reasoning text={message.reasoning} />}
-                <div className="ai-bubble"><AiMessageText text={message.content} />{message.error && index === messages.length - 1 && <button type="button" className="ai-retry" onClick={regenerate}>Повторить</button>}</div>
-                {actions.length > 0 && <div className="ai-actions">{actions.map((action) => <Link key={action.href} to={action.href} className={`ai-action ai-action-${action.kind}`}>{action.kind === 'route' ? <Route size={14} /> : <MapPin size={14} />}<RawText text={action.label} /></Link>)}</div>}
-                {!message.error && <MessageTools message={message} onRegenerate={index === lastAssistant && !pending ? regenerate : null} />}
-              </div>
+              {message.reasoning && <Reasoning text={message.reasoning} />}
+              <div className="ai-text">{message.error && <TriangleAlert size={16} className="ai-error-icon" />}<AiMessageText text={message.content} /></div>
+              {message.error && index === messages.length - 1 && <button type="button" className="ai-chip" onClick={regenerate}>Повторить</button>}
+              {actions.length > 0 && <div className="ai-actions">{actions.map((action) => <Link key={action.href} to={action.href} className="ai-chip">{action.kind === 'route' ? <Route size={14} /> : <MapPin size={14} />}<RawText text={action.label} /></Link>)}</div>}
+              {!message.error && <MessageTools message={message} onRegenerate={index === lastAssistant && !pending ? regenerate : null} />}
             </div>
           })}
-          {busyHere && <div className="ai-message ai-message-assistant"><span className="ai-avatar ai-avatar-brand ai-avatar-pulse" aria-hidden="true"><Sparkles size={14} /></span><Thinking deep={pending.deep} image={pending.image} /></div>}
-        </div>
-
-        {dragging && <div className="ai-drop" aria-hidden="true"><ImagePlus size={28} /><strong>Отпустите, чтобы приложить картинку</strong></div>}
-        {notice && <div className="ai-notice" role="status"><span>{notice}</span><button type="button" onClick={() => setNotice('')} aria-label="Закрыть"><X size={14} /></button></div>}
-
-        <form className="ai-composer-wrap" onSubmit={(event) => { event.preventDefault(); send() }}>
-          {attachments.length > 0 && <div className="ai-attachments">{attachments.map((src, index) => <span key={index} className="ai-attachment"><img src={src} alt={`Картинка ${index + 1}`} /><button type="button" onClick={() => setAttachments((current) => current.filter((_, i) => i !== index))} aria-label="Убрать картинку"><X size={12} /></button></span>)}</div>}
-          <div className="ai-composer">
-            <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={(event) => { addFiles(event.target.files); event.target.value = '' }} />
-            <button className="ai-tool-button" type="button" onClick={() => fileRef.current?.click()} disabled={attachments.length >= MAX_IMAGES} title="Приложить картинку (можно вставить Ctrl+V или перетащить)" aria-label="Приложить картинку"><ImagePlus size={18} /></button>
-            <label className="visually-hidden" htmlFor="ai-input">Сообщение для ЛОГОС AI</label>
-            <textarea id="ai-input" ref={inputRef} rows={1} value={input} maxLength={MAX_INPUT} onChange={(event) => setInput(event.target.value)} onKeyDown={onKeyDown} onPaste={onPaste} placeholder={listening ? 'Говорите…' : 'Спросите о кабинете, сайте или колледже…'} />
-            {SpeechRecognition && <button className={`ai-tool-button ${listening ? 'is-listening' : ''}`} type="button" onClick={toggleVoice} title={listening ? 'Остановить запись' : 'Сказать голосом'} aria-label={listening ? 'Остановить запись' : 'Сказать голосом'}>{listening ? <MicOff size={18} /> : <Mic size={18} />}</button>}
-            {busyHere
-              ? <button className="ai-send" type="button" onClick={stop} aria-label="Остановить ответ" title="Остановить"><Square size={15} /></button>
-              : <button className="ai-send" type="submit" disabled={(!input.trim() && !attachments.length) || Boolean(pending)} aria-label="Отправить" title="Отправить (Enter)"><SendHorizontal size={17} /></button>}
-          </div>
-          <div className="ai-composer-foot">
-            <button type="button" className={`ai-deep ${deep ? 'is-on' : ''}`} onClick={() => setDeep((value) => !value)} aria-pressed={deep} title="Модель рассуждает дольше, но точнее: для сложных вопросов и задач"><Brain size={14} /> Подумать глубже</button>
-            <span className="ai-note">Enter — отправить, Shift+Enter — новая строка. Не пишите личные данные: сообщения уходят в DeepSeek, подробнее — в <Link to="/privacy#ai">политике конфиденциальности</Link>.</span>
-          </div>
-        </form>
+          {busyHere && <div className="ai-message ai-message-assistant"><Thinking deep={pending.deep} image={pending.image} /></div>}
+        </div>}
       </div>
+
+      {dragging && <div className="ai-drop" aria-hidden="true"><ImagePlus size={26} /><strong>Отпустите, чтобы приложить картинку</strong></div>}
+      {messages.length > 0 && <div className="ai-dock">
+        {notice && <div className="ai-notice" role="status"><span>{notice}</span><button type="button" onClick={() => setNotice('')} aria-label="Закрыть"><X size={14} /></button></div>}
+        {composer}
+      </div>}
+      {!messages.length && notice && <div className="ai-dock"><div className="ai-notice" role="status"><span>{notice}</span><button type="button" onClick={() => setNotice('')} aria-label="Закрыть"><X size={14} /></button></div></div>}
+      <div className="ai-disclaimer">ЛОГОС AI может ошибаться — важное уточняйте в колледже · <Link to="/privacy#ai">Конфиденциальность</Link></div>
     </div>
   </section>
 }

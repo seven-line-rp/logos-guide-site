@@ -279,5 +279,8 @@ Object.assign(english, {
   'Enter — отправить, Shift+Enter — новая строка. Не пишите личные данные: сообщения уходят в DeepSeek, подробнее — в': 'Enter sends, Shift+Enter adds a line. Do not share personal data: messages go to DeepSeek, see the',
   'политике конфиденциальности': 'privacy policy',
   'На сайте появился': 'Meet the new', 'ИИ-помощник': 'AI assistant', 'Задайте вопрос — и получите ответ': 'Ask a question and get an answer', 'Перейти в чат': 'Open the chat',
+  'Чем помочь?': 'How can I help?', 'Найду кабинет и построю маршрут, расскажу о колледже, разберу фото расписания или помогу с учёбой.': 'I can find a room and plan a route, tell you about the college, read a photo of a timetable or help with your studies.',
+  'Спросите что-нибудь…': 'Ask anything…', 'Недавние': 'Recent', 'Скрыть список чатов': 'Hide chat list', 'Скрыть': 'Hide', 'Скачать чат': 'Download chat',
+  'ЛОГОС AI может ошибаться — важное уточняйте в колледже ·': 'LOGOS AI can make mistakes — check anything important with the college ·', 'Конфиденциальность': 'Privacy',
   'Ваши чаты с ЛОГОС AI и приложенные к ним картинки': 'Your LOGOS AI chats and the pictures attached to them',
 })
