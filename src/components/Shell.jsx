@@ -126,7 +126,7 @@ export function Header() {
       <div className="header-inner">
         <Brand />
         <nav className="desktop-nav" aria-label="Основная навигация">
-          {navigation.map((item) => <NavLink end key={item.to} to={item.to} className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}>{item.label}</NavLink>)}
+          {navigation.map((item) => <NavLink end key={item.to} to={item.to} className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}>{item.label}{item.badge && <span className="nav-badge">{item.badge}</span>}</NavLink>)}
         </nav>
         <div className="header-actions">
           <NavLink className={({ isActive }) => `header-docs ${isActive ? 'header-docs-active' : ''}`} to="/docs" title="Документация по сайту"><BookOpen size={16} /><span>Документация</span></NavLink>
@@ -139,7 +139,7 @@ export function Header() {
       </div>
       <nav id="site-menu" className="mobile-nav-panel" aria-label="Меню сайта" hidden={!mobileOpen}>
         <div className="mobile-nav-language"><span>Язык интерфейса</span><div className="language-switch" role="group" aria-label="Язык сайта">{['ru', 'en'].map((locale) => <button key={locale} type="button" lang={locale} aria-pressed={language === locale} onClick={() => setLanguage(locale)} title={locale === 'ru' ? 'Русская версия' : 'English version'}>{locale.toUpperCase()}</button>)}</div></div>
-        <div className="mobile-nav-links">{navigation.map((item, index) => <NavLink end key={item.to} to={item.to} onClick={() => setMobileOpen(false)} className={({ isActive }) => `mobile-nav-link ${isActive ? 'mobile-nav-link-active' : ''}`}><span className="mobile-nav-index">0{index + 1}</span>{item.label}<ArrowRight size={17} /></NavLink>)}</div>
+        <div className="mobile-nav-links">{navigation.map((item, index) => <NavLink end key={item.to} to={item.to} onClick={() => setMobileOpen(false)} className={({ isActive }) => `mobile-nav-link ${isActive ? 'mobile-nav-link-active' : ''}`}><span className="mobile-nav-index">0{index + 1}</span>{item.label}{item.badge && <span className="nav-badge">{item.badge}</span>}<ArrowRight size={17} /></NavLink>)}</div>
         <div className="mobile-nav-bottom"><span>Найдите нужное место</span><button type="button" onClick={openSearch}><Search size={17} /> Поиск кабинета</button></div>
         <div className="mobile-nav-bottom"><span>Впервые на сайте?</span><NavLink to="/docs" className="mobile-docs-link"><BookOpen size={16} /> Документация</NavLink><button className="mobile-tour-button" type="button" onClick={takeTour}><Sparkles size={16} /> Пройти обучение</button></div>
         <div className="mobile-nav-bottom"><span>Оформление</span><button type="button" onClick={changeTheme}>{theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}{theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}</button></div>
