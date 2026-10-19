@@ -4,7 +4,7 @@ import { buildRouteOptions } from './map-routing.js'
 // Экскурсии по колледжу: камера в 3D летит от остановки к остановке
 // (страница /tour). Тексты — короткие подсказки по назначению помещений,
 // без дат и фактов, которые могут устареть. `say` — что звучит в озвучке
-// (записи в public/voice/tour, собирает scripts/tour-voice.py); если его
+// (записи в public/voice/tour; scripts/tour-voice.py пересобирает их сам в GitHub Actions); если его
 // нет, читается заголовок и текст остановки.
 
 export const tours = [
