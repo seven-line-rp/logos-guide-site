@@ -25,6 +25,7 @@ import './features.css'
 import './header.css'
 import '@fontsource-variable/onest'
 import './design.css'
+import './room-cards.css'
 import './interactions.js'
 
 createRoot(document.getElementById('root')).render(
