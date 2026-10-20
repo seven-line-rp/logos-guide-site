@@ -42,7 +42,7 @@
 .plan-room-selected .plan-room-shape { fill: color-mix(in srgb, var(--map-route) 17%, transparent); stroke: var(--map-route); stroke-width: 2.6; }
 .plan-room-selected .plan-room-shape { animation: plan-select .5s var(--map-ease); }
 @keyframes plan-select { from { stroke-width: 7; stroke: color-mix(in srgb, var(--map-route) 30%, transparent); } }
-.plan-room-muted { opacity: .25; transition: opacity .3s var(--map-ease); }
+.plan-room-muted { transition: opacity .3s var(--map-ease); }
 
 /* Путь: светящаяся подложка, линия прорисовывается от старта к цели */
 .plan-route .plan-route-halo { stroke: var(--map-route-glow); stroke-width: 15; opacity: 1; animation: plan-fade .5s ease both; }

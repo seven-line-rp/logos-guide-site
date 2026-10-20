@@ -22,12 +22,7 @@
   --map-label: #2c3e5c;
   --map-door: #1657d8;
 }
-.section-top h2 em, .floor-preview-copy h2 em, .play-teaser-copy h2 em { color: var(--blue); }
-.page-heading h1 em { color: var(--blue); }
 .home-hero { background: #0d2c6e; }
-.home-hero h1 em { color: #a9c6ff; }
-.floor-preview-band { background: #1c4bb8; }
-.floor-preview-copy h2 em { color: #d9e6ff; }
 .quick-place-blue { background: #dfe9ff; }
 .quick-place-lavender { background: #e3e2ff; }
 .quick-place-sky { background: #d9edff; }
@@ -36,40 +31,32 @@
 .quick-place-lavender::before { background: #6c5ce0; }
 .quick-place-sky::before { background: #1f92c9; }
 .quick-place-yellow::before { background: #e8a72c; }
-.play-teaser-note { border-left-color: var(--yellow); }
 
 /* ============ 2. Fonts: clean grotesque, no handwritten serifs ============ */
 :root {
   --serif: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
 }
-h1 em, h2 em, h3 em, blockquote em, .about-values-quote blockquote,
-.games-heading-badge > strong, .quiz-question h3, .game-finish > strong,
-.search-input-wrap input {
+h1 em, h2 em, h3 em, blockquote em, .quiz-question h3, .game-finish > strong, .search-input-wrap input {
   font-family: inherit;
   font-style: normal;
 }
-.about-values-quote blockquote em { font-style: normal; color: var(--yellow); }
 
 /* ============ 3. Borders: crisp frames and consistent radii ============ */
 .button { border-radius: 10px; }
 .quick-place-card, .service-card, .directory-card, .game-panel, .game-mode-tab { border-width: 1px; }
 .quick-place-card, .directory-card, .service-card { border-radius: 12px; }
-.room-detail-panel, .map-plan-panel, .route-form-panel, .route-result-panel {
+.room-detail-panel, .map-plan-panel {
   border: 1px solid var(--line);
   border-radius: 14px;
 }
 .floor-tab { border-width: 1px; border-radius: 11px; }
-.floor-map-viewport { border: 1px solid var(--line); border-radius: 10px; }
 .plan-room-shape { stroke: var(--map-wall); }
 .plan-room:hover .plan-room-shape, .plan-room:focus-visible .plan-room-shape {
   fill: rgba(33, 88, 224, .16);
   stroke: var(--blue);
-  stroke-width: 2.6;
 }
 .plan-room-selected .plan-room-shape {
   fill: rgba(33, 88, 224, .22);
-  stroke: var(--blue);
-  stroke-width: 3.2;
 }
 .floor-map-art svg > :is(rect, path)[stroke="#ACAEB3"] { stroke: var(--map-wall); stroke-width: 1.6; }
 .floor-map-art svg > :is(rect, path)[fill="#878DA2"] { fill: #b3c1d4; }
