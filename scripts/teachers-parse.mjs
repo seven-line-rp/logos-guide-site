@@ -41,8 +41,17 @@ export function parseTeachers(html) {
     const block = [rest, ...lines.slice(index + 1, index + 9)].filter(Boolean)
     const end = block.findIndex((line, i) => i > 0 && NAME.test(line))
     const own = end > 0 ? block.slice(0, end) : block
-    const position = own.find((line) => POSITION.test(line) && line.length < 160 && !SUBJECTS.test(line.replace(/преподавател[а-я]*/gi, ''))) || ''
-    const subjectLines = own.filter((line) => line !== position && SUBJECTS.test(line) && !NOISE.test(line))
+    // На странице колледжа подпись стоит отдельной строкой («Преподаваемые
+    // дисциплины:»), а значение — на следующей.
+    const values = []
+    for (let i = 0; i < own.length; i += 1) {
+      if (/^[^:]{2,60}:$/.test(own[i])) { if (SUBJECTS.test(own[i]) && own[i + 1]) values.push(own[i + 1]); i += 1 }
+    }
+    const labelled = new Set(own.flatMap((line, i) => (/^[^:]{2,60}:$/.test(line) ? [line, own[i + 1]] : [])))
+    const first = own.find((line) => !labelled.has(line) && POSITION.test(line) && line.length < 200 && !SUBJECTS.test(line.replace(/преподавател[а-я]*/gi, '')))
+    // «Преподаватель, инженер в компании …» — для сайта хватает первой части.
+    const position = first ? first.split(/[,;]\s+/)[0].replace(/\s*\((.+)\)\s*/, ' $1').trim() : ''
+    const subjectLines = values.length ? values : own.filter((line) => line !== first && SUBJECTS.test(line) && !NOISE.test(line))
     const subjects = [...new Set(subjectLines.flatMap(splitSubjects))]
     // Должность «преподаватель физики» сама называет предмет.
     if (!subjects.length && /преподавател[а-я]*\s+\S/i.test(position)) {
