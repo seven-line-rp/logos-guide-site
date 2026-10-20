@@ -27,20 +27,6 @@
 }
 @media (max-width: 980px) { .header-docs { display: none; } }
 
-.mobile-nav-bottom .mobile-docs-link {
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 12px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  color: var(--ink);
-  background: var(--surface);
-  font-weight: 650;
-}
-.mobile-nav-bottom .mobile-docs-link svg { color: var(--blue); }
-
 /* ---------- Подвал ---------- */
 .footer-legal { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; }
 .footer-legal a, .footer-legal button {
@@ -226,7 +212,7 @@ html[data-theme='dark'] .cookie-switch { background: #3a4a63; }
 
 .docs-layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); align-items: start; gap: 56px; padding-block: 56px 96px; }
 .docs-toc { position: sticky; top: 100px; }
-.docs-toc-title { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-family: var(--mono); font-size: 10.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+.docs-toc-title { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-family: var(--mono); font-size: 10.5px; font-weight: 700; }
 .docs-toc ol { display: grid; gap: 2px; margin: 12px 0 0; padding: 0; list-style: none; border-left: 2px solid var(--line); }
 .docs-toc a {
   --tone: var(--blue);
@@ -347,7 +333,7 @@ html[data-theme='dark'] .docs-inline-link { color: var(--tone-2); }
 .legal-table-wrap { margin-top: 16px; overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; }
 .legal-table { width: 100%; min-width: 560px; border-collapse: collapse; font-size: 13px; }
 .legal-table th, .legal-table td { padding: 11px 14px; border-top: 1px solid var(--line); text-align: left; vertical-align: top; }
-.legal-table thead th { border-top: 0; color: var(--muted); background: var(--surface-soft); font-family: var(--mono); font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.legal-table thead th { border-top: 0; color: var(--muted); background: var(--surface-soft); font-family: var(--mono); font-size: 10.5px; font-weight: 700; }
 .legal-table td { color: var(--ink); }
 .legal code { min-width: 0; font-size: 11px; text-align: left; word-break: break-word; }
 .legal-kind { display: inline-block; padding: 3px 9px; border-radius: 999px; color: #0f766e; background: rgba(13, 148, 136, .12); font-size: 11.5px; font-weight: 700; white-space: nowrap; }
@@ -355,7 +341,7 @@ html[data-theme='dark'] .docs-inline-link { color: var(--tone-2); }
 .privacy-consent { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 18px; padding: 16px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface-soft); }
 .privacy-consent-icon { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 12px; color: #b45309; background: linear-gradient(135deg, #fef3c7, #fde68a); }
 .privacy-consent-copy { min-width: 0; display: flex; flex: 1 1 220px; flex-direction: column; gap: 2px; }
-.privacy-consent-copy small { color: var(--muted); font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; }
+.privacy-consent-copy small { color: var(--muted); font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; }
 .privacy-consent-copy strong { color: var(--ink); font-size: 14px; }
 .privacy-consent .button { gap: 8px; font-size: 12.5px; }
 html[data-theme='dark'] .legal-kind { color: #5eead4; }
@@ -388,7 +374,7 @@ html[data-theme='dark'] .privacy-consent-icon { color: #fde68a; background: rgba
   transition: transform .25s ease, box-shadow .25s ease;
 }
 .quiz-preview:hover { transform: rotate(0) translateY(-3px); box-shadow: 0 22px 46px rgba(15, 35, 75, .12); }
-.quiz-preview-top { display: flex; justify-content: space-between; gap: 10px; color: var(--muted); font-family: var(--mono); font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.quiz-preview-top { display: flex; justify-content: space-between; gap: 10px; color: var(--muted); font-family: var(--mono); font-size: 10.5px; font-weight: 700; }
 .quiz-preview-top span:first-child { color: #be185d; }
 .quiz-preview strong { color: var(--ink); font-size: 19px; font-weight: 760; letter-spacing: -.02em; line-height: 1.25; }
 .quiz-preview-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -402,7 +388,7 @@ html[data-theme='dark'] .quiz-preview-options .quiz-preview-right { color: #86ef
 @media (prefers-reduced-motion: reduce) { .quiz-preview { transform: none; transition: none; } }
 
 /* Кнопка «Настройки cookie» в подвале — тем же шрифтом, что ссылки рядом. */
-.footer-bottom .footer-legal :is(a, button) { font-family: var(--mono); font-size: 11px !important; letter-spacing: .08em !important; text-transform: uppercase; }
+.footer-bottom .footer-legal :is(a, button) { font-family: var(--mono); font-size: 11px !important; text-transform: uppercase; }
 
 /* Номер версии в подвале. */
 .footer-version { display: inline-block; margin-top: 14px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-family: var(--mono); font-size: 11px; letter-spacing: .02em; }

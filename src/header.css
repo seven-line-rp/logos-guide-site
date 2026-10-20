@@ -13,8 +13,8 @@
   padding: 10px 0;
   border-bottom: 1px solid transparent;
   background: color-mix(in srgb, var(--bg) 80%, transparent);
-  backdrop-filter: saturate(180%) blur(18px);
   -webkit-backdrop-filter: saturate(180%) blur(18px);
+  backdrop-filter: saturate(180%) blur(18px);
   box-shadow: none;
   transition: border-color .3s, box-shadow .3s, background .3s;
 }
@@ -187,8 +187,8 @@
   border-radius: 26px;
   background: color-mix(in srgb, var(--surface) 96%, transparent);
   box-shadow: 0 30px 80px rgba(13, 28, 59, .18);
-  backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
   animation: hd-menu-in .35s cubic-bezier(.22, 1, .36, 1);
   transform-origin: 90% 0;
 }
@@ -241,7 +241,7 @@
 .hd-menu-link:hover { border-color: var(--blue); color: var(--blue); }
 .hd-menu-tour { border-color: transparent; color: #fff; background: linear-gradient(135deg, #3b74ff, #1f4ff0); }
 .hd-menu-tour:hover { color: #fff; filter: brightness(1.06); }
-.hd-scrim { backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); animation: hd-fade .25s ease both; }
+.hd-scrim { -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); animation: hd-fade .25s ease both; }
 @keyframes hd-fade { from { opacity: 0; } }
 
 @media (max-width: 960px) {

@@ -1,0 +1,143 @@
+/* Карточки справочника с обложкой: фото помещения или мягкий градиент с
+   иконкой, если снимка пока нет. Подключается после design.css. */
+
+.directory-grid { gap: 14px; }
+
+.directory-card.directory-card-media {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 16px;
+  isolation: isolate;
+  transition: transform .35s cubic-bezier(.2,.7,.2,1), box-shadow .35s, border-color .35s;
+}
+.directory-card.directory-card-media:hover { transform: translateY(-3px); box-shadow: 0 18px 38px -18px rgba(28,44,70,.45); }
+
+.directory-card-cover {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: var(--cover-bg);
+}
+.directory-cover-blue { --cover-bg: radial-gradient(120% 90% at 20% 0%, #dfe9ff, #c7d6f3 55%, #b5c6e6); --cover-ink: #3159ad; }
+.directory-cover-green { --cover-bg: radial-gradient(120% 90% at 20% 0%, #e2f1ea, #c8e0d5 55%, #b4d0c4); --cover-ink: #2f6b55; }
+.directory-cover-warm { --cover-bg: radial-gradient(120% 90% at 20% 0%, #fbeedd, #efdcc2 55%, #e2c9a8); --cover-ink: #8a5a24; }
+.directory-cover-lilac { --cover-bg: radial-gradient(120% 90% at 20% 0%, #ece6fb, #d9d0f1 55%, #c7bce6); --cover-ink: #654bb0; }
+
+/* Без фото: точечная сетка и крупный номер кабинета. */
+.directory-card-cover::before {
+  position: absolute;
+  inset: 0;
+  content: '';
+  opacity: .5;
+  background-image: radial-gradient(rgba(255,255,255,.75) .9px, transparent 1px);
+  background-size: 14px 14px;
+  mask-image: linear-gradient(135deg, transparent 15%, #000 85%);
+  -webkit-mask-image: linear-gradient(135deg, transparent 15%, #000 85%);
+}
+.directory-card-cover:has(.directory-card-photo)::before { content: none; }
+.directory-card-mark {
+  position: relative;
+  color: var(--cover-ink);
+  font-size: clamp(40px, 4.4vw, 58px);
+  font-weight: 700;
+  letter-spacing: -.04em;
+  line-height: 1;
+  opacity: .82;
+  transition: transform .5s cubic-bezier(.2,.7,.2,1);
+}
+.directory-card-media:hover .directory-card-mark { transform: scale(1.06); }
+
+.directory-card-cover .directory-card-icon {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  color: var(--cover-ink);
+  background: rgba(255,255,255,.55);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  transition: transform .4s cubic-bezier(.2,.7,.2,1);
+}
+.directory-card-media:hover .directory-card-cover .directory-card-icon { transform: scale(1.08) rotate(-4deg); }
+
+.directory-card-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .8s cubic-bezier(.2,.7,.2,1), opacity .6s;
+}
+.directory-card-media:hover .directory-card-photo { transform: scale(1.06); }
+.directory-card-duo .directory-card-photo + .directory-card-photo { opacity: 0; }
+.directory-card-duo:hover .directory-card-photo + .directory-card-photo { opacity: 1; }
+
+/* Тёплая плёночная дымка поверх снимка. */
+.directory-card-cover:has(.directory-card-photo)::after {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  content: '';
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(255,190,120,.10), transparent 40%),
+    linear-gradient(0deg, rgba(15,24,38,.38), transparent 45%);
+}
+
+.directory-card-cover > .floor-tag {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  color: #1f2f45;
+  background: rgba(255,255,255,.78);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+.directory-card-media .directory-card-copy { padding: 12px 40px 14px 14px; }
+.directory-card-media .directory-card-copy strong { font-size: 15px; }
+.directory-card-media .directory-card-arrow { right: 14px; bottom: 16px; }
+
+:root[data-theme='dark'] .directory-cover-blue { --cover-bg: radial-gradient(120% 90% at 20% 0%, #33476a, #26364f 60%, #1f2c40); --cover-ink: #a9c3ff; }
+:root[data-theme='dark'] .directory-cover-green { --cover-bg: radial-gradient(120% 90% at 20% 0%, #2f4d44, #243b35 60%, #1d302b); --cover-ink: #9fd8c0; }
+:root[data-theme='dark'] .directory-cover-warm { --cover-bg: radial-gradient(120% 90% at 20% 0%, #4d4033, #3a3128 60%, #2e2721); --cover-ink: #f0c993; }
+:root[data-theme='dark'] .directory-cover-lilac { --cover-bg: radial-gradient(120% 90% at 20% 0%, #463d63, #352f4c 60%, #2a263c); --cover-ink: #c9b8ff; }
+:root[data-theme='dark'] .directory-card-cover .directory-card-icon { color: var(--cover-ink); background: rgba(255,255,255,.08); }
+:root[data-theme='dark'] .directory-card-cover::before { opacity: .18; }
+:root[data-theme='dark'] .directory-card-cover > .floor-tag { color: #ecebe6; background: rgba(20,20,20,.55); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .directory-cover-blue { --cover-bg: radial-gradient(120% 90% at 20% 0%, #33476a, #26364f 60%, #1f2c40); --cover-ink: #a9c3ff; }
+  :root:not([data-theme='light']) .directory-cover-green { --cover-bg: radial-gradient(120% 90% at 20% 0%, #2f4d44, #243b35 60%, #1d302b); --cover-ink: #9fd8c0; }
+  :root:not([data-theme='light']) .directory-cover-warm { --cover-bg: radial-gradient(120% 90% at 20% 0%, #4d4033, #3a3128 60%, #2e2721); --cover-ink: #f0c993; }
+  :root:not([data-theme='light']) .directory-cover-lilac { --cover-bg: radial-gradient(120% 90% at 20% 0%, #463d63, #352f4c 60%, #2a263c); --cover-ink: #c9b8ff; }
+  :root:not([data-theme='light']) .directory-card-cover .directory-card-icon { color: var(--cover-ink); background: rgba(255,255,255,.08); }
+  :root:not([data-theme='light']) .directory-card-cover::before { opacity: .18; }
+  :root:not([data-theme='light']) .directory-card-cover > .floor-tag { color: #ecebe6; background: rgba(20,20,20,.55); }
+}
+
+/* На телефоне — строка: миниатюра слева, текст справа. */
+@media (max-width: 680px) {
+  .directory-grid { gap: 8px; }
+  .directory-card.directory-card-media { flex-direction: row; align-items: stretch; border-radius: 14px; }
+  .directory-card-cover { width: 104px; flex: none; aspect-ratio: auto; min-height: 84px; }
+  .directory-card-mark { font-size: 26px; }
+  .directory-card-cover .directory-card-icon { width: 38px; height: 38px; border-radius: 11px; }
+  .directory-card-cover > .floor-tag { top: auto; right: auto; bottom: 6px; left: 6px; transform: scale(.85); transform-origin: bottom left; }
+  .directory-card-media .directory-card-copy { align-self: center; padding: 10px 34px 10px 12px; }
+  .directory-card-media .directory-card-copy strong { font-size: 14px; }
+  .directory-card-media .directory-card-arrow { right: 10px; bottom: 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .directory-card.directory-card-media, .directory-card-photo, .directory-card-cover .directory-card-icon, .directory-card-mark { transition: none; }
+  .directory-card-media:hover .directory-card-photo { transform: none; }
+}

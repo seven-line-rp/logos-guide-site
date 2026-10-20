@@ -143,7 +143,7 @@
 
 /* Кнопки камеры */
 .rs-controls { position: absolute; z-index: 5; right: 12px; bottom: 12px; display: grid; gap: 6px; }
-.rs-controls button { width: 40px; height: 40px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); background: color-mix(in srgb, var(--surface) 88%, transparent); box-shadow: 0 6px 18px rgba(15, 30, 60, .1); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); cursor: pointer; transition: color .15s, border-color .15s, transform .15s; }
+.rs-controls button { width: 40px; height: 40px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); background: color-mix(in srgb, var(--surface) 88%, transparent); box-shadow: 0 6px 18px rgba(15, 30, 60, .1); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); cursor: pointer; transition: color .15s, border-color .15s, transform .15s; }
 .rs-controls button:hover { color: var(--blue); border-color: var(--blue); }
 .rs-controls button:active { transform: scale(.94); }
 .rs-controls button.is-on { color: #fff; border-color: transparent; background: var(--action-bg, var(--blue)); }
@@ -159,7 +159,7 @@
 /* ---------- Карта на странице маршрута ---------- */
 .nv-map .rs { height: clamp(420px, 64vh, 680px); }
 @media (max-width: 680px) { .nv-map .rs { height: min(62vh, 480px); min-height: 360px; } }
-.nv-pick { position: absolute; z-index: 18; left: 12px; bottom: 12px; width: min(340px, calc(100% - 76px)); padding: 12px; display: grid; gap: 10px; border: 1px solid var(--line); border-radius: 16px; background: color-mix(in srgb, var(--surface) 94%, transparent); box-shadow: 0 14px 40px rgba(15, 30, 60, .16); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); animation: nv-pick-in .28s cubic-bezier(.22, 1, .36, 1); }
+.nv-pick { position: absolute; z-index: 18; left: 12px; bottom: 12px; width: min(340px, calc(100% - 76px)); padding: 12px; display: grid; gap: 10px; border: 1px solid var(--line); border-radius: 16px; background: color-mix(in srgb, var(--surface) 94%, transparent); box-shadow: 0 14px 40px rgba(15, 30, 60, .16); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); animation: nv-pick-in .28s cubic-bezier(.22, 1, .36, 1); }
 @keyframes nv-pick-in { from { opacity: 0; transform: translateY(10px) scale(.98); } }
 .nv-pick-head { display: flex; align-items: center; gap: 10px; }
 .nv-pick-icon { width: 34px; height: 34px; display: grid; flex: 0 0 auto; place-items: center; border-radius: 11px; color: var(--blue); background: var(--surface-soft); }

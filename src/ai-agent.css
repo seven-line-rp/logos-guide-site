@@ -3,7 +3,6 @@
 
 .nav-badge { margin-left: 5px; padding: 1px 5px 0; display: inline-flex; align-items: center; border-radius: 999px; color: #8a5a00; background: #fff1c9; font-size: 8.5px; font-weight: 750; letter-spacing: .06em; line-height: 1.5; vertical-align: middle; }
 :root[data-theme='dark'] .nav-badge { color: #ffd88a; background: rgba(255, 210, 103, .14); }
-.mobile-nav-link .nav-badge { margin-right: auto; margin-left: 8px; font-size: 10px; }
 
 /* Седьмой пункт навигации: «Документация» в шапке теперь всегда иконка
    (подпись остаётся в title и для скринридеров), иначе шапка не помещается. */

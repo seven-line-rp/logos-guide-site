@@ -42,7 +42,7 @@
 .plan-room-selected .plan-room-shape { fill: color-mix(in srgb, var(--map-route) 17%, transparent); stroke: var(--map-route); stroke-width: 2.6; }
 .plan-room-selected .plan-room-shape { animation: plan-select .5s var(--map-ease); }
 @keyframes plan-select { from { stroke-width: 7; stroke: color-mix(in srgb, var(--map-route) 30%, transparent); } }
-.plan-room-muted { opacity: .25; transition: opacity .3s var(--map-ease); }
+.plan-room-muted { transition: opacity .3s var(--map-ease); }
 
 /* Путь: светящаяся подложка, линия прорисовывается от старта к цели */
 .plan-route .plan-route-halo { stroke: var(--map-route-glow); stroke-width: 15; opacity: 1; animation: plan-fade .5s ease both; }
@@ -63,12 +63,12 @@
 .plan-position-core { transition: transform .4s var(--map-ease); }
 
 /* Кнопки масштаба — стеклянная панель */
-.floor-map-zoom-controls { gap: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 14px; background: color-mix(in srgb, var(--surface) 86%, transparent); box-shadow: 0 10px 28px rgba(15, 30, 60, .12); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+.floor-map-zoom-controls { gap: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 14px; background: color-mix(in srgb, var(--surface) 86%, transparent); box-shadow: 0 10px 28px rgba(15, 30, 60, .12); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
 .floor-map-zoom-controls button { width: 42px; height: 40px; border: 0; border-radius: 0; color: var(--ink); background: transparent; box-shadow: none; transition: background .15s, color .15s; }
 .floor-map-zoom-controls button + button { border-top: 1px solid var(--line); }
 .floor-map-zoom-controls button:hover { color: var(--blue); background: color-mix(in srgb, var(--blue) 8%, transparent); }
 :root[data-theme='dark'] .floor-map-zoom-controls button { color: var(--ink); background: transparent; }
-.floor-map-hint { border-radius: 999px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.floor-map-hint { border-radius: 999px; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
 
 /* Переключатель 2D / 3D на странице карты */
 .map-view-actions { display: inline-flex; align-items: center; gap: 8px; }

@@ -1,0 +1,87 @@
+/* Фото, статус «что сейчас» и форма «Сообщить о неточности» в карточке
+   помещения на карте; фото в карточках «Пространств». */
+
+.room-photo { position: relative; width: 100%; margin: 0 0 14px; overflow: hidden; border-radius: 14px; aspect-ratio: 4 / 3; background: var(--surface-soft); }
+.room-photo img { width: 100%; height: 100%; display: block; object-fit: cover; animation: room-photo-in .45s ease both; }
+.room-photo::after { position: absolute; inset: 0; content: ''; pointer-events: none; background: linear-gradient(180deg, rgba(255,190,120,.08), transparent 45%), linear-gradient(0deg, rgba(15,24,38,.28), transparent 40%); }
+.room-photo-dots { position: absolute; left: 50%; bottom: 10px; z-index: 1; display: flex; gap: 6px; transform: translateX(-50%); }
+.room-photo-dot { width: 8px; height: 8px; padding: 0; border: 0; border-radius: 50%; background: rgba(255,255,255,.55); cursor: pointer; transition: width .2s, background .2s; }
+.room-photo-dot-active { width: 20px; border-radius: 4px; background: #fff; }
+@keyframes room-photo-in { from { opacity: 0; transform: scale(1.03); } }
+
+.room-status { width: 100%; display: flex; align-items: center; gap: 9px; margin-top: 14px; padding: 10px 12px; border-radius: 12px; color: var(--ink); background: var(--surface-soft); font-size: 14px; line-height: 1.35; text-align: left; }
+.room-status-dot { width: 9px; height: 9px; flex: none; border-radius: 50%; background: #8b97a6; }
+.room-status-busy .room-status-dot { background: #e0794a; box-shadow: 0 0 0 4px rgba(224,121,74,.18); }
+.room-status-free .room-status-dot { background: #2f9e62; box-shadow: 0 0 0 4px rgba(47,158,98,.18); }
+.room-facts { width: 100%; display: grid; gap: 4px; margin: 10px 0 0; padding: 0; text-align: left; }
+.room-facts div { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px dashed var(--line); font-size: 14px; }
+.room-facts dt { color: var(--muted); }
+.room-facts dd { margin: 0; color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.report-toggle { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; padding: 4px 0; border: 0; color: var(--muted); background: none; font: inherit; font-size: 14px; cursor: pointer; }
+.report-toggle:hover { color: var(--blue); }
+.report-box { width: 100%; display: flex; flex-direction: column; gap: 10px; margin-top: 12px; padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-soft); text-align: left; }
+.report-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; color: var(--ink); font-size: 15px; }
+.report-close { width: 28px; height: 28px; flex: none; display: grid; place-items: center; border: 0; border-radius: 8px; color: var(--muted); background: transparent; cursor: pointer; }
+.report-close:hover { color: var(--ink); background: var(--surface); }
+.report-kinds { display: flex; flex-wrap: wrap; gap: 6px; }
+.report-kind { display: inline-flex; align-items: center; min-height: 34px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--ink); background: var(--surface); font-size: 14px; cursor: pointer; }
+.report-kind input { position: absolute; opacity: 0; pointer-events: none; }
+.report-kind:has(input:focus-visible) { outline: 3px solid color-mix(in srgb, var(--blue) 50%, transparent); outline-offset: 2px; }
+.report-kind-active { border-color: var(--blue); color: var(--blue); background: color-mix(in srgb, var(--blue) 9%, var(--surface)); }
+.report-box textarea { width: 100%; min-height: 70px; resize: vertical; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); background: var(--surface); font: inherit; font-size: 15px; }
+.report-box textarea:focus { border-color: var(--blue); outline: none; }
+.report-trap { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+.report-error { margin: 0; color: #c2410c; font-size: 14px; }
+.report-send { align-self: flex-start; }
+.report-note { margin: 0; color: var(--muted); font-size: 13px; }
+.report-done { flex-direction: row; align-items: flex-start; color: var(--ink); font-size: 14px; }
+.report-done > svg { flex: none; color: #2f9e62; }
+.report-done .report-close { margin-left: auto; }
+
+.service-card.service-card-photo { padding: 0; }
+.service-card-photo .room-photo { margin: 0; border-radius: 0; aspect-ratio: 16 / 9; }
+.service-card-photo .room-photo::after { background: linear-gradient(0deg, rgba(15,24,38,.32), transparent 55%); }
+.service-card-photo .service-card-body { flex: 1; display: flex; flex-direction: column; padding: 17px; }
+.service-card-photo .service-card-icon { top: 12px; right: 12px; z-index: 2; border-color: rgba(255,255,255,.5); color: #fff; background: rgba(15,24,38,.32); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+.service-card-photo .service-card-content { margin-top: 12px; }
+.service-card-photo .room-photo img { transition: transform .8s cubic-bezier(.2,.7,.2,1); }
+.service-card-photo:hover .room-photo img { transform: scale(1.05); }
+
+/* Пространства без фото: мягкий градиент в цвет карточки с крупной иконкой. */
+.service-card-art { position: relative; aspect-ratio: 16 / 9; display: grid; place-items: center; overflow: hidden; color: var(--art-ink, #3159ad); background: var(--art-bg, radial-gradient(120% 90% at 20% 0%, #dfe9ff, #c7d6f3 55%, #b5c6e6)); }
+.service-card-art::before { position: absolute; inset: 0; content: ''; opacity: .5; background-image: radial-gradient(rgba(255,255,255,.75) .9px, transparent 1px); background-size: 14px 14px; mask-image: linear-gradient(135deg, transparent 15%, #000 85%); -webkit-mask-image: linear-gradient(135deg, transparent 15%, #000 85%); }
+.service-card-art svg { position: relative; opacity: .85; transition: transform .6s cubic-bezier(.2,.7,.2,1); }
+.service-card-photo:hover .service-card-art svg { transform: scale(1.08) rotate(-4deg); }
+.service-card-art + .service-card-icon { display: none; }
+.service-green { --art-bg: radial-gradient(120% 90% at 20% 0%, #e2f1ea, #c8e0d5 55%, #b4d0c4); --art-ink: #2f6b55; }
+.service-cyan { --art-bg: radial-gradient(120% 90% at 20% 0%, #e0f2fa, #c4e1ef 55%, #abd0e3); --art-ink: #24688a; }
+.service-yellow { --art-bg: radial-gradient(120% 90% at 20% 0%, #fbeedd, #efdcc2 55%, #e2c9a8); --art-ink: #8a5a24; }
+:root[data-theme='dark'] .service-green { --art-bg: radial-gradient(120% 90% at 20% 0%, #2f4d44, #243b35 60%, #1d302b); --art-ink: #9fd8c0; }
+:root[data-theme='dark'] .service-cyan { --art-bg: radial-gradient(120% 90% at 20% 0%, #2d4a5a, #233a47 60%, #1c2f3a); --art-ink: #9fd3ef; }
+:root[data-theme='dark'] .service-yellow { --art-bg: radial-gradient(120% 90% at 20% 0%, #4d4033, #3a3128 60%, #2e2721); --art-ink: #f0c993; }
+:root[data-theme='dark'] .service-card-art::before { opacity: .18; }
+
+@media (max-width: 680px) {
+  .service-card-photo .service-card-body { padding: 13px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .room-photo img { animation: none; }
+  .service-card-photo .room-photo img { transition: none; }
+}
+
+/* Плашка «нет сети». */
+.offline-notice { position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 120; display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 999px; color: #fff; background: rgba(20,28,42,.92); box-shadow: 0 10px 30px rgba(0,0,0,.25); font-size: 14px; transform: translateX(-50%); white-space: nowrap; }
+
+/* «Начните здесь» на главной: карточки с фото на всю площадь. */
+.quick-place-card.quick-place-media { min-height: 190px; border-color: transparent; color: #fff; isolation: isolate; }
+.quick-place-media::before { display: none; }
+.quick-place-media::after { position: absolute; inset: 0; z-index: -1; content: ''; background: linear-gradient(180deg, rgba(10,18,32,.15) 0%, rgba(10,18,32,.05) 35%, rgba(10,18,32,.72) 100%), linear-gradient(180deg, rgba(255,190,120,.12), transparent 40%); }
+.quick-place-photo { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; transition: transform .8s cubic-bezier(.2,.7,.2,1); }
+.quick-place-media:hover .quick-place-photo { transform: scale(1.06); }
+.quick-place-media .quick-place-num { align-self: flex-start; padding: 3px 10px; border-radius: 999px; color: #1f2f45 !important; background: rgba(255,255,255,.82); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+.quick-place-media .quick-place-copy strong { color: #fff; text-shadow: 0 1px 12px rgba(0,0,0,.35); }
+.quick-place-media .quick-place-copy small { color: rgba(255,255,255,.9) !important; }
+.quick-place-media .quick-place-arrow { border-color: rgba(255,255,255,.4); color: #fff; background: rgba(255,255,255,.16); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+@media (prefers-reduced-motion: reduce) { .quick-place-photo { transition: none; } }

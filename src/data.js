@@ -68,7 +68,22 @@ export const rooms = [
   room('biotech-lab-225', 2, 'Лаборатория биотехнических и медицинских аппаратов', '225', 'Мастерские и лаборатории', 'Лаборатория биотехнических и медицинских аппаратов №225.', 'биотехнические медицинские аппараты лаборатория', { x: 262, y: 495, w: 228, h: 165, lines: ['Лаборатория', 'биотехнических', 'и медицинских', 'аппаратов'], door: ['left', .5] }),
 ]
 
-export const categoryLabels = ['Все места', 'Учебные кабинеты', 'Мастерские и лаборатории', 'Общие пространства', 'Администрация']
+// Фото для карточек справочника. У учебных кабинетов один общий снимок,
+// у остальных мест — свои; второй кадр показывается при наведении.
+const roomPhotos = {
+  'auditorium-104': ['/rooms/auditorium.webp'],
+  canteen: ['/rooms/canteen.webp'],
+  'library-214': ['/rooms/library.webp', '/rooms/library-2.webp'],
+}
+
+export function photosFor(room) {
+  return roomPhotos[room.id] || (room.category === 'Учебные кабинеты' ? ['/rooms/classroom.webp'] : [])
+}
+
+// У каждого снимка есть уменьшенная копия *-480.webp для маленьких экранов.
+export const photoSrcSet = (src) => `${src.replace(/\.webp$/, '-480.webp')} 480w, ${src} 960w`
+
+export const categoryLabels =['Все места', 'Учебные кабинеты', 'Мастерские и лаборатории', 'Общие пространства', 'Администрация']
 
 export const quickPlaces = [
   { roomId: 'auditorium-104', label: 'Актовый зал', meta: '104, 1 этаж', tone: 'blue' },

@@ -35,13 +35,12 @@
 .ab-section-head { max-width: 640px; }
 .ab-section-head-split { max-width: none; display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 16px 40px; }
 .ab-section-head-split > p { max-width: 380px; margin: 0; color: var(--muted); font-size: 15px; line-height: 1.6; }
-.ab-tag { color: var(--blue); font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.ab-tag { color: var(--blue); font-family: var(--mono); }
 .ab-section-head h2 { margin: 10px 0 0; color: var(--ink); font-size: clamp(26px, 3vw, 36px); font-weight: 760; letter-spacing: -.03em; line-height: 1.15; }
 
 .ab-principles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; margin: 32px 0 0; padding: 0; list-style: none; border-top: 1px solid var(--ink); }
 .ab-principles li { padding: 22px 28px 8px 0; }
 .ab-principles li + li { padding-left: 28px; border-left: 1px solid var(--line); }
-.ab-principle-num { color: var(--muted-2); font-family: var(--mono); font-size: 12px; font-weight: 700; }
 .ab-principles h3 { margin: 14px 0 0; color: var(--ink); font-size: 19px; font-weight: 720; letter-spacing: -.015em; }
 .ab-principles p { margin: 10px 0 0; color: var(--muted); font-size: 14.5px; line-height: 1.65; }
 

@@ -32,7 +32,7 @@
 .nv-arrive-status { padding: 10px 12px; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 2px 10px; border-radius: 12px; animation: fx-rise .35s var(--ease); }
 .nv-arrive-status strong { font-size: 14px; }
 .nv-arrive-status small { grid-column: 1; color: inherit; font-size: 12px; opacity: .8; }
-.nv-arrive-status button { grid-column: 2; grid-row: 1 / 3; min-height: 32px; padding: 0 12px; border: 0; border-radius: 10px; color: #fff; background: currentColor; font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+.nv-arrive-status button { grid-column: 2; grid-row: 1 / 3; min-height: 32px; padding: 0 12px; border: 0; border-radius: 10px; color: #fff; font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; }
 .nv-arrive-status button { background: var(--bad); }
 .nv-arrive-ok { color: #166534; background: #dcfce7; }
 .nv-arrive-tight { color: #92400e; background: #fef3c7; }
@@ -59,7 +59,7 @@
 .fav-button.is-on svg { animation: fx-pop .35s var(--ease); }
 
 /* ---------- Поделиться ---------- */
-.share-backdrop { position: fixed; z-index: 150; inset: 0; display: grid; place-items: center; padding: 18px; background: rgba(7, 20, 45, .55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); animation: fx-fade .2s ease both; }
+.share-backdrop { position: fixed; z-index: 150; inset: 0; display: grid; place-items: center; padding: 18px; background: rgba(7, 20, 45, .55); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); animation: fx-fade .2s ease both; }
 .share-dialog { position: relative; width: min(560px, 100%); max-height: calc(100dvh - 36px); padding: 24px; overflow-y: auto; border: 1px solid var(--line); border-radius: 24px; background: var(--surface); box-shadow: 0 30px 80px rgba(0, 0, 0, .25); animation: fx-rise .35s var(--ease); }
 .share-dialog h2 { margin: 10px 40px 4px 0; font-size: 21px; line-height: 1.25; letter-spacing: -.01em; }
 .share-meta { margin: 0 0 16px; color: var(--muted); }
@@ -189,8 +189,8 @@
 .schedule-layout { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 18px; align-items: start; }
 .schedule-main, .schedule-form, .schedule-side .lesson-next { padding: 18px; border: 1px solid var(--line); border-radius: 20px; background: var(--surface); }
 .schedule-side { display: grid; gap: 14px; position: sticky; top: 96px; }
-.schedule-days { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; padding: 4px; border-radius: 14px; background: var(--surface-soft); }
-.schedule-days button { position: relative; min-height: 40px; border: 0; border-radius: 10px; color: var(--muted); background: transparent; font: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer; transition: all .2s var(--ease); }
+.schedule-days { display: grid; gap: 4px; padding: 4px; border-radius: 14px; background: var(--surface-soft); }
+.schedule-days button { position: relative; border: 0; border-radius: 10px; color: var(--muted); background: transparent; font: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer; transition: all .2s var(--ease); }
 .schedule-days button[aria-selected='true'] { color: var(--ink); background: var(--surface); box-shadow: 0 2px 8px rgba(13, 28, 59, .08); }
 .schedule-days i { position: absolute; top: 4px; right: 6px; min-width: 16px; height: 16px; display: grid; place-items: center; border-radius: 999px; color: #fff; background: var(--blue); font-size: 10px; font-style: normal; }
 .schedule-day-title { margin: 18px 0 10px; display: flex; align-items: center; gap: 8px; font-size: 18px; }
@@ -223,7 +223,6 @@
 .schedule-times input:focus, .schedule-field input:focus { border-color: var(--blue); }
 .schedule-add { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 12px; color: #fff; background: var(--action-bg, var(--blue)); font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
 .schedule-error { margin: 0; color: var(--bad); font-size: 13px !important; }
-.schedule-note { margin: 0; color: var(--muted); font-size: 12px !important; }
 @media (max-width: 900px) {
   .schedule-layout { grid-template-columns: 1fr; }
   .schedule-side { position: static; order: -1; }
@@ -237,7 +236,7 @@
 .ex-layout { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 16px; align-items: start; }
 .ex-stage { position: relative; overflow: hidden; border: 1px solid var(--line); border-radius: 22px; }
 .ex-stage .rs { height: clamp(460px, 70vh, 720px); }
-.ex-card { position: absolute; z-index: 10; left: 14px; bottom: 14px; width: min(400px, calc(100% - 80px)); padding: 16px 18px; overflow: hidden; border: 1px solid var(--line); border-radius: 20px; background: color-mix(in srgb, var(--surface) 92%, transparent); box-shadow: 0 18px 50px rgba(13, 28, 59, .16); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); animation: fx-rise .45s var(--ease); }
+.ex-card { position: absolute; z-index: 10; left: 14px; bottom: 14px; width: min(400px, calc(100% - 80px)); padding: 16px 18px; overflow: hidden; border: 1px solid var(--line); border-radius: 20px; background: color-mix(in srgb, var(--surface) 92%, transparent); box-shadow: 0 18px 50px rgba(13, 28, 59, .16); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); animation: fx-rise .45s var(--ease); }
 .ex-card-step { color: var(--blue); font-size: 12px; font-weight: 700; }
 .ex-card h2 { margin: 4px 0 6px; font-size: 22px; line-height: 1.15; letter-spacing: -.02em; }
 .ex-card p { margin: 0 0 8px; color: var(--muted); font-size: 14px !important; }
