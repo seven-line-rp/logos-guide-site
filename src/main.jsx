@@ -26,6 +26,9 @@ import './header.css'
 import '@fontsource-variable/onest'
 import './design.css'
 import './room-cards.css'
+import './room-extras.css'
+import './arcade.css'
+import './a11y.css'
 import './interactions.js'
 
 createRoot(document.getElementById('root')).render(
@@ -33,3 +36,8 @@ createRoot(document.getElementById('root')).render(
     <App />
   </React.StrictMode>,
 )
+
+// Офлайн-режим: sw.js собирается вместе с сайтом (см. vite.config.js), поэтому только в сборке.
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => { navigator.serviceWorker.register('/sw.js').catch(() => {}) })
+}

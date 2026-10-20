@@ -1,7 +1,8 @@
 import { ArrowRight, ArrowUpRight, BookOpen, Coffee, Monitor, Mic2, Plane, Wrench } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { rooms } from '../data'
+import { photosFor, rooms } from '../data'
 import { FloorTag, PageHeading, Reveal, SectionLabel } from '../components/Primitives'
+import RoomPhoto from '../components/RoomPhoto'
 
 const spaces = [
   { id: 'canteen', icon: Coffee, label: 'Перед парой и после', note: 'Столовая', copy: 'Место для обеда и короткой передышки. Первый этаж, левое крыло.', tone: 'service-warm' },
@@ -15,7 +16,7 @@ const spaces = [
 export default function ServicesPage() {
   return <>
     <PageHeading eyebrow="Пространства колледжа" title={<>Не только<br /><em>учебные кабинеты.</em></>} description="Где найти столовую, библиотеку, актовый зал или мастерскую? Собрали самые полезные места на одной странице." />
-    <section className="services-section container"><div className="section-top"><div><SectionLabel>На карте</SectionLabel><h2>Куда <em>зайти?</em></h2></div><Link className="text-link" to="/map">Открыть общую карту <span><ArrowRight size={15} /></span></Link></div><div className="services-grid">{spaces.map((space, index) => { const Icon = space.icon; const location = rooms.find((room) => room.id === space.id); return <Reveal key={space.id} delay={index * 45}><Link className={`service-card ${space.tone}`} to={`/map?floor=${location.floor}&room=${location.id}`}><span className="service-card-top"><small>{space.label}</small><ArrowUpRight size={16} /></span><span className="service-card-icon"><Icon size={23} strokeWidth={1.5} /></span><span className="service-card-content"><strong>{space.note}</strong><span>{space.copy}</span></span><span className="service-card-bottom"><FloorTag floor={location.floor} />{location.number && <span>Кабинет {location.number}</span>}</span></Link></Reveal> })}</div></section>
+    <section className="services-section container"><div className="section-top"><div><SectionLabel>На карте</SectionLabel><h2>Куда <em>зайти?</em></h2></div><Link className="text-link" to="/map">Открыть общую карту <span><ArrowRight size={15} /></span></Link></div><div className="services-grid">{spaces.map((space, index) => { const Icon = space.icon; const location = rooms.find((room) => room.id === space.id); return <Reveal key={space.id} delay={index * 45}><Link className={`service-card service-card-photo ${space.tone}`} to={`/map?floor=${location.floor}&room=${location.id}`}>{photosFor(location).length ? <RoomPhoto room={location} sizes="(max-width: 680px) 100vw, 420px" dots={false} /> : <span className="service-card-art" aria-hidden="true"><Icon size={44} strokeWidth={1.2} /></span>}<span className="service-card-icon"><Icon size={23} strokeWidth={1.5} /></span><span className="service-card-body"><span className="service-card-top"><small>{space.label}</small><ArrowUpRight size={16} /></span><span className="service-card-content"><strong>{space.note}</strong><span>{space.copy}</span></span><span className="service-card-bottom"><FloorTag floor={location.floor} />{location.number && <span>Кабинет {location.number}</span>}</span></span></Link></Reveal> })}</div></section>
     <section className="services-help-band"><div className="container services-help-inner"><span className="services-help-mark">i</span><div><SectionLabel>Не нашли нужное?</SectionLabel><h2>Откройте <em>справочник.</em></h2><p>В нём есть кабинеты, лаборатории, лестницы и общие пространства. Ищите по названию или номеру.</p></div><Link className="button button-primary" to="/rooms">Перейти к кабинетам <ArrowRight size={15} /></Link><div className="services-help-outline" aria-hidden="true"><i /><i /><i /></div></div></section>
   </>
 }

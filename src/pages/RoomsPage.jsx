@@ -2,7 +2,7 @@ import { searchableRoom } from '../i18n.js'
 import { useMemo, useState } from 'react'
 import { ArrowRight, ArrowUpRight, Building2, Search, X } from 'lucide-react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { rooms, categoryLabels, photosFor } from '../data'
+import { rooms, categoryLabels, photoSrcSet, photosFor } from '../data'
 import { FloorTag, PageHeading, Reveal, SectionLabel } from '../components/Primitives'
 
 function formatRoomCount(count) {
@@ -18,7 +18,7 @@ function RoomCard({ room }) {
   const photos = photosFor(room)
   return <Link className={`directory-card directory-card-media${photos.length > 1 ? ' directory-card-duo' : ''}`} to={`/map?floor=${room.floor}&room=${room.id}`}>
     <span className={`directory-card-cover directory-cover-${coverTones[room.category] || 'blue'}`}>
-      {photos.length ? photos.map((src) => <img key={src} className="directory-card-photo" src={src} alt="" loading="lazy" decoding="async" />) : room.number ? <span className="directory-card-mark">{room.number.split(/[ ,(]/)[0]}</span> : <span className="directory-card-icon"><Building2 size={20} strokeWidth={1.6} /></span>}
+      {photos.length ? photos.map((src) => <img key={src} className="directory-card-photo" src={src} srcSet={photoSrcSet(src)} sizes="(max-width: 680px) 104px, (max-width: 1120px) 50vw, 380px" alt="" loading="lazy" decoding="async" />) : room.number ? <span className="directory-card-mark">{room.number.split(/[ ,(]/)[0]}</span> : <span className="directory-card-icon"><Building2 size={20} strokeWidth={1.6} /></span>}
       <FloorTag floor={room.floor} />
     </span>
     <span className="directory-card-copy"><small>{room.category}</small><strong>{room.name}</strong><span>{room.number ? `№ ${room.number}` : 'Общее пространство'}</span></span>

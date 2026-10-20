@@ -80,6 +80,9 @@ export function photosFor(room) {
   return roomPhotos[room.id] || (room.category === 'Учебные кабинеты' ? ['/rooms/classroom.webp'] : [])
 }
 
+// У каждого снимка есть уменьшенная копия *-480.webp для маленьких экранов.
+export const photoSrcSet = (src) => `${src.replace(/\.webp$/, '-480.webp')} 480w, ${src} 960w`
+
 export const categoryLabels =['Все места', 'Учебные кабинеты', 'Мастерские и лаборатории', 'Общие пространства', 'Администрация']
 
 export const quickPlaces = [

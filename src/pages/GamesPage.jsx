@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { ArrowRight, Award, Check, Compass, MapPin, RotateCcw, Target, Timer, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { games, rooms } from '../data'
+import Arcade from '../components/Arcade'
 import FloorMap from '../components/FloorMap'
 import { PageHeading, Reveal, SectionLabel } from '../components/Primitives'
 import { storageGet, storageSet } from '../storage.js'
@@ -155,7 +156,7 @@ export default function GamesPage() {
   const stopSpeed = () => { setSpeedRunning(false); setSpeedLeft(0) }
 
   return <>
-    <PageHeading eyebrow="Игры" title={<>Потренируйтесь<br /><em>по карте.</em></>} description="Три режима: угадайте этаж, найдите место по загадке или успейте за минуту. Каждый раунд собирается заново." />
+    <PageHeading eyebrow="Игры" title={<>Потренируйтесь<br /><em>по карте.</em></>} description="Три режима по карте колледжа: угадайте этаж, найдите место по загадке или успейте за минуту. А ниже — 2048, змейка и крестики-нолики на перемену." />
 
     <section className="games-section container"><div className="game-mode-tabs" role="tablist" aria-label="Выберите игру">{games.map((item) => <button key={item.id} role="tab" aria-selected={mode === item.id} className={mode === item.id ? 'game-mode-tab game-mode-active' : 'game-mode-tab'} onClick={() => setMode(item.id)}><span className="game-mode-icon"><ModeIcon id={item.id} /></span><span><small>{item.tag}</small><strong>{item.title}</strong><em>{item.description}</em></span><ArrowRight size={16} /></button>)}</div>
 
@@ -176,6 +177,8 @@ export default function GamesPage() {
         </>}
       </Reveal>}
     </section>
+
+    <Arcade />
 
     <section className="games-bottom container"><span className="games-bottom-icon"><MapPin size={17} /></span><p>После игры откройте карту и попробуйте найти кабинет в самом колледже.</p><Link to="/map">Карта этажей <ArrowRight size={14} /></Link></section>
   </>

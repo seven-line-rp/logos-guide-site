@@ -1,0 +1,30 @@
+/* Доступность: контраст текста не ниже 4.5:1 (WCAG AA) там, где его не
+   хватало по проверке axe, и мелкие правки для клавиатуры. Подключается
+   последним, поэтому перекрывает старые серые оттенки. */
+
+/* Светлая тема */
+.directory-card-copy small, .directory-card-copy > span, .directory-chip:not(.directory-chip-active), .directory-help > p,
+.map-under-note > p, .quiz-question > p, .room-clear, .room-detail-info > span, .room-quick-stat > span { color: var(--muted); }
+.floor-switch-copy small { color: #dbe5fb; }
+.footer-legal a, .footer-legal button { opacity: 1; }
+.footer-legal a, .site-footer a[href$='privacy'] { color: #4d5b6e; }
+.schedule-days button.is-off { opacity: 1; color: #5f6d82; }
+.schedule-days button.is-off > * { color: inherit; }
+.schedule-bells button[aria-pressed='true'] small { color: #fff; }
+.legal-kind { color: #115e59; }
+.legal-kind-required { color: #92400e; }
+.nv-option-on > em, .quiz-preview-options .quiz-preview-right { color: #166534; }
+.quick-place-num { color: #4a5970; }
+/* Метка начала маршрута и событий: белый текст на тёмно-оранжевом. */
+.rs-mark-head, .rs-mark-notice-event .rs-mark-head { background: #b45309; }
+.legal-table-wrap:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+
+/* Тёмная тема */
+:root[data-theme='dark'] :is(.ai-history-empty, .ai-sidebar-note, .quiz-preview-foot, .directory-floor-filters > span, .directory-results-head > span, .room-detail-number) { color: var(--muted); }
+:root[data-theme='dark'] .map-under-note { background: var(--surface); }
+:root[data-theme='dark'] :is(.map-under-note > a, .map-under-note > span) { color: #a9c3ff; }
+:root[data-theme='dark'] :is(.nv-floors, .nv-view) > button[aria-pressed='true'] { color: #0b1630; }
+:root[data-theme='dark'] .footer-legal a, :root[data-theme='dark'] .site-footer a[href$='privacy'] { color: var(--muted); }
+:root[data-theme='dark'] .quick-place-num { color: var(--muted); }
+:root[data-theme='dark'] .schedule-days button.is-off { color: #9a9993; }
+:root[data-theme='dark'] :is(.rs-mark-transfer, .rs-mark-arrival) .rs-mark-head { color: #0b1630; }
