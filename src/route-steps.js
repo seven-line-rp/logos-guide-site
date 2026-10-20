@@ -11,6 +11,13 @@ const MOVE_LABEL = {
 }
 
 const lastIndex = (leg) => Math.max(0, (leg?.points.length ?? 1) - 1)
+const SIDE_WORD = { left: 'слева', right: 'справа' }
+
+// «Дверь справа, сразу после 114» — по ориентирам из map-routing.js.
+function doorHint(arrival, what) {
+  if (!arrival?.side) return ''
+  return `${what} ${SIDE_WORD[arrival.side]}${arrival.after ? `, после: ${arrival.after}` : ''}`
+}
 
 export function buildRouteSteps({ startLabel, startFloor, targetFloor, targetName, route, sameRoom }) {
   const firstLeg = route.byFloor[startFloor]
@@ -50,9 +57,9 @@ export function buildRouteSteps({ startLabel, startFloor, targetFloor, targetNam
     steps.push({
       kind: 'transfer',
       title: `${move} на ${targetFloor} этаж`,
-      detail: route.transfer.kind === 'lift'
+      detail: [route.transfer.kind === 'lift'
         ? 'Переход на лифте'
-        : `Переход по лестнице (${MOVE_LABEL[route.transfer.kind] || route.transfer.kind})`,
+        : `Переход по лестнице (${MOVE_LABEL[route.transfer.kind] || route.transfer.kind})`, doorHint(firstLeg?.arrival, route.transfer.kind === 'lift' ? 'Лифт' : 'Вход на лестницу')].filter(Boolean).join('. '),
       say: `${move} на ${floorName} этаж ${route.transfer.kind === 'lift' ? 'на лифте' : 'по лестнице'}.`,
       voiceCue: [up ? 'transfer-up' : 'transfer-down'],
       floor: startFloor,
@@ -64,11 +71,29 @@ export function buildRouteSteps({ startLabel, startFloor, targetFloor, targetNam
   steps.push({
     kind: 'arrive',
     title: `Приход: ${targetName}`,
-    detail: `${targetFloor} этаж, дверь отмечена на плане`,
-    say: `Вы пришли: ${targetName}.`,
+    detail: doorHint(lastLeg?.arrival, 'Дверь') ? `${doorHint(lastLeg.arrival, 'Дверь')}. ${targetFloor} этаж` : `${targetFloor} этаж, дверь отмечена на плане`,
+    say: `Вы пришли: ${targetName}.${lastLeg?.arrival?.side ? ` Дверь ${SIDE_WORD[lastLeg.arrival.side]}.` : ''}`,
     voiceCue: ['arrive'],
     floor: targetFloor,
     progress: lastIndex(lastLeg),
   })
   return steps
+}
+
+// Маршрут с остановкой по пути («через раздевалку в 211»): шаги каждой части
+// подряд. Приход в промежуточную точку становится шагом «Остановка», у второй
+// части нет своего «Начала». leg — номер части: по нему страница выбирает,
+// какую линию показать на плане.
+export function buildTripSteps(legs) {
+  return legs.flatMap((leg, legIndex) => {
+    const steps = buildRouteSteps(leg).map((step) => ({ ...step, leg: legIndex }))
+    const isLast = legIndex === legs.length - 1
+    const body = legIndex > 0 && steps[0].kind === 'start' ? steps.slice(1) : steps
+    return body.map((step) => step.kind === 'arrive' && !isLast ? {
+      ...step,
+      kind: 'stop',
+      title: `Остановка: ${leg.targetName}`,
+      say: `Остановка: ${leg.targetName}. Когда будете готовы, идите дальше.`,
+    } : step)
+  })
 }

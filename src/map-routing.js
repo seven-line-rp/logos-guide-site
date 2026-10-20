@@ -91,7 +91,7 @@ function endpoint(value) {
     const anchor = inMain ? [x, 168] : inWest ? [73, y] : inHall ? [579, 168] : [73, 168]
     const path = inMain ? [[x, y], anchor] : inWest ? [[x, y], anchor] :
       inHall ? [[x, y], [579, y], anchor] : [[x, y], [73, y], anchor]
-    return { floor: value.floor, anchor, branch: inWest ? 'west' : 'main', path: cleanPath(path), label: 'Метка на плане' }
+    return { floor: value.floor, anchor, branch: inWest ? 'west' : 'main', path: cleanPath(path), label: 'Метка на плане', roomId: null }
   }
 
   const access = roomAccess[room.id]
@@ -109,7 +109,7 @@ function endpoint(value) {
     const via = branch === 'west' ? [door[0], from[1]] : [from[0], door[1]]
     path = [from, via, ...path]
   }
-  return { floor: room.floor, anchor, branch: branch === 'west' ? 'west' : 'main', path: cleanPath(path), label: typeof value === 'string' ? name(room) : 'Метка на плане' }
+  return { floor: room.floor, anchor, branch: branch === 'west' ? 'west' : 'main', path: cleanPath(path), label: typeof value === 'string' ? name(room) : 'Метка на плане', roomId: room.id }
 }
 
 function walk(from, to) {
@@ -120,7 +120,79 @@ function walk(from, to) {
   const waypoints = []
   if (from.branch === 'west' || to.branch === 'west') waypoints.push('Коридор западного крыла')
   if (points.some((point, index) => index > 0 && point[1] === 168 && points[index - 1][1] === 168 && Math.abs(point[0] - points[index - 1][0]) > 30)) waypoints.push('Главный коридор')
-  return { points, waypoints, guides: buildGuides(points, from.floor), length: distance(points), startLabel: from.label, endLabel: to.label }
+  const skip = new Set([from.roomId, to.roomId])
+  return { points, waypoints, guides: buildGuides(points, from.floor, skip), arrival: arrivalSide(points, from.floor, to, skip), length: distance(points), startLabel: from.label, endLabel: to.label }
+}
+
+// ---------- Ориентиры ----------
+// В коридоре «пройдите 24 м» не работает: человек считает двери. Поэтому к
+// подсказкам добавляем, мимо каких помещений идти, куда повернуть в конце
+// участка и с какой стороны будет нужная дверь.
+
+// Короткое имя для перечисления: номер кабинета или название места.
+function landmarkName(room) {
+  const number = room.number.split(/[ ,(]/)[0]
+  if (number && room.category !== 'Общие пространства' && room.category !== 'Администрация') return number
+  if (room.id.startsWith('toilet-')) return 'туалеты'
+  if (room.id.startsWith('stairs-middle')) return 'центральная лестница'
+  return room.name.charAt(0).toLowerCase() + room.name.slice(1)
+}
+
+// Помещения, чьи двери выходят на участок коридора между a и b, в порядке движения.
+function passedRooms(floor, a, b, skip) {
+  const horizontal = a[1] === b[1]
+  const axis = horizontal ? 0 : 1
+  const lo = Math.min(a[axis], b[axis]) + 4
+  const hi = Math.max(a[axis], b[axis]) - 4
+  const line = horizontal ? 168 : 73
+  if ((horizontal ? a[1] : a[0]) !== line) return []
+  const found = rooms.filter((room) => room.floor === floor && !skip.has(room.id) && !roomAccess[room.id]?.via).filter((room) => {
+    const access = roomAccess[room.id]
+    if (!access || (horizontal ? access.branch !== 'main' : access.branch !== 'west')) return false
+    return access.door[axis] >= lo && access.door[axis] <= hi
+  }).map((room) => ({ room, at: roomAccess[room.id].door[axis] }))
+  found.sort((first, second) => (b[axis] > a[axis] ? first.at - second.at : second.at - first.at))
+  const names = []
+  for (const { room } of found) { const label = landmarkName(room); if (!names.includes(label)) names.push(label) }
+  return names
+}
+
+// Поворот в точке b при движении a → b → c: экранные координаты (y вниз).
+function turnAt(a, b, c) {
+  const cross = (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0])
+  return cross > 0 ? 'right' : cross < 0 ? 'left' : null
+}
+const SIDE = { left: 'налево', right: 'направо' }
+
+// Перечисляем не больше трёх ориентиров — ближайших к концу участка.
+export function listLandmarks(names) {
+  const last = names.slice(-3)
+  return last.length > 1 ? `${last.slice(0, -1).join(', ')} и ${last.at(-1)}` : last[0] || ''
+}
+
+function withLandmarks(guide, points, index, floor, skip) {
+  const passed = passedRooms(floor, points[index - 1], points[index], skip)
+  const next = points[index + 1]
+  const turn = next ? turnAt(points[index - 1], points[index], next) : null
+  const isLast = index + 1 === points.length - 1
+  const parts = []
+  if (passed.length) parts.push(`По пути: ${listLandmarks(passed)}`)
+  if (turn && !isLast) parts.push(`Затем ${SIDE[turn]}`)
+  if (!parts.length) return guide
+  const sayPassed = passed.length ? ` Ориентиры по пути: ${listLandmarks(passed)}.` : ''
+  const sayTurn = turn && !isLast ? ` Затем поверните ${SIDE[turn]}.` : ''
+  return { ...guide, detail: parts.join('. '), say: `${guide.say}${sayPassed}${sayTurn}`, landmarks: passed, turn: !isLast ? turn : null }
+}
+
+// С какой стороны окажется дверь в конце участка и что будет прямо перед ней.
+function arrivalSide(points, floor, to, skip) {
+  if (points.length < 3) return { side: null, after: null }
+  const door = points.at(-1)
+  const corner = points.at(-2)
+  const before = points.at(-3)
+  const side = turnAt(before, corner, door)
+  const passed = passedRooms(floor, before, corner, skip)
+  return { side, after: passed.at(-1) || null }
 }
 
 // Куда ведёт восточный конец главного коридора — на каждом этаже своё.
@@ -135,14 +207,17 @@ const WEST_LANDMARK = {
 
 // Подсказки «что делать дальше» с привязкой к вершине маршрута: страница
 // маршрута двигает по ним точку на плане, поэтому index — позиция в points.
-function buildGuides(points, floor = 1) {
+function buildGuides(points, floor = 1, skip = new Set()) {
   const guides = []
-  const push = (guide) => {
+  let segment = 1
+  const push = (raw) => {
+    const guide = withLandmarks(raw, points, segment, floor, skip)
     const previous = guides.at(-1)
     if (previous && previous.index === guide.index) guides[guides.length - 1] = guide
     else guides.push(guide)
   }
   for (let index = 1; index < points.length; index += 1) {
+    segment = index
     const [x0, y0] = points[index - 1]
     const [x1, y1] = points[index]
     // Точка-поводырь встаёт в НАЧАЛО участка: это место, где пользователь

@@ -180,3 +180,16 @@ test('route options list every transfer with distance, time and footsteps', () =
   assert.equal(metrics.footsteps, 29)
   assert.equal(metrics.seconds, 20 / 1.25 + 45)
 })
+
+test('guides name the rooms passed on the way, the next turn and the side of the target door', () => {
+  const toClass = buildIndoorRoute('entrance-1', 'class-118', 'stairs').byFloor[1]
+  const corridor = toClass.guides.find((guide) => guide.kind === 'main-corridor')
+  assert.deepEqual(corridor.landmarks.slice(-2), ['148', 'столовая'], 'ближайшие к повороту ориентиры идут последними')
+  assert.equal(corridor.turn, 'left', 'из главного коридора в западное крыло — налево')
+  assert.match(corridor.detail, /Затем налево/)
+  assert.deepEqual(toClass.arrival, { side: 'right', after: '119' })
+  const toDirector = buildIndoorRoute('class-162', 'director-149', 'stairs').byFloor[1]
+  assert.equal(toDirector.arrival.side, 'right')
+  assert.equal(toDirector.arrival.after, 'центральная лестница')
+  assert.ok(!toDirector.guides.some((guide) => guide.landmarks?.includes('149')), 'цель не бывает ориентиром на пути к себе')
+})

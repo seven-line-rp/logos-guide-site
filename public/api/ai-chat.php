@@ -275,10 +275,11 @@ function college_context(array $config): string
     return $out;
 }
 
-// Объявления из public/notices.json (лежит в корне сайта, на уровень выше api/).
+// Объявления: сохранённые со страницы /admin (logos-notices.json рядом с папкой
+// сайта, см. api/notices.php), иначе public/notices.json в корне сайта.
 function notices_text(): string
 {
-    $file = dirname(__DIR__) . '/notices.json';
+    $file = is_file(dirname(__DIR__, 2) . '/logos-notices.json') ? dirname(__DIR__, 2) . '/logos-notices.json' : dirname(__DIR__) . '/notices.json';
     $list = is_file($file) ? json_decode((string) file_get_contents($file), true) : null;
     if (!is_array($list)) return '';
     $now = time();

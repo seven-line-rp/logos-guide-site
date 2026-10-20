@@ -6,7 +6,7 @@ import { activeNotices, avoidClosed, closedRoomIds, validNotice } from './notice
 import { buildRouteOptions } from './map-routing.js'
 import { tourLeg, tours } from './tours.js'
 import { rooms } from './data.js'
-import { routeLink } from './share.js'
+import { meetLink, routeLink } from './share.js'
 
 test('nearest place is found by walking time, not straight distance', () => {
   for (const kind of nearbyKinds) assert.ok(findNearest('entrance-1', kind.id), kind.id)
@@ -85,4 +85,10 @@ test('tours visit real rooms and every leg has a path', () => {
 test('share link keeps only meaningful parameters', () => {
   assert.equal(routeLink('https://x.ru', { from: 'entrance-1', to: 'physics-211', mode: 'auto' }), 'https://x.ru/route?from=entrance-1&to=physics-211')
   assert.equal(routeLink('https://x.ru', { from: 'manual', to: 'library-214', mode: 'lift' }), 'https://x.ru/route?from=manual&to=library-214&mode=lift')
+})
+
+test('meeting links carry the place and an optional time', () => {
+  assert.equal(meetLink('https://x.ru', { to: 'canteen', at: '12:10' }), 'https://x.ru/route?to=canteen&meet=1&at=12%3A10')
+  assert.equal(meetLink('https://x.ru', { to: 'canteen', at: '25:99' }), 'https://x.ru/route?to=canteen&meet=1')
+  assert.equal(routeLink('https://x.ru', { from: 'entrance-1', to: 'physics-211', via: 'changing-room' }), 'https://x.ru/route?from=entrance-1&to=physics-211&via=changing-room')
 })

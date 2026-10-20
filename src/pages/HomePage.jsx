@@ -1,5 +1,4 @@
-import { searchableRoom } from '../i18n.js'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ArrowDownRight, ArrowRight, ArrowUpRight, Check, MapPin, Search } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { photoSrcSet, photosFor, rooms, quickPlaces } from '../data.js'
@@ -7,24 +6,27 @@ import HeroScene from '../components/HeroScene.jsx'
 import AiPromoBanner from '../components/AiPromoBanner.jsx'
 import HomeDashboard from '../components/HomeDashboard.jsx'
 import { Reveal, SectionLabel } from '../components/Primitives.jsx'
+import VoiceSearchButton from '../components/VoiceSearchButton.jsx'
+import { cancelMiss, reportMiss, searchRooms, searchTeachers, shortName, useTeachers } from '../search.js'
 
 function HomeSearch() {
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
   const navigate = useNavigate()
-  const matches = useMemo(() => {
-    const term = query.trim().toLocaleLowerCase('ru')
-    if (!term) return []
-    return rooms.filter((room) => searchableRoom(room).includes(term)).slice(0, 4)
-  }, [query])
+  const teachers = useTeachers()
+  const matches = useMemo(() => (query.trim() ? searchRooms(query, 4).map((entry) => entry.room) : []), [query])
+  const teacherHits = useMemo(() => searchTeachers(teachers, query, 2), [teachers, query])
+  const missed = Boolean(query.trim()) && !matches.length && !teacherHits.length
+  useEffect(() => { if (missed) reportMiss(query); else cancelMiss() }, [missed, query])
   const goTo = (room) => navigate(`/map?floor=${room.floor}&room=${encodeURIComponent(room.id)}`)
   const submit = (event) => {
     event.preventDefault()
     if (matches[0]) goTo(matches[0])
+    else if (teacherHits[0]?.room) goTo(teacherHits[0].room)
     else navigate(`/rooms?q=${encodeURIComponent(query.trim())}`)
   }
 
-  return <form className="home-search" onSubmit={submit} role="search"><Search size={19} /><input id="home-room-search" value={query} onFocus={() => setOpen(true)} onBlur={() => window.setTimeout(() => setOpen(false), 130)} onChange={(event) => setQuery(event.target.value)} placeholder="Например, 217 или библиотека" aria-label="Найти кабинет или пространство" autoComplete="off" /><button type="submit" aria-label="Искать"><ArrowRight size={18} /></button>{open && query.trim() && <div className="home-search-suggestions">{matches.length ? matches.map((room) => <button type="button" key={room.id} onMouseDown={(event) => event.preventDefault()} onClick={() => goTo(room)}><span>{room.name}{room.number && ` №${room.number}`}</span><small>{room.floor} этаж, {room.category}</small></button>) : <button type="submit" className="home-search-no-results"><span>Искать «{query}» в справочнике</span><small>Посмотреть все результаты</small></button>}</div>}</form>
+  return <form className="home-search" onSubmit={submit} role="search"><Search size={19} /><input id="home-room-search" value={query} onFocus={() => setOpen(true)} onBlur={() => window.setTimeout(() => setOpen(false), 130)} onChange={(event) => setQuery(event.target.value)} placeholder="Например, 217, библиотека или фамилия" aria-label="Найти кабинет, место или преподавателя" autoComplete="off" /><VoiceSearchButton onText={(text) => { setQuery(text); setOpen(true) }} /><button type="submit" aria-label="Искать"><ArrowRight size={18} /></button>{open && query.trim() && <div className="home-search-suggestions">{teacherHits.map(({ teacher, room, bySubject }) => <button type="button" key={teacher.name} onMouseDown={(event) => event.preventDefault()} onClick={() => goTo(room || rooms.find((item) => item.id === 'academic-office'))}><span>{shortName(teacher.name)}</span><small>{room ? `${room.name}${room.number ? ` №${room.number}` : ''}${bySubject ? ', по предмету' : ''}` : 'Кабинет уточните в учебной части'}</small></button>)}{matches.length || teacherHits.length ? matches.map((room) => <button type="button" key={room.id} onMouseDown={(event) => event.preventDefault()} onClick={() => goTo(room)}><span>{room.name}{room.number && ` №${room.number}`}</span><small>{room.floor} этаж, {room.category}</small></button>) : <button type="submit" className="home-search-no-results"><span>Искать «{query}» в справочнике</span><small>Посмотреть все результаты</small></button>}</div>}</form>
 }
 
 export default function HomePage() {

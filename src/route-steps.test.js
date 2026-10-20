@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { rooms } from './data.js'
 import { buildIndoorRoute } from './map-routing.js'
-import { buildRouteSteps } from './route-steps.js'
+import { buildRouteSteps, buildTripSteps } from './route-steps.js'
 
 const name = (room) => `${room.name}${room.number ? ` №${room.number}` : ''}`
 
@@ -78,4 +78,28 @@ test('a route to your own room is a single step', () => {
   assert.equal(steps.length, 1)
   assert.equal(steps[0].title, 'Вы уже на месте')
   assert.deepEqual(steps[0].voiceCue, ['arrive'])
+})
+
+test('the arrival step says on which side the door is', () => {
+  const { steps } = stepsFor('entrance-1', 'class-118')
+  assert.match(steps.at(-1).detail, /^Дверь справа, после: 119/)
+  assert.match(steps.at(-1).say, /Дверь справа/)
+})
+
+test('a trip through a stop keeps one start, marks the stop and numbers the legs', () => {
+  const first = stepsFor('entrance-1', 'changing-room')
+  const second = stepsFor('changing-room', 'physics-211')
+  const leg = (fromId, toId, route) => {
+    const from = rooms.find((room) => room.id === fromId)
+    const to = rooms.find((room) => room.id === toId)
+    return { startLabel: name(from), startFloor: from.floor, targetFloor: to.floor, targetName: name(to), route, sameRoom: false }
+  }
+  const steps = buildTripSteps([leg('entrance-1', 'changing-room', first.route), leg('changing-room', 'physics-211', second.route)])
+  assert.equal(steps.filter((step) => step.kind === 'start').length, 1)
+  const stop = steps.find((step) => step.kind === 'stop')
+  assert.equal(stop.title, 'Остановка: Раздевалка')
+  assert.equal(stop.leg, 0)
+  assert.equal(steps.at(-1).kind, 'arrive')
+  assert.equal(steps.at(-1).leg, 1)
+  assert.equal(steps.length, first.steps.length + second.steps.length - 1)
 })

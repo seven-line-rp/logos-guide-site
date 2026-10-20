@@ -43,13 +43,17 @@ export function noticePoint(notice) {
   return room ? { floor: room.floor, room } : null
 }
 
+// Сначала api/notices.php (там объявления, сохранённые со страницы /admin),
+// без PHP или без сети — файл notices.json из корня сайта.
+const readList = (fetchImpl, url) => fetchImpl(url, { cache: 'no-cache' }).then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status))))).then((value) => (Array.isArray(value) ? value : Promise.reject(new Error('not a list'))))
+export function fetchNotices(fetchImpl = typeof fetch === 'undefined' ? null : fetch) {
+  if (!fetchImpl) return Promise.resolve([])
+  return readList(fetchImpl, '/api/notices.php').catch(() => readList(fetchImpl, '/notices.json')).catch(() => [])
+}
+
 let cache = null
 export function loadNotices(fetchImpl = typeof fetch === 'undefined' ? null : fetch) {
-  if (!cache) {
-    cache = fetchImpl
-      ? fetchImpl('/notices.json', { cache: 'no-cache' }).then((response) => (response.ok ? response.json() : [])).catch(() => [])
-      : Promise.resolve([])
-  }
+  if (!cache) cache = fetchNotices(fetchImpl)
   return cache
 }
 

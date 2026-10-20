@@ -1,37 +1,15 @@
-import { searchableRoom } from '../i18n.js'
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { ChevronDown, MapPin, Search } from 'lucide-react'
 import { floors, rooms } from '../data.js'
+import { normalize, scoreRoom, searchTeachers, shortName, useTeachers } from '../search.js'
+import VoiceSearchButton from './VoiceSearchButton.jsx'
 
 // Поиск кабинета для построения маршрута: вместо длинного <select> — поле
-// с живой фильтрацией. Ищем по названию, номеру, псевдонимам и категории;
-// точный номер кабинета всегда сильнее остальных совпадений.
-
-const normalize = (value) => String(value ?? '').toLowerCase().replace(/ё/g, 'е').replace(/\s+/g, ' ').trim()
+// с живой фильтрацией. Ищем по названию, номеру, псевдонимам, категории и
+// преподавателю (src/search.js); точный номер кабинета всегда сильнее.
 
 export function roomLabel(room) {
   return `${room.name}${room.number ? ` №${room.number}` : ''}`
-}
-
-function scoreRoom(room, query, digits) {
-  const name = normalize(room.name)
-  const aliases = normalize(room.aliases)
-  if (digits && room.number) {
-    const numberDigits = room.number.replace(/\D/g, '')
-    if (numberDigits) {
-      if (numberDigits === digits) return 200
-      if (numberDigits.startsWith(digits)) return 150
-      if (numberDigits.includes(digits)) return 90
-    }
-  }
-  if (!query) return 1
-  if (name.startsWith(query)) return 120
-  const words = `${name} ${aliases}`.split(' ')
-  if (words.some((word) => word.startsWith(query))) return 100
-  if (name.includes(query) || aliases.includes(query)) return 70
-  if (normalize(searchableRoom(room)).includes(query)) return 60
-  if (normalize(room.category).includes(query)) return 40
-  return 0
 }
 
 export default function RoomSearchSelect({ label, value, onChange, manualOption = null }) {
@@ -42,6 +20,7 @@ export default function RoomSearchSelect({ label, value, onChange, manualOption 
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [highlight, setHighlight] = useState(0)
+  const teachers = useTeachers()
 
   const selectedRoom = rooms.find((room) => room.id === value) || null
   const isManual = Boolean(manualOption) && value === manualOption.value
@@ -55,7 +34,14 @@ export default function RoomSearchSelect({ label, value, onChange, manualOption 
     const scored = rooms
       .map((room) => ({ room, score: scoreRoom(room, normalized, digits) }))
       .filter((entry) => entry.score > 0)
-      .sort((first, second) => second.score - first.score)
+    // Преподаватель → кабинет его предмета, с подписью фамилии.
+    for (const hit of searchTeachers(teachers, query, 4)) {
+      if (!hit.room) continue
+      const known = scored.find((entry) => entry.room.id === hit.room.id)
+      if (known) { known.teacher = known.teacher || shortName(hit.teacher.name); known.score = Math.max(known.score, hit.score) }
+      else scored.push({ room: hit.room, score: hit.score, teacher: shortName(hit.teacher.name) })
+    }
+    scored.sort((first, second) => second.score - first.score)
     const nextGroups = floors
       .map((floor) => ({ floor, items: scored.filter((entry) => entry.room.floor === floor.id) }))
       .filter((group) => group.items.length)
@@ -63,7 +49,7 @@ export default function RoomSearchSelect({ label, value, onChange, manualOption 
     if (manualOption) nextFlat.push({ id: manualOption.value, manual: true })
     for (const group of nextGroups) for (const entry of group.items) nextFlat.push({ id: entry.room.id })
     return { groups: nextGroups, flat: nextFlat }
-  }, [query, manualOption])
+  }, [query, manualOption, teachers])
 
   useEffect(() => {
     if (!open) return undefined
@@ -177,6 +163,7 @@ export default function RoomSearchSelect({ label, value, onChange, manualOption 
         }}
       />
       {!open && (selectedRoom || isManual) && <span className="route-room-search-floor">{isManual ? 'метка' : `${selectedRoom.floor} этаж`}</span>}
+      {open && <VoiceSearchButton className="route-room-voice" onText={(text) => { setQuery(text); setHighlight(0) }} />}
       <button
         type="button"
         className="route-room-search-chevron"
@@ -199,13 +186,14 @@ export default function RoomSearchSelect({ label, value, onChange, manualOption 
       })()}
       {groups.map((group) => <div className="route-room-search-group" key={group.floor.id}>
         <div className="route-room-search-group-label" aria-hidden="true">{group.floor.label}<small>{group.floor.hint}</small></div>
-        {group.items.map(({ room }) => {
+        {group.items.map(({ room, teacher }) => {
           renderIndex += 1
           const index = renderIndex
           return optionRow(room.id, index, <>
             <span className="route-room-option-main">
               <strong>{room.name}</strong>
               {room.number && <em className="route-room-option-number">№{room.number}</em>}
+              {teacher && <small className="route-room-option-teacher">{teacher}</small>}
             </span>
             <span className="route-room-option-floor">{room.floor} этаж</span>
           </>)

@@ -1,0 +1,85 @@
+/* Навигатор: остановка по пути, «я здесь», профиль лифта, встреча, толпа
+   на переменах и полноэкранный режим «Иду». */
+
+.nv-via { position: relative; display: flex; align-items: flex-end; gap: 6px; }
+.nv-via .route-room-search { flex: 1; min-width: 0; }
+.nv-via-remove { width: 40px; height: 44px; flex: none; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 12px; color: var(--muted); background: var(--surface); cursor: pointer; }
+.nv-via-remove:hover { border-color: var(--blue); color: var(--blue); }
+.nv-place-tools { grid-column: 2 / 4; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; margin-top: 12px; }
+.nv-place-tools .nv-manual { margin-top: 0; }
+.nv-add-via { display: inline-flex; align-items: center; gap: 6px; padding: 0; border: 0; color: var(--blue); background: none; font: inherit; font-size: 13px; font-weight: 650; cursor: pointer; }
+.nv-add-via:hover { text-decoration: underline; text-underline-offset: 3px; }
+.nv-here { grid-column: 2 / 4; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 10px 0 0; color: var(--muted); font-size: 13px; }
+.nv-here svg { color: var(--blue); }
+.nv-here button { padding: 0; border: 0; color: var(--blue); background: none; font: inherit; font-weight: 650; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.nv-lift-switch { grid-column: 1 / -1; flex-wrap: wrap; margin-top: 14px; text-align: left; }
+.nv-lift-switch small { flex-basis: 100%; margin-left: 50px; color: var(--muted); font-size: 12.5px; font-weight: 500; }
+
+.nv-meet { display: flex; align-items: flex-start; gap: 10px; border-color: color-mix(in srgb, var(--blue) 35%, var(--line)); background: color-mix(in srgb, var(--blue) 7%, var(--surface)); }
+.nv-meet > svg { flex: none; margin-top: 2px; color: var(--blue); }
+.nv-meet span { display: grid; gap: 3px; }
+.nv-meet strong { color: var(--ink); font-size: 15px; }
+.nv-meet small { color: var(--muted); font-size: 13px; line-height: 1.45; }
+
+.nv-crowd { display: flex; align-items: flex-start; gap: 7px; margin: 12px 0 0; padding: 9px 11px; border-radius: 11px; color: var(--ink); background: var(--surface-soft); font-size: 13px; line-height: 1.45; }
+.nv-crowd svg { flex: none; margin-top: 2px; color: #b45309; }
+.nv-option-crowd { display: block; flex-basis: 100%; margin-top: 2px; color: #92400e; font-size: 12px; font-weight: 600; }
+:root[data-theme='dark'] .nv-option-crowd { color: #f0c993; }
+:root[data-theme='dark'] .nv-crowd svg { color: #f0c993; }
+.nv-footnote a { display: inline-flex; align-items: center; gap: 3px; margin-right: 6px; color: var(--blue); font-weight: 650; }
+
+/* ---------- Режим «Иду» ---------- */
+.walk { position: fixed; inset: 0; z-index: 200; display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; gap: 12px; padding: calc(12px + env(safe-area-inset-top)) 16px calc(14px + env(safe-area-inset-bottom)); color: var(--ink); background: var(--bg, var(--surface)); animation: walk-in .25s ease both; }
+@keyframes walk-in { from { opacity: 0; transform: translateY(12px); } }
+.walk-top { display: flex; align-items: center; gap: 12px; }
+.walk-count { flex: none; color: var(--muted); font-size: 14px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.walk-progress { flex: 1; display: flex; gap: 4px; }
+.walk-progress i { height: 5px; flex: 1; border-radius: 3px; background: var(--line); transition: background .25s; }
+.walk-progress i.is-done { background: color-mix(in srgb, var(--blue) 45%, var(--line)); }
+.walk-progress i.is-now { background: var(--blue); }
+.walk-close { width: 44px; height: 44px; flex: none; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 14px; color: var(--ink); background: var(--surface); cursor: pointer; }
+
+.walk-body { display: grid; justify-items: start; gap: 8px; max-width: 640px; width: 100%; margin: 0 auto; }
+.walk-icon { width: 52px; height: 52px; display: grid; place-items: center; border-radius: 16px; color: #fff; background: var(--blue); }
+.walk-icon-arrive { background: #2f9e62; }
+.walk-icon-stop { background: #b45309; }
+.walk-floor { color: var(--muted); font-size: 14px; font-weight: 650; }
+.walk-title { margin: 0; color: var(--ink); font-size: clamp(26px, 7vw, 38px); font-weight: 750; letter-spacing: -.03em; line-height: 1.12; }
+.walk-detail { margin: 0; color: var(--ink); font-size: clamp(17px, 4.6vw, 21px); line-height: 1.45; opacity: .86; }
+.walk-photo { max-width: 420px; aspect-ratio: 16 / 10; margin: 6px 0 0; }
+
+.walk-map { position: relative; min-height: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); }
+.walk-map > * { width: 100%; height: 100%; }
+
+.walk-controls { display: grid; grid-template-columns: 56px 56px minmax(0, 1fr); gap: 10px; max-width: 640px; width: 100%; margin: 0 auto; }
+.walk-ctl { height: 64px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 18px; color: var(--ink); background: var(--surface); cursor: pointer; }
+.walk-ctl:disabled { opacity: .4; cursor: default; }
+.walk-next { height: 64px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; border: 0; border-radius: 18px; color: #fff; background: var(--blue); font: inherit; font-size: 20px; font-weight: 750; cursor: pointer; touch-action: manipulation; }
+.walk-next:active { transform: scale(.98); }
+.walk-next-done { background: #2f9e62; }
+.walk :focus-visible { outline: 3px solid color-mix(in srgb, var(--blue) 60%, transparent); outline-offset: 3px; }
+:root[data-theme='dark'] .walk-next, :root[data-theme='dark'] .walk-icon { color: #0b1630; }
+:root[data-theme='dark'] .walk-next-done, :root[data-theme='dark'] .walk-icon-arrive { color: #fff; background: #23804f; }
+
+@media (min-width: 900px) {
+  .walk { grid-template-columns: minmax(320px, 440px) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; column-gap: 24px; padding: 24px; }
+  .walk-top { grid-column: 1 / -1; }
+  .walk-body { align-content: start; }
+  .walk-map { grid-column: 2; grid-row: 2 / 4; }
+  .walk-controls { grid-column: 1; align-self: end; }
+}
+@media (max-height: 620px) and (max-width: 899px) { .walk-photo { display: none; } }
+@media (prefers-reduced-motion: reduce) { .walk { animation: none; } .walk-progress i { transition: none; } }
+
+/* «Встретиться здесь» в карточке помещения. */
+.meet-toggle { display: inline-flex; align-items: center; gap: 6px; margin-top: 14px; padding: 4px 0; border: 0; color: var(--blue); background: none; font: inherit; font-size: 14px; font-weight: 650; cursor: pointer; }
+.meet-toggle:hover { text-decoration: underline; text-underline-offset: 3px; }
+.meet-box { width: 100%; display: flex; flex-direction: column; gap: 10px; margin-top: 12px; padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-soft); text-align: left; }
+.meet-head { display: flex; align-items: center; justify-content: space-between; color: var(--ink); font-size: 15px; }
+.meet-time { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--ink); font-size: 14px; }
+.meet-time input { min-height: 38px; padding: 0 10px; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); background: var(--surface); font: inherit; }
+.meet-time small { color: var(--muted); font-size: 13px; }
+.meet-send { align-self: flex-start; }
+.meet-status { display: flex; align-items: center; gap: 6px; margin: 0; color: var(--ink); font-size: 14px; }
+.meet-status svg { color: #2f9e62; }
+.nv-meet em { color: var(--blue); font-size: 14px; font-style: normal; font-weight: 650; }
