@@ -1,9 +1,11 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
-import { ArrowUpRight, BookOpen, Bot, CalendarDays, Check, Compass, Gamepad2, Info, LayoutGrid, Map as MapIcon, MapPin, Moon, Navigation, Search, Sparkles, Sun, X } from 'lucide-react'
+import { ArrowUpRight, BookOpen, Bot, CalendarDays, Check, Compass, Gamepad2, GraduationCap, Info, LayoutGrid, Map as MapIcon, MapPin, Moon, Navigation, Search, Sparkles, Sun, X } from 'lucide-react'
 import { navigation, rooms } from '../data'
 import { lockBodyScroll, storageGet, storageSet } from '../storage'
-import { setLanguage, useLanguage, searchableRoom } from '../i18n.js'
+import { setLanguage, useLanguage } from '../i18n.js'
+import { cancelMiss, reportMiss, searchRooms, searchTeachers, shortName, useTeachers } from '../search.js'
+import VoiceSearchButton from './VoiceSearchButton.jsx'
 import { isSearchShortcut } from '../shortcuts.js'
 import { startTour } from '../tour-bus.js'
 import { openCookieSettings } from '../consent.js'
@@ -55,6 +57,9 @@ function resultPath(room) {
 
 function SearchDialog({ open, onClose }) {
   const [query, setQuery] = useState('')
+  const teachers = useTeachers()
+  const missed = Boolean(query.trim()) && !searchRooms(query, 1).length && !searchTeachers(teachers, query, 1).length
+  useEffect(() => { if (missed) reportMiss(query); else cancelMiss() }, [missed, query])
   const inputRef = useRef(null)
   const location = useLocation()
 
@@ -78,11 +83,9 @@ function SearchDialog({ open, onClose }) {
   useEffect(() => onClose(), [location.pathname, onClose])
   if (!open) return null
 
-  const normalized = query.trim().toLocaleLowerCase('ru')
-  const matches = rooms.filter((room) => {
-    const text = searchableRoom(room)
-    return !normalized || text.includes(normalized)
-  }).slice(0, 7)
+  const matches = query.trim() ? searchRooms(query, 7).map((entry) => entry.room) : rooms.slice(0, 7)
+  const teacherHits = searchTeachers(teachers, query, 3)
+
   const countLabel = matches.length === 1 ? 'место' : matches.length > 1 && matches.length < 5 ? 'места' : 'мест'
 
   return (
@@ -90,9 +93,10 @@ function SearchDialog({ open, onClose }) {
       <section className="search-dialog" role="dialog" aria-modal="true" aria-labelledby="search-title">
         <div className="search-dialog-top"><span className="eyebrow">Поиск по колледжу</span><button className="icon-button" onClick={onClose} aria-label="Закрыть поиск"><X size={18} /></button></div>
         <h2 id="search-title" className="visually-hidden">Найти кабинет или пространство</h2>
-        <label className="search-input-wrap"><Search size={19} /><input ref={inputRef} type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Номер кабинета, название, место…" /><kbd>ESC</kbd></label>
+        <label className="search-input-wrap"><Search size={19} /><input ref={inputRef} type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Номер кабинета, место или преподаватель…" /><VoiceSearchButton onText={setQuery} /><kbd>ESC</kbd></label>
         <div className="search-results" aria-live="polite">
-          {matches.length ? matches.map((room) => <Link key={room.id} className="search-result" to={resultPath(room)} onClick={onClose}><span className="search-result-icon"><MapPin size={16} /></span><span className="search-result-copy"><small>{room.category}, {room.floor} этаж</small><strong>{room.name}{room.number && ` №${room.number}`}</strong></span><ArrowUpRight className="search-result-arrow" size={17} /></Link>) : <div className="search-empty"><span>Такого места не нашли.</span><small>Проверьте номер или попробуйте «библиотека», «столовая».</small></div>}
+          {teacherHits.map(({ teacher, room, bySubject }) => <Link key={teacher.name} className="search-result search-teacher" to={room ? resultPath(room) : '/map?floor=1&room=academic-office'} onClick={onClose}><span className="search-result-icon"><GraduationCap size={16} /></span><span className="search-result-copy"><small>{[teacher.position, (teacher.subjects || []).slice(0, 2).join(', ')].filter(Boolean).join(' · ') || 'Преподаватель'}</small><strong>{shortName(teacher.name)}</strong><em>{room ? `${room.name}${room.number ? ` №${room.number}` : ''}${bySubject ? ', по предмету' : ''}` : 'Кабинет уточните в учебной части'}</em></span><ArrowUpRight className="search-result-arrow" size={17} /></Link>)}
+          {matches.length ? matches.map((room) => <Link key={room.id} className="search-result" to={resultPath(room)} onClick={onClose}><span className="search-result-icon"><MapPin size={16} /></span><span className="search-result-copy"><small>{room.category}, {room.floor} этаж</small><strong>{room.name}{room.number && ` №${room.number}`}</strong></span><ArrowUpRight className="search-result-arrow" size={17} /></Link>) : teacherHits.length ? null : <div className="search-empty"><span>Такого места не нашли.</span><small>Проверьте номер или попробуйте «библиотека», «столовая».</small></div>}
         </div>
         <div className="search-foot"><span><kbd>K</kbd> быстрый поиск</span><span>{matches.length} {countLabel}</span></div>
       </section>

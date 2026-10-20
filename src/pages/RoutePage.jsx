@@ -312,7 +312,7 @@ export default function RoutePage() {
           <button type="button" className={`nv-switch nv-lift-switch ${needLift ? 'nv-switch-on' : ''}`} onClick={toggleNeedLift} aria-pressed={needLift}><i aria-hidden="true"><b /></i> <Accessibility size={15} aria-hidden="true" /> Мне нужен лифт <small>запомнить для всех маршрутов</small></button>
         </section>
 
-        {meet && <section className="nv-card nv-meet" role="status"><Handshake size={18} aria-hidden="true" /><span><strong>Вас ждут: {roomName(target)}{meet.at ? `, в ${meet.at}` : ''}</strong><small>Путь построен от: {startLabel}. Если вы в другом месте, поменяйте «Откуда».</small></span></section>}
+        {meet && <section className="nv-card nv-meet" role="status"><Handshake size={18} aria-hidden="true" /><span><strong>Вас ждут: {roomName(target)}</strong>{meet.at && <em>Встреча в {meet.at}</em>}<small>Путь построен от: {startLabel}. Если вы в другом месте, поменяйте «Откуда».</small></span></section>}
 
         {targetNotices.length > 0 && <section className="nv-card nv-notices" aria-live="polite">
           {targetNotices.map((notice, index) => <div key={index} className={`nv-notice-item nv-notice-${NOTICE_TYPES[notice.type].tone}`}>

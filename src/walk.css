@@ -70,3 +70,16 @@
 }
 @media (max-height: 620px) and (max-width: 899px) { .walk-photo { display: none; } }
 @media (prefers-reduced-motion: reduce) { .walk { animation: none; } .walk-progress i { transition: none; } }
+
+/* «Встретиться здесь» в карточке помещения. */
+.meet-toggle { display: inline-flex; align-items: center; gap: 6px; margin-top: 14px; padding: 4px 0; border: 0; color: var(--blue); background: none; font: inherit; font-size: 14px; font-weight: 650; cursor: pointer; }
+.meet-toggle:hover { text-decoration: underline; text-underline-offset: 3px; }
+.meet-box { width: 100%; display: flex; flex-direction: column; gap: 10px; margin-top: 12px; padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-soft); text-align: left; }
+.meet-head { display: flex; align-items: center; justify-content: space-between; color: var(--ink); font-size: 15px; }
+.meet-time { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--ink); font-size: 14px; }
+.meet-time input { min-height: 38px; padding: 0 10px; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); background: var(--surface); font: inherit; }
+.meet-time small { color: var(--muted); font-size: 13px; }
+.meet-send { align-self: flex-start; }
+.meet-status { display: flex; align-items: center; gap: 6px; margin: 0; color: var(--ink); font-size: 14px; }
+.meet-status svg { color: #2f9e62; }
+.nv-meet em { color: var(--blue); font-size: 14px; font-style: normal; font-weight: 650; }
