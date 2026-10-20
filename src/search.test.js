@@ -42,3 +42,15 @@ test('teachers are found by name or subject and point to the subject room', () =
   assert.deepEqual(searchTeachers(list, 'ив'), [], 'слишком короткий запрос')
   assert.equal(shortName('Иванова Анна Сергеевна'), 'Иванова А. С.')
 })
+
+test('the real staff list is valid and finds teachers by surname and subject', async () => {
+  const { readFile } = await import('node:fs/promises')
+  const list = JSON.parse(await readFile(new URL('../public/teachers.json', import.meta.url), 'utf8'))
+  assert.ok(list.length >= 20)
+  assert.ok(list.every((teacher) => teacher.name.split(' ').length === 3 && teacher.position))
+  assert.equal(searchTeachers(list, 'сиротин')[0].room.id, 'informatics-222')
+  assert.equal(searchTeachers(list, 'золотарев')[0].room.id, 'chemistry-biology-202')
+  assert.equal(searchTeachers(list, 'колодяжный')[0].room.id, 'training-centre-113')
+  assert.equal(searchTeachers(list, 'шумакова')[0].room.id, 'psychologist-224')
+  assert.ok(searchTeachers(list, 'химия').some((hit) => hit.teacher.name.startsWith('Золотарев')))
+})
