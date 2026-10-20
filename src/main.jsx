@@ -28,6 +28,7 @@ import './design.css'
 import './room-cards.css'
 import './room-extras.css'
 import './arcade.css'
+import './walk.css'
 import './a11y.css'
 import './interactions.js'
 

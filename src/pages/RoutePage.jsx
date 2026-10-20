@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { AlarmClock, ArrowLeft, ArrowRight, ArrowUpDown, ArrowUpRight, Check, ChevronDown, Flag, Footprints, Info, Map as MapIcon, MapPin, MoveDown, MoveUp, Navigation, Play, RotateCcw, Share2, Sparkles, Star, TriangleAlert, Volume2, VolumeX, X } from 'lucide-react'
+import { Accessibility, AlarmClock, ArrowLeft, ArrowRight, ArrowUpDown, ArrowUpRight, Check, ChevronDown, Flag, Footprints, Handshake, Info, Map as MapIcon, MapPin, MoveDown, MoveUp, Navigation, Pause, Play, Plus, RotateCcw, Share2, Sparkles, Star, TriangleAlert, Users, Volume2, VolumeX, X } from 'lucide-react'
 import { rooms } from '../data.js'
 import RouteScene from '../components/RouteScene.jsx'
 import RoomSearchSelect from '../components/RoomSearchSelect.jsx'
 import { buildRouteOptions, pickRoute } from '../map-routing.js'
-import { buildRouteSteps } from '../route-steps.js'
+import { buildTripSteps } from '../route-steps.js'
 import { readManualLocation } from '../map-location.js'
 import { VOICE_PRESETS, getStoredPreset, setVoicePreset, speakText, stopSpeech } from '../speech.js'
 import { VOICE_PACK_MALE_ID, playVoicePack, stopVoicePack, voicePackForPreset } from '../voice-pack.js'
@@ -15,6 +15,8 @@ import { findNearest, nearbyKinds, rememberRoute } from '../places.js'
 import { arrivalStatus, formatCountdown, nextLesson, readSchedule } from '../schedule.js'
 import { useFavorite } from '../components/FavoriteButton.jsx'
 import ShareRoute from '../components/ShareRoute.jsx'
+import WalkMode from '../components/WalkMode.jsx'
+import { crowdMoment, readHere, readNeedLift, setHere, setNeedLift, useHere, useNeedLift, withCrowd } from '../route-prefs.js'
 
 // Страница маршрута устроена как навигатор: слева панель (откуда/куда,
 // сводка, варианты, шаги, озвучка), справа большая карта с текущей
@@ -33,40 +35,89 @@ function stepLabel(count) { return `${count} ${plural(count, 'шаг', 'шага
 function minutes(seconds) { return Math.max(1, Math.round(seconds / 60)) }
 const prefersFlatMap = () => window.matchMedia('(max-width: 680px), (max-height: 500px) and (pointer: coarse)').matches
 
-const stepIcon = (step) => step.kind === 'start' ? MapPin : step.kind === 'arrive' ? Check : step.kind === 'transfer' ? (step.title.startsWith('Поднимитесь') ? MoveUp : MoveDown) : Footprints
+const stepIcon = (step) => step.kind === 'start' ? MapPin : step.kind === 'arrive' ? Check : step.kind === 'stop' ? Pause : step.kind === 'transfer' ? (step.title.startsWith('Поднимитесь') ? MoveUp : MoveDown) : Footprints
+
+function useCrowdMoment() {
+  const [moment, setMoment] = useState(() => crowdMoment())
+  useEffect(() => {
+    const timer = window.setInterval(() => setMoment(crowdMoment()), 30000)
+    return () => window.clearInterval(timer)
+  }, [])
+  return moment
+}
 
 export default function RoutePage() {
   const [params] = useSearchParams()
   const manualPoint = readManualLocation(storageGet('map-manual-point'))
-  const [startId, setStartId] = useState(() => params.get('from') === 'manual' && manualPoint ? 'manual' : rooms.some((room) => room.id === params.get('from')) ? params.get('from') : 'entrance-1')
+  const known = (id) => rooms.some((room) => room.id === id)
+  // Старт по умолчанию: из ссылки, иначе там, где закончился прошлый маршрут
+  // («я здесь», src/route-prefs.js), иначе главный вход.
+  const [startId, setStartId] = useState(() => params.get('from') === 'manual' && manualPoint ? 'manual' : known(params.get('from')) ? params.get('from') : readHere()?.roomId || 'entrance-1')
   // ?nearest=toilet — цель выбирается сама: ближайшее место нужного вида.
   const [targetId, setTargetId] = useState(() => {
-    if (rooms.some((room) => room.id === params.get('to'))) return params.get('to')
-    const from = params.get('from') === 'manual' && manualPoint ? manualPoint : rooms.some((room) => room.id === params.get('from')) ? params.get('from') : 'entrance-1'
+    if (known(params.get('to'))) return params.get('to')
+    const from = params.get('from') === 'manual' && manualPoint ? manualPoint : known(params.get('from')) ? params.get('from') : readHere()?.roomId || 'entrance-1'
     return findNearest(from, params.get('nearest'), typeof from === 'string' ? from : '')?.room.id || 'auditorium-104'
   })
+  // Остановка по пути (?via=changing-room): маршрут из двух частей.
+  const [viaId, setViaId] = useState(() => known(params.get('via')) ? params.get('via') : '')
+  const [viaOpen, setViaOpen] = useState(() => known(params.get('via')))
+  const needLift = useNeedLift()
+  const here = useHere()
   // Вариант маршрута: 'auto' — самый быстрый, 'stairs' — ближайшая лестница,
   // либо точный вид ('lift', 'stairs-west', 'stairs-middle', 'stairs-north').
+  // С профилем «Мне нужен лифт» по умолчанию всегда лифт.
   const [routePreference, setRoutePreference] = useState(() => {
     const mode = params.get('mode')
-    return mode && ['lift', 'stairs', 'stairs-west', 'stairs-middle', 'stairs-north'].includes(mode) ? mode : 'auto'
+    return mode && ['lift', 'stairs', 'stairs-west', 'stairs-middle', 'stairs-north'].includes(mode) ? mode : readNeedLift() ? 'lift' : 'auto'
   })
+  const toggleNeedLift = () => { setNeedLift(!needLift); setRoutePreference(needLift ? 'auto' : 'lift') }
+  const meet = params.get('meet') === '1' ? { at: /^([01]\d|2[0-3]):[0-5]\d$/.test(params.get('at') || '') ? params.get('at') : '' } : null
   const start = startId === 'manual' && manualPoint ? manualPoint : rooms.find((room) => room.id === startId) || rooms.find((room) => room.id === 'entrance-1')
   const target = rooms.find((room) => room.id === targetId) || rooms[0]
+  const via = viaId && viaId !== targetId && viaId !== startId ? rooms.find((room) => room.id === viaId) : null
   const startLabel = startId === 'manual' ? 'Ваша отметка' : roomName(start)
   const crossFloor = start.floor !== target.floor
   // Закрытые по объявлениям лестницы и лифт маршрут обходит (public/notices.json).
   const notices = useNotices()
   const closed = useMemo(() => closedRoomIds(notices), [notices])
-  const routeOptions = useMemo(() => avoidClosed(buildRouteOptions(startId === 'manual' && manualPoint ? manualPoint : start.id, target.id), closed), [startId, start.id, target.id, manualPoint, closed])
-  const route = useMemo(() => pickRoute(routeOptions, routePreference), [routeOptions, routePreference])
+  // На перемене и в обед переход между этажами считаем с запасом (оценка).
+  const crowd = useCrowdMoment()
+  const startPoint = startId === 'manual' && manualPoint ? manualPoint : start.id
+  const optionsFor = (from, toId) => withCrowd(avoidClosed(buildRouteOptions(from, toId), closed), crowd)
+  const legPlan = useMemo(() => {
+    const parts = via ? [[startPoint, start, via], [via.id, via, target]] : [[startPoint, start, target]]
+    return parts.map(([from, fromRoom, toRoom]) => ({ from, fromRoom, toRoom, options: optionsFor(from, toRoom.id) }))
+    // optionsFor зависит только от перечисленного ниже
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startPoint, start, via, target, closed, crowd])
+  const routeOptions = via ? [] : legPlan[0].options
+  const legs = useMemo(() => legPlan.map((plan) => ({ ...plan, route: pickRoute(plan.options, routePreference) })), [legPlan, routePreference])
+  // Сводка по всему пути: у маршрута с остановкой — сумма частей.
+  const route = via ? {
+    kind: legs.map((leg) => leg.route.kind || 'same').join('+'),
+    meters: legs.reduce((sum, leg) => sum + (leg.route.meters || 0), 0),
+    seconds: legs.reduce((sum, leg) => sum + (leg.route.seconds || 0), 0),
+    footsteps: legs.reduce((sum, leg) => sum + (leg.route.footsteps || 0), 0),
+    length: legs.reduce((sum, leg) => sum + (leg.route.length || 0), 0),
+    transfer: legs.find((leg) => leg.route.transfer)?.route.transfer || null,
+    crowdSeconds: legs.reduce((sum, leg) => sum + (leg.route.crowdSeconds || 0), 0),
+    byFloor: {},
+  } : legs[0].route
   const transition = route.transfer?.kind === 'lift' || !route.transfer ? 'lift' : route.transfer.kind
-  const sameRoom = !crossFloor && route.length === 0
-  // Каждый шаг знает свой этаж и вершину маршрута: по ним на плане двигается
-  // точка, а пройденная часть линии остаётся бледной (см. src/route-steps.js).
-  const steps = buildRouteSteps({ startLabel, startFloor: start.floor, targetFloor: target.floor, targetName: roomName(target), route, sameRoom })
+  const sameRoom = !via && !crossFloor && route.length === 0
+  // Каждый шаг знает свой этаж, часть пути (leg) и вершину маршрута: по ним
+  // на плане двигается точка, а пройденная часть линии остаётся бледной.
+  const steps = buildTripSteps(legs.map((leg, index) => ({
+    startLabel: index === 0 ? startLabel : roomName(leg.fromRoom),
+    startFloor: leg.fromRoom.floor,
+    targetFloor: leg.toRoom.floor,
+    targetName: roomName(leg.toRoom),
+    route: leg.route,
+    sameRoom: index === 0 && sameRoom,
+  })))
 
-  const routeKey = [startId, target.id, route.kind || 'same'].join('|')
+  const routeKey = [startId, via?.id || '', target.id, route.kind || 'same'].join('|')
   const [nav, setNav] = useState({ key: routeKey, index: 0 })
   const stepIndex = nav.key === routeKey ? Math.min(nav.index, steps.length - 1) : 0
   const current = steps[stepIndex]
@@ -76,6 +127,9 @@ export default function RoutePage() {
   const [peek, setPeek] = useState({ key: '', floor: null })
   const peekKey = `${routeKey}|${stepIndex}`
   const shownFloor = peek.key === peekKey && peek.floor ? peek.floor : current.floor
+  // Часть пути текущего шага: её линию и её цель показывает план.
+  const shownLeg = legs[current.leg || 0]
+  const legCross = shownLeg.fromRoom.floor !== shownLeg.toRoom.floor
 
   // Голос включён по умолчанию: первую фразу всё равно слышно только после
   // нажатия кнопки, поэтому браузер автозапуск не блокирует.
@@ -158,15 +212,28 @@ export default function RoutePage() {
     const timer = window.setTimeout(() => rememberRoute(startId, target.id), 2500)
     return () => window.clearTimeout(timer)
   }, [startId, target.id])
+  const [walking, setWalking] = useState(false)
+  const arrive = () => {
+    setHere(target.id)
+    setWalking(false)
+    if (startId !== target.id) setStartId(target.id)
+  }
   const [favorite, toggleFavorite] = useFavorite(target.id)
   const [sharing, setSharing] = useState(false)
   // «Успеть на пару»: время до начала берём из своего расписания, если
   // следующая пара — в этом кабинете, иначе человек выбирает его сам.
   const lessonAhead = useMemo(() => { const next = nextLesson(readSchedule()); return next && next.lesson.roomId === target.id && next.minutes < 180 ? next : null }, [target.id])
+  const meetMinutes = useMemo(() => {
+    if (!meet?.at) return null
+    const now = new Date()
+    const [h, m] = meet.at.split(':').map(Number)
+    const left = h * 60 + m - (now.getHours() * 60 + now.getMinutes())
+    return left > 0 && left < 180 ? left : null
+  }, [meet?.at])
   const [deadline, setDeadline] = useState(null)
-  const minutesLeft = deadline ?? (lessonAhead ? lessonAhead.minutes : null)
+  const minutesLeft = deadline ?? (lessonAhead ? lessonAhead.minutes : meetMinutes)
   const arrival = minutesLeft === null || sameRoom ? null : arrivalStatus(route.seconds, minutesLeft)
-  const fastest = routeOptions[0]
+  const fastest = via ? null : routeOptions[0]
   const nearestFrom = startId === 'manual' && manualPoint ? manualPoint : start.id
   const goNearest = (kind) => {
     const found = findNearest(nearestFrom, kind, startId)
@@ -179,7 +246,7 @@ export default function RoutePage() {
     setStartId(targetId)
     setTargetId(startId)
   }
-  const resetRoute = () => { setStartId('entrance-1'); setTargetId('auditorium-104'); setRoutePreference('auto') }
+  const resetRoute = () => { setStartId('entrance-1'); setTargetId('auditorium-104'); setViaId(''); setViaOpen(false); setRoutePreference(needLift ? 'lift' : 'auto') }
   const mapUrl = `/map?floor=${target.floor}&from=${encodeURIComponent(startId)}&to=${encodeURIComponent(target.id)}${crossFloor ? `&mode=${transition}` : ''}`
 
   // Стрелки на клавиатуре листают шаги, пока фокус не в поле ввода.
@@ -195,12 +262,13 @@ export default function RoutePage() {
   }, [routeKey, steps.length])
 
   const followsStep = shownFloor === current.floor
-  const leg = route.byFloor[shownFloor]
-  const transferMarks = crossFloor && route.transfer ? {
-    floor: start.floor,
-    label: `${route.transfer.kind === 'lift' ? 'Лифт' : 'Лестница'} ${target.floor > start.floor ? '↑' : '↓'} ${target.floor} этаж`,
-    arrival: target.floor,
-    arrivalLabel: `${start.floor > target.floor ? '↓' : '↑'} с ${start.floor} этажа`,
+  const leg = shownLeg.route.byFloor[shownFloor]
+  const legTransfer = shownLeg.route.transfer
+  const transferMarks = legCross && legTransfer ? {
+    floor: shownLeg.fromRoom.floor,
+    label: `${legTransfer.kind === 'lift' ? 'Лифт' : 'Лестница'} ${shownLeg.toRoom.floor > shownLeg.fromRoom.floor ? '↑' : '↓'} ${shownLeg.toRoom.floor} этаж`,
+    arrival: shownLeg.toRoom.floor,
+    arrivalLabel: `${shownLeg.fromRoom.floor > shownLeg.toRoom.floor ? '↓' : '↑'} с ${shownLeg.fromRoom.floor} этажа`,
   } : null
   const pickRoom = (room) => setPicked(room)
   const pickAs = (kind) => {
@@ -210,7 +278,7 @@ export default function RoutePage() {
     setPicked(null)
   }
   const progress = steps.length > 1 ? stepIndex / (steps.length - 1) : 1
-  const viaLabel = crossFloor ? route.transfer?.method || route.transfer?.label : 'по одному этажу'
+  const viaLabel = via ? `через: ${via.name.toLowerCase()}` : crossFloor ? route.transfer?.method || route.transfer?.label : 'по одному этажу'
 
   return <div className="nv">
     <header className="nv-head container">
@@ -228,15 +296,23 @@ export default function RoutePage() {
           <div className="nv-place-rail" aria-hidden="true"><i className="nv-dot-start" /><span /><i className="nv-dot-end" /></div>
           <div className="nv-place-fields">
             <RoomSearchSelect label="Откуда" value={startId} onChange={setStartId} manualOption={manualPoint ? { value: 'manual', label: `Ваша отметка, ${manualPoint.floor} этаж` } : null} />
+            {viaOpen && <div className="nv-via"><RoomSearchSelect label="Через" value={viaId} onChange={setViaId} /><button type="button" className="nv-via-remove" onClick={() => { setViaId(''); setViaOpen(false) }} aria-label="Убрать остановку"><X size={15} /></button></div>}
             <RoomSearchSelect label="Куда" value={targetId} onChange={setTargetId} />
           </div>
           <button type="button" className="nv-swap" onClick={swapPoints} disabled={!canSwap} aria-label="Поменять старт и цель местами" title="Поменять местами"><ArrowUpDown size={16} /></button>
-          <Link className="nv-manual" to={`/map?floor=${start.floor}&manual=1`}><MapPin size={14} /> {manualPoint ? 'Изменить свою отметку на плане' : 'Начать от своей точки на плане'}</Link>
+          {here && startId === here.roomId && !params.get('from') && <p className="nv-here"><MapPin size={14} /> Старт — там, где закончился прошлый маршрут. <button type="button" onClick={() => { setHere(null); setStartId('entrance-1') }}>От входа</button></p>}
+          <div className="nv-place-tools">
+            {!viaOpen && <button type="button" className="nv-add-via" onClick={() => setViaOpen(true)}><Plus size={14} /> Остановка по пути</button>}
+            <Link className="nv-manual" to={`/map?floor=${start.floor}&manual=1`}><MapPin size={14} /> {manualPoint ? 'Изменить свою отметку на плане' : 'Начать от своей точки на плане'}</Link>
+          </div>
           <div className="nv-nearby" role="group" aria-label="Ближайшее место">
             <span>Ближайший:</span>
             {nearbyKinds.map((kind) => <button type="button" key={kind.id} onClick={() => goNearest(kind.id)}>{kind.label}</button>)}
           </div>
+          <button type="button" className={`nv-switch nv-lift-switch ${needLift ? 'nv-switch-on' : ''}`} onClick={toggleNeedLift} aria-pressed={needLift}><i aria-hidden="true"><b /></i> <Accessibility size={15} aria-hidden="true" /> Мне нужен лифт <small>запомнить для всех маршрутов</small></button>
         </section>
+
+        {meet && <section className="nv-card nv-meet" role="status"><Handshake size={18} aria-hidden="true" /><span><strong>Вас ждут: {roomName(target)}{meet.at ? `, в ${meet.at}` : ''}</strong><small>Путь построен от: {startLabel}. Если вы в другом месте, поменяйте «Откуда».</small></span></section>}
 
         {targetNotices.length > 0 && <section className="nv-card nv-notices" aria-live="polite">
           {targetNotices.map((notice, index) => <div key={index} className={`nv-notice-item nv-notice-${NOTICE_TYPES[notice.type].tone}`}>
@@ -256,6 +332,7 @@ export default function RoutePage() {
               <div><dt>Шагов пешком</dt><dd>~{route.footsteps}</dd></div>
               <div><dt>Путь</dt><dd>{viaLabel}</dd></div>
             </dl>
+            {route.crowdSeconds > 0 && <p className="nv-crowd"><Users size={14} aria-hidden="true" /> {crowd?.kind === 'lunch' ? 'Сейчас обед' : crowd?.kind === 'before' ? 'Скоро первая пара' : 'Сейчас перемена'}: у лестниц и лифта людно, время посчитано с запасом.</p>}
           </>}
           {!sameRoom && <div className="nv-arrive">
             <span className="nv-arrive-label"><AlarmClock size={15} /> {lessonAhead && deadline === null ? `${lessonAhead.lesson.subject} ${formatCountdown(lessonAhead.minutes)}` : 'Пара через'}</span>
@@ -269,7 +346,7 @@ export default function RoutePage() {
             </div>}
           </div>}
           <div className="nv-actions">
-            <button type="button" className="nv-go" onClick={startNavigation}><Navigation size={16} /> Начать</button>
+            <button type="button" className="nv-go" onClick={() => { startNavigation(); setWalking(true) }}><Navigation size={16} /> Идти</button>
             <button type="button" className={`nv-ghost nv-icon-btn ${favorite ? 'is-on' : ''}`} onClick={toggleFavorite} aria-pressed={favorite} title={favorite ? 'Убрать из избранного' : 'В избранное'} aria-label={favorite ? 'Убрать из избранного' : 'Добавить в избранное'}><Star size={16} fill={favorite ? 'currentColor' : 'none'} /></button>
             <button type="button" className="nv-ghost nv-icon-btn" onClick={() => setSharing(true)} title="Поделиться маршрутом" aria-label="Поделиться маршрутом"><Share2 size={16} /></button>
             <button type="button" className="nv-ghost nv-icon-btn" onClick={resetRoute} title="Вернуть маршрут по умолчанию" aria-label="Сбросить маршрут"><RotateCcw size={15} /></button>
@@ -283,6 +360,7 @@ export default function RoutePage() {
               <span className="nv-option-icon" aria-hidden="true">{option.kind === 'lift' ? <MoveUp size={15} /> : <ArrowUpDown size={15} />}</span>
               <span className="nv-option-body"><strong>{option.label}</strong><span>≈ {Math.round(option.meters)} м, {option.seconds < 60 ? 'меньше минуты' : `${minutes(option.seconds)} мин`}</span></span>
               {index === 0 && <em>Быстрее</em>}
+              {option.crowdSeconds > 0 && <small className="nv-option-crowd">+{option.crowdSeconds} с на перемене</small>}
             </button>)}
           </div>
         </section>}
@@ -339,7 +417,7 @@ export default function RoutePage() {
             following={following && followsStep}
             mode={mode3d ? '3d' : 'top'}
             selectedId={picked?.floor === shownFloor ? picked.id : ''}
-            targetId={target.id}
+            targetId={shownLeg.toRoom.id}
             transfer={transferMarks}
             onRoomClick={pickRoom}
             onFollowChange={setFollowing}
@@ -358,8 +436,8 @@ export default function RoutePage() {
             </div>
           </div>}
           <div className="nv-map-tools">
-            {crossFloor && <div className="nv-floors" role="group" aria-label="Этаж на карте">
-              {[start.floor, target.floor].map((floor) => <button type="button" key={floor} aria-pressed={shownFloor === floor} onClick={() => setPeek({ key: peekKey, floor })}>{`${floor} этаж`}</button>)}
+            {legCross && <div className="nv-floors" role="group" aria-label="Этаж на карте">
+              {[shownLeg.fromRoom.floor, shownLeg.toRoom.floor].map((floor) => <button type="button" key={floor} aria-pressed={shownFloor === floor} onClick={() => setPeek({ key: peekKey, floor })}>{`${floor} этаж`}</button>)}
             </div>}
             <div className="nv-view" role="group" aria-label="Вид карты">
               <button type="button" aria-pressed={mode3d} onClick={() => setMode3d(true)}>3D</button>
@@ -375,11 +453,14 @@ export default function RoutePage() {
           <button type="button" className="nv-ctl" onClick={repeatStep} aria-label="Повторить подсказку голосом" title="Повторить голосом"><Volume2 size={17} /></button>
           {stepIndex < steps.length - 1
             ? <button type="button" className="nv-next" onClick={() => goToStep(stepIndex + 1)}>Дальше <ArrowRight size={17} /></button>
-            : <Link className="nv-next nv-next-done" to={mapUrl}>На карте <ArrowUpRight size={16} /></Link>}
+            : <button type="button" className="nv-next nv-next-done" onClick={arrive}><Check size={17} /> Я на месте</button>}
         </div>
-        <p className="nv-footnote">Маршрут построен по плану. Если проход закрыт, следуйте указателям в здании.<span className="nv-keys"> Стрелки ← → на клавиатуре листают шаги.</span></p>
+        <p className="nv-footnote"><Link to={mapUrl}>Открыть на карте <ArrowUpRight size={13} /></Link> Маршрут построен по плану. Если проход закрыт, следуйте указателям в здании.<span className="nv-keys"> Стрелки ← → на клавиатуре листают шаги.</span></p>
       </section>
     </div>
-    {sharing && <ShareRoute onClose={() => setSharing(false)} from={startId === 'manual' ? 'entrance-1' : startId} to={target.id} mode={routePreference} title={`${startLabel} → ${roomName(target)}`} meta={`${sameRoom ? 'Вы уже на месте' : `≈ ${Math.round(route.meters)} м, ${route.seconds < 60 ? 'меньше минуты' : `${minutes(route.seconds)} мин`}`}${crossFloor ? `, ${viaLabel}` : ''}`} steps={steps} manualStart={startId === 'manual'} />}
+    {walking && <WalkMode steps={steps} index={stepIndex} onStep={(index) => goToStep(index)} onRepeat={repeatStep} onClose={() => setWalking(false)} onArrive={arrive} target={target} stop={via}>
+      <RouteScene floor={shownFloor} points={leg?.points || []} progress={followsStep ? current.progress : null} following={followsStep} mode="top" targetId={shownLeg.toRoom.id} transfer={transferMarks} notices={notices} />
+    </WalkMode>}
+    {sharing && <ShareRoute onClose={() => setSharing(false)} from={startId === 'manual' ? 'entrance-1' : startId} to={target.id} via={via?.id || ''} mode={routePreference} title={`${startLabel} → ${roomName(target)}`} meta={`${sameRoom ? 'Вы уже на месте' : `≈ ${Math.round(route.meters)} м, ${route.seconds < 60 ? 'меньше минуты' : `${minutes(route.seconds)} мин`}`}${crossFloor ? `, ${viaLabel}` : ''}`} steps={steps} manualStart={startId === 'manual'} />}
   </div>
 }

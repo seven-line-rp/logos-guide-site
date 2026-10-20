@@ -6,8 +6,8 @@ import { lockBodyScroll } from '../storage.js'
 
 // «Поделиться маршрутом»: ссылка, QR-код (навести камеру — и маршрут открыт)
 // и печать листка с шагами для гостей и родителей.
-export default function ShareRoute({ from, to, mode, title, meta, steps, manualStart, onClose }) {
-  const url = routeLink(window.location.origin, { from, to, mode })
+export default function ShareRoute({ from, to, via = '', mode, title, meta, steps, manualStart, onClose }) {
+  const url = routeLink(window.location.origin, { from, to, mode, via })
   const [svg, setSvg] = useState('')
   const [status, setStatus] = useState('')
 

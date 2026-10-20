@@ -13,5 +13,6 @@ export const storedItems = [
   { key: 'logos-ai-chats', purpose: 'Ваши чаты с ЛОГОС AI и приложенные к ним картинки', kind: 'Функциональные' },
   { key: 'logos-favorites, logos-recent-routes', purpose: 'Избранные места и последние маршруты', kind: 'Функциональные' },
   { key: 'logos-schedule', purpose: 'Ваше расписание пар', kind: 'Функциональные' },
+  { key: 'logos-here, route-need-lift', purpose: 'Где закончился последний маршрут (на 3 часа) и настройка «Мне нужен лифт»', kind: 'Функциональные' },
   { key: 'logos-welcome-hidden, logos-tour-done', purpose: 'Не показывать приветствие, обучение пройдено', kind: 'Функциональные' },
 ]
