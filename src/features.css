@@ -59,7 +59,7 @@
 .fav-button.is-on svg { animation: fx-pop .35s var(--ease); }
 
 /* ---------- Поделиться ---------- */
-.share-backdrop { position: fixed; z-index: 150; inset: 0; display: grid; place-items: center; padding: 18px; background: rgba(7, 20, 45, .55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); animation: fx-fade .2s ease both; }
+.share-backdrop { position: fixed; z-index: 150; inset: 0; display: grid; place-items: center; padding: 18px; background: rgba(7, 20, 45, .55); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); animation: fx-fade .2s ease both; }
 .share-dialog { position: relative; width: min(560px, 100%); max-height: calc(100dvh - 36px); padding: 24px; overflow-y: auto; border: 1px solid var(--line); border-radius: 24px; background: var(--surface); box-shadow: 0 30px 80px rgba(0, 0, 0, .25); animation: fx-rise .35s var(--ease); }
 .share-dialog h2 { margin: 10px 40px 4px 0; font-size: 21px; line-height: 1.25; letter-spacing: -.01em; }
 .share-meta { margin: 0 0 16px; color: var(--muted); }
@@ -236,7 +236,7 @@
 .ex-layout { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 16px; align-items: start; }
 .ex-stage { position: relative; overflow: hidden; border: 1px solid var(--line); border-radius: 22px; }
 .ex-stage .rs { height: clamp(460px, 70vh, 720px); }
-.ex-card { position: absolute; z-index: 10; left: 14px; bottom: 14px; width: min(400px, calc(100% - 80px)); padding: 16px 18px; overflow: hidden; border: 1px solid var(--line); border-radius: 20px; background: color-mix(in srgb, var(--surface) 92%, transparent); box-shadow: 0 18px 50px rgba(13, 28, 59, .16); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); animation: fx-rise .45s var(--ease); }
+.ex-card { position: absolute; z-index: 10; left: 14px; bottom: 14px; width: min(400px, calc(100% - 80px)); padding: 16px 18px; overflow: hidden; border: 1px solid var(--line); border-radius: 20px; background: color-mix(in srgb, var(--surface) 92%, transparent); box-shadow: 0 18px 50px rgba(13, 28, 59, .16); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); animation: fx-rise .45s var(--ease); }
 .ex-card-step { color: var(--blue); font-size: 12px; font-weight: 700; }
 .ex-card h2 { margin: 4px 0 6px; font-size: 22px; line-height: 1.15; letter-spacing: -.02em; }
 .ex-card p { margin: 0 0 8px; color: var(--muted); font-size: 14px !important; }

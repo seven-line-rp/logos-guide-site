@@ -195,7 +195,7 @@
 .nv-map .floor-map-viewport.floor-map-3d { height: clamp(380px, 58vh, 600px); }
 .nv-map .floor-map-viewport:not(.floor-map-3d) { max-height: clamp(380px, 62vh, 640px); overflow: auto; }
 .nv-map-tools { position: absolute; z-index: 16; top: 12px; right: 12px; left: 12px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; pointer-events: none; }
-.nv-floors, .nv-view { display: inline-flex; gap: 3px; padding: 3px; border: 1px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); box-shadow: 0 6px 18px rgba(15, 30, 60, .1); pointer-events: auto; }
+.nv-floors, .nv-view { display: inline-flex; gap: 3px; padding: 3px; border: 1px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--surface) 92%, transparent); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: 0 6px 18px rgba(15, 30, 60, .1); pointer-events: auto; }
 .nv-view { margin-left: auto; }
 .nv-floors button, .nv-view button { min-height: 32px; padding: 0 12px; border-radius: 9px; color: var(--muted); background: transparent; font-size: 12.5px; font-weight: 700; cursor: pointer; }
 .nv-floors button[aria-pressed='true'], .nv-view button[aria-pressed='true'] { color: #fff; background: var(--blue); }

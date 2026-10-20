@@ -226,8 +226,8 @@ html[data-theme='dark'] .home-hero-scene {
   position: absolute;
   z-index: 1;
   inset: 0;
-  backdrop-filter: blur(5px);
   -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
   -webkit-mask-image: radial-gradient(ellipse 30% 40% at 66% 54%, transparent 45%, #000 100%);
   mask-image: radial-gradient(ellipse 30% 40% at 66% 54%, transparent 45%, #000 100%);
 }
@@ -260,8 +260,8 @@ html[data-theme='dark'] .home-hero-scene {
   border-radius: 14px;
   color: #fff;
   background: rgba(10, 24, 60, .45);
-  backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
   transition: background .2s, border-color .2s;
 }
 .hero-scene-caption:hover { border-color: rgba(255, 255, 255, .45); background: rgba(10, 24, 60, .62); }

@@ -62,8 +62,8 @@
   border-radius: 14px;
   color: var(--cover-ink);
   background: rgba(255,255,255,.55);
-  backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
   transition: transform .4s cubic-bezier(.2,.7,.2,1);
 }
 .directory-card-media:hover .directory-card-cover .directory-card-icon { transform: scale(1.08) rotate(-4deg); }
@@ -99,8 +99,8 @@
   z-index: 2;
   color: #1f2f45;
   background: rgba(255,255,255,.78);
-  backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
 }
 
 .directory-card-media .directory-card-copy { padding: 12px 40px 14px 14px; }

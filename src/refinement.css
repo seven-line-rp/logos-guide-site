@@ -34,13 +34,13 @@ button, a { touch-action: manipulation; }
 .reveal, .reveal-visible { opacity: 1 !important; transform: none !important; transition: none !important; }
 
 /* Frosted surfaces are reserved for navigation and overlays, not every card. */
-.site-header { height: 70px; border-color: var(--line); background: var(--glass); backdrop-filter: blur(20px) saturate(1.12); -webkit-backdrop-filter: blur(20px) saturate(1.12); }
+.site-header { height: 70px; border-color: var(--line); background: var(--glass); -webkit-backdrop-filter: blur(20px) saturate(1.12); backdrop-filter: blur(20px) saturate(1.12); }
 .brand-copy strong { color: var(--ink); letter-spacing: .035em; }
 .brand-copy small { color: var(--muted); font-family: inherit; font-size: 11px !important; }
 .nav-link { color: var(--muted); }
 .nav-link:hover, .nav-link-active { color: var(--blue); }
 .theme-toggle, .search-trigger { border-color: var(--line); color: var(--ink); background: rgba(255,255,255,.56); }
-.search-dialog { border-color: var(--glass-border); background: var(--glass); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
+.search-dialog { border-color: var(--glass-border); background: var(--glass); -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); }
 .search-input-wrap { border-color: var(--line); }
 .search-input-wrap input { color: var(--ink); }
 .search-result { border-color: var(--line); }
@@ -57,7 +57,7 @@ button, a { touch-action: manipulation; }
 
 /* Home: real tasks and the real plan, without floating badges or decoration. */
 .home-hero::before, .floor-preview-band::before, .quick-place-graphic, .floor-switch-lines { display: none; }
-.home-search { border-color: rgba(245,250,255,.4); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+.home-search { border-color: rgba(245,250,255,.4); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
 .home-hero-edge { font-family: inherit; }
 .home-hero-edge a { display: inline-flex; align-items: center; gap: 6px; }
 .quick-places { padding-block: 65px; }
@@ -101,7 +101,7 @@ button, a { touch-action: manipulation; }
 .map-manual-summary span { flex: 1; }
 .map-manual-summary button { width: 32px; height: 32px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 7px; color: var(--ink); background: transparent; cursor: pointer; }
 .map-manual-summary .map-pin-show { width:auto; min-height:32px; padding-inline:8px; color:var(--blue); font-weight:700; }
-.map-settings-panel { border-color: var(--line); color: var(--ink); background: var(--glass); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
+.map-settings-panel { border-color: var(--line); color: var(--ink); background: var(--glass); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); }
 .map-settings-panel strong { color: var(--ink); font-size: 13px; }
 .map-settings-panel small { color: var(--muted); font-size: 11px !important; }
 .map-reset-anchors { padding: 5px 10px; border: 1px solid var(--line); }
@@ -223,7 +223,7 @@ button, a { touch-action: manipulation; }
   .map-anchor-button { flex: 1 1 100%; }
   .map-category-filters { width: 100%; max-width: 100%; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 5px; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
   .map-filter { flex: 0 0 auto; font-size: 12px !important; white-space: nowrap; }
-  .map-plan-panel, .room-detail-panel, .game-panel, .game-mode-tab, .directory-card { border-radius: 10px; background: var(--surface); box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .map-plan-panel, .room-detail-panel, .game-panel, .game-mode-tab, .directory-card { border-radius: 10px; background: var(--surface); box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
   .map-panel-heading { min-height: 63px; padding: 8px 11px; background: #e9eff2; }
   .map-panel-heading small { max-width: 215px; font-size: 11px !important; }
   .map-zoom-button { padding: 0 8px; font-size: 11px !important; }

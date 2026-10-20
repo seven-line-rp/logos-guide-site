@@ -453,7 +453,7 @@ kbd { padding: 3px 5px; border: 1px solid #dce2ec; border-radius: 4px; color: #8
 /* Glass navigation, touch feedback, and theme surfaces */
 :root { --glass: rgba(255,255,255,.72); --glass-border: rgba(255,255,255,.68); }
 body, .site-header, .site-footer, .map-plan-panel, .search-dialog { transition: color .28s ease, background-color .28s ease, border-color .28s ease; }
-.site-header { background: rgba(255,255,255,.78); backdrop-filter: blur(22px) saturate(1.45); -webkit-backdrop-filter: blur(22px) saturate(1.45); }
+.site-header { background: rgba(255,255,255,.78); -webkit-backdrop-filter: blur(22px) saturate(1.45); backdrop-filter: blur(22px) saturate(1.45); }
 .theme-toggle { width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid rgba(110,133,174,.2); border-radius: 50%; color: #35517f; cursor: pointer; transition: transform .24s, color .24s, background .24s; }
 .theme-toggle:hover { color: var(--blue); background: #fff; transform: rotate(-12deg); }
 
@@ -490,7 +490,7 @@ html[data-theme='dark'] .toast { color: #eef5ff; background: #17345e; }
 @media (max-width: 680px) {
   .header-inner { gap: 7px; }
   .header-actions { gap: 5px; }
-  .theme-toggle, .search-trigger, .mobile-menu-toggle { flex: 0 0 auto; border: 1px solid rgba(87,125,190,.18); border-radius: 50%; backdrop-filter: blur(16px) saturate(1.45); -webkit-backdrop-filter: blur(16px) saturate(1.45); }
+  .theme-toggle, .search-trigger, .mobile-menu-toggle { flex: 0 0 auto; border: 1px solid rgba(87,125,190,.18); border-radius: 50%; -webkit-backdrop-filter: blur(16px) saturate(1.45); backdrop-filter: blur(16px) saturate(1.45); }
   .map-tools-top { align-items: flex-start; flex-direction: column; gap: 9px; width: 100%; }
   .map-tool-label { min-height: 22px; }
   .map-settings-button { height: 38px; }
@@ -499,7 +499,7 @@ html[data-theme='dark'] .toast { color: #eef5ff; background: #17345e; }
   .map-settings-panel { width: 100%; border-radius: 14px; box-shadow: 0 8px 22px rgba(31,67,126,.08); backdrop-filter: blur(18px); }
   .floor-tab { backdrop-filter: blur(16px); }
   .map-panel-heading small { font-size: 11px; }
-  .room-detail-panel, .game-panel, .directory-card { backdrop-filter: blur(20px) saturate(1.28); -webkit-backdrop-filter: blur(20px) saturate(1.28); }
+  .room-detail-panel, .game-panel, .directory-card { -webkit-backdrop-filter: blur(20px) saturate(1.28); backdrop-filter: blur(20px) saturate(1.28); }
   .room-route-button { min-height: 44px; font-size: 11px; }
   .footer-top { background: linear-gradient(145deg, rgba(238,244,253,.9), rgba(222,233,250,.82)); }
   html[data-theme='dark'] .theme-toggle, html[data-theme='dark'] .search-trigger, html[data-theme='dark'] .mobile-menu-toggle { border-color: rgba(171,198,238,.18); color: #dceaff; }
