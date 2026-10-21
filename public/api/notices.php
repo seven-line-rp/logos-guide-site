@@ -105,14 +105,22 @@ if ($method === 'GET') respond(200, current_notices());
 if ($method !== 'POST') respond(405, ['error' => 'Метод не поддерживается.']);
 
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-$host = preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'] ?? '');
-if ($origin !== '' && parse_url($origin, PHP_URL_HOST) !== $host) respond(403, ['error' => 'Запрос с другого сайта.']);
+// Хост сравниваем без порта и без «www.»; за прокси хостинга Host может быть внутренним,
+// поэтому учитываем и X-Forwarded-Host, и заголовок Sec-Fetch-Site от браузера.
+$hosts = [];
+foreach ([$_SERVER['HTTP_HOST'] ?? '', explode(',', $_SERVER['HTTP_X_FORWARDED_HOST'] ?? '')[0], $_SERVER['SERVER_NAME'] ?? ''] as $candidate) {
+    $candidate = preg_replace('/^www\./', '', strtolower(trim(preg_replace('/:\d+$/', '', $candidate) ?? '')));
+    if ($candidate !== '') $hosts[] = $candidate;
+}
+$originHost = preg_replace('/^www\./', '', strtolower((string) parse_url($origin, PHP_URL_HOST)));
+$sameSite = in_array($_SERVER['HTTP_SEC_FETCH_SITE'] ?? '', ['same-origin', 'same-site'], true);
+if ($origin !== '' && !$sameSite && !in_array($originHost, $hosts, true)) respond(403, ['error' => 'Запрос с другого сайта (' . $originHost . ').']);
 
 $config = load_config();
 if ((string) $config['notices_key'] === '') respond(503, ['error' => 'Правка объявлений не настроена: задайте notices_key (deploy/notices.md).']);
 if (too_many_fails(false)) respond(429, ['error' => 'Слишком много неверных попыток. Подождите час.']);
 $key = (string) ($_SERVER['HTTP_X_ADMIN_KEY'] ?? '');
-if (!hash_equals((string) $config['notices_key'], $key)) {
+if (!hash_equals(trim((string) $config['notices_key']), trim($key))) {
     too_many_fails(true);
     respond(403, ['error' => 'Неверный ключ.']);
 }
