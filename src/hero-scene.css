@@ -186,14 +186,14 @@ html[data-theme='dark'] .home-hero-scene {
 .hs-stairs { position: absolute; top: 0; left: 0; transform-style: preserve-3d; }
 .hs-stairs i {
   position: absolute;
-  top: -5px;
-  left: -11px;
-  width: 22px;
-  height: 10px;
+  top: -3px;
+  left: -7px;
+  width: 14px;
+  height: 6px;
   border: 1px solid var(--route);
   border-radius: 1px;
   background: color-mix(in srgb, var(--route) 38%, transparent);
-  box-shadow: 0 0 10px var(--route-glow);
+  box-shadow: 0 0 7px var(--route-glow);
   opacity: calc(clamp(0, (var(--prog, 0) - var(--p)) * 10 + .6, 1) * var(--vis, 0));
 }
 .hs-cabin { position: absolute; top: 0; left: 0; transform-style: preserve-3d; }
@@ -364,7 +364,7 @@ html[data-theme='dark'] .hero-scene-caption small { color: var(--muted); }
   transition: transform 1s cubic-bezier(.2, .8, .2, 1);
   animation: hs-spiral-in 2.2s cubic-bezier(.2, .7, .2, 1) .5s forwards;
 }
-@keyframes hs-spiral-in { from { opacity: 0; filter: blur(14px); } to { opacity: .92; filter: blur(0); } }
+@keyframes hs-spiral-in { from { opacity: 0; filter: blur(14px); } to { opacity: .8; filter: blur(0); } }
 .hs-spiral-glow {
   position: absolute;
   inset: 4% 8% 0;
@@ -488,4 +488,72 @@ html[data-theme='dark'] .hero-scene-caption small { color: var(--muted); }
   .hs-aurora i, .hs-streak, .hs-spiral-glow, .hs-spiral-turn, .hs-spiral-ring { animation: none; }
   .hs-spiral { opacity: .75; animation: none; transition: none; }
   .hs-spiral-orb, .hs-spiral-ring, .hs-streak { display: none; }
+}
+
+/* ---------- Ещё анимации первого экрана ---------- */
+/* Свет за курсором: пятно следует за мышью по всему кадру. */
+.hs-spot {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  background: radial-gradient(420px circle at calc((var(--px, 0) + .5) * 100%) calc((var(--py, 0) + .5) * 100%), color-mix(in srgb, var(--route) 16%, transparent), transparent 70%);
+  mix-blend-mode: screen;
+  transition: background-position .4s;
+}
+
+/* Золотой заголовок переливается, как металл под лучом. */
+.home-hero-scene h1 em {
+  background: linear-gradient(100deg, #ffd66d 0%, #ffd66d 38%, #fff3c4 50%, #ffd66d 62%, #ffd66d 100%) 0 0 / 260% 100% no-repeat !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  animation: m-rise .6s var(--ease-out) .1s backwards, hs-shimmer 6.5s ease-in-out 1.4s infinite;
+}
+@keyframes hs-shimmer { 0%, 30% { background-position: 100% 0; } 70%, 100% { background-position: 0 0; } }
+
+/* Живая метка в плашке и вращающийся световой контур у поиска. */
+.home-eyebrow svg { animation: hs-ping 2.6s ease-in-out infinite; transform-origin: 50% 90%; }
+@keyframes hs-ping { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-3px) scale(1.12); } 60% { transform: translateY(0); } }
+@property --glow { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+.home-hero-scene .home-search { position: relative; }
+.home-hero-scene .home-search::before {
+  position: absolute;
+  z-index: -1;
+  inset: -3px;
+  border-radius: 16px;
+  background: conic-gradient(from var(--glow), transparent 0 62%, rgba(255, 214, 109, .95) 80%, transparent 100%);
+  opacity: .85;
+  content: '';
+  animation: hs-glow 5s linear infinite;
+}
+@keyframes hs-glow { to { --glow: 360deg; } }
+
+/* Блик пробегает по главной кнопке. */
+.home-hero-scene .home-map-cta { position: relative; overflow: hidden; }
+.home-hero-scene .home-map-cta::after {
+  position: absolute;
+  inset: 0 auto 0 -60%;
+  width: 40%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .85), transparent);
+  content: '';
+  transform: skewX(-18deg);
+  animation: hs-shine 5.5s ease-in-out 2s infinite;
+}
+@keyframes hs-shine { 0%, 60% { left: -60%; } 100% { left: 150%; } }
+
+/* Прокрутка вниз: сцена уходит назад и гаснет (где браузер умеет scroll-driven). */
+@supports (animation-timeline: scroll()) {
+  .hero-scene > .hs-parallax {
+    animation: hs-recede linear both;
+    animation-timeline: scroll(root block);
+    animation-range: 0 640px;
+  }
+  .hs-parallax { transform-origin: 66% 50%; }
+}
+@keyframes hs-recede { to { translate: 0 -40px; scale: .94; } }
+
+@media (max-width: 860px) { .hs-spot { display: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .home-hero-scene h1 em, .home-eyebrow svg, .home-hero-scene .home-search::before, .home-hero-scene .home-map-cta::after { animation: none; }
+  .home-hero-scene .home-search::before, .home-hero-scene .home-map-cta::after, .hs-spot { display: none; }
 }

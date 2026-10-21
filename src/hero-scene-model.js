@@ -169,7 +169,7 @@ function yawTrack(line, startReference) {
 // дверью на втором. Лифт — кабина в шахте: точка заходит в неё, кабина едет
 // вверх, двери открываются на втором этаже.
 export const STAIR_STEPS = 18
-const STAIR_RADIUS = 16
+const STAIR_RADIUS = 9
 const STAIR_TURNS = 1.5
 const LIFT_PHASES = { enter: 0.18, ride: 0.64 }
 
@@ -249,7 +249,7 @@ export function buildFlight(lowerPoints, upperPoints, gap = FLOOR_GAP, transfer 
       const { x, y, z, door } = climbAt(m)
       const k = z / gap
       frame.lower = 1
-      frame.camera = { ...follow(x, y, z, mix(lowerYaw(1), nearestAngle(upperYaw(0), lowerYaw(1)), k)), zoom: FOLLOW.zoom - Math.sin(k * Math.PI) * 0.5 }
+      frame.camera = { ...follow(x, y, z, mix(lowerYaw(1), nearestAngle(upperYaw(0), lowerYaw(1)), k)), zoom: FOLLOW.zoom - Math.sin(k * Math.PI) * 0.85 }
       frame.walker = { x, y, z, visible: true }
       frame.upperFloor = mix(HIDDEN_FLOOR, 1, k)
       frame.climb = { progress: lift ? m : k, vis: 1, door, x, y, z }

@@ -223,6 +223,7 @@ export default function HeroScene() {
     <div className="hs-aurora"><i /><i /><i /></div>
     <GrandSpiral />
     <div className="hs-streak" />
+    <div className="hs-spot" />
     <div className="hs-dof" />
     <div className="hs-particles">{particles.map((particle, index) => <i key={index} style={{ left: `${particle.left}%`, top: `${particle.top}%`, width: particle.size, height: particle.size, animationDelay: `${particle.delay}s` }} />)}</div>
   </div>

@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ArrowDownRight, ArrowRight, ArrowUpRight, Check, GraduationCap, ListChecks, MapPin, QrCode, Search } from 'lucide-react'
+import { ArrowDownRight, ArrowRight, ArrowUpRight, GraduationCap, ListChecks, MapPin, QrCode, Search } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { photoSrcSet, photosFor, rooms, quickPlaces } from '../data.js'
 import { HERO_ROUTES } from '../hero-scene-model.js'
 import HeroScene from '../components/HeroScene.jsx'
+import BreakWalk from '../components/BreakWalk.jsx'
 import AiPromoBanner from '../components/AiPromoBanner.jsx'
 import HomeDashboard from '../components/HomeDashboard.jsx'
 import { Reveal, SectionLabel } from '../components/Primitives.jsx'
@@ -91,6 +92,6 @@ export default function HomePage() {
 
     <section className="floor-preview-band"><div className="container floor-preview-inner"><Reveal className="floor-preview-copy" variant="left"><SectionLabel>Планы этажей</SectionLabel><h2>Первый<br />или <em>второй?</em></h2><p>Переключайтесь между этажами, выбирайте помещения и находите ближайшую лестницу.</p><Link className="button button-white" to="/map">Открыть карту <ArrowRight size={15} /></Link></Reveal><Reveal className="floor-switch-cards" delay={90} variant="right">{[1, 2].map((floor) => <Link key={floor} to={`/map?floor=${floor}`} className={`floor-switch-card floor-switch-${floor}`}><span className="floor-switch-number">{floor}</span><span className="floor-switch-copy"><small>{floor === 1 ? 'Первый этаж' : 'Второй этаж'}</small><strong>{floor === 1 ? 'Столовая, актовый зал, учебная часть' : 'Библиотека, лаборатории, кабинеты'}</strong></span><ArrowUpRight size={17} /></Link>)}</Reveal></div></section>
 
-    <section className="play-teaser container section-pad"><Reveal className="play-teaser-copy" variant="up"><SectionLabel>На перемене</SectionLabel><h2>Проверьте себя<br /><em>по плану.</em></h2><p>В коротком квизе можно потренироваться узнавать кабинеты и этажи.</p><Link className="button button-primary" to="/games">Открыть игры <ArrowRight size={15} /></Link></Reveal><Link className="quiz-preview" to="/games" aria-label="Открыть квиз «Узнай этаж»"><span className="quiz-preview-top"><span>Узнай этаж</span><span>Вопрос 1 из 5</span></span><strong>На каком этаже библиотека?</strong><span className="quiz-preview-options"><span>1 этаж</span><span className="quiz-preview-right"><Check size={14} /> 2 этаж</span></span><span className="quiz-preview-foot">Без оценок, около минуты</span></Link></section>
+    <BreakWalk />
   </>
 }
