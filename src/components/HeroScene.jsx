@@ -48,6 +48,28 @@ const particles = Array.from({ length: 22 }, (_, index) => ({
   size: 2 + (index % 3),
 }))
 
+// Огромная винтовая лестница справа: ступени-плиты по спирали, перила, светящийся
+// стержень и шар-«гость», который спускается по ступеням с шлейфом. Всё на
+// CSS 3D, ступени и шар считает браузер по одной формуле (--n — номер ступени).
+const SPIRAL_STEPS = 56
+const spiralSteps = Array.from({ length: SPIRAL_STEPS }, (_, n) => n)
+const spiralTrail = Array.from({ length: 7 }, (_, n) => n)
+
+function GrandSpiral() {
+  return <div className="hs-spiral">
+    <div className="hs-spiral-glow" />
+    <div className="hs-spiral-stage">
+      <div className="hs-spiral-turn">
+        <i className="hs-spiral-pole" />
+        {spiralSteps.map((n) => <i key={n} className="hs-spiral-step" style={{ '--n': n }} />)}
+        {spiralTrail.map((n) => <b key={n} className="hs-spiral-orb" style={{ '--t': n }} />)}
+        <i className="hs-spiral-ring hs-spiral-ring-1" />
+        <i className="hs-spiral-ring hs-spiral-ring-2" />
+      </div>
+    </div>
+  </div>
+}
+
 function FloorPlate({ floor }) {
   const language = useLanguage()
   const html = useMemo(() => composePlanArt(floor === 1 ? floorOnePlan : floorTwoPlan, floor, language), [floor, language])
@@ -112,7 +134,7 @@ export default function HeroScene() {
     let lastTime = 0
     const follow = (target, now) => {
       if (!smooth || !lastTime) { smooth = { ...target }; lastTime = now; return smooth }
-      const k = 1 - Math.exp(-Math.min(0.1, (now - lastTime) / 1000) / 0.22)
+      const k = 1 - Math.exp(-Math.min(0.1, (now - lastTime) / 1000) / 0.32)
       lastTime = now
       const yaw = target.yaw + 360 * Math.round((smooth.yaw - target.yaw) / 360)
       for (const key of ['x', 'y', 'z', 'zoom', 'tilt']) smooth[key] += (target[key] - smooth[key]) * k
@@ -198,6 +220,9 @@ export default function HeroScene() {
         <div className="hs-walker" ref={walkerRef}><i /></div>
       </div>
     </div>
+    <div className="hs-aurora"><i /><i /><i /></div>
+    <GrandSpiral />
+    <div className="hs-streak" />
     <div className="hs-dof" />
     <div className="hs-particles">{particles.map((particle, index) => <i key={index} style={{ left: `${particle.left}%`, top: `${particle.top}%`, width: particle.size, height: particle.size, animationDelay: `${particle.delay}s` }} />)}</div>
   </div>
