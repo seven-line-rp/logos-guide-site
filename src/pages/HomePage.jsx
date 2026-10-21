@@ -3,6 +3,7 @@ import { ArrowDownRight, ArrowRight, ArrowUpRight, Check, GraduationCap, ListChe
 import { Link, useNavigate } from 'react-router-dom'
 import { photoSrcSet, photosFor, rooms, quickPlaces } from '../data.js'
 import HeroScene from '../components/HeroScene.jsx'
+import HeroFx from '../components/HeroFx.jsx'
 import AiPromoBanner from '../components/AiPromoBanner.jsx'
 import HomeDashboard from '../components/HomeDashboard.jsx'
 import { Reveal, SectionLabel } from '../components/Primitives.jsx'
@@ -40,6 +41,7 @@ export default function HomePage() {
   return <>
     <section className="home-hero hero-mesh home-hero-usual home-hero-scene" id="top">
       <HeroScene />
+      <HeroFx />
       <div className="container home-hero-inner">
         <div className="home-hero-copy">
           <span className="home-eyebrow">
