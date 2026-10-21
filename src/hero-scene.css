@@ -180,20 +180,39 @@ html[data-theme='dark'] .home-hero-scene {
   animation: hs-ring 1.6s ease-out infinite;
 }
 
-/* Подъём по лестнице: луч между этажами и точка, которая по нему едет. */
-.hs-climb { position: absolute; transform-style: preserve-3d; }
-.hs-climb-beam {
+/* Подъём между этажами: винтовой марш из плит, по которому поднимается
+   точка, и кабина лифта, которая едет по шахте. Видимость и прогресс
+   задаёт JS через --vis и --prog. */
+.hs-stairs { position: absolute; top: 0; left: 0; transform-style: preserve-3d; }
+.hs-stairs i {
   position: absolute;
-  top: 0;
-  left: -2px;
-  width: 4px;
-  height: var(--gap);
-  transform-origin: 2px 0;
-  background: linear-gradient(180deg, var(--route), color-mix(in srgb, var(--route) 30%, transparent));
-  box-shadow: 0 0 14px var(--route-glow);
-  transform: rotateZ(90deg) rotateX(90deg);
-  opacity: 0;
+  top: -5px;
+  left: -11px;
+  width: 22px;
+  height: 10px;
+  border: 1px solid var(--route);
+  border-radius: 1px;
+  background: color-mix(in srgb, var(--route) 38%, transparent);
+  box-shadow: 0 0 10px var(--route-glow);
+  opacity: calc(clamp(0, (var(--prog, 0) - var(--p)) * 10 + .6, 1) * var(--vis, 0));
 }
+.hs-cabin { position: absolute; top: 0; left: 0; transform-style: preserve-3d; }
+.hs-cabin i { position: absolute; display: block; opacity: var(--vis, 0); }
+.hs-cabin-floor, .hs-cabin-roof { top: -10px; left: -10px; width: 20px; height: 20px; border: 1px solid var(--route); background: color-mix(in srgb, var(--route) 30%, transparent); box-shadow: 0 0 12px var(--route-glow); }
+.hs-cabin-roof { background: color-mix(in srgb, var(--route) 12%, transparent); transform: translateZ(22px); }
+.hs-cabin-side {
+  top: var(--y);
+  left: var(--x);
+  width: 20px;
+  height: 22px;
+  transform-origin: 0 0;
+  border: 1px solid color-mix(in srgb, var(--route) 60%, transparent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--route) 30%, transparent), color-mix(in srgb, var(--route) 6%, transparent));
+  transform: rotateZ(var(--a)) rotateX(90deg);
+}
+.hs-cabin-door { width: 10px; background: linear-gradient(180deg, color-mix(in srgb, var(--route) 55%, transparent), color-mix(in srgb, var(--route) 14%, transparent)); }
+.hs-cabin-door-l { transform: rotateZ(var(--a)) rotateX(90deg) translateX(calc(var(--door, 1) * -9px)); }
+.hs-cabin-door-r { transform: rotateZ(var(--a)) rotateX(90deg) translateX(calc(var(--door, 1) * 9px)); }
 
 /* Маяк над целью: вертикальный луч света и кольцо на полу второго этажа. */
 .hs-beacon { position: absolute; transform-style: preserve-3d; transform: translateZ(var(--gap)); }
