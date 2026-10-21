@@ -31,6 +31,9 @@ const siteSections = {
   '/privacy': 'политика конфиденциальности и настройки cookie',
   '/ai': 'этот чат с ИИ-агентом (тестовый режим)',
   '/schedule': '«Моё расписание»: студент добавляет свои пары, главная показывает следующую пару с маршрутом',
+  '/teachers': 'преподаватели и сотрудники: поиск по фамилии и предмету, кабинет и маршрут к нему',
+  '/start': 'чек-лист первой недели для новичков: учебная часть, медпункт, библиотека и т. д. с маршрутами',
+  '/here': '«Вы здесь»: /here?room=<id> — ссылка из QR-таблички на двери; ставит точку старта у этого помещения',
   '/tour': 'экскурсия по колледжу в 3D: «Первый день» (?id=first-day) и «День открытых дверей» (?id=open-day)',
 }
 
@@ -40,7 +43,7 @@ function roomLine(room) {
 }
 
 export function buildKnowledge() {
-  const sections = navigation.map((item) => item.to).concat(['/', '/schedule', '/tour', '/docs', '/privacy'])
+  const sections = navigation.map((item) => item.to).concat(['/', '/games', '/services', '/about', '/teachers', '/start', '/tour', '/docs', '/privacy'])
   const unique = [...new Set(sections)]
   return [
     '# Сайт «ЛОГОС: Путеводитель»',

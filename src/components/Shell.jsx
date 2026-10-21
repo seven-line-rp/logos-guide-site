@@ -1,7 +1,10 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
-import { Link, NavLink, useLocation } from 'react-router-dom'
-import { ArrowUpRight, BookOpen, Bot, CalendarDays, Check, Compass, Gamepad2, GraduationCap, Info, LayoutGrid, Map as MapIcon, MapPin, Moon, Navigation, Search, Sparkles, Sun, X } from 'lucide-react'
-import { navigation, rooms } from '../data'
+import { flushSync } from 'react-dom'
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
+import { ArrowUpRight, BookOpen, Bot, CalendarDays, Check, Compass, Gamepad2, GraduationCap, History, Info, LayoutGrid, ListChecks, Map as MapIcon, MapPin, Moon, Navigation, Search, Sparkles, Sun, Type, Users, X } from 'lucide-react'
+import { navigation, quickPlaces, rooms } from '../data'
+import { clearRecentPlaces, readRecentPlaces, rememberPlace } from '../places.js'
+import { readTextSize, setTextSize } from '../text-size.js'
 import { lockBodyScroll, storageGet, storageSet } from '../storage'
 import { setLanguage, useLanguage } from '../i18n.js'
 import { cancelMiss, reportMiss, searchRooms, searchTeachers, shortName, useTeachers } from '../search.js'
@@ -34,17 +37,26 @@ export function ToastProvider({ children }) {
 
 export function useToast() { return useContext(ToastContext) }
 
-// Разделы в меню: карточки с иконкой и подсказкой.
-const menuSections = [
-  { to: '/map', label: 'Карта этажей', hint: 'План 1 и 2 этажа в 2D и 3D', icon: MapIcon, tone: 'blue' },
-  { to: '/route', label: 'Маршрут', hint: 'Путь по шагам с голосом', icon: Navigation, tone: 'violet' },
-  { to: '/rooms', label: 'Кабинеты', hint: 'Справочник помещений', icon: LayoutGrid, tone: 'sky' },
-  { to: '/schedule', label: 'Моё расписание', hint: 'Пары и звонки', icon: CalendarDays, tone: 'green' },
-  { to: '/ai', label: 'ИИ-Агент', badge: 'ТЕСТ', hint: 'Спросите ЛОГОС AI', icon: Bot, tone: 'violet' },
-  { to: '/tour', label: 'Экскурсия в 3D', hint: 'Прогулка по колледжу', icon: Compass, tone: 'amber' },
-  { to: '/games', label: 'Игры', hint: 'Квизы по плану', icon: Gamepad2, tone: 'pink' },
-  { to: '/services', label: 'Пространства', hint: 'Столовая, библиотека, залы', icon: Sparkles, tone: 'sky' },
-  { to: '/about', label: 'О проекте', hint: 'Команда и идея', icon: Info, tone: 'slate' },
+// Меню: разделы сгруппированы по задачам человека, а не по устройству сайта.
+const menuGroups = [
+  { title: 'Найти дорогу', items: [
+    { to: '/map', label: 'Карта этажей', hint: 'План 1 и 2 этажа', icon: MapIcon, tone: 'blue' },
+    { to: '/route', label: 'Маршрут', hint: 'Путь по шагам с голосом', icon: Navigation, tone: 'violet' },
+    { to: '/rooms', label: 'Кабинеты', hint: 'Справочник помещений', icon: LayoutGrid, tone: 'sky' },
+    { to: '/teachers', label: 'Преподаватели', hint: 'Кто где сидит', icon: Users, tone: 'green' },
+    { to: '/services', label: 'Пространства', hint: 'Столовая, библиотека, залы', icon: Sparkles, tone: 'amber' },
+  ] },
+  { title: 'Учёба', items: [
+    { to: '/schedule', label: 'Моё расписание', hint: 'Пары и звонки', icon: CalendarDays, tone: 'green' },
+    { to: '/start', label: 'Первая неделя', hint: 'Чек-лист для новичков', icon: ListChecks, tone: 'blue' },
+    { to: '/ai', label: 'ИИ-помощник', badge: 'ТЕСТ', hint: 'Спросите о чём угодно', icon: Bot, tone: 'violet' },
+  ] },
+  { title: 'Познакомиться', items: [
+    { to: '/tour', label: 'Экскурсия в 3D', hint: 'Прогулка по колледжу', icon: Compass, tone: 'amber' },
+    { to: '/games', label: 'Игры', hint: 'Квизы по плану', icon: Gamepad2, tone: 'pink' },
+    { to: '/about', label: 'О проекте', hint: 'Команда и идея', icon: Info, tone: 'slate' },
+    { to: '/docs', label: 'Документация', hint: 'Как всё устроено', icon: BookOpen, tone: 'slate' },
+  ] },
 ]
 
 function Brand() {
@@ -55,13 +67,20 @@ function resultPath(room) {
   return `/map?floor=${room.floor}&room=${encodeURIComponent(room.id)}`
 }
 
+function routePath(room) {
+  return `/route?to=${encodeURIComponent(room.id)}`
+}
+
 function SearchDialog({ open, onClose }) {
   const [query, setQuery] = useState('')
+  const [active, setActive] = useState(0)
   const teachers = useTeachers()
   const missed = Boolean(query.trim()) && !searchRooms(query, 1).length && !searchTeachers(teachers, query, 1).length
   useEffect(() => { if (missed) reportMiss(query); else cancelMiss() }, [missed, query])
   const inputRef = useRef(null)
+  const listRef = useRef(null)
   const location = useLocation()
+  const navigate = useNavigate()
 
   useEffect(() => {
     if (open) {
@@ -81,24 +100,53 @@ function SearchDialog({ open, onClose }) {
   }, [open, onClose])
 
   useEffect(() => onClose(), [location.pathname, onClose])
+  useEffect(() => setActive(0), [query])
+  useEffect(() => {
+    listRef.current?.querySelector('.is-active')?.scrollIntoView({ block: 'nearest' })
+  }, [active])
   if (!open) return null
 
-  const matches = query.trim() ? searchRooms(query, 7).map((entry) => entry.room) : rooms.slice(0, 7)
+  // Пустой запрос: сначала недавние места, затем популярные.
+  const recent = readRecentPlaces().map((id) => rooms.find((room) => room.id === id))
+  const popular = quickPlaces.map((place) => rooms.find((room) => room.id === place.roomId)).filter((room) => room && !recent.includes(room))
+  const matches = query.trim() ? searchRooms(query, 7).map((entry) => entry.room) : [...recent, ...popular].slice(0, 7)
   const teacherHits = searchTeachers(teachers, query, 3)
-
+  const items = [
+    ...teacherHits.map(({ teacher, room }) => ({ key: teacher.name, to: room ? resultPath(room) : '/map?floor=1&room=academic-office', room })),
+    ...matches.map((room) => ({ key: room.id, to: resultPath(room), room })),
+  ]
   const countLabel = matches.length === 1 ? 'место' : matches.length > 1 && matches.length < 5 ? 'места' : 'мест'
+  const open_ = (item, toRoute = false) => {
+    if (!item) return
+    if (item.room) rememberPlace(item.room.id)
+    onClose()
+    navigate(toRoute && item.room ? routePath(item.room) : item.to)
+  }
+  const onKeyDown = (event) => {
+    if (event.key === 'ArrowDown') { event.preventDefault(); setActive((value) => Math.min(items.length - 1, value + 1)) }
+    else if (event.key === 'ArrowUp') { event.preventDefault(); setActive((value) => Math.max(0, value - 1)) }
+    else if (event.key === 'Enter' && !event.nativeEvent.isComposing) { event.preventDefault(); open_(items[active], event.altKey || event.ctrlKey || event.metaKey) }
+  }
+  const itemProps = (index, item) => ({
+    className: index === active ? 'is-active' : '',
+    onMouseMove: () => { if (index !== active) setActive(index) },
+    onClick: () => item.room && rememberPlace(item.room.id),
+  })
+  const routeButton = (item) => item.room && item.room.id !== 'entrance-1' && <Link className="search-route" to={routePath(item.room)} onClick={() => { rememberPlace(item.room.id); onClose() }} aria-label={`Маршрут: ${item.room.name}`} title="Построить маршрут"><Navigation size={15} /><span>Маршрут</span></Link>
 
   return (
     <div className="search-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
       <section className="search-dialog" role="dialog" aria-modal="true" aria-labelledby="search-title">
         <div className="search-dialog-top"><span className="eyebrow">Поиск по колледжу</span><button className="icon-button" onClick={onClose} aria-label="Закрыть поиск"><X size={18} /></button></div>
         <h2 id="search-title" className="visually-hidden">Найти кабинет или пространство</h2>
-        <label className="search-input-wrap"><Search size={19} /><input ref={inputRef} type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Номер кабинета, место или преподаватель…" /><VoiceSearchButton onText={setQuery} /><kbd>ESC</kbd></label>
-        <div className="search-results" aria-live="polite">
-          {teacherHits.map(({ teacher, room, bySubject }) => <Link key={teacher.name} className="search-result search-teacher" to={room ? resultPath(room) : '/map?floor=1&room=academic-office'} onClick={onClose}><span className="search-result-icon"><GraduationCap size={16} /></span><span className="search-result-copy"><small>{[teacher.position, (teacher.subjects || []).slice(0, 2).join(', ')].filter(Boolean).join(' · ') || 'Преподаватель'}</small><strong>{shortName(teacher.name)}</strong><em>{room ? `${room.name}${room.number ? ` №${room.number}` : ''}${bySubject ? ', по предмету' : ''}` : 'Кабинет уточните в учебной части'}</em></span><ArrowUpRight className="search-result-arrow" size={17} /></Link>)}
-          {matches.length ? matches.map((room) => <Link key={room.id} className="search-result" to={resultPath(room)} onClick={onClose}><span className="search-result-icon"><MapPin size={16} /></span><span className="search-result-copy"><small>{room.category}, {room.floor} этаж</small><strong>{room.name}{room.number && ` №${room.number}`}</strong></span><ArrowUpRight className="search-result-arrow" size={17} /></Link>) : teacherHits.length ? null : <div className="search-empty"><span>Такого места не нашли.</span><small>Проверьте номер или попробуйте «библиотека», «столовая».</small></div>}
+        <label className="search-input-wrap"><Search size={19} /><input ref={inputRef} type="search" value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={onKeyDown} placeholder="Номер кабинета, место или преподаватель…" role="combobox" aria-expanded="true" aria-controls="search-results" aria-activedescendant={items[active] ? `search-item-${active}` : undefined} /><VoiceSearchButton onText={setQuery} /><kbd>ESC</kbd></label>
+        {!query.trim() && recent.length > 0 && <div className="search-section-label"><History size={13} /> Недавние<button type="button" onClick={() => { clearRecentPlaces(); inputRef.current?.focus() }}>Очистить</button></div>}
+        {!query.trim() && !recent.length && <div className="search-section-label">Часто ищут</div>}
+        <div className="search-results" id="search-results" role="listbox" ref={listRef} aria-live="polite">
+          {teacherHits.map(({ teacher, room, bySubject }, index) => { const item = items[index]; return <div key={teacher.name} id={`search-item-${index}`} role="option" aria-selected={index === active} className={`search-row ${index === active ? 'is-active' : ''}`}><Link {...itemProps(index, item)} className="search-result search-teacher" to={item.to} onClick={() => { if (room) rememberPlace(room.id); onClose() }}><span className="search-result-icon"><GraduationCap size={16} /></span><span className="search-result-copy"><small>{[teacher.position, (teacher.subjects || []).slice(0, 2).join(', ')].filter(Boolean).join(' · ') || 'Преподаватель'}</small><strong>{shortName(teacher.name)}</strong><em>{room ? `${room.name}${room.number ? ` №${room.number}` : ''}${bySubject ? ', по предмету' : ''}` : 'Кабинет уточните в учебной части'}</em></span></Link>{routeButton(item)}</div> })}
+          {matches.length ? matches.map((room, offset) => { const index = teacherHits.length + offset; const item = items[index]; return <div key={room.id} id={`search-item-${index}`} role="option" aria-selected={index === active} className={`search-row ${index === active ? 'is-active' : ''}`}><Link {...itemProps(index, item)} className="search-result" to={item.to} onClick={() => { rememberPlace(room.id); onClose() }}><span className="search-result-icon">{!query.trim() && recent.includes(room) ? <History size={16} /> : <MapPin size={16} />}</span><span className="search-result-copy"><small>{room.category}, {room.floor} этаж</small><strong>{room.name}{room.number && ` №${room.number}`}</strong></span></Link>{routeButton(item)}</div> }) : teacherHits.length ? null : <div className="search-empty"><span>Такого места не нашли.</span><small>Проверьте номер или попробуйте «библиотека», «столовая». <Link to={`/ai?q=${encodeURIComponent(`Где найти: ${query.trim()}`)}`} onClick={onClose}>Спросить ИИ-помощника</Link></small></div>}
         </div>
-        <div className="search-foot"><span><kbd>K</kbd> быстрый поиск</span><span>{matches.length} {countLabel}</span></div>
+        <div className="search-foot"><span><kbd>↑</kbd><kbd>↓</kbd> выбрать <kbd>Enter</kbd> открыть <kbd>Alt</kbd>+<kbd>Enter</kbd> маршрут</span><span>{matches.length} {countLabel}</span></div>
       </section>
     </div>
   )
@@ -110,11 +158,28 @@ export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const menuToggleRef = useRef(null)
   const [theme, setTheme] = useState(() => storageGet('site-theme') || 'light')
+  const [textSize, setTextSizeState] = useState(readTextSize)
   const location = useLocation()
   const closeSearch = useCallback(() => setSearchOpen(false), [])
-  const changeTheme = () => setTheme((value) => value === 'dark' ? 'light' : 'dark')
+  // Смена темы кругом от кнопки (View Transitions API, где он есть).
+  const switchTheme = (next, event) => {
+    if (next === theme) return
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (!document.startViewTransition || reduced) { setTheme(next); return }
+    const rect = event?.currentTarget?.getBoundingClientRect()
+    if (rect) {
+      document.documentElement.style.setProperty('--theme-x', `${rect.left + rect.width / 2}px`)
+      document.documentElement.style.setProperty('--theme-y', `${rect.top + rect.height / 2}px`)
+    }
+    document.startViewTransition(() => {
+      flushSync(() => setTheme(next))
+      document.documentElement.dataset.theme = next
+    })
+  }
+  const changeTheme = (event) => switchTheme(theme === 'dark' ? 'light' : 'dark', event)
   const openSearch = () => { setMobileOpen(false); setSearchOpen(true) }
   const takeTour = () => { setMobileOpen(false); startTour() }
+  const changeTextSize = (value) => setTextSizeState(setTextSize(value))
 
   useEffect(() => setMobileOpen(false), [location.pathname])
   useEffect(() => {
@@ -138,6 +203,7 @@ export function Header() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [mobileOpen])
 
+  let cardIndex = 0
   return <>
     <header className="site-header hd">
       <div className="header-inner">
@@ -147,21 +213,24 @@ export function Header() {
         </nav>
         <div className="header-actions">
           <button className="search-trigger" type="button" aria-keyshortcuts="K" onClick={openSearch} aria-label="Найти кабинет"><Search size={17} /><span>Найти место</span><kbd>K</kbd></button>
-          <NavLink className={({ isActive }) => `header-docs hd-icon ${isActive ? 'header-docs-active' : ''}`} to="/docs" title="Документация по сайту" aria-label="Документация"><BookOpen size={17} /><span>Документация</span></NavLink>
           <button className="theme-toggle header-theme hd-icon" type="button" onClick={changeTheme} aria-label={theme === 'dark' ? 'Включить светлую тему' : 'Включить тёмную тему'} title={theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}>{theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}</button>
-          <Link className="header-cta" to="/map"><MapPin size={16} /> Открыть карту</Link>
           <NavLink className={({ isActive }) => `mobile-map-link ${isActive ? 'mobile-map-link-active' : ''}`} to="/map" aria-label="Открыть карту"><MapPin size={18} /><span>Карта</span></NavLink>
-          <button ref={menuToggleRef} className={`mobile-menu-toggle hd-burger ${mobileOpen ? 'is-open' : ''}`} type="button" onClick={() => setMobileOpen((value) => !value)} aria-controls="site-menu" aria-label={mobileOpen ? 'Закрыть меню' : 'Открыть меню'} aria-expanded={mobileOpen}><span className="hd-burger-lines" aria-hidden="true"><i /><i /><i /></span><span className="hd-burger-label">Меню</span></button>
+          <button ref={menuToggleRef} className={`mobile-menu-toggle hd-burger ${mobileOpen ? 'is-open' : ''}`} type="button" onClick={() => setMobileOpen((value) => !value)} aria-controls="site-menu" aria-label={mobileOpen ? 'Закрыть меню' : 'Открыть меню'} aria-expanded={mobileOpen}><span className="hd-burger-lines" aria-hidden="true"><i /><i /><i /></span><span className="hd-burger-label">Ещё</span></button>
         </div>
       </div>
       <nav id="site-menu" className="hd-menu" aria-label="Меню сайта" hidden={!mobileOpen}>
         <div className="hd-menu-inner">
-          <div className="hd-menu-grid">
-            {menuSections.map((item, index) => { const Icon = item.icon; return <NavLink end key={item.to} to={item.to} style={{ '--i': index }} onClick={() => setMobileOpen(false)} className={({ isActive }) => `hd-menu-card hd-tone-${item.tone} ${isActive ? 'is-active' : ''}`}>
-              <span className="hd-menu-icon" aria-hidden="true"><Icon size={19} /></span>
-              <span className="hd-menu-text"><strong>{item.label}{item.badge && <span className="nav-badge">{item.badge}</span>}</strong><small>{item.hint}</small></span>
-              <ArrowUpRight className="hd-menu-arrow" size={16} aria-hidden="true" />
-            </NavLink> })}
+          <div className="hd-menu-groups">
+            {menuGroups.map((group) => <section key={group.title} className="hd-menu-group" aria-label={group.title}>
+              <h2 className="hd-menu-group-title">{group.title}</h2>
+              <div className="hd-menu-grid">
+                {group.items.map((item) => { const Icon = item.icon; const index = cardIndex++; return <NavLink end key={item.to} to={item.to} style={{ '--i': index }} onClick={() => setMobileOpen(false)} className={({ isActive }) => `hd-menu-card hd-tone-${item.tone} ${isActive ? 'is-active' : ''}`}>
+                  <span className="hd-menu-icon" aria-hidden="true"><Icon size={19} /></span>
+                  <span className="hd-menu-text"><strong>{item.label}{item.badge && <span className="nav-badge">{item.badge}</span>}</strong><small>{item.hint}</small></span>
+                  <ArrowUpRight className="hd-menu-arrow" size={16} aria-hidden="true" />
+                </NavLink> })}
+              </div>
+            </section>)}
           </div>
           <div className="hd-menu-side">
             <button type="button" className="hd-menu-search" onClick={openSearch}><Search size={17} /><span>Найти место</span><kbd>K</kbd></button>
@@ -171,10 +240,13 @@ export function Header() {
             </div>
             <div className="hd-menu-row">
               <span>Тема</span>
-              <div className="hd-seg" role="group" aria-label="Тема оформления"><button type="button" aria-pressed={theme !== 'dark'} onClick={() => setTheme('light')}><Sun size={14} /> Светлая</button><button type="button" aria-pressed={theme === 'dark'} onClick={() => setTheme('dark')}><Moon size={14} /> Тёмная</button></div>
+              <div className="hd-seg" role="group" aria-label="Тема оформления"><button type="button" aria-pressed={theme !== 'dark'} onClick={(event) => switchTheme('light', event)}><Sun size={14} /> Светлая</button><button type="button" aria-pressed={theme === 'dark'} onClick={(event) => switchTheme('dark', event)}><Moon size={14} /> Тёмная</button></div>
+            </div>
+            <div className="hd-menu-row">
+              <span>Текст</span>
+              <div className="hd-seg" role="group" aria-label="Размер текста"><button type="button" aria-pressed={textSize !== 'large'} onClick={() => changeTextSize('normal')}>Обычный</button><button type="button" aria-pressed={textSize === 'large'} onClick={() => changeTextSize('large')}><Type size={14} /> Крупный</button></div>
             </div>
             <div className="hd-menu-actions">
-              <NavLink to="/docs" className="hd-menu-link" onClick={() => setMobileOpen(false)}><BookOpen size={16} /> Документация</NavLink>
               <button type="button" className="hd-menu-link hd-menu-tour" onClick={takeTour}><Sparkles size={16} /> Пройти обучение</button>
             </div>
           </div>
@@ -187,5 +259,5 @@ export function Header() {
 }
 
 export function Footer() {
-  return <footer className="site-footer"><div className="footer-top container"><div className="footer-brand-block"><Brand /><p>План двух этажей,<br />кабинеты и маршруты.</p><span className="footer-version">Версия {SITE_VERSION_LABEL}, by {SITE_AUTHOR}</span></div><div className="footer-links-group"><span className="footer-label">Навигация</span><Link to="/map">Карта этажей</Link><Link to="/rooms">Кабинеты</Link><Link to="/route">Маршрут</Link></div><div className="footer-links-group"><span className="footer-label">Полезное</span><Link to="/services">Пространства</Link><Link to="/games">Игры</Link><Link to="/schedule">Моё расписание</Link><Link to="/tour">Экскурсия в 3D</Link><Link to="/about">О путеводителе</Link><Link to="/docs">Документация</Link></div><div className="footer-note"><span className="footer-label">Быстрый старт</span><p>Не знаете номер кабинета? Найдите его по названию или отметьте на карте.</p><Link className="footer-about-link" to="/rooms">Найти кабинет <ArrowUpRight size={14} /></Link></div></div><div className="footer-bottom container"><span>Путеводитель колледжа</span><nav className="footer-legal" aria-label="Правовая информация"><Link to="/privacy">Политика конфиденциальности</Link><Link to="/privacy#cookies">Cookie</Link><button type="button" onClick={openCookieSettings}>Настройки cookie</button></nav><a href="#top" onClick={(event) => { event.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>Наверх ↑</a></div></footer>
+  return <footer className="site-footer"><div className="footer-top container"><div className="footer-brand-block"><Brand /><p>Карта, маршруты и всё, что<br />нужно найти в колледже.</p><span className="footer-version">Версия {SITE_VERSION_LABEL}, by {SITE_AUTHOR}</span></div>{menuGroups.map((group) => <div key={group.title} className="footer-links-group"><span className="footer-label">{group.title}</span>{group.items.map((item) => <Link key={item.to} to={item.to}>{item.label}</Link>)}</div>)}</div><div className="footer-bottom container"><span>Путеводитель колледжа «Логос»</span><nav className="footer-legal" aria-label="Правовая информация"><Link to="/privacy">Политика конфиденциальности</Link><Link to="/privacy#cookies">Cookie</Link><button type="button" onClick={openCookieSettings}>Настройки cookie</button></nav><a href="#top" onClick={(event) => { event.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>Наверх ↑</a></div></footer>
 }

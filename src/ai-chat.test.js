@@ -126,3 +126,13 @@ test('route links from answers are parsed for the inline route card', () => {
   assert.equal(routeFromLink('/map?floor=2'), null)
   assert.equal(routeFromLink('/route?from=x'), null)
 })
+
+test('fenced code blocks stay verbatim and are not parsed as lists or links', () => {
+  const blocks = parseBlocks('Вот код:\n```python\nfor i in range(3):\n    print(i)  # - не список\n```\nГотово.')
+  assert.deepEqual(blocks.map((block) => block.type), ['p', 'code', 'p'])
+  assert.equal(blocks[1].lang, 'python')
+  assert.equal(blocks[1].text, 'for i in range(3):\n    print(i)  # - не список')
+  assert.equal(parseBlocks('```\nнедописано')[0].text, 'недописано')
+  assert.match(plainText('```js\nlet a = 1\n```'), /let a = 1/)
+  assert.deepEqual(answerActions('```\n[x](/route?to=a)\n```'), [])
+})

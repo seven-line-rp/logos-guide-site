@@ -5,7 +5,7 @@ import { nearbyKinds, roomTitle } from '../places.js'
 import { tours } from '../tours.js'
 import { bellState, nextLesson } from '../schedule.js'
 import { useFavorites, useRecentRoutes } from './FavoriteButton.jsx'
-import { NextLessonCard, useNow, useSchedule } from '../pages/SchedulePage.jsx'
+import { NextLessonCard, useNow, useSchedule } from './NextLesson.jsx'
 import { RawText } from './ai-message.js'
 
 // Что сейчас по звонкам — видно и без своего расписания.

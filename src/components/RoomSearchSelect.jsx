@@ -12,7 +12,7 @@ export function roomLabel(room) {
   return `${room.name}${room.number ? ` №${room.number}` : ''}`
 }
 
-export default function RoomSearchSelect({ label, value, onChange, manualOption = null }) {
+export default function RoomSearchSelect({ label, value, onChange, manualOption = null, placeholder = '' }) {
   const listId = useId()
   const rootRef = useRef(null)
   const inputRef = useRef(null)
@@ -152,7 +152,7 @@ export default function RoomSearchSelect({ label, value, onChange, manualOption 
         aria-label={label}
         autoComplete="off"
         spellCheck={false}
-        placeholder={open ? 'Кабинет, номер или название' : ''}
+        placeholder={open ? 'Кабинет, номер или название' : placeholder}
         value={open ? query : selectedLabel}
         readOnly={!open}
         onFocus={openList}

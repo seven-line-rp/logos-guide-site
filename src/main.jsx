@@ -31,10 +31,14 @@ import './arcade.css'
 import './walk.css'
 import './search.css'
 import './a11y.css'
+import './human.css'
+import './motion.css'
 import './interactions.js'
 import { applyMapContrast } from './map-contrast.js'
+import { applyTextSize, readTextSize } from './text-size.js'
 
 applyMapContrast()
+applyTextSize(readTextSize())
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>

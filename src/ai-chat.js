@@ -1,13 +1,13 @@
 import { functionalStorageAllowed } from './consent.js'
 
 // Клиентская часть ИИ-агента: запрос к public/api/ai-chat.php, хранение
-// чатов в браузере, фильтр мата и разбор ответа. Ответ модели — Markdown,
+// чатов в браузере, маскировка мата и разбор ответа. Ответ модели — Markdown,
 // но в страницу он попадает только как текст и ссылки (без innerHTML),
 // поэтому разметка из ответа не исполняется.
 
 export const AI_ENDPOINT = '/api/ai-chat.php'
-export const MAX_HISTORY = 16
-export const MAX_INPUT = 2000
+export const MAX_HISTORY = 20
+export const MAX_INPUT = 4000
 export const MAX_IMAGES = 3
 export const CHATS_KEY = 'logos-ai-chats'
 export const MAX_CHATS = 30
@@ -55,8 +55,8 @@ export async function askAgent(messages, { signal, deep = false, fetchImpl = fet
 }
 
 // ---------- Мат ----------
-// Нецензурное сообщение не уходит в модель: вместо ответа страница
-// «отправляет его куратору» (это шутка, никуда ничего не отправляется).
+// Сообщение с матом уходит в модель замаскированным («б***»): агент отвечает
+// по существу, а грубые слова не попадают ни в запрос, ни в историю.
 // Корни проверяются с начала слова (с приставками), поэтому «оскорблять»,
 // «употреблять», «небо», «себя» и «мудрый» не срабатывают.
 
@@ -206,12 +206,19 @@ export function parseInline(text) {
   return parts
 }
 
-// Текст → блоки: абзацы, заголовки, маркированные и нумерованные списки.
+// Текст → блоки: абзацы, заголовки, списки и блоки кода (```lang … ```).
 export function parseBlocks(text) {
   const blocks = []
   let paragraph = []
+  let code = null
   const flush = () => { if (paragraph.length) blocks.push({ type: 'p', text: paragraph.join(' ') }); paragraph = [] }
   for (const raw of String(text).replace(/\r\n?/g, '\n').split('\n')) {
+    const fence = raw.trim().match(/^```\s*([\w+#.-]*)\s*$/)
+    if (code) {
+      if (fence && !fence[1]) { blocks.push(code); code = null } else code.text += (code.text ? '\n' : '') + raw
+      continue
+    }
+    if (fence) { flush(); code = { type: 'code', lang: fence[1], text: '' }; continue }
     const line = raw.trim()
     const bullet = line.match(/^[-*•]\s+(.*)$/)
     const numbered = line.match(/^\d+[.)]\s+(.*)$/)
@@ -229,6 +236,8 @@ export function parseBlocks(text) {
     paragraph.push(line)
   }
   flush()
+  // Модель могла оборвать ответ внутри блока кода: показываем то, что есть.
+  if (code) blocks.push(code)
   return blocks
 }
 
@@ -236,7 +245,7 @@ export function parseBlocks(text) {
 export function answerActions(text) {
   const actions = []
   const seen = new Set()
-  for (const part of parseBlocks(text).flatMap((block) => block.items || [block.text]).flatMap(parseInline)) {
+  for (const part of parseBlocks(text).filter((block) => block.type !== 'code').flatMap((block) => block.items || [block.text]).flatMap(parseInline)) {
     if (part.type !== 'link' || !part.internal || seen.has(part.href)) continue
     const kind = part.href.startsWith('/route') ? 'route' : part.href.startsWith('/map') ? 'map' : ''
     if (!kind) continue
@@ -259,6 +268,7 @@ export function routeFromLink(href) {
 // Текст без Markdown: для копирования и озвучки.
 export function plainText(text) {
   return parseBlocks(text).map((block) => {
+    if (block.type === 'code') return block.text
     const line = (value) => parseInline(value).map((part) => part.text).join('')
     if (block.items) return block.items.map((item) => `— ${line(item)}`).join('\n')
     return line(block.text)

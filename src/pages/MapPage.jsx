@@ -166,7 +166,7 @@ export default function MapPage() {
   }
 
   return <>
-    <PageHeading eyebrow="Карта колледжа" title={<>Найти нужный<br /><em>кабинет.</em></>} description="Выберите этаж и коснитесь помещения на плане. Покажем номер, вход и путь по коридорам." />
+    <PageHeading className="page-heading-compact" eyebrow="Карта колледжа" title={<>Карта <em>этажей</em></>} description="Выберите этаж и коснитесь помещения: покажем номер, вход и путь по коридорам." />
     <section className="map-page-section container">
       <Reveal className="map-control-row"><div className="floor-tabs" role="group" aria-label="Выбор этажа">{floors.map((item) => <button key={item.id} type="button" aria-pressed={floor === item.id} className={`floor-tab ${floor === item.id ? 'floor-tab-active' : ''}`} onClick={() => chooseFloor(item.id)}><span className="floor-tab-index">{item.id}</span><span><strong>{item.label}</strong><small>{item.hint}</small></span><i aria-hidden="true">{floor === item.id && <ArrowUpRight size={16} />}</i></button>)}</div><Link className="map-directory-link" to="/rooms"><Search size={16} /> Не знаете номер? <strong>Открыть справочник</strong><ArrowRight size={14} /></Link></Reveal>
 

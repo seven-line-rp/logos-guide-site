@@ -35,8 +35,10 @@ export function findNearest(start, kindId, exclude = '') {
 
 export const FAVORITES_KEY = 'logos-favorites'
 export const RECENT_KEY = 'logos-recent-routes'
+export const RECENT_PLACES_KEY = 'logos-recent-places'
 const MAX_FAVORITES = 12
 const MAX_RECENT = 6
+const MAX_RECENT_PLACES = 5
 const known = (id) => rooms.some((room) => room.id === id)
 const listeners = new Set()
 
@@ -88,6 +90,20 @@ export function rememberRoute(from, to, now = Date.now()) {
 
 export function clearRecent() {
   writeList(RECENT_KEY, [])
+}
+
+// Места, открытые из поиска: при пустом запросе окно поиска показывает их первыми.
+export function readRecentPlaces() {
+  return readList(RECENT_PLACES_KEY).filter((id) => typeof id === 'string' && known(id))
+}
+
+export function rememberPlace(id) {
+  if (!known(id)) return
+  writeList(RECENT_PLACES_KEY, [id, ...readRecentPlaces().filter((item) => item !== id)].slice(0, MAX_RECENT_PLACES))
+}
+
+export function clearRecentPlaces() {
+  writeList(RECENT_PLACES_KEY, [])
 }
 
 export function roomTitle(id) {

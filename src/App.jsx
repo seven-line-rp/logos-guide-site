@@ -21,6 +21,9 @@ const PrivacyPage = lazy(() => import('./pages/PrivacyPage'))
 const AiAgentPage = lazy(() => import('./pages/AiAgentPage'))
 const SchedulePage = lazy(() => import('./pages/SchedulePage'))
 const TourPage = lazy(() => import('./pages/TourPage'))
+const TeachersPage = lazy(() => import('./pages/TeachersPage'))
+const StartPage = lazy(() => import('./pages/StartPage'))
+const HerePage = lazy(() => import('./pages/HerePage'))
 
 const titles = {
   '/': 'Путеводитель по колледжу',
@@ -35,6 +38,9 @@ const titles = {
   '/ai': 'ИИ-Агент | Путеводитель колледжа',
   '/schedule': 'Моё расписание | Путеводитель колледжа',
   '/tour': 'Экскурсия в 3D | Путеводитель колледжа',
+  '/teachers': 'Преподаватели | Путеводитель колледжа',
+  '/start': 'Первая неделя | Путеводитель колледжа',
+  '/here': 'Вы здесь | Путеводитель колледжа',
 }
 
 // Адрес вне списка выше — это страница приложения «404»: показываем это и в заголовке вкладки,
@@ -58,7 +64,7 @@ function NotFoundPage() {
 function Site() {
   useLanguage()
   const location = useLocation()
-  return <><RouteEffects /><Header /><main id="main-content" className="site-main page-transition" key={location.pathname}><Suspense fallback={<div className="page-loading container" role="status"><span className="shimmer" style={{display:"inline-block",width:"120px",height:"14px",borderRadius:"6px"}} /> Открываем раздел…</div>}><Routes location={location}><Route path="/" element={<HomePage />} /><Route path="/map" element={<MapPage />} /><Route path="/rooms" element={<RoomsPage />} /><Route path="/route" element={<RoutePage />} /><Route path="/games" element={<GamesPage />} /><Route path="/services" element={<ServicesPage />} /><Route path="/about" element={<AboutPage />} /><Route path="/docs" element={<DocsPage />} /><Route path="/privacy" element={<PrivacyPage />} /><Route path="/ai" element={<AiAgentPage />} /><Route path="/schedule" element={<SchedulePage />} /><Route path="/tour" element={<TourPage />} /><Route path="/admin" element={<AdminPage />} /><Route path="*" element={<NotFoundPage />} /></Routes></Suspense></main><Footer /><WelcomeDialog /><SiteTour /><CookieBanner /><OfflineNotice /></>
+  return <><RouteEffects /><Header /><main id="main-content" className="site-main page-transition" key={location.pathname}><Suspense fallback={<div className="page-loading container" role="status"><span className="page-loading-dots" aria-hidden="true"><i /><i /><i /></span> Открываем раздел…</div>}><Routes location={location}><Route path="/" element={<HomePage />} /><Route path="/map" element={<MapPage />} /><Route path="/rooms" element={<RoomsPage />} /><Route path="/route" element={<RoutePage />} /><Route path="/games" element={<GamesPage />} /><Route path="/services" element={<ServicesPage />} /><Route path="/about" element={<AboutPage />} /><Route path="/docs" element={<DocsPage />} /><Route path="/privacy" element={<PrivacyPage />} /><Route path="/ai" element={<AiAgentPage />} /><Route path="/schedule" element={<SchedulePage />} /><Route path="/tour" element={<TourPage />} /><Route path="/teachers" element={<TeachersPage />} /><Route path="/start" element={<StartPage />} /><Route path="/here" element={<HerePage />} /><Route path="/admin" element={<AdminPage />} /><Route path="*" element={<NotFoundPage />} /></Routes></Suspense></main>{location.pathname !== '/ai' && <Footer />}<WelcomeDialog /><SiteTour /><CookieBanner /><OfflineNotice /></>
 }
 
 export default function App() {

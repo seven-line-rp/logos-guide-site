@@ -39,7 +39,7 @@ export default function AiPromoBanner() {
       <span className="ai-promo-copy">
         <span className="ai-promo-brand">ЛОГОС AI</span>
         <h2 id="ai-promo-title">На сайте появился<br />ИИ-помощник</h2>
-        <p>Задайте вопрос и получите ответ</p>
+        <p>Спросите что угодно: где кабинет, как дойти, что почитать к зачёту или как решить задачу.</p>
         <span className="ai-promo-button">Перейти в чат <ArrowRight size={18} /></span>
       </span>
     </Link>

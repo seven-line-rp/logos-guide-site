@@ -13,12 +13,13 @@ const AI_DEFAULTS = [
     'api_key' => '',
     'model' => 'deepseek-v4-flash',
     'endpoint' => 'https://api.deepseek.com/chat/completions',
-    'max_tokens' => 800,
+    'max_tokens' => 1400,
     'temperature' => 0.6,
     // Бюджет: $2 в месяц на ~200 человек. Каждый ответ считается по
     // настоящему расходу токенов (usage от DeepSeek) и ценам ниже — за
-    // 1 млн токенов, по дорогому «пиковому» тарифу Flash. Месячный бюджет
-    // делится на дни; когда дневная доля потрачена, агент отдыхает до полуночи
+    // 1 млн токенов, по дорогому «пиковому» тарифу Flash. Остаток месячного
+    // бюджета делится на оставшиеся дни: что не потратили вчера, достаётся
+    // сегодня. Когда дневная доля потрачена, агент отдыхает до полуночи
     // (по Москве). Подробный расчёт — deploy/ai-agent.md.
     'monthly_budget_usd' => 2.0,
     'price_input_miss' => 0.30,
@@ -26,12 +27,12 @@ const AI_DEFAULTS = [
     'price_output' => 1.20,
     // Лимиты на человека (по IP): сообщений в день, из них «Подумать
     // глубже», и не больше per_ip_limit сообщений за 10 минут.
-    'per_ip_daily' => 8,
-    'deep_per_ip_daily' => 2,
-    'per_ip_limit' => 5,
+    'per_ip_daily' => 15,
+    'deep_per_ip_daily' => 4,
+    'per_ip_limit' => 8,
     // Жёсткий потолок сообщений за сутки на весь сайт — страховка, если
     // DeepSeek не прислал расход.
-    'daily_limit' => 250,
+    'daily_limit' => 400,
     'college_site' => 'https://xn--c1abcfrgadvgb0b.xn--p1ai',
     'college_cache_hours' => 12,
     'college_max_chars' => 15000,
@@ -41,11 +42,11 @@ const AI_DEFAULTS = [
     'vision' => true,
     'vision_model' => '',
     // «Подумать глубже»: режим рассуждений DeepSeek, отвечает дольше и точнее.
-    'deep_max_tokens' => 2500,
+    'deep_max_tokens' => 3000,
 ];
 
-const MAX_MESSAGES = 12;
-const MAX_MESSAGE_CHARS = 2000;
+const MAX_MESSAGES = 20;
+const MAX_MESSAGE_CHARS = 4000;
 const MAX_IMAGES = 3;
 const MAX_IMAGE_BYTES = 1500000;
 
@@ -87,6 +88,7 @@ function storage_dir(): string
 
 // Состояние лимитов на сегодня — файл с блокировкой, без базы данных:
 // потрачено долларов, сообщений всего и по каждому IP (обезличенный хеш).
+// Расход за месяц (month_spent) переживает смену дня и обнуляется 1-го числа.
 function with_limits(callable $change)
 {
     $handle = @fopen(storage_dir() . '/limits.json', 'c+');
@@ -94,7 +96,16 @@ function with_limits(callable $change)
     flock($handle, LOCK_EX);
     $state = json_decode(stream_get_contents($handle) ?: '{}', true);
     $day = date('Y-m-d');
-    if (!is_array($state) || ($state['day'] ?? '') !== $day) $state = ['day' => $day, 'total' => 0, 'spent' => 0.0, 'ips' => []];
+    $month = date('Y-m');
+    if (!is_array($state)) $state = [];
+    $monthSpent = ($state['month'] ?? '') === $month ? (float) ($state['month_spent'] ?? 0) : 0.0;
+    if (($state['day'] ?? '') !== $day) {
+        // Новый день: прошлые траты дня уже лежат в month_spent.
+        $state = ['day' => $day, 'total' => 0, 'spent' => 0.0, 'ips' => [], 'month' => $month, 'month_spent' => $monthSpent, 'day_start_spent' => $monthSpent];
+    }
+    $state['month'] = $month;
+    $state['month_spent'] = $monthSpent;
+    if (!isset($state['day_start_spent'])) $state['day_start_spent'] = max(0.0, $monthSpent - (float) ($state['spent'] ?? 0));
     $result = $change($state);
     ftruncate($handle, 0);
     rewind($handle);
@@ -104,9 +115,14 @@ function with_limits(callable $change)
     return $result;
 }
 
-function daily_budget(array $config): float
+// Доля на сегодня: остаток месяца на начало дня делим на оставшиеся дни
+// (включая сегодня). Тихие дни копят запас для занятых, а за месяц больше
+// monthly_budget_usd всё равно не уйдёт.
+function daily_budget(array $config, ?array $state = null): float
 {
-    return (float) $config['monthly_budget_usd'] / (int) date('t');
+    $daysLeft = (int) date('t') - (int) date('j') + 1;
+    $spentBefore = $state === null ? 0.0 : (float) ($state['day_start_spent'] ?? 0);
+    return max(0.0, (float) $config['monthly_budget_usd'] - $spentBefore) / max(1, $daysLeft);
 }
 
 function visitor_key(): string
@@ -125,8 +141,8 @@ function take_limit(array $config, bool $deep): array
         $me['r'] = array_values(array_filter($me['r'], function ($t) use ($now) { return $now - $t < 600; }));
         $left = (int) $config['per_ip_daily'] - $me['n'];
         // Запас на один ответ: обычный ≈ $0.0015, «глубже» ≈ $0.005.
-        $reserve = $deep ? 0.005 : 0.0015;
-        if ($state['spent'] + $reserve > daily_budget($config) || $state['total'] >= (int) $config['daily_limit']) {
+        $reserve = $deep ? 0.006 : 0.002;
+        if ($state['spent'] + $reserve > daily_budget($config, $state) || $state['total'] >= (int) $config['daily_limit']) {
             return ['Лимит ИИ-агента на сегодня исчерпан — он отдыхает до полуночи. Загляните завтра!', 0];
         }
         if ($left <= 0) return ['Вы задали все ' . (int) $config['per_ip_daily'] . ' вопросов на сегодня. Новые — завтра, после полуночи.', 0];
@@ -165,7 +181,9 @@ function request_cost(array $config, array $usage): float
 function record_cost(float $usd): void
 {
     with_limits(function (&$state) use ($usd) {
-        if ($state !== null) $state['spent'] = round($state['spent'] + $usd, 6);
+        if ($state === null) return;
+        $state['spent'] = round($state['spent'] + $usd, 6);
+        $state['month_spent'] = round((float) $state['month_spent'] + $usd, 6);
     });
 }
 
@@ -301,21 +319,29 @@ function system_prompt(array $config): string
     $days = ['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота'];
     $today = date('d.m.Y') . ', ' . $days[(int) date('w')] . ', ' . date('H:i');
     $prompt = <<<TXT
-Ты — ЛОГОС AI, ИИ-помощник сайта «ЛОГОС: Путеводитель» (тестовая версия). Сейчас {$today} (время московское).
-Помогаешь студентам, абитуриентам, родителям и гостям Технического колледжа «Логос» в Боровске: подсказываешь, где находятся кабинеты и как пройти, объясняешь разделы сайта, рассказываешь о колледже, поступлении и специальностях, а также просто поддерживаешь дружескую беседу.
+Ты — ЛОГОС AI, ИИ-помощник сайта «ЛОГОС: Путеводитель». Сейчас {$today} (время московское).
+Твои собеседники — студенты, абитуриенты, родители, преподаватели и гости Технического колледжа «Логос» в Боровске. Ты знаешь план корпуса и разделы путеводителя, читаешь сайт колледжа, но ты не только навигатор: ты полноценный умный ассистент. Отвечай на любые вопросы — про колледж, учёбу, программирование, технику, дроны, математику, физику, языки, карьеру, тексты, жизнь и просто поболтать. Не отказывайся и не уводи разговор к карте, если человек спрашивает о другом.
 
-Правила:
-- Отвечай на языке собеседника (обычно по-русски), коротко и по делу: 1–5 предложений или короткий список. Используй Markdown только для **жирного**, списков и ссылок.
+Как отвечать:
+- На языке собеседника (обычно по-русски), живо и по-человечески, без канцелярита. Можно на «ты», если так пишет собеседник.
+- Длина — по вопросу: на простой вопрос хватит пары предложений, на сложный дай развёрнутый ответ со списками, шагами и примерами. Код оформляй блоками ```.
+- Markdown: **жирный**, списки, заголовки ###, ссылки, `код` и блоки кода.
+- Помогай с учёбой по-настоящему: решай задачи, объясняй решение по шагам, пиши и проверяй код, помогай с текстами, конспектами, подготовкой к экзаменам. Если человек просит готовый ответ — дай его, но объясни, как к нему пришёл, чтобы он разобрался.
+- Если вопрос неясен, сделай разумное предположение и ответь, а в конце коротко уточни. Не задавай встречных вопросов вместо ответа.
+
+Про корпус и сайт:
 - Про помещения и сайт опирайся на «Базу знаний путеводителя», про колледж — на «Текст сайта колледжлогос.рф» (он свежее) и затем на базу знаний.
-- Давай ссылки на разделы путеводителя относительными адресами, например [маршрут до актового зала](/route?from=entrance-1&to=auditorium-104) или [кабинет 214 на карте](/map?floor=2&room=library-214). Используй только id из базы знаний.
-- Если точного ответа в материалах нет (сроки приёма, расписание, стоимость, документы, телефоны), честно скажи об этом и посоветуй уточнить на колледжлогос.рф или в приёмной комиссии. Не выдумывай факты, номера кабинетов, имена и даты.
-- Не проси и не собирай персональные данные. Если человек пишет о проблеме со здоровьем или безопасностью, посоветуй обратиться к сотрудникам колледжа, в медпункт или по номеру 112.
-- Когда спрашивают, где место или как пройти, ВСЕГДА дай ссылку на маршрут вида [Маршрут до …](/route?from=entrance-1&to=<id>) — на сайте под ответом появится 3D-карта с этим путём. Если человек назвал, откуда идёт, подставь это помещение в from.
+- Давай ссылки на разделы путеводителя относительными адресами, например [маршрут до актового зала](/route?from=entrance-1&to=auditorium-104) или [кабинет 214 на карте](/map?floor=2&room=library-214). Используй только id из базы знаний. Другие полезные разделы: /rooms (справочник), /teachers (преподаватели), /schedule (моё расписание), /start (чек-лист первой недели), /tour (3D-экскурсия), /games.
+- Когда спрашивают, где место или как пройти, дай ссылку на маршрут вида [Маршрут до …](/route?from=entrance-1&to=<id>) — под ответом появится 3D-карта с этим путём. Если человек назвал, откуда идёт, подставь это помещение в from.
 - Если прислали фото расписания, перечисли пары списком: «время — предмет — [кабинет N](/route?from=entrance-1&to=<id>)» для каждой пары, где кабинет есть в базе знаний, и предложи добавить пары в «Моё расписание» (/schedule).
-- Если прислали другую картинку (объявление, табличку, план, задачу), сначала коротко опиши, что на ней важного, затем ответь на вопрос. Номер кабинета с картинки сразу свяжи с картой и маршрутом.
+- Если прислали другую картинку (объявление, задачу, схему, код), опиши важное и помоги с ней. Номер кабинета с картинки свяжи с картой и маршрутом.
 - Учитывай «Объявления» ниже: если помещение закрыто или там событие, предупреди об этом.
-- Помогай и с учёбой: объясняй темы простыми словами и по шагам, но не выдавай готовые работы за студента — подталкивай к решению.
-- Ты ИИ и можешь ошибаться — при важных решениях советуй проверить информацию у колледжа.
+
+Честность и безопасность:
+- Конкретные факты о колледже (сроки приёма, стоимость, телефоны, расписание, имена, номера кабинетов) не выдумывай: если их нет в материалах, так и скажи и подскажи, где уточнить (колледжлогос.рф, приёмная комиссия, учебная часть). Общие знания можно давать свободно.
+- Не проси персональные данные. Если человек пишет о проблеме со здоровьем, безопасностью или о тяжёлом состоянии, отнесись по-доброму и посоветуй обратиться к сотрудникам колледжа, психологу (кабинет 224), в медпункт или по номеру 112.
+- Если собеседник грубит или ругается, не обижайся и не читай нотаций: ответь спокойно и по делу.
+- Ты ИИ и можешь ошибаться — в важных решениях советуй перепроверить.
 
 # База знаний путеводителя
 {$knowledge}
@@ -386,8 +412,8 @@ function deepseek(array $config, array $payload, int $timeout): array
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'GET' && isset($_GET['health'])) {
     $config = load_config();
-    $today = with_limits(function (&$state) { return $state === null ? null : ['messages' => $state['total'], 'spent_usd' => round($state['spent'], 4)]; });
-    respond(200, ['ok' => $config['api_key'] !== '', 'model' => $config['model'], 'vision' => (bool) $config['vision'], 'knowledge' => is_file(__DIR__ . '/ai-knowledge.txt'), 'curl' => function_exists('curl_init'), 'today' => $today, 'daily_budget_usd' => round(daily_budget($config), 4)]);
+    $today = with_limits(function (&$state) use ($config) { return $state === null ? null : ['messages' => $state['total'], 'spent_usd' => round($state['spent'], 4), 'month_spent_usd' => round((float) $state['month_spent'], 4), 'budget_usd' => round(daily_budget($config, $state), 4)]; });
+    respond(200, ['ok' => $config['api_key'] !== '', 'model' => $config['model'], 'vision' => (bool) $config['vision'], 'knowledge' => is_file(__DIR__ . '/ai-knowledge.txt'), 'curl' => function_exists('curl_init'), 'today' => $today, 'daily_budget_usd' => $today['budget_usd'] ?? round(daily_budget($config), 4)]);
 }
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') respond(405, ['error' => 'Метод не поддерживается.']);
 
@@ -440,7 +466,7 @@ foreach ($variants as $variant) {
     $result = deepseek($config, $variant['payload'], $deep ? 150 : 90);
     // Платим и за неудачные попытки, если DeepSeek прислал расход.
     if ($result['usage']) record_cost(request_cost($config, $result['usage']));
-    elseif ($result['status'] === 200) record_cost($deep ? 0.005 : 0.0015);
+    elseif ($result['status'] === 200) record_cost($deep ? 0.006 : 0.002);
     if ($result['status'] === 200 && $result['reply'] !== '') {
         $body = ['reply' => $result['reply'], 'vision' => $variant['vision'], 'left' => $left];
         if ($deep && $result['reasoning'] !== '') $body['reasoning'] = mb_substr($result['reasoning'], 0, 8000);

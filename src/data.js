@@ -1,11 +1,11 @@
+// Основные разделы в шапке — то, за чем приходят каждый день. Остальное
+// (игры, экскурсия, преподаватели, о проекте) — в меню, см. Shell.jsx.
 export const navigation = [
-  { label: 'Карта этажей', to: '/map' },
-  { label: 'Кабинеты', to: '/rooms' },
+  { label: 'Карта', to: '/map' },
   { label: 'Маршрут', to: '/route' },
-  { label: 'Игры', to: '/games' },
-  { label: 'Пространства', to: '/services' },
-  { label: 'О проекте', to: '/about' },
-  { label: 'ИИ-Агент', to: '/ai', badge: 'ТЕСТ' },
+  { label: 'Кабинеты', to: '/rooms' },
+  { label: 'Расписание', to: '/schedule' },
+  { label: 'ИИ-помощник', to: '/ai', badge: 'ТЕСТ' },
 ]
 
 export const floors = [
