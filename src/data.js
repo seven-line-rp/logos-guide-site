@@ -74,6 +74,9 @@ const roomPhotos = {
   'auditorium-104': ['/rooms/auditorium.webp'],
   canteen: ['/rooms/canteen.webp'],
   'library-214': ['/rooms/library.webp', '/rooms/library-2.webp'],
+  'changing-room': ['/rooms/cloakroom.webp'],
+  // На схеме у этого помещения два номера: 236 и 213 — снимок кабинета 213.
+  'meteorology-236': ['/rooms/room-213.webp'],
 }
 
 export function photosFor(room) {

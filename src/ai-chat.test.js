@@ -20,7 +20,9 @@ test('askAgent posts history and surfaces server errors', async () => {
   const ok = async (url, init) => { sent = { url, body: JSON.parse(init.body) }; return { ok: true, status: 200, json: async () => ({ reply: 'Библиотека — кабинет 214.' }) } }
   assert.deepEqual(await askAgent([{ role: 'user', content: 'Где библиотека?' }], { fetchImpl: ok, deep: true }), { reply: 'Библиотека — кабинет 214.', reasoning: '', vision: true, left: null })
   assert.equal(sent.url, '/api/ai-chat.php')
-  assert.deepEqual(sent.body, { messages: [{ role: 'user', content: 'Где библиотека?' }], deep: true })
+  assert.deepEqual(sent.body, { messages: [{ role: 'user', content: 'Где библиотека?' }], deep: true, rude: false })
+  await askAgent([{ role: 'user', content: 'б*** ну ты и тормоз', rude: true }], { fetchImpl: ok })
+  assert.equal(sent.body.rude, true)
 
   const limited = async () => ({ ok: false, status: 429, json: async () => ({ error: 'Вы задали все 8 вопросов на сегодня.', left: 0 }) })
   await assert.rejects(askAgent([{ role: 'user', content: 'x' }], { fetchImpl: limited }), (error) => error.left === 0 && /8 вопросов/.test(error.message))

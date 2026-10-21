@@ -112,6 +112,12 @@ const HIDDEN_FLOOR = 0.08 // на сколько единиц вперёд и н
 
 const clamp01 = (value) => Math.max(0, Math.min(1, value))
 const ease = (value) => (value < 0.5 ? 4 * value ** 3 : 1 - (-2 * value + 2) ** 3 / 2)
+// Мягкий ход для отрезков пути: на стыках фаз скорость не падает до нуля,
+// поэтому точка не «спотыкается» у лестницы и на площадке второго этажа.
+const glide = (value) => {
+  const k = clamp01(value)
+  return mix(k, k * k * (3 - 2 * k), 0.6)
+}
 const mix = (a, b, k) => a + (b - a) * k
 const nearestAngle = (angle, reference) => angle + 360 * Math.round((reference - angle) / 360)
 
@@ -163,7 +169,7 @@ function yawTrack(line, startReference) {
 // дверью на втором. Лифт — кабина в шахте: точка заходит в неё, кабина едет
 // вверх, двери открываются на втором этаже.
 export const STAIR_STEPS = 18
-const STAIR_RADIUS = 16
+const STAIR_RADIUS = 9
 const STAIR_TURNS = 1.5
 const LIFT_PHASES = { enter: 0.18, ride: 0.64 }
 
@@ -198,7 +204,7 @@ export function buildFlight(lowerPoints, upperPoints, gap = FLOOR_GAP, transfer 
   // Положение и высота того, кто едет: по винтовой лестнице или в кабине лифта.
   const climbAt = (m) => {
     if (!lift) {
-      const k = ease(m)
+      const k = glide(m)
       const [dx, dy] = stairOffset(k)
       return { x: mix(climbPoint[0], exitPoint[0], k) + dx, y: mix(climbPoint[1], exitPoint[1], k) + dy, z: gap * k, door: 1 }
     }
@@ -206,14 +212,14 @@ export function buildFlight(lowerPoints, upperPoints, gap = FLOOR_GAP, transfer 
     const { enter, ride } = LIFT_PHASES
     const leave = enter + ride
     if (m < enter) {
-      const k = ease(m / enter)
+      const k = glide(m / enter)
       return { x: mix(climbPoint[0], cx, k), y: mix(climbPoint[1], cy, k), z: 0, door: 1 - k }
     }
     if (m > leave) {
-      const k = ease((m - leave) / (1 - leave))
+      const k = glide((m - leave) / (1 - leave))
       return { x: mix(cx, exitPoint[0], k), y: mix(cy, exitPoint[1], k), z: gap, door: k }
     }
-    return { x: cx, y: cy, z: gap * ease((m - enter) / ride), door: 0 }
+    return { x: cx, y: cy, z: gap * glide((m - enter) / ride), door: 0 }
   }
   const follow = (x, y, z, yaw) => ({ x, y, z, zoom: FOLLOW.zoom, tilt: FOLLOW.tilt, yaw })
   const blend = (a, b, k) => ({ x: mix(a.x, b.x, k), y: mix(a.y, b.y, k), z: mix(a.z, b.z, k), zoom: mix(a.zoom, b.zoom, k), tilt: mix(a.tilt, b.tilt, k), yaw: mix(a.yaw, nearestAngle(b.yaw, a.yaw), k) })
@@ -223,7 +229,7 @@ export function buildFlight(lowerPoints, upperPoints, gap = FLOOR_GAP, transfer 
     const t = ((time % 1) + 1) % 1
     // upperFloor — видимость второго этажа: пока камера летит по первому, он
     // висит прямо перед объективом, поэтому почти растворяется.
-    const frame = { lower: 0, upper: 0, walker: null, beam: 0, beacon: 0.25, upperFloor: 1, climb: { progress: 0, vis: 0, door: 1, x: climbPoint[0], y: climbPoint[1], z: 0 } }
+    const frame = { lower: 0, upper: 0, walker: null, beam: 0, beacon: 0.25 * clamp01(t / 0.06), upperFloor: 1, climb: { progress: 0, vis: 0, door: 1, x: climbPoint[0], y: climbPoint[1], z: 0 } }
     if (t < PHASES.lower) {
       const [x, y] = lower.at(0)
       const dive = ease(clamp01((t - PHASES.wide) / (PHASES.lower - PHASES.wide)))
@@ -231,7 +237,7 @@ export function buildFlight(lowerPoints, upperPoints, gap = FLOOR_GAP, transfer 
       frame.walker = { x, y, z: 0, visible: t > PHASES.wide }
       frame.upperFloor = mix(1, HIDDEN_FLOOR, dive)
     } else if (t < PHASES.climb) {
-      const k = ease(clamp01((t - PHASES.lower) / (PHASES.climb - PHASES.lower)))
+      const k = glide((t - PHASES.lower) / (PHASES.climb - PHASES.lower))
       const [x, y] = lower.at(lower.total * k)
       frame.lower = k
       frame.camera = follow(x, y, 0, lowerYaw(k))
@@ -243,12 +249,12 @@ export function buildFlight(lowerPoints, upperPoints, gap = FLOOR_GAP, transfer 
       const { x, y, z, door } = climbAt(m)
       const k = z / gap
       frame.lower = 1
-      frame.camera = { ...follow(x, y, z, mix(lowerYaw(1), nearestAngle(upperYaw(0), lowerYaw(1)), k)), zoom: FOLLOW.zoom - Math.sin(k * Math.PI) * 0.5 }
+      frame.camera = { ...follow(x, y, z, mix(lowerYaw(1), nearestAngle(upperYaw(0), lowerYaw(1)), k)), zoom: FOLLOW.zoom - Math.sin(k * Math.PI) * 0.85 }
       frame.walker = { x, y, z, visible: true }
       frame.upperFloor = mix(HIDDEN_FLOOR, 1, k)
       frame.climb = { progress: lift ? m : k, vis: 1, door, x, y, z }
     } else if (t < PHASES.back) {
-      const k = ease(clamp01((t - PHASES.upper) / (PHASES.back - PHASES.upper)))
+      const k = glide((t - PHASES.upper) / (PHASES.back - PHASES.upper))
       const [x, y] = upper.at(upper.total * k)
       frame.lower = 1
       frame.upper = k
@@ -262,7 +268,7 @@ export function buildFlight(lowerPoints, upperPoints, gap = FLOOR_GAP, transfer 
       frame.lower = 1
       frame.upper = 1
       frame.climb = { progress: 1, vis: 0, door: 1, x: exitPoint[0], y: exitPoint[1], z: gap }
-      frame.beacon = 1 - fade * 0.75
+      frame.beacon = 1 - fade
       frame.camera = blend(follow(x, y, gap, upperYaw(1)), wide, k)
       frame.walker = { x, y, z: gap, visible: k < 0.35 }
       frame.routeOpacity = 1 - fade

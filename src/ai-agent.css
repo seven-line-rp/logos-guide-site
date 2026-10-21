@@ -135,6 +135,8 @@
 .ai-curator-progress { height: 4px; border-radius: 999px; background: var(--ai-soft); overflow: hidden; }
 .ai-curator-progress span { height: 100%; display: block; border-radius: inherit; background: var(--blue); transition: width .8s ease; }
 .ai-curator-done .ai-curator-progress span { background: #1f9d55; }
+.ai-curator-joke.ai-curator-threat { color: #b42318; font-weight: 600; }
+.ai-curator-threat b { display: inline-block; min-width: 1ch; font-variant-numeric: tabular-nums; animation: ai-pop .4s ease-out; }
 .ai-curator-joke { margin: 0; color: var(--muted); font-size: 13.5px; animation: ai-rise .4s ease-out; }
 
 /* ---------- Ввод ---------- */
@@ -233,3 +235,4 @@
 .ai-code-top button:hover { color: #fff; background: rgba(148, 163, 184, .16); }
 .ai-code pre { margin: 0; padding: 12px 14px 14px; overflow-x: auto; color: #e2e8f0; font-size: 13px; line-height: 1.6; tab-size: 4; }
 .ai-text .ai-code code { padding: 0; background: none; font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace; font-size: inherit; white-space: pre; }
+:root[data-theme='dark'] .ai-curator-joke.ai-curator-threat { color: #ffb4a8; }
