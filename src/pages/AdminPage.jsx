@@ -18,9 +18,24 @@ const saveKey = (value) => { try { if (value) sessionStorage.setItem(KEY_STORAGE
 const fromLocalInput = (value) => (value ? new Date(value).toISOString() : undefined)
 const emptyDraft = { type: 'closed', roomId: 'stairs-middle-1', title: '', text: '', from: '', to: '' }
 
+// Ключ уходит в теле запроса, а не в заголовке: в заголовок нельзя положить
+// русские буквы (fetch падает), а часть хостингов вырезает свои заголовки.
 async function postNotices(key, body) {
-  const response = await fetch('/api/notices.php', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Admin-Key': key }, body: JSON.stringify(body) })
-  const data = await response.json().catch(() => ({}))
+  let response
+  try {
+    response = await fetch('/api/notices.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...body, key: key.normalize('NFC') }) })
+  } catch {
+    throw new Error('Нет связи с сервером. Проверьте интернет и попробуйте ещё раз.')
+  }
+  const text = await response.text()
+  let data = null
+  try { data = JSON.parse(text) } catch { /* ниже — понятная ошибка */ }
+  // Вместо ответа PHP пришла страница сайта или ошибка хостинга.
+  if (!data || typeof data !== 'object') {
+    throw new Error(response.status === 404 || /<html/i.test(text)
+      ? 'Файл api/notices.php не отвечает: загрузите папку api из сборки на хостинг и проверьте, что там включён PHP.'
+      : `Сервер ответил ${response.status}, но не PHP-скриптом. Проверьте папку api на хостинге.`)
+  }
   if (!response.ok) throw new Error(data.error || `Сервер ответил ${response.status}`)
   return data
 }
@@ -35,15 +50,19 @@ export default function AdminPage() {
 
   useEffect(() => { fetchNotices().then((value) => setList(Array.isArray(value) ? value : [])) }, [])
 
+  const [checking, setChecking] = useState(false)
   const login = async (event) => {
     event.preventDefault()
-    setStatus({ kind: '', text: '' })
+    setStatus({ kind: '', text: 'Проверяем ключ…' })
+    setChecking(true)
     try {
       const data = await postNotices(keyInput.trim(), { check: true })
       setKey(keyInput.trim()); saveKey(keyInput.trim()); setKeyInput('')
       setStatus(data.writable === false ? { kind: 'bad', text: 'Ключ верный, но сервер не может записать файл рядом с папкой сайта. Проверьте права (deploy/notices.md).' } : { kind: 'ok', text: 'Вход выполнен.' })
     } catch (error) {
       setStatus({ kind: 'bad', text: error.message })
+    } finally {
+      setChecking(false)
     }
   }
   const logout = () => { setKey(''); saveKey('') }
@@ -81,12 +100,13 @@ export default function AdminPage() {
     <p className="admin-lead">Закрытые лестницы и лифт маршрут обходит сам. Объявление видно на карте, в карточке помещения и на странице маршрута.</p>
     <p className="admin-lead"><Link to="/here">Распечатать QR-таблички «Вы здесь» для дверей</Link> — по ним маршрут строится от того места, где висит табличка.</p>
 
-    {status.text && <p className={`admin-status ${status.kind ? `admin-status-${status.kind}` : ''}`} role="status">{status.kind === 'ok' ? <Check size={16} /> : status.kind === 'bad' ? <TriangleAlert size={16} /> : null} {status.text}</p>}
+    {status.text && !(status.kind === 'bad' && !key) && <p className={`admin-status ${status.kind ? `admin-status-${status.kind}` : ''}`} role="status">{status.kind === 'ok' ? <Check size={16} /> : status.kind === 'bad' ? <TriangleAlert size={16} /> : null} {status.text}</p>}
 
     {!key ? <form className="admin-card admin-login" onSubmit={login}>
       <label><KeyRound size={16} /> Ключ доступа<input type="password" value={keyInput} onChange={(event) => setKeyInput(event.target.value)} autoComplete="current-password" required /></label>
-      <button className="button button-primary" type="submit">Войти</button>
-      <small>Ключ выдаёт команда сайта. Он хранится только в этой вкладке.</small>
+      <button className="button button-primary" type="submit" disabled={checking}>{checking ? 'Проверяем…' : 'Войти'}</button>
+      {status.kind === 'bad' && <p className="admin-status admin-status-bad" role="alert"><TriangleAlert size={16} /> {status.text}</p>}
+      <small>Ключ — значение notices_key из файла logos-ai-config.php на хостинге. Он хранится только в этой вкладке.</small>
     </form> : <>
       <div className="admin-card">
         <div className="admin-head"><h2>Сейчас на сайте</h2><button type="button" className="admin-link" onClick={logout}>Выйти</button></div>

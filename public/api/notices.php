@@ -109,15 +109,19 @@ $host = preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'] ?? '');
 if ($origin !== '' && parse_url($origin, PHP_URL_HOST) !== $host) respond(403, ['error' => 'Запрос с другого сайта.']);
 
 $config = load_config();
-if ((string) $config['notices_key'] === '') respond(503, ['error' => 'Правка объявлений не настроена: задайте notices_key (deploy/notices.md).']);
+// Пробелы и переносы по краям ключа в конфиге — частая опечатка, не считаем их.
+$expected = trim((string) $config['notices_key']);
+if ($expected === '') respond(503, ['error' => 'Правка объявлений не настроена: задайте notices_key в logos-ai-config.php (deploy/notices.md).']);
 if (too_many_fails(false)) respond(429, ['error' => 'Слишком много неверных попыток. Подождите час.']);
-$key = (string) ($_SERVER['HTTP_X_ADMIN_KEY'] ?? '');
-if (!hash_equals((string) $config['notices_key'], $key)) {
+$data = json_decode((string) file_get_contents('php://input', false, null, 0, 65536), true);
+// Ключ приходит в теле запроса (так можно и русские буквы); старый вариант —
+// заголовок X-Admin-Key — тоже понимаем.
+$key = trim(is_array($data) && is_string($data['key'] ?? null) ? $data['key'] : (string) ($_SERVER['HTTP_X_ADMIN_KEY'] ?? ''));
+if ($key === '' || !hash_equals($expected, $key)) {
     too_many_fails(true);
-    respond(403, ['error' => 'Неверный ключ.']);
+    respond(403, ['error' => 'Неверный ключ. Он должен совпадать с notices_key в logos-ai-config.php — с учётом регистра букв.']);
 }
 
-$data = json_decode((string) file_get_contents('php://input', false, null, 0, 65536), true);
 if (is_array($data) && !empty($data['check'])) respond(200, ['ok' => true, 'writable' => is_writable(dirname(stored_file()))]);
 if (!is_array($data) || !is_array($data['notices'] ?? null)) respond(400, ['error' => 'Нет списка объявлений.']);
 if (count($data['notices']) > NOTICES_MAX) respond(400, ['error' => 'Не больше ' . NOTICES_MAX . ' объявлений.']);
