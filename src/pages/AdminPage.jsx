@@ -79,6 +79,7 @@ export default function AdminPage() {
     <span className="eyebrow">Для сотрудников</span>
     <h1>Объявления на карте</h1>
     <p className="admin-lead">Закрытые лестницы и лифт маршрут обходит сам. Объявление видно на карте, в карточке помещения и на странице маршрута.</p>
+    <p className="admin-lead"><Link to="/here">Распечатать QR-таблички «Вы здесь» для дверей</Link> — по ним маршрут строится от того места, где висит табличка.</p>
 
     {status.text && <p className={`admin-status ${status.kind ? `admin-status-${status.kind}` : ''}`} role="status">{status.kind === 'ok' ? <Check size={16} /> : status.kind === 'bad' ? <TriangleAlert size={16} /> : null} {status.text}</p>}
 

@@ -1,0 +1,108 @@
+/* Анимации: короткие, по делу и одинаковые по характеру. Появление —
+   с fill-mode backwards: после анимации у элемента не остаётся transform,
+   иначе выпадающие подсказки оказывались бы под соседними блоками. Одна кривая
+   «выезда» (--ease-out), длительности 160 / 280 / 480 мс. Всё отключается
+   при «Уменьшить движение» в системе (в конце файла). */
+
+:root {
+  --ease-out: cubic-bezier(.22, 1, .36, 1);
+  --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
+  --t-fast: .16s;
+  --t-mid: .28s;
+  --t-slow: .48s;
+}
+
+@keyframes m-rise { from { opacity: 0; transform: translateY(14px); } }
+@keyframes m-rise-sm { from { opacity: 0; transform: translateY(6px); } }
+@keyframes m-scale-in { from { opacity: 0; transform: translateY(10px) scale(.97); } }
+@keyframes m-slide-left { from { opacity: 0; transform: translateX(14px); } }
+@keyframes m-fade { from { opacity: 0; } }
+
+/* ---------- Главная: заголовок и поиск появляются по очереди ---------- */
+.home-hero-copy > * { animation: m-rise var(--t-slow) var(--ease-out) backwards; }
+.home-hero-copy > :nth-child(1) { animation-delay: .05s; }
+.home-hero-copy > :nth-child(2) { animation-delay: .12s; }
+.home-hero-copy > :nth-child(3) { animation-delay: .22s; }
+.home-hero-copy > :nth-child(4) { animation-delay: .3s; }
+.home-hero-copy > :nth-child(5) { animation-delay: .38s; }
+.home-hero h1 > span, .home-hero h1 > em { display: block; animation: m-rise .6s var(--ease-out) backwards; }
+.home-hero h1 > em { animation-delay: .1s; }
+.hero-scene-caption { animation: m-slide-left .6s var(--ease-out) .5s backwards; }
+.home-hero-edge a svg { animation: m-nudge 2.4s ease-in-out 1.2s infinite; }
+@keyframes m-nudge { 0%, 70%, 100% { transform: none; } 80% { transform: translate(2px, 2px); } }
+
+/* Карточки «Мой день» — лёгкий каскад. */
+.home-day-grid > .day-card { animation: m-rise var(--t-slow) var(--ease-out) backwards; }
+.home-day-grid > .day-card:nth-child(2) { animation-delay: .06s; }
+.home-day-grid > .day-card:nth-child(3) { animation-delay: .12s; }
+.home-day-grid > .day-card:nth-child(4) { animation-delay: .18s; }
+.day-card { transition: transform var(--t-mid) var(--ease-out), box-shadow var(--t-mid) ease, border-color var(--t-fast) ease; }
+.day-card:hover { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(13, 28, 59, .07); }
+.day-chip { transition: transform var(--t-fast) var(--ease-out), background var(--t-fast) ease, border-color var(--t-fast) ease, color var(--t-fast) ease; }
+.day-chip:hover { transform: translateY(-1px); }
+
+/* Фото в карточках чуть приближается под курсором. */
+.quick-place-card { overflow: hidden; }
+.quick-place-photo { transition: transform .7s var(--ease-out), filter .4s ease; }
+.quick-place-card:hover .quick-place-photo { transform: scale(1.06); }
+.quick-place-arrow { transition: transform var(--t-mid) var(--ease-out); }
+.quick-place-card:hover .quick-place-arrow { transform: translate(2px, -2px); }
+
+/* ---------- Кнопки: отклик на нажатие ---------- */
+:is(.button, .header-cta, .search-trigger, .hd-icon, .hd-burger, .directory-chip, .day-chip, .here-chip, .teacher-action, .start-go, .search-route, .ai-chip, .ai-send, .lesson-next-go):active { transform: scale(.97); transition-duration: .08s; }
+.button svg, .text-link svg { transition: transform var(--t-mid) var(--ease-out); }
+.button:hover svg:last-child, .text-link:hover svg:last-child { transform: translateX(2px); }
+
+/* ---------- Шапка ---------- */
+.hd .nav-link { position: relative; }
+.hd .nav-link-active { animation: m-pill .35s var(--ease-out); }
+@keyframes m-pill { from { transform: scale(.94); } }
+.brand-mark { transition: transform .6s var(--ease-spring); }
+.brand:hover .brand-mark { transform: rotate(-14deg) scale(1.05); }
+
+/* ---------- Поиск ---------- */
+.search-dialog { animation: m-scale-in var(--t-mid) var(--ease-out) backwards; }
+.search-results .search-row { animation: m-rise-sm var(--t-mid) var(--ease-out) backwards; }
+.search-results .search-row:nth-child(2) { animation-delay: .02s; }
+.search-results .search-row:nth-child(3) { animation-delay: .04s; }
+.search-results .search-row:nth-child(4) { animation-delay: .06s; }
+.search-results .search-row:nth-child(5) { animation-delay: .08s; }
+.search-results .search-row:nth-child(n+6) { animation-delay: .1s; }
+.home-search-suggestions { animation: m-rise-sm var(--t-fast) var(--ease-out) backwards; }
+
+/* ---------- Подвал: подчёркивание выезжает ---------- */
+.footer-links-group > a { background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat; transition: background-size var(--t-mid) var(--ease-out), color var(--t-fast) ease; }
+.footer-links-group > a:hover { background-size: 100% 1px; }
+
+/* ---------- Всплывающее уведомление ---------- */
+.toast { min-height: 46px; padding: 0 18px 0 10px; border-radius: 14px; font-size: 14px; transform: translateY(14px) scale(.96); transition: opacity var(--t-mid) ease, transform .4s var(--ease-spring); }
+.toast-visible { transform: none; }
+
+/* ---------- ИИ-помощник: сообщения въезжают ---------- */
+.ai-message-user { animation: m-slide-left var(--t-mid) var(--ease-out) backwards; }
+.ai-message-assistant { animation: m-rise var(--t-slow) var(--ease-out) backwards; }
+.ai-welcome > * { animation: m-rise var(--t-slow) var(--ease-out) backwards; }
+.ai-welcome > :nth-child(2) { animation-delay: .06s; }
+.ai-welcome > :nth-child(3) { animation-delay: .12s; }
+.ai-welcome > :nth-child(4) { animation-delay: .18s; }
+.ai-welcome > :nth-child(5) { animation-delay: .24s; }
+.ai-suggestions button { transition: transform var(--t-mid) var(--ease-out), border-color var(--t-fast) ease, background var(--t-fast) ease; }
+.ai-suggestions button:hover { transform: translateY(-2px); }
+
+/* ---------- Справочник и преподаватели ---------- */
+.directory-chip { transition: background var(--t-fast) ease, color var(--t-fast) ease, border-color var(--t-fast) ease, transform var(--t-fast) var(--ease-out); }
+.directory-chip-active { animation: m-pill .3s var(--ease-out); }
+.teacher-avatar { transition: transform .5s var(--ease-spring), background var(--t-mid) ease; }
+.teacher-card:hover .teacher-avatar { transform: scale(1.08) rotate(-4deg); }
+
+/* ---------- Смена темы: круг расходится от кнопки (View Transitions) ---------- */
+::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+::view-transition-new(root) { animation: m-theme-reveal .55s var(--ease-out); }
+@keyframes m-theme-reveal { from { clip-path: circle(0 at var(--theme-x, 100%) var(--theme-y, 0)); } to { clip-path: circle(150vmax at var(--theme-x, 100%) var(--theme-y, 0)); } }
+
+/* ---------- «Уменьшить движение» ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; animation-delay: 0s !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+  .reveal { opacity: 1 !important; transform: none !important; filter: none !important; }
+  ::view-transition-new(root) { animation: none; }
+}

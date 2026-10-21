@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ArrowDownRight, ArrowRight, ArrowUpRight, Check, MapPin, Search } from 'lucide-react'
+import { ArrowDownRight, ArrowRight, ArrowUpRight, Check, GraduationCap, ListChecks, MapPin, QrCode, Search } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { photoSrcSet, photosFor, rooms, quickPlaces } from '../data.js'
 import HeroScene from '../components/HeroScene.jsx'
@@ -8,6 +8,13 @@ import HomeDashboard from '../components/HomeDashboard.jsx'
 import { Reveal, SectionLabel } from '../components/Primitives.jsx'
 import VoiceSearchButton from '../components/VoiceSearchButton.jsx'
 import { cancelMiss, reportMiss, searchRooms, searchTeachers, shortName, useTeachers } from '../search.js'
+
+// Разделы, до которых с главной иначе не добраться за один клик.
+const homeTasks = [
+  { to: '/start', icon: ListChecks, tone: 'blue', title: 'Первая неделя', text: 'Чек-лист новичка: раздевалка, учебная часть, медпункт и ещё шесть мест.', action: 'Начать' },
+  { to: '/teachers', icon: GraduationCap, tone: 'green', title: 'Преподаватели', text: 'Найдите человека по фамилии или предмету и узнайте, где его кабинет.', action: 'Найти' },
+  { to: '/here', icon: QrCode, tone: 'amber', title: 'Таблички «Вы здесь»', text: 'QR-коды для дверей: отсканировал — и маршрут строится от этого места.', action: 'Открыть' },
+]
 
 function HomeSearch() {
   const [query, setQuery] = useState('')
@@ -58,6 +65,11 @@ export default function HomePage() {
     <HomeDashboard />
 
     <section className="quick-places container section-pad" id="quick-places"><div className="section-top"><div><SectionLabel>Часто ищут</SectionLabel><h2>Начните <em>здесь.</em></h2></div><Link className="text-link" to="/rooms">Все помещения <span><ArrowRight size={15} /></span></Link></div><div className="quick-place-grid">{quickPlaces.map((place, index) => { const room = rooms.find((item) => item.id === place.roomId); return <Reveal key={place.roomId} delay={index * 60} variant="up"><Link className={`quick-place-card quick-place-${place.tone}${photosFor(room).length ? ' quick-place-media' : ''}`} to={`/map?floor=${room.floor}&room=${room.id}`}>{photosFor(room).length > 0 && <img className="quick-place-photo" src={photosFor(room)[0]} srcSet={photoSrcSet(photosFor(room)[0])} sizes="(max-width: 680px) 100vw, 320px" alt="" loading="lazy" decoding="async" />}<span className="quick-place-num">{room.floor} этаж</span><span className="quick-place-copy"><strong>{place.label}</strong><small>{place.meta}</small></span><span className="quick-place-arrow"><ArrowUpRight size={16} /></span></Link></Reveal> })}</div></section>
+
+    <section className="home-tasks container" aria-labelledby="home-tasks-title">
+      <div className="section-top"><div><SectionLabel>Ещё пригодится</SectionLabel><h2 id="home-tasks-title">Что ещё <em>умеет сайт.</em></h2></div></div>
+      <div className="home-task-grid">{homeTasks.map((task, index) => { const Icon = task.icon; return <Reveal key={task.to} delay={index * 60} variant="up"><Link className={`home-task home-task-${task.tone}`} to={task.to}><span className="home-task-icon" aria-hidden="true"><Icon size={20} /></span><strong>{task.title}</strong><span>{task.text}</span><span className="home-task-go">{task.action} <ArrowRight size={14} /></span></Link></Reveal> })}</div>
+    </section>
 
     <AiPromoBanner />
 

@@ -26,12 +26,11 @@ function initScrollProgress() {
   update()
 }
 
+// Шапку ищем при каждой прокрутке: этот файл выполняется до первой отрисовки
+// React, и раньше .site-header здесь ещё не было — тень не появлялась никогда.
 function initHeaderScroll() {
-  const header = document.querySelector('.site-header')
-  if (!header) return
   const update = () => {
-    if (window.scrollY > 12) header.classList.add('scrolled')
-    else header.classList.remove('scrolled')
+    document.querySelector('.site-header')?.classList.toggle('scrolled', window.scrollY > 12)
   }
   window.addEventListener('scroll', update, { passive: true })
   update()
@@ -64,7 +63,7 @@ function initCursorGlow() {
 
 function initMagnetic() {
   if (reduced || coarsePointer) return
-  const selector = '.button, .header-cta, .magnetic, .nav-link, .text-link'
+  const selector = '.button, .header-cta, .magnetic, .text-link'
   const attach = (el) => {
     if (el.dataset.mag) return
     el.dataset.mag = '1'
@@ -93,7 +92,7 @@ function initMagnetic() {
 
 function initTilt() {
   if (reduced || coarsePointer) return
-  const selector = '.tilt, .quick-place-card, .floor-switch-card, .game-mode-tab, .quiz-option, .service-card, .about-person, .about-value-row, .faq-item, .search-result, .directory-card'
+  const selector = '.tilt, .quick-place-card, .floor-switch-card, .game-mode-tab, .quiz-option, .service-card, .about-person, .about-value-row, .faq-item, .directory-card'
   const attach = (el) => {
     if (el.dataset.tilt) return
     el.dataset.tilt = '1'
@@ -116,7 +115,7 @@ function initTilt() {
 function initRipple() {
   if (reduced || coarsePointer) return
   document.addEventListener('click', (e) => {
-    const target = e.target.closest('.button, .header-cta, .quiz-option, .game-mode-tab, .nav-link, .text-link, .search-result, .quick-place-card, .floor-switch-card, .ripple-host')
+    const target = e.target.closest('.button, .header-cta, .quiz-option, .game-mode-tab, .text-link, .quick-place-card, .floor-switch-card, .ripple-host')
     if (!target) return
     const rect = target.getBoundingClientRect()
     const size = Math.max(rect.width, rect.height)

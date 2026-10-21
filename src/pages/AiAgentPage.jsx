@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, useSearchParams } from 'react-router-dom'
-import { ArrowUp, Brain, Check, ChevronDown, Copy, Download, GraduationCap, ImagePlus, Lightbulb, MapPin, Mic, MicOff, PanelLeft, RefreshCw, Route, Sparkles, SquarePen, Square, Trash2, TriangleAlert, UserRound, Volume2, VolumeX, X } from 'lucide-react'
+import { ArrowUp, Brain, Check, ChevronDown, Code, Copy, Download, GraduationCap, ImagePlus, Lightbulb, MapPin, Mic, MicOff, PanelLeft, RefreshCw, Route, Sparkles, SquarePen, Square, Trash2, TriangleAlert, UserRound, Volume2, VolumeX, X } from 'lucide-react'
 import { answerActions, askAgent, routeFromLink, chatTitle, chatToMarkdown, compressImage, containsProfanity, createChat, loadChats, maskProfanity, MAX_IMAGES, MAX_INPUT, plainText, saveChats } from '../ai-chat.js'
 import { functionalStorageAllowed, onConsentChange } from '../consent.js'
 import { speakText, stopSpeech } from '../speech.js'
@@ -11,14 +11,15 @@ import { rooms } from '../data.js'
 
 // ЛОГОС AI: чат с DeepSeek через public/api/ai-chat.php. Чаты хранятся в
 // localStorage (ключ logos-ai-chats, если человек не отказался от
-// функциональных cookie), картинки сжимаются в браузере. Мат не уходит в
-// модель — вместо ответа шуточная «отправка куратору».
+// функциональных cookie), картинки сжимаются в браузере. Мат уходит в модель
+// замаскированным. Старые чаты могут содержать шуточную «отправку куратору»
+// из прошлых версий — она по-прежнему показывается.
 
 const suggestions = [
   { icon: MapPin, text: 'Где библиотека и как до неё дойти?' },
-  { icon: Route, text: 'Как пройти от входа до кабинета 211?' },
   { icon: GraduationCap, text: 'Какие специальности есть в колледже?' },
-  { icon: Lightbulb, text: 'Составь план подготовки к зачёту на неделю' },
+  { icon: Lightbulb, text: 'Объясни закон Ома на простом примере' },
+  { icon: Code, text: 'Помоги разобраться с циклами в Python' },
 ]
 
 const thinkingStages = {
@@ -186,14 +187,13 @@ export default function AiAgentPage() {
     const content = text.trim().slice(0, MAX_INPUT)
     if ((!content && !attachments.length) || pending) return
     const chatId = chat.id
-    const rude = containsProfanity(content)
-    const userMessage = { role: 'user', content: rude ? maskProfanity(content) : content, at: Date.now(), ...(attachments.length && !rude ? { images: attachments } : {}) }
+    const userMessage = { role: 'user', content: containsProfanity(content) ? maskProfanity(content) : content, at: Date.now(), ...(attachments.length ? { images: attachments } : {}) }
     const next = [...messages.filter((m) => !m.error), userMessage]
-    updateChat(chatId, (item) => ({ ...item, title: item.messages.length ? item.title : chatTitle(userMessage.content), messages: rude ? [...item.messages, userMessage, { role: 'curator', content: 'Сообщение передано куратору', at: Date.now() }] : next }))
+    updateChat(chatId, (item) => ({ ...item, title: item.messages.length ? item.title : chatTitle(userMessage.content), messages: next }))
     setInput('')
     setAttachments([])
     inputRef.current?.focus()
-    if (!rude) await run(chatId, next, deep)
+    await run(chatId, next, deep)
   }
 
   // «Спросить про это место» с карты и маршрута: /ai?about=<id> сразу задаёт
@@ -346,7 +346,7 @@ export default function AiAgentPage() {
         {!messages.length ? <div className="ai-welcome">
           <span className="ai-mark ai-mark-big" aria-hidden="true"><Sparkles size={22} /></span>
           <h1>Чем помочь?</h1>
-          <p>Найду кабинет и построю маршрут, расскажу о колледже, разберу фото расписания или помогу с учёбой.</p>
+          <p>Спросите о чём угодно: найду кабинет и построю маршрут, расскажу о колледже, решу задачу, объясню тему, помогу с кодом или текстом.</p>
           {composer}
           <div className="ai-suggestions">{suggestions.map(({ icon: Icon, text }) => <button key={text} type="button" onClick={() => send(text)}><Icon size={15} />{text}</button>)}</div>
         </div> : <div className="ai-thread">

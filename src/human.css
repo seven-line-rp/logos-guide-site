@@ -1,0 +1,212 @@
+/* Человечная структура: шапка из пяти разделов, меню по задачам, поиск с
+   действиями, подвал из трёх групп и новые страницы (преподаватели, первая
+   неделя, «Вы здесь»). Подключается после остальных слоёв дизайна. */
+
+/* ---------- Шапка ---------- */
+.hd .header-docs { display: none; }
+@media (min-width: 1221px) {
+  .hd .desktop-nav { position: absolute; left: 50%; transform: translateX(-50%); margin: 0; }
+  .hd .nav-link { padding: 0 16px; font-size: 14.5px; }
+  .hd .mobile-map-link { display: none; }
+}
+@media (min-width: 1221px) and (max-width: 1499px) {
+  .hd .search-trigger { width: auto; padding: 0 8px 0 14px; justify-content: flex-start; }
+  .hd .search-trigger span, .hd .search-trigger kbd { display: inline-grid; }
+  .hd .search-trigger span { display: inline; }
+}
+@media (min-width: 1221px) and (max-width: 1360px) {
+  .hd .search-trigger { width: 42px; padding: 0; justify-content: center; }
+  .hd .search-trigger span, .hd .search-trigger kbd { display: none; }
+  .hd .hd-burger-label { display: inline; }
+  .hd .hd-burger { width: auto; padding: 0 14px 0 12px; }
+}
+
+/* ---------- Меню: группы по задачам ---------- */
+.hd-menu-groups { display: grid; gap: 16px; align-content: start; }
+.hd-menu-group-title { margin: 0 0 8px 4px; color: var(--muted); font-size: 13px; font-weight: 650; letter-spacing: 0; }
+.hd-menu-group .hd-menu-grid { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
+.hd-menu-card { min-height: 68px; }
+@media (max-width: 680px) {
+  .hd-menu-groups { gap: 12px; }
+  .hd-menu-group .hd-menu-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hd-menu-inner { display: flex; flex-direction: column; }
+  .hd-menu-card { min-height: 54px; padding: 10px; flex-direction: row; align-items: center; gap: 10px; }
+  .hd-menu-icon { width: 34px; height: 34px; border-radius: 10px; }
+  .hd-menu-text small { display: none; }
+  .hd-menu-text strong { font-size: 13.5px; line-height: 1.25; }
+}
+
+/* ---------- Поиск: строки с кнопкой «Маршрут» и выбор с клавиатуры ---------- */
+.search-section-label { margin: 2px 4px 6px; display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12.5px; font-weight: 650; }
+.search-section-label button { margin-left: auto; padding: 2px 6px; border: 0; border-radius: 6px; color: var(--muted); background: none; font: inherit; cursor: pointer; }
+.search-section-label button:hover { color: var(--blue); background: var(--surface-soft); }
+.search-row { position: relative; display: flex; align-items: stretch; gap: 6px; border-radius: 14px; transition: background .16s ease; }
+.search-dialog { background: var(--surface); }
+.search-input-wrap { transition: border-color var(--t-fast, .16s) ease; }
+.search-input-wrap:focus-within { border-bottom-color: var(--blue); }
+.search-input-wrap input:focus-visible { outline: none; box-shadow: none; }
+.search-row { border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent); }
+.search-row .search-result { flex: 1; min-width: 0; border-bottom: 0; }
+.search-row .search-result:hover { background: transparent; }
+.search-row.is-active { background: var(--surface-soft); }
+.search-row.is-active .search-result { background: transparent; }
+.search-route { flex: 0 0 auto; align-self: center; height: 36px; margin-right: 6px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: 999px; color: var(--blue); background: var(--surface); font-size: 13px; font-weight: 650; opacity: 0; transform: translateX(-4px); transition: opacity .16s ease, transform .2s cubic-bezier(.22, 1, .36, 1), border-color .16s ease; }
+.search-row.is-active .search-route, .search-route:focus-visible { opacity: 1; transform: none; }
+.search-route:hover { border-color: var(--blue); }
+@media (hover: none) { .search-route { opacity: 1; transform: none; } .search-route span { display: none; } .search-route { width: 36px; padding: 0; justify-content: center; } }
+.search-foot kbd { min-width: 20px; height: 20px; margin: 0 2px; padding: 0 5px; display: inline-grid; place-items: center; border: 1px solid var(--line); border-radius: 5px; font-family: inherit; font-size: 11px; }
+.search-empty small a { color: var(--blue); font-weight: 650; text-decoration: underline; text-underline-offset: 3px; }
+@media (max-width: 680px) { .search-foot > span:first-child { display: none; } }
+
+/* ---------- Страницы: компактный заголовок там, где важен сам инструмент ---------- */
+.page-heading.page-heading-compact { min-height: 0; padding-block: 28px 20px; border-bottom: 0; }
+.page-heading-compact h1 { margin-top: 6px; font-size: clamp(30px, 3.6vw, 44px) !important; line-height: 1.1; }
+.page-heading-compact .page-heading-main > p { margin-top: 10px; font-size: 15.5px !important; }
+.page-heading-aside { animation: none !important; }
+@media (max-width: 680px) { .page-heading.page-heading-compact { padding-block: 20px 12px; } }
+
+/* Загрузка раздела: три точки вместо полоски. */
+.page-loading { display: flex; align-items: center; gap: 12px; min-height: 40vh; justify-content: center; color: var(--muted); }
+.page-loading-dots { display: inline-flex; gap: 5px; }
+.page-loading-dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--blue); animation: loading-dot 1s ease-in-out infinite; }
+.page-loading-dots i:nth-child(2) { animation-delay: .15s; }
+.page-loading-dots i:nth-child(3) { animation-delay: .3s; }
+@keyframes loading-dot { 0%, 80%, 100% { opacity: .25; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-4px); } }
+
+/* ---------- Подвал ---------- */
+.footer-top { grid-template-columns: 1.4fr 1fr 1fr 1fr; }
+.footer-label { display: block; min-height: 18px; margin-bottom: 6px; color: var(--ink) !important; font-size: 13px !important; font-weight: 700; }
+.footer-links-group { gap: 6px; }
+.footer-links-group > a { font-size: 14.5px !important; }
+.footer-brand-block > p { line-height: 1.55; }
+@media (max-width: 900px) { .footer-top { grid-template-columns: 1fr 1fr; } .footer-brand-block { grid-column: 1 / -1; } }
+@media (max-width: 680px) { .footer-bottom { flex-wrap: wrap; gap: 10px 16px; } }
+
+/* ---------- Главная: «Что ещё умеет сайт» ---------- */
+.home-tasks { padding-block: 10px 70px; }
+.home-task-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.home-task { height: 100%; padding: 22px; display: flex; flex-direction: column; gap: 8px; border: 1px solid var(--line); border-radius: 22px; color: var(--ink); background: var(--surface); transition: transform .3s cubic-bezier(.22, 1, .36, 1), box-shadow .3s ease, border-color .2s ease; }
+.home-task:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--task) 40%, var(--line)); box-shadow: 0 16px 34px rgba(13, 28, 59, .08); }
+.home-task strong { font-size: 18px; }
+.home-task > span:not([class]) { color: var(--muted); font-size: 14.5px; line-height: 1.55; }
+.home-task-icon { width: 44px; height: 44px; margin-bottom: 6px; display: grid; place-items: center; border-radius: 14px; color: var(--task); background: color-mix(in srgb, var(--task) 12%, transparent); transition: transform .35s cubic-bezier(.22, 1, .36, 1); }
+.home-task:hover .home-task-icon { transform: rotate(-6deg) scale(1.06); }
+.home-task-go { margin-top: auto; padding-top: 8px; display: inline-flex; align-items: center; gap: 6px; color: var(--blue); font-size: 14px; font-weight: 700; }
+.home-task-go svg { transition: transform .25s ease; }
+.home-task:hover .home-task-go svg { transform: translateX(3px); }
+.home-task-blue { --task: #2563eb; }
+.home-task-green { --task: #16a34a; }
+.home-task-amber { --task: #d97706; }
+@media (max-width: 900px) { .home-task-grid { grid-template-columns: 1fr; } .home-tasks { padding-bottom: 50px; } }
+
+/* ---------- Преподаватели ---------- */
+.teachers-section { padding-bottom: 70px; }
+.teachers-filters { margin: 14px 0 6px; }
+.teachers-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+.teachers-grid > .reveal { height: 100%; }
+.teacher-card { height: 100%; padding: 18px; display: flex; flex-direction: column; gap: 12px; border: 1px solid var(--line); border-radius: 20px; background: var(--surface); transition: border-color .2s ease, box-shadow .3s ease, transform .3s cubic-bezier(.22, 1, .36, 1); }
+.teacher-card:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--blue) 30%, var(--line)); box-shadow: 0 14px 30px rgba(13, 28, 59, .07); }
+.teacher-card-top { display: flex; align-items: center; gap: 12px; }
+.teacher-avatar { width: 46px; height: 46px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 50%; color: var(--blue); background: var(--surface-soft); font-size: 15px; font-weight: 750; }
+.teacher-card-name h2 { margin: 0; color: var(--ink); font-size: 16px; line-height: 1.3; letter-spacing: -.01em; }
+.teacher-card-name span { color: var(--muted); font-size: 13px; line-height: 1.4; }
+.teacher-subjects { margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; list-style: none; }
+.teacher-subjects li { padding: 4px 10px; border-radius: 999px; color: var(--ink); background: var(--bg); font-size: 12.5px; line-height: 1.35; }
+.teacher-card-room { display: flex; align-items: flex-start; gap: 8px; color: var(--ink); font-size: 14px; line-height: 1.45; }
+.teacher-card-room svg { flex: 0 0 auto; margin-top: 2px; color: var(--blue); }
+.teacher-card-room small { color: var(--muted); font-size: 12.5px; }
+.teacher-card-actions { margin-top: auto; display: flex; gap: 8px; }
+.teacher-action { min-height: 40px; padding: 0 14px; display: inline-flex; flex: 1; align-items: center; justify-content: center; gap: 7px; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); background: var(--surface); font-size: 14px; font-weight: 650; transition: border-color .16s ease, color .16s ease, background .16s ease; }
+.teacher-action:hover { border-color: var(--blue); color: var(--blue); }
+.teacher-action-primary { border-color: transparent; color: #fff; background: var(--blue); }
+.teacher-action-primary:hover { color: #fff; background: var(--blue-bright); }
+.teacher-card-skeleton { min-height: 190px; }
+.teacher-card-skeleton .shimmer { height: 14px; border-radius: 7px; }
+.teacher-card-skeleton .shimmer:first-child { width: 60%; height: 20px; }
+.teacher-card-skeleton .shimmer:last-child { width: 40%; }
+.teachers-note { max-width: 720px; margin: 26px 0 0; color: var(--muted); font-size: 13.5px; line-height: 1.6; }
+
+/* ---------- Первая неделя ---------- */
+.start-section { position: relative; padding-bottom: 70px; }
+.start-section > *, .here-section > * { max-width: 860px; }
+.start-progress { position: sticky; top: 86px; z-index: 5; margin-bottom: 16px; padding: 16px 18px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px 18px; border: 1px solid var(--line); border-radius: 18px; background: color-mix(in srgb, var(--surface) 92%, transparent); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+.start-progress-copy { display: grid; }
+.start-progress-copy strong { color: var(--ink); font-size: 18px; }
+.start-progress-copy span { color: var(--muted); font-size: 13px; }
+.start-progress-bar { height: 10px; overflow: hidden; border-radius: 999px; background: var(--bg); }
+.start-progress-bar span { height: 100%; display: block; border-radius: inherit; background: linear-gradient(90deg, #3b74ff, #16a34a); transition: width .6s cubic-bezier(.22, 1, .36, 1); }
+.start-progress.is-done { border-color: color-mix(in srgb, #16a34a 45%, var(--line)); }
+.start-reset { padding: 6px 10px; display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 10px; color: var(--muted); background: none; font: inherit; font-size: 13px; cursor: pointer; }
+.start-reset:hover { color: var(--ink); background: var(--bg); }
+.start-list { margin: 0; padding: 0; display: grid; gap: 10px; list-style: none; }
+.start-item { padding: 14px 16px; display: grid; grid-template-columns: auto auto 1fr auto; align-items: center; gap: 14px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); transition: border-color .2s ease, background .3s ease; }
+.start-item.is-checked { border-color: color-mix(in srgb, #16a34a 35%, var(--line)); background: color-mix(in srgb, #16a34a 5%, var(--surface)); }
+.start-check { width: 30px; height: 30px; display: grid; place-items: center; border: 2px solid var(--line); border-radius: 10px; color: transparent; background: var(--surface); cursor: pointer; transition: border-color .2s ease, background .2s ease, color .2s ease, transform .2s ease; }
+.start-check:hover { border-color: #16a34a; }
+.start-check:active { transform: scale(.9); }
+.start-item.is-checked .start-check { border-color: #16a34a; color: #fff; background: #16a34a; animation: check-pop .4s cubic-bezier(.34, 1.56, .64, 1); }
+@keyframes check-pop { 0% { transform: scale(.7); } 100% { transform: scale(1); } }
+.start-icon { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 12px; color: var(--blue); background: var(--surface-soft); }
+.start-copy { min-width: 0; display: grid; gap: 2px; }
+.start-copy strong { color: var(--ink); font-size: 15.5px; }
+.start-copy span { color: var(--muted); font-size: 13.5px; line-height: 1.45; }
+.start-item.is-checked .start-copy strong { text-decoration: line-through; text-decoration-color: color-mix(in srgb, #16a34a 60%, transparent); }
+.start-go { min-height: 38px; padding: 0 14px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: 999px; color: var(--blue); font-size: 13.5px; font-weight: 650; white-space: nowrap; transition: border-color .16s ease, background .16s ease; }
+.start-go:hover { border-color: var(--blue); background: var(--surface-soft); }
+.start-hint { margin: 18px 0 0; display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13.5px; }
+.start-confetti { position: absolute; inset: 0 0 auto; height: 0; pointer-events: none; }
+.start-confetti i { position: absolute; top: 20px; left: calc(var(--i) * 5.5%); width: 8px; height: 14px; border-radius: 2px; background: hsl(calc(var(--i) * 40), 85%, 58%); opacity: 0; animation: confetti 1.6s cubic-bezier(.2, .7, .4, 1) calc(var(--i) * 40ms) forwards; }
+@keyframes confetti { 0% { opacity: 1; transform: translateY(0) rotate(0); } 100% { opacity: 0; transform: translateY(220px) rotate(calc(var(--i) * 70deg)); } }
+@media (max-width: 680px) {
+  .start-progress { top: 74px; grid-template-columns: 1fr auto; }
+  .start-progress-bar { grid-column: 1 / -1; grid-row: 2; }
+  .start-item { grid-template-columns: auto 1fr; padding: 12px; gap: 10px 12px; }
+  .start-icon { display: none; }
+  .start-go { grid-column: 2; justify-self: start; }
+}
+
+/* ---------- «Вы здесь» ---------- */
+.here-section { padding-bottom: 70px; display: grid; gap: 16px; }
+.here-card { padding: 20px; display: flex; align-items: flex-start; gap: 16px; border: 1px solid var(--line); border-radius: 22px; background: var(--surface); box-shadow: 0 14px 34px rgba(13, 28, 59, .06); }
+.here-pin { position: relative; width: 48px; height: 48px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 50%; color: #fff; background: var(--blue); }
+.here-pin::after { content: ''; position: absolute; inset: -6px; border: 2px solid var(--blue); border-radius: 50%; opacity: 0; animation: here-ping 2s cubic-bezier(.2, .7, .4, 1) infinite; }
+@keyframes here-ping { 0% { opacity: .6; transform: scale(.8); } 100% { opacity: 0; transform: scale(1.5); } }
+.here-pick { flex: 1; min-width: 0; display: grid; gap: 12px; }
+.here-pick-hint { color: var(--muted); font-size: 13px; }
+.here-block h2 { margin: 6px 0 10px; color: var(--ink); font-size: 17px; }
+.here-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.here-chip { min-height: 44px; padding: 0 14px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: 14px; color: var(--ink); background: var(--surface); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; transition: border-color .16s ease, transform .2s ease, box-shadow .2s ease; }
+.here-chip small { color: var(--muted); font-size: 12px; font-weight: 500; }
+.here-chip:hover { transform: translateY(-1px); border-color: var(--blue); box-shadow: 0 8px 18px rgba(13, 28, 59, .07); }
+.here-note a { display: inline-flex; align-items: center; gap: 6px; color: var(--blue); font-weight: 650; }
+.here-signs { padding-bottom: 70px; }
+.here-signs-bar { margin-bottom: 18px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.here-sign-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.here-sign { padding: 14px; display: flex; align-items: center; gap: 14px; border: 1px solid var(--line); border-radius: 16px; background: #fff; color: #13213a; break-inside: avoid; }
+.here-sign-qr { width: 96px; height: 96px; flex: 0 0 auto; border-radius: 8px; background: #f4f7fc; }
+.here-sign-qr svg { width: 100%; height: 100%; display: block; }
+.here-sign-copy { min-width: 0; display: grid; gap: 3px; }
+.here-sign-copy span { display: inline-flex; align-items: center; gap: 5px; color: #245ce5; font-size: 12px; font-weight: 700; }
+.here-sign-copy strong { font-size: 16px; line-height: 1.25; }
+.here-sign-copy small { color: #697891; font-size: 11.5px; line-height: 1.4; }
+@media (max-width: 680px) { .here-card { flex-direction: column; } }
+@media print {
+  .site-header, .site-footer, .no-print, .scroll-progress, .cursor-glow, .cookie-banner, .offline-notice { display: none !important; }
+  .here-signs { padding: 0; }
+  .here-sign-grid { grid-template-columns: repeat(2, 1fr); gap: 8mm; }
+  .here-sign { border: 1px dashed #9aa7bd; border-radius: 4mm; }
+  .here-sign-qr { width: 34mm; height: 34mm; }
+  .here-sign-copy strong { font-size: 15pt; }
+}
+
+/* ---------- Крупный текст ---------- */
+:root[data-text-size='large'] body { zoom: 1.12; }
+/* При крупном тексте на телефоне инструменты карты уходят на вторую строку. */
+@media (max-width: 680px) {
+  :root[data-text-size='large'] .map-panel-heading { flex-wrap: wrap; }
+  :root[data-text-size='large'] .map-panel-heading > span:first-child { flex: 1 1 100%; }
+  :root[data-text-size='large'] .map-panel-heading small { max-width: none; }
+}
+
+/* ---------- Мелочи ---------- */
+.directory-floor-filters > span { text-transform: none; }

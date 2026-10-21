@@ -44,9 +44,9 @@ test('the tour no longer mentions the removed AI assistant', () => {
   }
 })
 
-test('the documentation step falls back to the menu button on small screens', () => {
+test('the documentation step points at the menu, where the docs now live', () => {
   const docsStep = TOUR_STEPS.find((step) => step.id === 'docs')
-  assert.deepEqual(docsStep.targets, ['.header-docs', '.mobile-menu-toggle'])
+  assert.deepEqual(docsStep.targets, ['.mobile-menu-toggle'])
 })
 
 test('finishing the tour is remembered in the browser', () => {

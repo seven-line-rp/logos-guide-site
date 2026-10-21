@@ -92,3 +92,19 @@ test('meeting links carry the place and an optional time', () => {
   assert.equal(meetLink('https://x.ru', { to: 'canteen', at: '25:99' }), 'https://x.ru/route?to=canteen&meet=1')
   assert.equal(routeLink('https://x.ru', { from: 'entrance-1', to: 'physics-211', via: 'changing-room' }), 'https://x.ru/route?from=entrance-1&to=physics-211&via=changing-room')
 })
+
+test('search remembers recently opened places, newest first, without duplicates', async () => {
+  const { clearRecentPlaces, readRecentPlaces, rememberPlace } = await import('./places.js')
+  const data = new Map([['logos-cookie-consent', JSON.stringify({ v: 1, functional: true })]])
+  globalThis.localStorage = { getItem: (key) => data.get(key) ?? null, setItem: (key, value) => data.set(key, String(value)), removeItem: (key) => data.delete(key) }
+  try {
+    for (const id of ['canteen', 'library-214', 'physics-211', 'canteen', 'no-such-room']) rememberPlace(id)
+    assert.deepEqual(readRecentPlaces(), ['canteen', 'physics-211', 'library-214'])
+    for (const id of ['auditorium-104', 'hall-1', 'class-217', 'class-119']) rememberPlace(id)
+    assert.equal(readRecentPlaces().length, 5)
+    clearRecentPlaces()
+    assert.deepEqual(readRecentPlaces(), [])
+  } finally {
+    delete globalThis.localStorage
+  }
+})
