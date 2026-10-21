@@ -37,7 +37,7 @@ export async function askAgent(messages, { signal, deep = false, fetchImpl = fet
     response = await fetchImpl(AI_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: historyForRequest(messages), deep }),
+      body: JSON.stringify({ messages: historyForRequest(messages), deep, rude: Boolean(messages[messages.length - 1]?.rude) }),
       signal,
     })
   } catch (error) {

@@ -12,8 +12,8 @@ import { rooms } from '../data.js'
 // ЛОГОС AI: чат с DeepSeek через public/api/ai-chat.php. Чаты хранятся в
 // localStorage (ключ logos-ai-chats, если человек не отказался от
 // функциональных cookie), картинки сжимаются в браузере. Мат уходит в модель
-// замаскированным. Старые чаты могут содержать шуточную «отправку куратору»
-// из прошлых версий — она по-прежнему показывается.
+// замаскированным вместе с пометкой rude: агент сам включает «враждебный
+// режим» (подсказка в ai-chat.php), а в чате проигрывается «отправка куратору».
 
 const suggestions = [
   { icon: MapPin, text: 'Где библиотека и как до неё дойти?' },
@@ -53,8 +53,15 @@ function CuratorCard({ animate }) {
     return () => timers.forEach(window.clearTimeout)
   }, [animate])
   const done = stage === curatorStages.length - 1
+  // После «доставлено» идёт обратный отсчёт на извинения; в старых чатах — уже «время вышло».
+  const [left, setLeft] = useState(animate ? 3 : 0)
+  useEffect(() => {
+    if (!animate || !done || left <= 0) return undefined
+    const timer = window.setTimeout(() => setLeft((value) => value - 1), 1000)
+    return () => window.clearTimeout(timer)
+  }, [animate, done, left])
   const ref = useRef(null)
-  // Шутка появляется в конце анимации: докручиваем чат, чтобы её было видно.
+  // Ультиматум появляется в конце анимации: докручиваем чат, чтобы её было видно.
   useEffect(() => { if (animate && done) ref.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }) }, [animate, done])
   return <div ref={ref} className={`ai-curator ${done ? 'ai-curator-done' : ''}`} role="status">
     <div className="ai-curator-track" aria-hidden="true">
@@ -64,7 +71,7 @@ function CuratorCard({ animate }) {
     </div>
     <strong>{curatorStages[stage]}</strong>
     <div className="ai-curator-progress" aria-hidden="true"><span style={{ width: `${(stage + 1) * 25}%` }} /></div>
-    {done && <p className="ai-curator-joke">Шутка 🙂 Никуда ничего не ушло. Но давайте без мата: так я помогу быстрее. Переформулируйте вопрос, и продолжим.</p>}
+    {done && <p className="ai-curator-joke ai-curator-threat">{left > 0 ? <>Даю пару секунд, чтобы извиниться. <b>{left}</b></> : 'Время вышло. Карьера оформляется в пух и прах.'}</p>}
   </div>
 }
 
@@ -187,9 +194,11 @@ export default function AiAgentPage() {
     const content = text.trim().slice(0, MAX_INPUT)
     if ((!content && !attachments.length) || pending) return
     const chatId = chat.id
-    const userMessage = { role: 'user', content: containsProfanity(content) ? maskProfanity(content) : content, at: Date.now(), ...(attachments.length ? { images: attachments } : {}) }
+    const rude = containsProfanity(content)
+    const userMessage = { role: 'user', content: rude ? maskProfanity(content) : content, at: Date.now(), ...(rude ? { rude: true } : {}), ...(attachments.length ? { images: attachments } : {}) }
     const next = [...messages.filter((m) => !m.error), userMessage]
-    updateChat(chatId, (item) => ({ ...item, title: item.messages.length ? item.title : chatTitle(userMessage.content), messages: next }))
+    const shown = rude ? [...next, { role: 'curator', content: 'Сообщение передано куратору', at: Date.now() }] : next
+    updateChat(chatId, (item) => ({ ...item, title: item.messages.length ? item.title : chatTitle(userMessage.content), messages: shown }))
     setInput('')
     setAttachments([])
     inputRef.current?.focus()
