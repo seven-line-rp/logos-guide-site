@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import floorOnePlan from '../../map1lower.svg?raw'
 import floorTwoPlan from '../../map2lower.svg?raw'
 import { composePlanArt } from '../map-art.js'
 import { buildRouteOptions } from '../map-routing.js'
 import { planSizes } from '../map-geometry.js'
 import { useLanguage } from '../i18n.js'
-import { FLIGHT_SECONDS, FLOOR_GAP, HERO_ROUTE, WALL_HEIGHT, buildFlight, floorDoors, floorWalls, transferColumns } from '../hero-scene-model.js'
+import { FLIGHT_SECONDS, FLOOR_GAP, HERO_ROUTES, WALL_HEIGHT, buildFlight, floorDoors, floorWalls, stairSteps, transferColumns } from '../hero-scene-model.js'
 
 // Декорация первого экрана: корпус в 3D. Пол каждого этажа — настоящий план,
 // стены и двери подняты из той же геометрии, второй этаж висит над первым,
@@ -14,21 +14,31 @@ import { FLIGHT_SECONDS, FLOOR_GAP, HERO_ROUTE, WALL_HEIGHT, buildFlight, floorD
 // пролетает по нему (сценарий пролёта — buildFlight в hero-scene-model.js).
 const { width, height } = planSizes[1]
 
-const scene = (() => {
-  const option = buildRouteOptions(HERO_ROUTE.from, HERO_ROUTE.to).find((item) => item.kind === HERO_ROUTE.via)
-  const pathOf = (points) => (points?.length ? `M${points.map(([x, y]) => `${x} ${y}`).join(' L')}` : '')
+const floors = [1, 2].map((floor) => ({ floor, walls: floorWalls(floor), doors: floorDoors(floor) }))
+const columns = transferColumns()
+const pathOf = (points) => (points?.length ? `M${points.map(([x, y]) => `${x} ${y}`).join(' L')}` : '')
+
+// Каждый маршрут собираем заранее: путь по этажам, сценарий пролёта и то,
+// чем он поднимается (ступени лестницы или кабина лифта).
+const routes = HERO_ROUTES.map((route) => {
+  const option = buildRouteOptions(route.from, route.to).find((item) => item.kind === route.via)
   const lower = option?.byFloor[1]?.points || []
   const upper = option?.byFloor[2]?.points || []
+  if (!lower.length || !upper.length) return null
+  const lift = route.via === 'lift'
+  const column = columns.find((item) => item.id === `${route.via}-1`)
+  const transfer = lift ? { kind: 'lift', center: [column.x, column.y] } : { kind: 'stairs' }
   return {
-    floors: [1, 2].map((floor) => ({ floor, walls: floorWalls(floor), doors: floorDoors(floor) })),
-    columns: transferColumns(),
+    ...route,
     lower: pathOf(lower),
     upper: pathOf(upper),
-    flight: lower.length && upper.length ? buildFlight(lower, upper, FLOOR_GAP) : null,
+    flight: buildFlight(lower, upper, FLOOR_GAP, transfer),
     climb: lower.at(-1),
     target: upper.at(-1),
+    transfer,
+    steps: lift ? [] : stairSteps(lower.at(-1), upper[0]),
   }
-})()
+}).filter(Boolean)
 
 // Детерминированные «пылинки»: одинаковые при каждом рендере, без Math.random.
 const particles = Array.from({ length: 22 }, (_, index) => ({
@@ -69,10 +79,13 @@ function cameraTransform(camera, center) {
 }
 
 export default function HeroScene() {
+  const [index, setIndex] = useState(0)
+  const scene = routes[index % routes.length]
   const rootRef = useRef(null)
   const cameraRef = useRef(null)
   const walkerRef = useRef(null)
-  const beamRef = useRef(null)
+  const transferRef = useRef(null)
+  const cabinRef = useRef(null)
   const beaconRef = useRef(null)
   const lowerRef = useRef(null)
   const upperRef = useRef(null)
@@ -86,8 +99,9 @@ export default function HeroScene() {
   useEffect(() => {
     const root = rootRef.current
     const camera = cameraRef.current
-    if (!root || !camera || !scene.flight) return undefined
+    if (!root || !camera) return undefined
     const upperFloor = root.querySelector('.hs-floor-2')
+    window.dispatchEvent(new CustomEvent('hero-route', { detail: { from: scene.from, to: scene.to, via: scene.via } }))
     let upperAlpha = ''
     let center = frameCenter(root.getBoundingClientRect())
     const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => { center = frameCenter(root.getBoundingClientRect()) })
@@ -111,7 +125,16 @@ export default function HeroScene() {
       if (upperRef.current) upperRef.current.style.strokeDashoffset = String(1 - frame.upper)
       if (lowerRouteRef.current) lowerRouteRef.current.style.opacity = String(frame.routeOpacity)
       if (upperRouteRef.current) upperRouteRef.current.style.opacity = String(frame.routeOpacity * frame.upperFloor)
-      if (beamRef.current) beamRef.current.style.opacity = String(frame.beam * 0.9)
+      const { climb } = frame
+      if (transferRef.current) {
+        transferRef.current.style.setProperty('--prog', climb.progress.toFixed(3))
+        transferRef.current.style.setProperty('--vis', climb.vis.toFixed(3))
+      }
+      if (cabinRef.current) {
+        cabinRef.current.style.setProperty('--vis', climb.vis.toFixed(3))
+        cabinRef.current.style.setProperty('--door', climb.door.toFixed(3))
+        cabinRef.current.style.transform = `translate3d(${climb.x}px, ${climb.y}px, ${climb.z}px)`
+      }
       // Прозрачность — только у лучей маяка: на самом контейнере с preserve-3d
       // она бы «сплющила» вертикальные плоскости.
       for (const ray of beaconRef.current?.children || []) ray.style.opacity = String(frame.beacon)
@@ -134,12 +157,15 @@ export default function HeroScene() {
     let frameId = 0
     const startedAt = performance.now()
     const tick = (now) => {
-      apply(scene.flight((now - startedAt) / 1000 / FLIGHT_SECONDS), now)
+      const progress = (now - startedAt) / 1000 / FLIGHT_SECONDS
+      // Цикл кончился общим планом: меняем маршрут, пока камера на нём.
+      if (progress >= 1) { setIndex((current) => (current + 1) % routes.length); return }
+      apply(scene.flight(progress), now)
       frameId = requestAnimationFrame(tick)
     }
     frameId = requestAnimationFrame(tick)
     return () => { cancelAnimationFrame(frameId); observer?.disconnect() }
-  }, [])
+  }, [scene])
 
   // Лёгкий параллакс за курсором: сцена чуть поворачивается к мыши.
   useEffect(() => {
@@ -157,16 +183,17 @@ export default function HeroScene() {
     return () => { cancelAnimationFrame(frame); window.removeEventListener('pointermove', onMove) }
   }, [])
 
-  if (!scene.flight) return null
-  const [floorOne, floorTwo] = scene.floors
+  const [floorOne, floorTwo] = floors
 
   return <div className="hero-scene" ref={rootRef} aria-hidden="true" style={{ '--wall-h': `${WALL_HEIGHT}px`, '--gap': `${FLOOR_GAP}px` }}>
     <div className="hs-parallax">
       <div className="hs-camera" ref={cameraRef} style={{ width, height }}>
         <Floor {...floorOne} path={scene.lower} lineRef={lowerRef} routeRef={lowerRouteRef} />
         <Floor {...floorTwo} path={scene.upper} lineRef={upperRef} routeRef={upperRouteRef} />
-        {scene.columns.map((column) => <div key={column.id} className={`hs-column ${column.lift ? 'hs-column-lift' : ''}`} style={{ left: column.x, top: column.y }}><i /><i /></div>)}
-        <div className="hs-climb" style={{ left: scene.climb[0], top: scene.climb[1] }}><i className="hs-climb-beam" ref={beamRef} /></div>
+        {columns.map((column) => <div key={column.id} className={`hs-column ${column.lift ? 'hs-column-lift' : ''}`} style={{ left: column.x, top: column.y }}><i /><i /></div>)}
+        {scene.transfer.kind === 'stairs'
+          ? <div className="hs-stairs" ref={transferRef}>{scene.steps.map((step, number) => <i key={number} style={{ '--p': step.k, transform: `translate3d(${step.x}px, ${step.y}px, ${(step.k * FLOOR_GAP).toFixed(1)}px) rotateZ(${step.angle}deg)` }} />)}</div>
+          : <div className="hs-cabin" ref={cabinRef}><i className="hs-cabin-floor" /><i className="hs-cabin-roof" /><i className="hs-cabin-side" style={{ '--x': '-10px', '--y': '10px', '--a': '0deg' }} /><i className="hs-cabin-side" style={{ '--x': '10px', '--y': '10px', '--a': '-90deg' }} /><i className="hs-cabin-side" style={{ '--x': '10px', '--y': '-10px', '--a': '180deg' }} /><i className="hs-cabin-side hs-cabin-door hs-cabin-door-l" style={{ '--x': '-10px', '--y': '-10px', '--a': '0deg' }} /><i className="hs-cabin-side hs-cabin-door hs-cabin-door-r" style={{ '--x': '0px', '--y': '-10px', '--a': '0deg' }} /></div>}
         <div className="hs-beacon" ref={beaconRef} style={{ left: scene.target[0], top: scene.target[1] }}><i /><i /><b /></div>
         <div className="hs-walker" ref={walkerRef}><i /></div>
       </div>
