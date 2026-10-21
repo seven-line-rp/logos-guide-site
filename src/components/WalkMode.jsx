@@ -67,7 +67,7 @@ export default function WalkMode({ steps, index, onStep, onRepeat, onClose, onAr
       <span className="walk-floor">{step.floor} этаж</span>
       <h2 className="walk-title">{step.title}</h2>
       {step.detail && step.detail !== `${step.floor} этаж` && <p className="walk-detail">{step.detail.replace(new RegExp(`\\. ${step.floor} этаж$`), '')}</p>}
-      {photoRoom && <RoomPhoto key={photoRoom.id} room={photoRoom} className="walk-photo" sizes="(max-width: 680px) 92vw, 420px" />}
+      {photoRoom && <RoomPhoto room={photoRoom} className="walk-photo" sizes="(max-width: 680px) 92vw, 420px" />}
     </div>
 
     <div className="walk-map">{children}</div>

@@ -5,7 +5,10 @@ import { photoSrcSet, photosFor } from '../data'
 // несколько, под фото появляются точки для переключения (кроме карточек-ссылок: dots={false}).
 export default function RoomPhoto({ room, className = '', sizes = '(max-width: 680px) 100vw, 360px', dots = true }) {
   const photos = photosFor(room)
-  const [index, setIndex] = useState(0)
+  // Индекс привязан к помещению: при выборе другого кабинета снимки начинаются с первого.
+  const [pick, setPick] = useState({ id: room.id, index: 0 })
+  const index = pick.id === room.id ? pick.index : 0
+  const setIndex = (next) => setPick({ id: room.id, index: next })
   if (!photos.length) return null
   const current = photos[Math.min(index, photos.length - 1)]
   return <figure className={`room-photo ${className}`}>
