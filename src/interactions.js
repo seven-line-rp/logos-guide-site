@@ -1,5 +1,7 @@
 // Premium micro-interactions: magnetic buttons, tilt cards, ripple, parallax, cursor glow, scroll progress.
-const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+import { isLitePerf } from './perf.js'
+
+const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches || isLitePerf()
 // На телефоне hover-эффекты не работают, но раньше их MutationObserver всё
 // равно пересканировал DOM при каждом обновлении React.
 const coarsePointer = window.matchMedia('(pointer: coarse)').matches

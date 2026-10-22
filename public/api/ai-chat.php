@@ -13,8 +13,9 @@ const AI_DEFAULTS = [
     'api_key' => '',
     'model' => 'deepseek-v4-flash',
     'endpoint' => 'https://api.deepseek.com/chat/completions',
-    'max_tokens' => 1400,
-    'temperature' => 0.8,
+    'max_tokens' => 2200,
+    // 0.6 вместо 0.8: при высокой температуре модель чаще вставляет иероглифы.
+    'temperature' => 0.6,
     // Бюджет: $2 в месяц на ~200 человек. Каждый ответ считается по
     // настоящему расходу токенов (usage от DeepSeek) и ценам ниже — за
     // 1 млн токенов, по дорогому «пиковому» тарифу Flash. Остаток месячного
@@ -312,6 +313,58 @@ function notices_text(): string
     return implode("\n", $lines);
 }
 
+// Иероглифы (китайские, японские, корейские) и полноширинные знаки. Модель
+// иногда «срывается» и вставляет их в русский ответ: вырезаем на сервере, а
+// если ответ почти целиком на китайском, просим переписать (см. ниже).
+const AI_CJK = '/[\x{2E80}-\x{2FDF}\x{3000}-\x{303F}\x{3040}-\x{30FF}\x{3100}-\x{312F}\x{3130}-\x{318F}\x{31A0}-\x{33FF}\x{3400}-\x{4DBF}\x{4E00}-\x{9FFF}\x{A960}-\x{A97F}\x{AC00}-\x{D7AF}\x{F900}-\x{FAFF}\x{FE30}-\x{FE4F}\x{FF00}-\x{FFEF}\x{20000}-\x{2FA1F}]/u';
+
+function has_cjk(string $text): bool
+{
+    return preg_match(AI_CJK, $text) === 1;
+}
+
+function cjk_share(string $text): float
+{
+    $all = (int) preg_match_all('/[\p{L}\p{N}]/u', $text);
+    return $all === 0 ? 0.0 : (int) preg_match_all(AI_CJK, $text) / $all;
+}
+
+function strip_cjk(string $text): string
+{
+    if (!has_cjk($text)) return $text;
+    $text = strtr($text, ['，' => ', ', '、' => ', ', '。' => '. ', '：' => ': ', '；' => '; ', '！' => '! ', '？' => '? ', '（' => ' (', '）' => ') ', '【' => ' [', '】' => '] ', '《' => ' «', '》' => '» ', '“' => ' «', '”' => '» ']);
+    $text = (string) preg_replace(AI_CJK, '', $text);
+    $text = (string) preg_replace(['/[ \t]{2,}/', '/ +([,.:;!?)])/', '/\(\s*\)/', '/[ \t]+$/m'], [' ', '$1', '', ''], $text);
+    return trim($text);
+}
+
+// Правила оформления: формулы LaTeX, таблицы, графики, плашки и метка предмета.
+// Nowdoc: внутри полно знаков $ и \, которые PHP не должен трогать.
+function formatting_rules(): string
+{
+    return <<<'TXT'
+
+# Оформление ответов
+Сайт сам рисует формулы, таблицы, графики и цветные карточки по предметам, поэтому оформляй ответ так:
+- Если вопрос по школьному или колледжному предмету, первой строкой поставь метку [[предмет: ключ]] и больше нигде её не пиши. Ключи: math, physics, chemistry, informatics, russian, literature, history, biology, geography, english, economics, drawing. Программирование — informatics. Про колледж, карту, жизнь и болтовню метку не ставь.
+- Формулы пиши только в LaTeX: в строке между одиночными $…$, отдельным блоком между $$…$$ (сами $$ на отдельных строках). Дроби — \frac{числитель}{знаменатель}, корни — \sqrt{x} и \sqrt[3]{x}, степени x^{2}, индексы x_{1}, умножение \cdot, а также \le \ge \ne \pm \approx \to \infty \sum \int \lim \sin \alpha \beta \pi \Delta и прочее. Единицы — \text{ м/с}. Систему уравнений — \begin{cases} … \end{cases}, матрицу — \begin{pmatrix} … \end{pmatrix}. Никогда не пиши дроби и степени в формулах как 1/2 или x^2 без долларов и не рисуй формулы символами. Не используй \( \) и \[ \]. Цену пиши словами («5 руб.»), а не со знаком $.
+- Решение задачи оформляй плашками-цитатами: «> **Дано:** …», «> **Решение:** …» (шаги нумерованным списком, главные формулы отдельными строками $$…$$), «> **Ответ:** …». Другие плашки: «> **Формула:**», «> **Важно:**», «> **Пример:**». Каждая плашка — отдельный блок, все её строки начинаются с «>».
+- Сравнения, значения, даты, разборы слов, классификации — таблицей Markdown (| А | Б | и строка | --- | --- |).
+- Физика: Дано (в СИ), формула, подстановка, ответ с единицами. Химия: вещества и реакции в $\mathrm{H_2SO_4}$, уравнения $$\mathrm{2H_2 + O_2 \rightarrow 2H_2O}$$, обязательно баланс и условия. Математика: решай по шагам, в конце проверка. Русский язык и литература: правило, примеры, разбор таблицей или списком. История: даты и причины-следствия таблицей или списком. Информатика: код в блоке ```язык и пояснение.
+- Графики рисуй блоком ```chart с одним JSON-объектом без комментариев. Виды:
+  {"type":"function","title":"Парабола y = x²","fn":["x^2"],"from":-5,"to":5,"xLabel":"x","yLabel":"y","points":[[0,0,"вершина"]]}
+  {"type":"line","title":"Скорость тела","xLabel":"t, с","yLabel":"v, м/с","series":[{"name":"опыт","points":[[0,0],[2,4],[4,8]]}]}
+  {"type":"scatter","title":"Измерения","series":[{"points":[[1,2],[2,4.1],[3,5.9]]}]}
+  {"type":"bar","title":"Оценки по дням","labels":["Пн","Вт","Ср"],"values":[3,5,4]}
+  {"type":"pie","title":"Состав воздуха","data":[["Азот",78],["Кислород",21],["Прочее",1]]}
+  Для функций всегда давай формулу в fn (до 6 штук) и границы from/to, точки сам не считай. В формуле допустимы только x, числа, + - * / ^, скобки, |x|, sin cos tan sqrt abs ln log exp и pi. Под графиком коротко поясни, что на нём видно. Схемы цепей, геометрические фигуры и карты блоком chart не рисуются: опиши их словами или таблицей.
+- Код — всегда в блоке ```язык. Заголовки ### только в длинных ответах.
+
+# Язык ответа
+Пиши только на языке собеседника (обычно по-русски). Китайские, японские и корейские иероглифы, полноширинные знаки （，。：） и «двуязычные» вставки в скобках запрещены в любом месте ответа, включая рассуждения, имена и термины: иностранные имена и термины пиши кириллицей или латиницей. Исключение — собеседник сам просит показать иероглифы или разобрать китайский язык.
+TXT;
+}
+
 function system_prompt(array $config): string
 {
     $knowledge = is_file(__DIR__ . '/ai-knowledge.txt') ? (string) file_get_contents(__DIR__ . '/ai-knowledge.txt') : '';
@@ -354,6 +407,7 @@ function system_prompt(array $config): string
 # База знаний путеводителя
 {$knowledge}
 TXT;
+    $prompt .= formatting_rules();
     $notices = notices_text();
     if ($notices !== '') $prompt .= "\n\n# Объявления на карте (действуют сейчас)\n" . $notices;
     if ($college !== '') $prompt .= "\n\n# Текст сайта колледжлогос.рф (обновляется раз в " . (int) $config['college_cache_hours'] . " ч.)\n" . $college;
@@ -470,12 +524,28 @@ if ($images) {
 $variants[] = ['vision' => !$request['images'], 'payload' => $base + ['model' => $config['model'], 'messages' => array_merge([$system], $textOnly), 'thinking' => $thinking]];
 $variants[] = ['vision' => !$request['images'], 'payload' => $base + ['model' => $config['model'], 'messages' => array_merge([$system], $textOnly)]];
 
+$rewritten = false;
 foreach ($variants as $variant) {
     $result = deepseek($config, $variant['payload'], $deep ? 150 : 90);
     // Платим и за неудачные попытки, если DeepSeek прислал расход.
     if ($result['usage']) record_cost(request_cost($config, $result['usage']));
     elseif ($result['status'] === 200) record_cost($deep ? 0.006 : 0.002);
     if ($result['status'] === 200 && $result['reply'] !== '') {
+        // Ответ почти целиком на иероглифах: один раз просим переписать по-русски.
+        if (!has_cjk($question) && cjk_share($result['reply']) > 0.2 && !$rewritten) {
+            $rewritten = true;
+            $payload = $variant['payload'];
+            $payload['messages'][] = ['role' => 'assistant', 'content' => mb_substr($result['reply'], 0, 1200)];
+            $payload['messages'][] = ['role' => 'user', 'content' => 'В ответе были иероглифы. Перепиши ответ целиком только на русском языке, без китайских, японских и корейских символов.'];
+            $again = deepseek($config, $payload, $deep ? 150 : 90);
+            if ($again['usage']) record_cost(request_cost($config, $again['usage']));
+            if ($again['status'] === 200 && $again['reply'] !== '') $result = $again;
+        }
+        if (!has_cjk($question)) {
+            $result['reply'] = strip_cjk($result['reply']);
+            $result['reasoning'] = strip_cjk($result['reasoning']);
+        }
+        if ($result['reply'] === '') $result['reply'] = 'Не получилось сформулировать ответ. Попробуйте переписать вопрос.';
         $body = ['reply' => $result['reply'], 'vision' => $variant['vision'], 'left' => $left];
         if ($deep && $result['reasoning'] !== '') $body['reasoning'] = mb_substr($result['reasoning'], 0, 8000);
         respond(200, $body);

@@ -5,6 +5,7 @@ import { composePlanArt } from '../map-art.js'
 import { buildRouteOptions } from '../map-routing.js'
 import { planSizes } from '../map-geometry.js'
 import { useLanguage } from '../i18n.js'
+import { isLitePerf } from '../perf.js'
 import { FLIGHT_SECONDS, FLOOR_GAP, HERO_ROUTES, WALL_HEIGHT, buildFlight, floorDoors, floorWalls, stairSteps, transferColumns } from '../hero-scene-model.js'
 
 // Декорация первого экрана: корпус в 3D. Пол каждого этажа — настоящий план,
@@ -171,7 +172,7 @@ export default function HeroScene() {
         walker.style.opacity = frame.walker.visible ? '1' : '0'
       }
     }
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || isLitePerf()) {
       const still = scene.flight(0.999)
       apply({ ...still, routeOpacity: 1, walker: { ...still.walker, visible: false } })
       return () => observer?.disconnect()

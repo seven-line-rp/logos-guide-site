@@ -7,6 +7,7 @@ import { composePlanArt } from '../map-art.js'
 import { planSizes, roomOutline } from '../map-geometry.js'
 import { floorDoors, floorWalls } from '../hero-scene-model.js'
 import { useLanguage } from '../i18n.js'
+import { isLitePerf } from '../perf.js'
 import { FOLLOW_ZOOM, TILT_3D, cameraTransform, clampCamera, fitCamera, flyDuration, flyFrame, headingYaw, panCamera, pathData, pathHeading, projectPoint, zoomCamera } from '../route-scene-model.js'
 
 // Интерактивная карта маршрута. Пол — настоящий план, стены и двери подняты
@@ -107,7 +108,7 @@ export default function RouteScene({ floor, points = [], progress = null, follow
   useLayoutEffect(() => {
     cancelAnimationFrame(flight.current)
     const from = shown.current
-    const reduced = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    const reduced = isLitePerf() || (typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)
     if (!animated || !from || reduced) { drawRef.current(cam); return undefined }
     const duration = flyDuration(from, cam)
     const startedAt = performance.now()

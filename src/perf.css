@@ -1,0 +1,38 @@
+/* Лёгкий режим (html[data-perf='lite'], см. perf.js) и страховка для телефонов.
+   Подключается последним: убирает всё, что заставляет слабую видеокарту
+   перерисовывать экран на каждом кадре. */
+
+/* Размытие фона (backdrop-filter) на телефонах не нужно никогда: оно тормозит
+   прокрутку, а у шапки ещё и ломает position: fixed у вложенных элементов —
+   из-за этого меню и текст «улетали» и перекрывались. */
+@media (max-width: 960px) {
+  .site-header, .hd, .hd-scrim, .hd-menu-inner, .search-backdrop, .search-dialog, .welcome-backdrop, .share-backdrop,
+  .home-search, .map-settings-panel, .room-detail-panel, .game-panel, .directory-card, .floor-tab,
+  .theme-toggle, .search-trigger, .mobile-menu-toggle, .floor-map-zoom-controls, .floor-map-hint, .nv-floors, .nv-view,
+  .nv-pick, .ex-card, .rs-controls button, .start-progress, .arcade-overlay {
+    -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+  }
+  .site-header, .hd { background: var(--surface, #fff) !important; }
+}
+
+:root[data-perf='lite'] *, :root[data-perf='lite'] *::before, :root[data-perf='lite'] *::after {
+  -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+  animation-duration: .01ms !important; animation-iteration-count: 1 !important; animation-delay: 0s !important;
+  transition-duration: .01ms !important; transition-delay: 0s !important;
+  scroll-behavior: auto !important;
+  will-change: auto !important;
+  text-shadow: none !important;
+}
+:root[data-perf='lite'] .site-header, :root[data-perf='lite'] .hd { background: var(--surface, #fff) !important; }
+/* Тени и мягкие подложки — самое дорогое при перерисовке. */
+:root[data-perf='lite'] :is(.day-card, .quick-place-card, .directory-card, .service-card, .game-panel, .room-detail-panel, .map-settings-panel, .search-dialog, .welcome-dialog, .ex-card, .nv-pick, .nv-floors, .nv-view, .rs-controls button, .ai-promo, .ai-promo-button, .hd-menu-inner, .header-cta, .button) { box-shadow: none !important; }
+:root[data-perf='lite'] [style*='filter'], :root[data-perf='lite'] :is(.hero-scene, .hs-camera, .quick-place-photo, .brand-mark) { filter: none !important; }
+:root[data-perf='lite'] .reveal { opacity: 1 !important; transform: none !important; filter: none !important; }
+/* Украшения: свечение за курсором, полоса прокрутки, ripple, большие SVG-звёзды. */
+:root[data-perf='lite'] :is(.cursor-glow, .scroll-progress, .ripple, .ai-promo-art, .hero-scene-caption) { display: none !important; }
+:root[data-perf='lite'] .ai-promo { grid-template-columns: 1fr; min-height: 0; }
+:root[data-perf='lite'] .ai-promo::after { display: none; }
+/* Бесконечные «дыхания» и бегущие линии маршрута. */
+:root[data-perf='lite'] :is(.plan-route-flow, .plan-route-pulse, .plan-route-guide-pulse, .voice-search, .walk) { animation: none !important; }
+/* Длинные страницы рисуем по мере прокрутки. */
+:root[data-perf='lite'] :is(.directory-card, .day-card, .faq-item, .teacher-card) { content-visibility: auto; contain-intrinsic-size: auto 120px; }
