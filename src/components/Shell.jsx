@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { ArrowUpRight, BookOpen, Bot, CalendarDays, Check, Compass, Gamepad2, GraduationCap, History, Info, LayoutGrid, ListChecks, Map as MapIcon, MapPin, Moon, Navigation, Search, Sparkles, Sun, Type, Users, X } from 'lucide-react'
+import { ArrowUpRight, BookOpen, Bot, CalendarDays, Check, Compass, Flag, Gamepad2, GraduationCap, History, Info, LayoutGrid, ListChecks, Map as MapIcon, MapPin, Moon, Navigation, Search, Sparkles, Sun, Type, Users, X } from 'lucide-react'
 import { navigation, quickPlaces, rooms } from '../data'
 import { clearRecentPlaces, readRecentPlaces, rememberPlace } from '../places.js'
 import { readTextSize, setTextSize } from '../text-size.js'
@@ -49,13 +49,14 @@ const menuGroups = [
   { title: 'Учёба', items: [
     { to: '/schedule', label: 'Моё расписание', hint: 'Пары и звонки', icon: CalendarDays, tone: 'green' },
     { to: '/start', label: 'Первая неделя', hint: 'Чек-лист для новичков', icon: ListChecks, tone: 'blue' },
-    { to: '/ai', label: 'ИИ-помощник', badge: 'ТЕСТ', hint: 'Спросите о чём угодно', icon: Bot, tone: 'violet' },
+    { to: '/ai', label: 'ИИ-помощник', badge: 'АЛЬФА', hint: 'Спросите о чём угодно', icon: Bot, tone: 'violet' },
   ] },
   { title: 'Познакомиться', items: [
     { to: '/tour', label: 'Экскурсия в 3D', hint: 'Прогулка по колледжу', icon: Compass, tone: 'amber' },
     { to: '/games', label: 'Игры', hint: 'Квизы по плану', icon: Gamepad2, tone: 'pink' },
     { to: '/about', label: 'О проекте', hint: 'Команда и идея', icon: Info, tone: 'slate' },
     { to: '/docs', label: 'Документация', hint: 'Как всё устроено', icon: BookOpen, tone: 'slate' },
+    { to: '/feedback', label: 'Сообщить о проблеме', hint: 'Баг, идея, ошибка ИИ', icon: Flag, tone: 'pink' },
   ] },
 ]
 

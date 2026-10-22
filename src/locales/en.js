@@ -250,7 +250,7 @@ Object.assign(english, { 'м': 'm' })
 // ЛОГОС AI (страница /ai и баннер на главной). Реплики чата и названия
 // чатов не переводятся — см. src/components/ai-message.js.
 Object.assign(english, {
-  'ИИ-Агент': 'AI agent', 'ТЕСТ': 'TEST', 'ИИ-Агент | Путеводитель колледжа': 'AI agent | Campus guide',
+  'ИИ-Агент': 'AI agent', 'ТЕСТ': 'TEST', 'АЛЬФА': 'ALPHA', 'ИИ-Агент | Путеводитель колледжа': 'AI agent | Campus guide',
   'ЛОГОС AI': 'LOGOS AI', 'ЛОГОС AI, ТЕСТОВЫЙ РЕЖИМ': 'LOGOS AI, TEST MODE', 'Спросите': 'Ask', 'путеводитель.': 'the guide.',
   'Знает план корпуса, разделы сайта и материалы с': 'Knows the floor plan, the site sections and the materials from',
   '. Понимает картинки, строит маршруты и помогает с учёбой. Отвечает нейросеть DeepSeek, она может ошибаться, важное уточняйте в колледже.': '. Understands pictures, plans routes and helps with studies. Answers come from the DeepSeek model, it can be wrong, so check anything important with the college.',

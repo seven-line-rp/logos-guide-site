@@ -1,9 +1,11 @@
 import { functionalStorageAllowed } from './consent.js'
+import { calloutKind, cleanReply, parseChartSpec, splitSubject } from './ai-format.js'
 
 // Клиентская часть ИИ-агента: запрос к public/api/ai-chat.php, хранение
 // чатов в браузере, маскировка мата и разбор ответа. Ответ модели — Markdown,
-// но в страницу он попадает только как текст и ссылки (без innerHTML),
-// поэтому разметка из ответа не исполняется.
+// но в страницу он попадает только как текст и ссылки: HTML из ответа не
+// исполняется. Единственное исключение — формулы: их превращает в вёрстку KaTeX
+// (trust: false), он сам экранирует всё лишнее.
 
 export const AI_ENDPOINT = '/api/ai-chat.php'
 export const MAX_HISTORY = 20
@@ -46,7 +48,8 @@ export async function askAgent(messages, { signal, deep = false, fetchImpl = fet
   }
   const data = await response.json().catch(() => null)
   if (response.ok && typeof data?.reply === 'string') {
-    return { reply: data.reply, reasoning: typeof data.reasoning === 'string' ? data.reasoning : '', vision: data.vision !== false, left: Number.isFinite(data.left) ? data.left : null }
+    const question = messages[messages.length - 1]?.content || ''
+    return { reply: cleanReply(data.reply, question), reasoning: typeof data.reasoning === 'string' ? cleanReply(data.reasoning, question) : '', vision: data.vision !== false, left: Number.isFinite(data.left) ? data.left : null }
   }
   if (data?.error) throw Object.assign(new Error(data.error), { left: Number.isFinite(data.left) ? data.left : null })
   if (response.status === 404) throw new Error('ИИ-агент ещё не загружен на этот сервер.')
@@ -185,7 +188,9 @@ export function safeHref(href) {
   return null
 }
 
-const inlinePattern = /\*\*([^*]+)\*\*|\[([^\]]+)\]\(([^)\s]+)\)|(https:\/\/[^\s)<]+[^\s)<.,!?;:])|`([^`]+)`/g
+// Формулы: $…$ (без пробела после открывающего и перед закрывающим знаком, чтобы
+// «5$ и 10$» не считалось формулой) и \(…\). Курсив: *текст* и _текст_.
+const inlinePattern = /\*\*([^*]+)\*\*|\[([^\]]+)\]\(([^)\s]+)\)|(https:\/\/[^\s)<]+[^\s)<.,!?;:])|`([^`]+)`|\$(?=\S)([^$\n]*?\S)\$(?!\d)|\\\(([^\n]+?)\\\)|(?<![\w*])\*(?=\S)([^*\n]*?\S)\*(?![\w*])/g
 
 // Строка → список кусков: text, strong, code, link.
 export function parseInline(text) {
@@ -195,6 +200,8 @@ export function parseInline(text) {
     if (match.index > last) parts.push({ type: 'text', text: text.slice(last, match.index) })
     if (match[1]) parts.push({ type: 'strong', text: match[1] })
     else if (match[5]) parts.push({ type: 'code', text: match[5] })
+    else if (match[6] ?? match[7]) parts.push({ type: 'math', text: match[6] ?? match[7] })
+    else if (match[8]) parts.push({ type: 'em', text: match[8] })
     else {
       const label = match[2] ?? match[4]
       const link = safeHref(match[3] ?? match[4])
@@ -206,20 +213,75 @@ export function parseInline(text) {
   return parts
 }
 
-// Текст → блоки: абзацы, заголовки, списки и блоки кода (```lang … ```).
+const tableRow = /^\s*\|.*\|\s*$/
+const tableRule = /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/
+
+function splitRow(line) {
+  return line.trim().replace(/^\|/, '').replace(/\|$/, '').split(/(?<!\\)\|/).map((cell) => cell.trim().replace(/\\\|/g, '|'))
+}
+
+// Текст → блоки: абзацы, заголовки, списки, цитаты-плашки, таблицы, формулы,
+// графики (```chart) и блоки кода (```lang … ```).
 export function parseBlocks(text) {
   const blocks = []
   let paragraph = []
   let code = null
+  let math = null
   const flush = () => { if (paragraph.length) blocks.push({ type: 'p', text: paragraph.join(' ') }); paragraph = [] }
-  for (const raw of String(text).replace(/\r\n?/g, '\n').split('\n')) {
+  const closeCode = () => {
+    if (code.lang.toLowerCase() === 'chart') {
+      const spec = parseChartSpec(code.text)
+      blocks.push(spec ? { type: 'chart', spec } : { type: 'code', lang: 'json', text: code.text })
+    } else blocks.push(code)
+    code = null
+  }
+  const lines = String(text).replace(/\r\n?/g, '\n').split('\n')
+  for (let index = 0; index < lines.length; index += 1) {
+    const raw = lines[index]
     const fence = raw.trim().match(/^```\s*([\w+#.-]*)\s*$/)
     if (code) {
-      if (fence && !fence[1]) { blocks.push(code); code = null } else code.text += (code.text ? '\n' : '') + raw
+      if (fence && !fence[1]) closeCode(); else code.text += (code.text ? '\n' : '') + raw
+      continue
+    }
+    if (math) {
+      const end = raw.indexOf(math.close)
+      if (end >= 0) { math.text += ` ${raw.slice(0, end)}`; blocks.push({ type: 'math', text: math.text.trim() }); math = null } else math.text += ` ${raw}`
       continue
     }
     if (fence) { flush(); code = { type: 'code', lang: fence[1], text: '' }; continue }
     const line = raw.trim()
+    // Формула на отдельных строках: $$ … $$ или \[ … \].
+    const display = line.match(/^(?:\$\$([\s\S]*)|\\\[([\s\S]*))$/)
+    if (display) {
+      flush()
+      const close = line.startsWith('$$') ? '$$' : '\\]'
+      const body = display[1] ?? display[2]
+      const end = body.indexOf(close)
+      if (end >= 0) blocks.push({ type: 'math', text: body.slice(0, end).trim() })
+      else math = { close, text: body }
+      continue
+    }
+    if (tableRow.test(line) && tableRule.test(lines[index + 1] || '')) {
+      flush()
+      const head = splitRow(line)
+      const aligns = splitRow(lines[index + 1]).map((cell) => (cell.startsWith(':') && cell.endsWith(':') ? 'center' : cell.endsWith(':') ? 'right' : ''))
+      const rows = []
+      index += 2
+      while (index < lines.length && tableRow.test(lines[index].trim())) { rows.push(splitRow(lines[index])); index += 1 }
+      index -= 1
+      blocks.push({ type: 'table', head, aligns, rows: rows.slice(0, 60) })
+      continue
+    }
+    if (/^>\s?/.test(line)) {
+      flush()
+      const quote = []
+      while (index < lines.length && /^>\s?/.test(lines[index].trim())) { quote.push(lines[index].trim().replace(/^>\s?/, '')); index += 1 }
+      index -= 1
+      const label = quote[0].match(/^\*\*([^*]+)\*\*/)?.[1] || quote[0].match(/^([А-Яа-яЁёA-Za-z ]{3,24}):/)?.[1] || ''
+      blocks.push({ type: 'callout', kind: calloutKind(label), blocks: parseBlocks(quote.join('\n')) })
+      continue
+    }
+    if (/^(?:-{3,}|\*{3,}|_{3,})$/.test(line)) { flush(); blocks.push({ type: 'hr' }); continue }
     const bullet = line.match(/^[-*•]\s+(.*)$/)
     const numbered = line.match(/^\d+[.)]\s+(.*)$/)
     const heading = line.match(/^#{1,6}\s+(.*)$/)
@@ -236,8 +298,9 @@ export function parseBlocks(text) {
     paragraph.push(line)
   }
   flush()
-  // Модель могла оборвать ответ внутри блока кода: показываем то, что есть.
-  if (code) blocks.push(code)
+  // Модель могла оборвать ответ внутри блока кода или формулы: показываем то, что есть.
+  if (code) closeCode()
+  if (math) blocks.push({ type: 'math', text: math.text.trim() })
   return blocks
 }
 
@@ -245,7 +308,7 @@ export function parseBlocks(text) {
 export function answerActions(text) {
   const actions = []
   const seen = new Set()
-  for (const part of parseBlocks(text).filter((block) => block.type !== 'code').flatMap((block) => block.items || [block.text]).flatMap(parseInline)) {
+  for (const part of parseBlocks(splitSubject(text).text).filter((block) => ['p', 'h', 'ul', 'ol'].includes(block.type)).flatMap((block) => block.items || [block.text]).flatMap(parseInline)) {
     if (part.type !== 'link' || !part.internal || seen.has(part.href)) continue
     const kind = part.href.startsWith('/route') ? 'route' : part.href.startsWith('/map') ? 'map' : ''
     if (!kind) continue
@@ -267,12 +330,18 @@ export function routeFromLink(href) {
 
 // Текст без Markdown: для копирования и озвучки.
 export function plainText(text) {
-  return parseBlocks(text).map((block) => {
-    if (block.type === 'code') return block.text
+  const flat = (blocks) => blocks.map((block) => {
     const line = (value) => parseInline(value).map((part) => part.text).join('')
+    if (block.type === 'code') return block.text
+    if (block.type === 'math') return block.text
+    if (block.type === 'chart') return block.spec.title ? `[график: ${block.spec.title}]` : '[график]'
+    if (block.type === 'hr') return ''
+    if (block.type === 'table') return [block.head, ...block.rows].map((row) => row.map(line).join(' | ')).join('\n')
+    if (block.type === 'callout') return flat(block.blocks)
     if (block.items) return block.items.map((item) => `— ${line(item)}`).join('\n')
     return line(block.text)
-  }).join('\n')
+  }).filter((part) => part !== '').join('\n')
+  return flat(parseBlocks(splitSubject(text).text))
 }
 
 export function chatToMarkdown(chat) {

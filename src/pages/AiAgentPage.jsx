@@ -5,7 +5,7 @@ import { ArrowUp, Brain, Check, ChevronDown, Code, Copy, Download, GraduationCap
 import { answerActions, askAgent, routeFromLink, chatTitle, chatToMarkdown, compressImage, containsProfanity, createChat, loadChats, maskProfanity, MAX_IMAGES, MAX_INPUT, plainText, saveChats } from '../ai-chat.js'
 import { functionalStorageAllowed, onConsentChange } from '../consent.js'
 import { speakText, stopSpeech } from '../speech.js'
-import { AiMessageText, RawText } from '../components/ai-message.js'
+import { AiMessageText, RawText, messageSubject } from '../components/ai-message.js'
 import RoutePreview from '../components/RoutePreview.jsx'
 import { rooms } from '../data.js'
 
@@ -305,7 +305,7 @@ export default function AiAgentPage() {
   const sidebarView = <>
     <aside className="ai-sidebar" aria-label="Чаты">
       <div className="ai-sidebar-top">
-        <span className="ai-brand"><span className="ai-mark" aria-hidden="true"><Sparkles size={14} /></span>ЛОГОС AI<span className="nav-badge">ТЕСТ</span></span>
+        <span className="ai-brand"><span className="ai-mark" aria-hidden="true"><Sparkles size={14} /></span>ЛОГОС AI<span className="nav-badge">АЛЬФА</span></span>
         <button className="ai-icon" type="button" onClick={() => (narrow ? setSidebar(false) : setCollapsed(true))} aria-label="Скрыть список чатов" title="Скрыть"><PanelLeft size={18} /></button>
       </div>
       <button className="ai-new" type="button" onClick={newChat}><SquarePen size={16} /> Новый чат</button>
@@ -367,7 +367,7 @@ export default function AiAgentPage() {
             const preview = routeLink ? routeFromLink(routeLink.href) : null
             return <div key={index} className={`ai-message ai-message-assistant ${message.error ? 'ai-message-error' : ''}`}>
               {message.reasoning && <Reasoning text={message.reasoning} />}
-              <div className="ai-text">{message.error && <TriangleAlert size={16} className="ai-error-icon" />}<AiMessageText text={message.content} /></div>
+              <div className={`ai-text${messageSubject(message.content) ? ` ai-subject ai-subject-${messageSubject(message.content)}` : ''}`}>{message.error && <TriangleAlert size={16} className="ai-error-icon" />}<AiMessageText text={message.content} /></div>
               {message.error && index === messages.length - 1 && <button type="button" className="ai-chip" onClick={regenerate}>Повторить</button>}
               {preview && <RoutePreview {...preview} live={index === lastAssistant} />}
               {actions.length > 0 && <div className="ai-actions">{actions.map((action) => <Link key={action.href} to={action.href} className="ai-chip">{action.kind === 'route' ? <Route size={14} /> : <MapPin size={14} />}<RawText text={action.label} /></Link>)}</div>}
