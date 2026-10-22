@@ -96,11 +96,18 @@ function endpoint(value) {
 
   const access = roomAccess[room.id]
   if (!access) return null
+  const main = doorway(room, value, access)
+  // Второй вход (например, в раздевалку из холла): маршрут выбирает ближайший.
+  if (access.alt) main.alt = doorway(room, value, { ...access.alt, alt: undefined })
+  return main
+}
+
+function doorway(room, value, access) {
   const { door, branch } = access
   const anchor = branch === 'west' ? [73, door[1]] : branch === 'hall' || branch === 'auditorium' ? [579, 168] :
     branch === 'library' ? [73, 168] : [door[0], 168]
   let path = branch === 'library' ? [door, [116, 126], [73, 126], anchor] :
-    branch === 'auditorium' ? [door, [579, door[1]], anchor] : [door, anchor]
+    branch === 'auditorium' || branch === 'hall' ? [door, [579, door[1]], anchor] : [door, anchor]
 
   if (typeof value !== 'string') {
     const from = [value.x, value.y]
@@ -112,8 +119,18 @@ function endpoint(value) {
   return { floor: room.floor, anchor, branch: branch === 'west' ? 'west' : 'main', path: cleanPath(path), label: typeof value === 'string' ? name(room) : 'Метка на плане', roomId: room.id }
 }
 
+// У помещения может быть второй вход (`alt` в roomAccess): из всех пар входов берём самый короткий путь.
 function walk(from, to) {
   if (!from || !to || from.floor !== to.floor) return emptyRoute
+  let best = null
+  for (const a of [from, from.alt].filter(Boolean)) for (const b of [to, to.alt].filter(Boolean)) {
+    const route = walkDoors(a, b)
+    if (!best || route.length < best.length) best = route
+  }
+  return best
+}
+
+function walkDoors(from, to) {
   const junction = [73, 168]
   const middle = from.branch !== to.branch ? [junction] : []
   const points = cleanPath([...from.path, ...middle, ...[...to.path].reverse()])

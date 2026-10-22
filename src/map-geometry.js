@@ -42,9 +42,10 @@ export const planRoomBounds = {
   'stairs-west-1': [0, 322, 62, 62],
   'class-139': [86, 306, 63.3, 68.4],
   'class-138': [86, 374.4, 63.3, 68.3],
-  // Медицинский блок под кабинетом 138: медпункт примыкает к коридору
-  // западного крыла, кабинет врача — отдельная комната за медпунктом.
-  'medical-post': [86, 442.7, 33, 25.3],
+  // Медицинский блок под кабинетом 138. Из коридора западного крыла открыт
+  // небольшой холл (x=86…119, y=442.7…458); из него двери ведут в медпункт
+  // (вниз, y=458…468) и в кабинет врача (вправо, на всю высоту блока).
+  'medical-post': [86, 458, 33, 10],
   'medical-doctor': [119, 442.7, 30.3, 25.3],
   'class-162': [0, 419, 62, 49],
   'training-centre-113': [0, 468, 149.3, 84],
@@ -117,6 +118,7 @@ export const circulation = {
     [[0, 155.5], [610, 155.5], [610, 180], [0, 180]],
     [[62, 179], [86, 179], [86, 468], [62, 468]],
     [[548, 179], [610, 179], [610, 242], [548, 242]],
+    [[86, 442.7], [119, 442.7], [119, 458], [86, 458]],
   ],
   2: [
     [[0, 114], [144, 114], [144, 182], [0, 182]],
@@ -134,9 +136,9 @@ export const roomAccess = {
   'academic-office': { door: [412, 156], branch: 'main' },
   'lift-1': { door: [537, 156], branch: 'main' },
   'stairs-north-1': { door: [579, 156], branch: 'main' },
-  // The auditorium opens off the entrance hall, not straight through its
-  // north wall at the far end of the main corridor.
-  'auditorium-104': { door: [610, 205], branch: 'auditorium' },
+  // Актовый зал открывается прямо в конец главного коридора (дверь на всю
+  // ширину коридора, x=610, y=156…180), а не из холла.
+  'auditorium-104': { door: [610, 168], branch: 'main' },
   'class-119': { door: [62, 246], branch: 'west' },
   'class-118': { door: [62, 294], branch: 'west' },
   'toilet-men-1': { door: [86, 205], branch: 'west' },
@@ -145,17 +147,17 @@ export const roomAccess = {
   'aerodynamics-120': { door: [261, 181], branch: 'main' },
   'stairs-middle-1': { door: [327, 181], branch: 'main' },
   'director-149': { door: [359, 181], branch: 'main' },
-  'changing-room': { door: [505, 181], branch: 'main' },
+  // Два входа: из коридора и из холла (восточная стена, x=548).
+  'changing-room': { door: [505, 181], branch: 'main', alt: { door: [548, 212], branch: 'hall' } },
   'hall-1': { door: [579, 179], branch: 'hall' },
   'entrance-1': { door: [579, 241], branch: 'hall' },
   'stairs-west-1': { door: [62, 354], branch: 'west' },
   'class-139': { door: [86, 367], branch: 'west' },
   'class-138': { door: [86, 434], branch: 'west' },
-  // В медпункт — дверь из коридора; в кабинет врача — через медпункт
-  // (на плане между ними нарисована отдельная дверь), поэтому маршрут
-  // законно проходит по медпункту: это указано в `via`.
-  'medical-post': { door: [86, 455], branch: 'west' },
-  'medical-doctor': { door: [121, 455], branch: 'west', via: 'medical-post' },
+  // Обе двери открываются в маленький холл у коридора: в медпункт — дверь в
+  // его верхней стене (x=95…110), в кабинет врача — в левой (y=447…458).
+  'medical-post': { door: [103, 457.5], branch: 'west' },
+  'medical-doctor': { door: [118.5, 452.5], branch: 'west' },
   'class-162': { door: [62, 450], branch: 'west' },
   'training-centre-113': { door: [73, 468], branch: 'west' },
 

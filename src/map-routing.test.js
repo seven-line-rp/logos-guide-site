@@ -54,8 +54,7 @@ test('routes stay in circulation or in their own rooms, never through another ro
       if (!leg) continue
       const allowed = [from.id, to.id, 'hall-1']
       if (route.transfer) allowed.push(route.transfer.startId, route.transfer.endId)
-      // Кабинет врача находится за медпунктом, и маршрут законно идёт через
-      // него — это единственный проход, помеченный в roomAccess как `via`.
+      // Помещение может открываться через другое (`via` в roomAccess).
       for (const room of [from, to]) {
         const via = roomAccess[room.id]?.via
         if (via) allowed.push(via)
@@ -88,12 +87,11 @@ test('every leg carries step guides that point at a real vertex of the route', (
 test('corridor guides name the wing and never repeat the same vertex twice', () => {
   const cross = buildIndoorRoute('class-162', 'auditorium-104', 'stairs').byFloor[1]
   // Подсказки стоят в начале своих участков: поворот в западное крыло -> вход
-  // в главный коридор -> выход в холл.
-  assert.deepEqual(cross.guides.map((guide) => guide.index), [1, 2, 3])
+  // в главный коридор, который ведёт к двери актового зала в его конце.
+  assert.deepEqual(cross.guides.map((guide) => guide.index), [1, 2])
   assert.equal(cross.guides[0].kind, 'west-corridor')
   assert.deepEqual(cross.points[cross.guides[0].index], [73, 450], 'точка стоит там, где начинается поворот')
   assert.match(cross.guides[1].title, /Главный коридор, к холлу/)
-  assert.match(cross.guides[2].say, /актового зала/)
   assert.deepEqual(cross.points[cross.guides[1].index], [73, 168], 'главный коридор начинается от западного перекрёстка')
   const secondFloor = buildIndoorRoute('radio-lab-228', 'canteen', 'stairs').byFloor[2]
   assert.match(secondFloor.guides[0].say, /лабораторий/, 'на втором этаже восточный коридор ведёт к лабораториям')
@@ -101,11 +99,19 @@ test('corridor guides name the wing and never repeat the same vertex twice', () 
   assert.match(firstFloor.guides[0].say, /западного крыла/)
 })
 
-test('the auditorium is reached through the entrance hall, not through its north wall', () => {
+test('the auditorium door is at the far end of the main corridor', () => {
   const leg = calculateIndoorRoute('canteen', 'auditorium-104', 1)
-  assert.deepEqual(leg.points.at(-1), [610, 205])
-  assert.ok(leg.points.some(([x, y]) => x === 579 && y === 205))
-  checkLeg(leg, 1, ['canteen', 'hall-1', 'auditorium-104'])
+  assert.deepEqual(leg.points.at(-1), [610, 168])
+  assert.ok(leg.points.every(([, y]) => y <= 168), 'маршрут не заходит в холл')
+  checkLeg(leg, 1, ['canteen', 'auditorium-104'])
+})
+
+test('the changing room has a second door to the hall and routes pick the nearer one', () => {
+  const fromEntrance = buildIndoorRoute('entrance-1', 'changing-room', 'stairs').byFloor[1]
+  assert.deepEqual(fromEntrance.points.at(-1), [548, 212], 'от входа — через холл, в восточную дверь')
+  checkLeg(fromEntrance, 1, ['entrance-1', 'changing-room', 'hall-1'])
+  const fromCanteen = buildIndoorRoute('canteen', 'changing-room', 'stairs').byFloor[1]
+  assert.deepEqual(fromCanteen.points.at(-1), [505, 181], 'из западного крыла — через коридор, в северную дверь')
 })
 
 test('west and north stairwells connect to their counterpart and use the nearer stairwell', () => {
@@ -142,12 +148,14 @@ test('the medical block below room 138 has two rooms reachable on foot', () => {
   const doctor = rooms.find((room) => room.id === 'medical-doctor')
   assert.ok(post && doctor, 'оба медкабинета описаны в справочнике')
   assert.ok(post.floor === 1 && doctor.floor === 1)
-  // Медпункт открывается прямо в коридор, кабинет врача — через медпункт.
+  // Обе двери открываются в маленький холл у коридора: в медпункт — сверху,
+  // в кабинет врача — слева. Проходить через медпункт не нужно.
   const toPost = buildIndoorRoute('entrance-1', 'medical-post', 'stairs')
   checkLeg(toPost.byFloor[1], 1, ['entrance-1', 'medical-post', 'hall-1'])
   const toDoctor = buildIndoorRoute('entrance-1', 'medical-doctor', 'stairs')
   assert.deepEqual(toDoctor.byFloor[1].points.at(-1), roomAccess['medical-doctor'].door)
-  checkLeg(toDoctor.byFloor[1], 1, ['entrance-1', 'medical-doctor', 'hall-1', 'medical-post'])
+  checkLeg(toDoctor.byFloor[1], 1, ['entrance-1', 'medical-doctor', 'hall-1'])
+  assert.deepEqual(post.floor === 1 && roomOutline('medical-post').map(([, y]) => y), [458, 458, 468, 468], 'медпункт — под холлом, y=458…468')
   const doctorToPost = buildIndoorRoute('medical-doctor', 'medical-post', 'stairs')
   checkLeg(doctorToPost.byFloor[1], 1, ['medical-doctor', 'medical-post', 'hall-1'])
 })
