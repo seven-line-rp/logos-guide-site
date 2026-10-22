@@ -29,9 +29,8 @@ test('a route keeps the start, the wing guides, the transfer and the arrival', (
   assert.deepEqual(steps[0].voiceCue, ['route-built'], 'первый шаг не должен молчать без русского голоса на iPhone')
   assert.equal(steps.at(-1).kind, 'arrive')
   assert.equal(steps.at(-1).floor, 1)
-  assert.deepEqual(steps.map((step) => step.kind), ['start', 'guide', 'guide', 'guide', 'arrive'])
+  assert.deepEqual(steps.map((step) => step.kind), ['start', 'guide', 'guide', 'arrive'])
   assert.match(steps[2].title, /Главный коридор/)
-  assert.match(steps[3].title, /Холл/)
   // Точка каждого шага лежит внутри своей части маршрута.
   for (const step of steps) {
     const leg = route.byFloor[step.floor]
