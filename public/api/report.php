@@ -1,6 +1,6 @@
 <?php
-// «Сообщить о неточности»: принимает короткое сообщение о помещении на карте
-// и складывает его в файл на сервере. Без базы данных и без внешних сервисов.
+// Обращения с сайта: «Сообщить о неточности» на карте (помещение) и общая форма
+// «Сообщить о проблеме» (/feedback: баг, идея, ошибка ИИ). Складывает всё в файл на сервере. Без базы данных и без внешних сервисов.
 // Где лежат сообщения, как их читать и как включить письма — deploy/reports.md.
 // Совместим с PHP 7.4+.
 
@@ -9,7 +9,9 @@ declare(strict_types=1);
 date_default_timezone_set('Europe/Moscow');
 
 const REPORT_KINDS = ['wrong-place', 'closed', 'moved', 'wrong-name', 'other'];
-const REPORT_MAX_TEXT = 600;
+// Общая форма сайта: помещение не нужно.
+const SITE_KINDS = ['bug', 'idea', 'ai', 'question'];
+const REPORT_MAX_TEXT = 1200;
 const REPORT_PER_IP_HOUR = 5;
 const REPORT_PER_DAY = 200;
 
@@ -115,22 +117,33 @@ if (!is_array($data)) respond(400, ['error' => 'Не получилось про
 
 $room = clean_text($data['room'] ?? '', 60);
 $kind = clean_text($data['kind'] ?? '', 20);
+$site = in_array($kind, SITE_KINDS, true);
+$contact = clean_text($data['contact'] ?? '', 80);
+$agent = clean_text($data['agent'] ?? '', 160);
 $text = clean_text($data['text'] ?? '', REPORT_MAX_TEXT);
 $page = clean_text($data['page'] ?? '', 200);
-if (!preg_match('/^[a-z0-9-]{1,60}$/', $room)) respond(400, ['error' => 'Не указано помещение.']);
-if (!in_array($kind, REPORT_KINDS, true)) respond(400, ['error' => 'Выберите, что не так.']);
-if ($kind === 'other' && mb_strlen($text) < 3) respond(400, ['error' => 'Опишите, что не так, хотя бы парой слов.']);
+if ($site) {
+    $room = '';
+    if (mb_strlen($text) < 5) respond(400, ['error' => 'Опишите проблему хотя бы парой слов.']);
+} else {
+    if (!preg_match('/^[a-z0-9-]{1,60}$/', $room)) respond(400, ['error' => 'Не указано помещение.']);
+    if (!in_array($kind, REPORT_KINDS, true)) respond(400, ['error' => 'Выберите, что не так.']);
+    if ($kind === 'other' && mb_strlen($text) < 3) respond(400, ['error' => 'Опишите, что не так, хотя бы парой слов.']);
+}
 // Ловушка для ботов: поле скрыто от людей.
 if (clean_text($data['website'] ?? '', 100) !== '') respond(200, ['ok' => true]);
 if (!take_limit()) respond(429, ['error' => 'Слишком много сообщений. Попробуйте позже.']);
 
 $entry = ['at' => date('c'), 'room' => $room, 'kind' => $kind, 'text' => $text, 'page' => $page, 'visitor' => visitor_key()];
+if ($site) $entry += ['scope' => 'site', 'contact' => $contact, 'agent' => $agent];
 $saved = @file_put_contents(reports_dir() . '/reports.jsonl', json_encode($entry, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n", FILE_APPEND | LOCK_EX);
 if ($saved === false) respond(500, ['error' => 'Сервер не смог сохранить сообщение.']);
 
 if ($config['reports_email'] !== '' && function_exists('mail')) {
-    $body = "Помещение: {$room}\nЧто не так: {$kind}\nКомментарий: {$text}\nСтраница: {$page}\nВремя: {$entry['at']}\n";
-    @mail((string) $config['reports_email'], '=?UTF-8?B?' . base64_encode('ЛОГОС: неточность на карте') . '?=', $body, "Content-Type: text/plain; charset=utf-8\r\n");
+    $body = $site
+        ? "Тип: {$kind}\nСообщение: {$text}\nКонтакт: {$contact}\nСтраница: {$page}\nБраузер: {$agent}\nВремя: {$entry['at']}\n"
+        : "Помещение: {$room}\nЧто не так: {$kind}\nКомментарий: {$text}\nСтраница: {$page}\nВремя: {$entry['at']}\n";
+    @mail((string) $config['reports_email'], '=?UTF-8?B?' . base64_encode($site ? 'ЛОГОС: обращение с сайта' : 'ЛОГОС: неточность на карте') . '?=', $body, "Content-Type: text/plain; charset=utf-8\r\n");
 }
 
 respond(200, ['ok' => true]);

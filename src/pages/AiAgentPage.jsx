@@ -305,7 +305,7 @@ export default function AiAgentPage() {
   const sidebarView = <>
     <aside className="ai-sidebar" aria-label="Чаты">
       <div className="ai-sidebar-top">
-        <span className="ai-brand"><span className="ai-mark" aria-hidden="true"><Sparkles size={14} /></span>ЛОГОС AI<span className="nav-badge">ТЕСТ</span></span>
+        <span className="ai-brand"><span className="ai-mark" aria-hidden="true"><Sparkles size={14} /></span>ЛОГОС AI<span className="nav-badge">АЛЬФА</span></span>
         <button className="ai-icon" type="button" onClick={() => (narrow ? setSidebar(false) : setCollapsed(true))} aria-label="Скрыть список чатов" title="Скрыть"><PanelLeft size={18} /></button>
       </div>
       <button className="ai-new" type="button" onClick={newChat}><SquarePen size={16} /> Новый чат</button>
