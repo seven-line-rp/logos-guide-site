@@ -1,76 +1,447 @@
-newmtl badge_gold
-Kd 0.8 0.65 0.15
+newmtl art_cert
+Kd 1 1 1
 Ka 0 0 0
-Ks 0.05 0.05 0.05
+Ks 0.1 0.1 0.1
+map_Kd textures/art_cert.png
+
+newmtl art_city
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/art_city.png
+
+newmtl art_map
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/art_map.png
+
+newmtl art_portrait
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/art_portrait.png
+
+newmtl badge_wall
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/badge_wall.png
+map_d textures/badge_wall.png
 
 newmtl bars
-Kd 0.1 0.1 0.11
+Kd 0.07 0.07 0.08
 Ka 0 0 0
-Ks 0.05 0.05 0.05
+Ks 0.1 0.1 0.1
 
-newmtl carpet_blue
-Kd 0.12 0.17 0.3
+newmtl book_b
+Kd 0.08 0.2 0.36
 Ka 0 0 0
-Ks 0.05 0.05 0.05
+Ks 0.1 0.1 0.1
 
-newmtl ceiling
-Kd 0.92 0.92 0.9
+newmtl book_c
+Kd 0.1 0.3 0.15
 Ka 0 0 0
-Ks 0.05 0.05 0.05
+Ks 0.1 0.1 0.1
+
+newmtl books
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/books.png
+
+newmtl brick
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/brick.png
+
+newmtl brick_front
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/brick.png
+
+newmtl cardboard
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/cardboard.png
+
+newmtl carpet_grey
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/carpet_grey.png
+
+newmtl caution
+Kd 0.9 0.75 0.05
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+
+newmtl ceiling_tile
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/ceiling_tile.png
+
+newmtl chrome
+Kd 0.8 0.82 0.85
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+
+newmtl clock
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/clock.png
+
+newmtl concrete
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/concrete.png
+
+newmtl exit_light
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/sign_exit.png
 
 newmtl fabric_blue
-Kd 0.1 0.18 0.4
+Kd 0.08 0.16 0.38
 Ka 0 0 0
-Ks 0.05 0.05 0.05
+Ks 0.1 0.1 0.1
 
-newmtl floor_dark
-Kd 0.25 0.25 0.27
+newmtl fabric_grey
+Kd 0.3 0.31 0.34
 Ka 0 0 0
-Ks 0.05 0.05 0.05
+Ks 0.1 0.1 0.1
 
-newmtl floor_tile
-Kd 0.62 0.62 0.6
+newmtl fixture_frame
+Kd 1 1 1
 Ka 0 0 0
-Ks 0.05 0.05 0.05
+Ks 0.1 0.1 0.1
+map_Kd textures/metal.png
+
+newmtl flag_state
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/flag_state.png
+
+newmtl flag_us
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/flag_us.png
+
+newmtl floor_vinyl
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/floor_vinyl.png
 
 newmtl glass
-Kd 0.55 0.75 0.85
+Kd 0.65 0.82 0.9
 Ka 0 0 0
-Ks 0.05 0.05 0.05
+Ks 0.1 0.1 0.1
+d 0.22
+
+newmtl gold
+Kd 0.85 0.66 0.18
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+
+newmtl granite
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/granite.png
+
+newmtl heightchart
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/heightchart.png
+
+newmtl keyboard
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/keyboard.png
+
+newmtl leather
+Kd 0.05 0.05 0.055
+Ka 0 0 0
+Ks 0.1 0.1 0.1
 
 newmtl light
-Kd 1.0 1.0 0.9
+Kd 1 1 0.95
 Ka 0 0 0
-Ks 0.05 0.05 0.05
-Ke 1 1 0.9
+Ks 0.1 0.1 0.1
+Ke 1 1 0.95
 
 newmtl locker
-Kd 0.3 0.4 0.55
+Kd 0.2 0.31 0.52
 Ka 0 0 0
-Ks 0.05 0.05 0.05
+Ks 0.1 0.1 0.1
+
+newmtl locker_front
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/locker_front.png
+
+newmtl mat_lspd
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/mat_lspd.png
 
 newmtl metal
-Kd 0.45 0.47 0.5
+Kd 1 1 1
 Ka 0 0 0
-Ks 0.05 0.05 0.05
+Ks 0.1 0.1 0.1
+map_Kd textures/metal.png
 
 newmtl metal_dark
-Kd 0.15 0.16 0.18
+Kd 1 1 1
 Ka 0 0 0
-Ks 0.05 0.05 0.05
+Ks 0.1 0.1 0.1
+map_Kd textures/metal_dark.png
 
-newmtl wall_blue
-Kd 0.2 0.3 0.5
+newmtl mirror_glass
+Kd 1 1 1
 Ka 0 0 0
-Ks 0.05 0.05 0.05
+Ks 0.1 0.1 0.1
+map_Kd textures/mirror.png
 
-newmtl wall_white
-Kd 0.86 0.86 0.84
+newmtl noticeboard
+Kd 1 1 1
 Ka 0 0 0
-Ks 0.05 0.05 0.05
+Ks 0.1 0.1 0.1
+map_Kd textures/noticeboard.png
 
-newmtl wood
-Kd 0.38 0.24 0.13
+newmtl paper
+Kd 0.92 0.92 0.9
 Ka 0 0 0
-Ks 0.05 0.05 0.05
+Ks 0.1 0.1 0.1
+
+newmtl parquet
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/parquet.png
+
+newmtl plant_card
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/plant_a.png
+map_d textures/plant_a.png
+
+newmtl plastic_black
+Kd 0.04 0.04 0.045
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+
+newmtl plastic_white
+Kd 0.9 0.9 0.88
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+
+newmtl poster_wanted
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/poster_wanted.png
+
+newmtl pot
+Kd 0.55 0.55 0.52
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+
+newmtl red
+Kd 0.65 0.05 0.04
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+
+newmtl roof
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/concrete.png
+
+newmtl rope_red
+Kd 0.5 0.02 0.03
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+
+newmtl rubber
+Kd 0.03 0.03 0.03
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+
+newmtl rug_red
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/rug_red.png
+
+newmtl screen_cctv
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/screen_cctv.png
+
+newmtl screen_desktop
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/screen_desktop.png
+
+newmtl screen_map
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/screen_map.png
+
+newmtl screen_slide
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/screen_slide.png
+
+newmtl seal_floor
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/seal_floor.png
+map_d textures/seal_floor.png
+
+newmtl sign_briefing
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/sign_briefing.png
+
+newmtl sign_chief
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/sign_chief.png
+
+newmtl sign_evidence
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/sign_evidence.png
+
+newmtl sign_holding
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/sign_holding.png
+
+newmtl sign_interrogation
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/sign_interrogation.png
+
+newmtl sign_lobby
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/sign_lobby.png
+
+newmtl sign_locker
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/sign_locker.png
+
+newmtl sign_protect
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/sign_protect.png
+
+newmtl sign_restroom
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/sign_restroom.png
+
+newmtl sign_values
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/sign_values.png
+
+newmtl soil
+Kd 0.13 0.08 0.05
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+
+newmtl tile_beige
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/tile_beige.png
+
+newmtl tile_grey
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/tile_grey.png
+
+newmtl tile_white
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/tile_white.png
+
+newmtl wainscot
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/wainscot.png
+
+newmtl wainscot_front
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/wainscot.png
+
+newmtl wall_cream
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/wall_cream.png
+
+newmtl wall_cream_front
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/wall_cream.png
+
+newmtl whiteboard_tex
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/whiteboard.png
+
+newmtl wood_dark
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/wood_dark.png
+
+newmtl wood_light
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/wood_light.png
 

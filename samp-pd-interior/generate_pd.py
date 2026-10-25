@@ -1,244 +1,275 @@
 #!/usr/bin/env python3
-"""Генератор интерьера полицейского департамента для SA-MP.
+"""LSPD interior (планировка по референсу): широкое лобби, коридор, ряд служебных помещений, блок камер.
 
-Выход: pd_interior.obj + pd_interior.mtl (Z вверх, метры, 1 unit = 1 м, как в GTA SA),
-а также pd_interior_boxes.json (список коллизионных боксов для .col) и
-pd_interior_objects.inc (Pawn-массив с расстановкой спавн-точек).
-Только стандартная библиотека.
+Порядок:  python3 gen_textures.py  →  python3 generate_pd.py
+Выход: pd_interior.obj/.mtl, pd_interior_boxes.json, scene.json (см. pd_lib.write_files).
+Оси: X — вправо (восток), Y — вглубь здания (север), Z — вверх; единицы — метры.
+Аргумент face у place(): направление, В КОТОРОЕ СМОТРИТ пользователь предмета
+(у предмета, стоящего у стены, — в сторону этой стены).
 """
-import json
-import os
+import pd_lib as L
+from pd_lib import *   # noqa: F401,F403
+from pd_props import *  # noqa: F401,F403
 
-OUT = os.path.dirname(os.path.abspath(__file__))
-H = 3.2          # высота потолка
-T = 0.2          # толщина стен
-DOOR_W, DOOR_H = 1.4, 2.3
+W, D = 56.0, 36.0          # размеры здания
 
-verts, faces, boxes = [], [], []   # faces: (material, [vertex idx])
-MATS = {
-    "wall_white":  (0.86, 0.86, 0.84),
-    "wall_blue":   (0.20, 0.30, 0.50),
-    "floor_tile":  (0.62, 0.62, 0.60),
-    "floor_dark":  (0.25, 0.25, 0.27),
-    "carpet_blue": (0.12, 0.17, 0.30),
-    "ceiling":     (0.92, 0.92, 0.90),
-    "wood":        (0.38, 0.24, 0.13),
-    "metal":       (0.45, 0.47, 0.50),
-    "metal_dark":  (0.15, 0.16, 0.18),
-    "bars":        (0.10, 0.10, 0.11),
-    "locker":      (0.30, 0.40, 0.55),
-    "fabric_blue": (0.10, 0.18, 0.40),
-    "light":       (1.00, 1.00, 0.90),
-    "badge_gold":  (0.80, 0.65, 0.15),
-    "glass":       (0.55, 0.75, 0.85),
-}
-
-
-def box(x0, y0, z0, x1, y1, z1, mat, collide=True):
-    """Закрытый параллелепипед с нормалями наружу."""
-    x0, x1 = sorted((x0, x1)); y0, y1 = sorted((y0, y1)); z0, z1 = sorted((z0, z1))
-    if x1 - x0 < 1e-6 or y1 - y0 < 1e-6 or z1 - z0 < 1e-6:
-        return
-    b = len(verts) + 1
-    verts.extend([(x0, y0, z0), (x1, y0, z0), (x1, y1, z0), (x0, y1, z0),
-                  (x0, y0, z1), (x1, y0, z1), (x1, y1, z1), (x0, y1, z1)])
-    for q in ((0, 3, 2, 1), (4, 5, 6, 7), (0, 1, 5, 4),
-              (1, 2, 6, 5), (2, 3, 7, 6), (3, 0, 4, 7)):
-        faces.append((mat, [b + i for i in q]))
-    if collide:
-        boxes.append([round(v, 3) for v in (x0, y0, z0, x1, y1, z1)])
-
-
-def wall(axis, c, a, b, doors=(), mat="wall_white", z0=0.0, h=H):
-    """Стена. axis='x': вдоль X на y=c; axis='y': вдоль Y на x=c. doors — центры проёмов."""
-    cuts = sorted((d - DOOR_W / 2, d + DOOR_W / 2) for d in doors)
-    pos = a
-    segs = []
-    for s, e in cuts:
-        segs.append((pos, s)); pos = e
-    segs.append((pos, b))
-    lo, hi = c - T / 2, c + T / 2
-    for s, e in segs:
-        if axis == "x":
-            box(s, lo, z0, e, hi, z0 + h, mat)
-        else:
-            box(lo, s, z0, hi, e, z0 + h, mat)
-    for s, e in cuts:  # перемычка над проёмом
-        if axis == "x":
-            box(s, lo, z0 + DOOR_H, e, hi, z0 + h, mat)
-        else:
-            box(lo, s, z0 + DOOR_H, hi, e, z0 + h, mat)
-
-
-def room_floor(x0, y0, x1, y1, mat):
-    box(x0, y0, 0.0, x1, y1, 0.02, mat, collide=False)
-
-
-def desk(x, y, w=1.6, d=0.8, rot=False, mat="wood"):
-    sx, sy = (d, w) if rot else (w, d)
-    box(x - sx / 2, y - sy / 2, 0.70, x + sx / 2, y + sy / 2, 0.76, mat)
-    for dx in (-1, 1):
-        for dy in (-1, 1):
-            box(x + dx * (sx / 2 - .06) - .03, y + dy * (sy / 2 - .06) - .03, 0,
-                x + dx * (sx / 2 - .06) + .03, y + dy * (sy / 2 - .06) + .03, .70, mat, collide=False)
-
-
-def chair(x, y, mat="fabric_blue"):
-    box(x - .22, y - .22, .42, x + .22, y + .22, .48, mat, collide=False)
-    box(x - .22, y - .24, .48, x + .22, y - .20, .95, mat, collide=False)
-    box(x - .03, y - .03, 0, x + .03, y + .03, .42, "metal_dark", collide=False)
-
-
-def monitor(x, y, rot=0):
-    box(x - .22, y - .03, .76, x + .22, y + .03, .98, "metal_dark", collide=False)
+L.ROOMS.update({
+    "lobby": [0, 0, W, 16], "corridor": [0, 16, W, 20], "briefing": [0, 20, 12, 36], "chief": [12, 20, 22, 36],
+    "interrogation": [22, 20, 31, 28], "observation": [22, 28, 31, 36], "locker": [31, 20, 40, 28],
+    "restroom": [31, 28, 40, 36], "evidence": [40, 20, 46, 36], "holding": [46, 20, 49, 36], "cells": [49, 20, 56, 36],
+})
 
 
 def build():
-    # --- плиты ---
-    box(0, 0, -0.3, 36, 26, 0, "floor_dark")
-    box(0, 0, H, 36, 26, H + 0.3, "ceiling")
+    # ───── плиты и покрытия ─────
+    box(-.6, -2.4, -.3, W + .6, D + .6, 0, "concrete")
+    box(-.3, -.3, H, W + .3, D + .3, H + .3, "roof", False, {"z-": "ceiling_tile"})
+    for rect, mat in [((0, 0, W, 16), "tile_beige"), ((0, 16, W, 20), "tile_beige"),
+                      ((0, 20, 12, 36), "carpet_grey"), ((12, 20, 22, 36), "parquet"),
+                      ((22, 20, 31, 28), "tile_grey"), ((22, 28, 31, 36), "carpet_grey"),
+                      ((31, 20, 40, 28), "tile_grey"), ((31, 28, 40, 36), "tile_white"),
+                      ((40, 20, 46, 36), "floor_vinyl"), ((46, 20, 49, 36), "tile_grey"),
+                      ((49, 20, 56, 36), "concrete")]:
+        floor_pad(*rect, mat)
 
-    # --- покрытия комнат ---
-    room_floor(0, 0, 14, 14, "floor_tile")          # холл
-    room_floor(0, 14, 36, 18, "floor_tile")         # коридор
-    room_floor(0, 18, 14, 26, "carpet_blue")        # брифинг
-    room_floor(14, 18, 22, 26, "carpet_blue")       # кабинет шефа
-    room_floor(22, 18, 29, 26, "floor_dark")        # допросная
-    room_floor(29, 18, 36, 26, "floor_dark")        # улики
-    room_floor(14, 0, 24, 8, "floor_tile")          # раздевалка
-    room_floor(14, 8, 24, 14, "floor_dark")         # оружейная
-    room_floor(24, 5, 36, 14, "floor_tile")         # зал камер
-    room_floor(24, 0, 36, 5, "floor_dark")          # камеры
+    # ───── стены ─────
+    wall("x", 0, 0, W, [door_op(28, 2.4)], ("brick_front", "wall_cream_front"), (False, True), panel="wainscot_front")
+    wall("x", 36, 0, W, [win_op(17, 2.2)], ("wall_cream", "brick"), (True, False))
+    wall("y", 0, 0, 36, [door_op(18)], ("brick", "wall_cream"), (False, True))
+    wall("y", W, 0, 36, [door_op(18)], ("wall_cream", "brick"), (True, False))
+    wall("x", 16, 0, W, [door_op(3), door_op(53)])
+    wall("x", 20, 0, W, [door_op(6), door_op(17), door_op(26.5), door_op(35.5), door_op(43), door_op(47.5)])
+    for x in (12, 22, 31, 40, 46):
+        wall("y", x, 20, 36)
+    wall("x", 28, 22, 40, [door_op(23.3, 1.2), door_op(35.5), win_op(28.0, 2.6, 0.9, 2.3)])
+    for y in (24, 28, 32):
+        box(49, y - .1, 0, W, y + .1, H, "concrete", True)
 
-    # --- наружные стены ---
-    wall("x", 0, 0, 36, doors=[7], mat="wall_blue")                 # юг, главный вход
-    wall("x", 26, 0, 36, mat="wall_white")                          # север
-    wall("y", 0, 0, 26, doors=[16], mat="wall_white")               # запад (запасной выход)
-    wall("y", 36, 0, 26, doors=[16], mat="wall_white")              # восток (выход в гараж)
+    # ───── двери и окна ─────
+    door("x", 0, 28, 2.4, "glass", 0.0, "chrome", double=True)
+    window("x", 36, 17, 2.2)
+    door("x", 16, 3, 1.4, "wood", .7); door("x", 16, 53, 1.4, "wood", 0.0)
+    door("y", 0, 18, 1.4, "metal", 0.0, "metal_dark"); door("y", W, 18, 1.4, "metal", 0.0, "metal_dark")
+    door("x", 20, 6, 1.4, "wood", .85)
+    door("x", 20, 17, 1.4, "wood", 0.0)
+    door("x", 20, 26.5, 1.4, "metal", 0.0, "metal_dark")
+    door("x", 20, 35.5, 1.4, "wood", .5)
+    door("x", 20, 43, 1.4, "metal", 0.0, "metal_dark")
+    door("x", 20, 47.5, 1.4, "metal", 1.0, "metal_dark")
+    door("x", 28, 23.3, 1.2, "metal", .6, "metal_dark")
+    door("x", 28, 35.5, 1.4, "wood", 0.0)
+    window("x", 28, 28.0, 2.6, 0.9, 2.3)
+    # вход снаружи: ступени, козырёк с вывеской
+    box(24.5, -1.6, -.3, 31.5, 0, 0, "concrete", True)
+    box(24.8, -1.2, -.3, 31.2, 0, .12, "concrete", True)
+    box(25.2, -.8, -.3, 30.8, 0, .24, "concrete", True)
+    box(23.6, -2.0, 3.0, 32.4, 0, 3.12, "metal_dark")
+    box(23.6, -2.02, 3.12, 32.4, -1.9, 3.9, "sign_lobby")
+    for sx in (24.0, 32.0):
+        cyl(sx, -1.8, -.3, 3.0, .07, "metal_dark", 10)
 
-    # --- внутренние: юг ---
-    wall("x", 14, 0, 14, doors=[7], mat="wall_white")               # холл <-> коридор
-    wall("y", 14, 0, 14, doors=[4], mat="wall_white")               # холл <-> раздевалка
-    wall("y", 24, 0, 14, mat="wall_white")                          # раздевалка/оружейная | камеры
-    wall("x", 8, 14, 24, mat="wall_white")                          # раздевалка | оружейная
-    wall("x", 14, 14, 24, doors=[19], mat="wall_white")             # оружейная <-> коридор
-    wall("x", 14, 24, 36, doors=[30], mat="wall_white")             # зал камер <-> коридор
+    # ───── таблички над дверями ─────
+    for d, m in [(6, "sign_briefing"), (17, "sign_chief"), (26.5, "sign_interrogation"),
+                 (35.5, "sign_locker"), (43, "sign_evidence"), (47.5, "sign_holding")]:
+        label("x", 20, -1, d, m, 1.3, 2.5)
+    label("x", 28, +1, 35.5, "sign_restroom", 1.2, 2.5)
+    exit_sign(.11, 18, 1, 0); exit_sign(W - .11, 18, -1, 0)
 
-    # --- внутренние: север ---
-    wall("x", 18, 0, 36, doors=[7, 18, 25.5, 32.5], mat="wall_white")
-    wall("y", 14, 18, 26, mat="wall_white")
-    wall("y", 22, 18, 26, mat="wall_white")
-    wall("y", 29, 18, 26, mat="wall_white")
+    # ───── ЛОББИ ─────
+    decal(28, 7.0, 7.2, 7.2, "seal_floor")
+    decal(28, 1.4, 2.8, 1.4, "mat_lspd"); decal(3, 15.0, 1.6, .8, "mat_lspd"); decal(53, 15.0, 1.6, .8, "mat_lspd")
+    place(19, 10.4, "N"); reception_counter(18.0, 1.2); pop()
+    for i, x in enumerate((22.0, 25.3, 28.6, 31.9, 35.2)):
+        station(x, 13.7, "S", 1.8, 2, False, "fabric_blue",
+                ["screen_desktop", "screen_map" if i == 2 else "screen_desktop"])
+    for x in (19.0, 19.5, 36.5, 37.0):
+        place(x, 15.6, "N"); filing_cabinet(); pop()
+    wall_plane(28, 15.9, 0, -1, 1.7, 1.55, 3.25, "badge_wall", .01)
+    place(23.4, 15.4, "N"); flag_pole("flag_us"); pop()
+    place(32.0, 15.4, "N"); flag_pole("flag_state"); pop()
+    wall_plane(11.0, 15.9, 0, -1, 3.0, 1.45, 2.95, "sign_protect", .01)
+    wall_plane(45.0, 15.9, 0, -1, 3.0, 1.45, 2.95, "sign_values", .01)
+    wall_plane(6.5, 15.9, 0, -1, 1.7, 1.25, 2.25, "noticeboard", .01)
+    wall_plane(50.0, 15.9, 0, -1, 1.7, 1.25, 2.25, "noticeboard", .01)
+    clock_on_wall(15.6, 15.9, 0, -1, 2.9, .24)
+    pic_frame(41.0, 15.9, 0, -1, 1.2, .9, 1.7, "art_cert"); pic_frame(52.5, 15.9, 0, -1, .8, 1.1, 1.6, "art_portrait")
+    for x in (3.0, 5.6):
+        for y in (3.9, 7.5):
+            place(x, y, "N"); waiting_chairs(3); pop()
+    for x in (46.6, 49.2):
+        for y in (3.9, 7.5):
+            place(x, y, "N"); waiting_chairs(3); pop()
+    for cx in (5.0, 51.0):
+        box(cx - .4, 5.0, 0, cx + .4, 5.8, .45, "wood_dark", True); box(cx - .5, 4.9, .45, cx + .5, 5.9, .48, "glass")
+    place(.55, 12.5, "W"); waiting_chairs(3); pop()
+    place(W - .55, 9.5, "E"); waiting_chairs(3); pop()
+    for (xa, xb, y) in ((14.0, 18.5, 5.6), (37.5, 42.0, 5.6)):
+        stanchion(xa, y); stanchion(xb, y); rope(xa, y, xb, y)
+    for (x, y) in [(1.0, 1.0), (W - 1.0, 1.0), (24.6, 1.2), (31.4, 1.2), (17.4, 9.4), (38.6, 9.4), (1.0, 15.0),
+                   (W - 1.0, 15.0), (12.8, 11.5), (43.2, 11.5)]:
+        place(x, y, "N"); plant(R.uniform(1.25, 1.55)); pop()
+    place(W - .5, 3.0, "E"); vending_machine(); pop()
+    place(W - .55, 5.0, "E"); water_cooler(); pop()
+    place(W - .4, 6.0, "N"); trash_can(); pop()
+    place(.4, 1.2, "N"); trash_can(); pop()
+    place(23.2, 3.0, "N"); a_frame_sign(); pop()
+    for y, m in [(4.0, "art_city"), (7.0, "art_cert"), (10.0, "art_portrait")]:
+        pic_frame(.1, y, 1, 0, 1.0, .8, 1.5, m)
+    for y, m in [(11.0, "art_map"), (13.0, "art_city"), (2.0, "art_cert")]:
+        pic_frame(W - .1, y, -1, 0, 1.0, .8, 1.5, m)
+    wall_plane(.11, 14.0, 1, 0, 1.4, 1.2, 2.2, "noticeboard", .004)
+    cctv_dome(14, 8, H); cctv_dome(42, 8, H)
 
-    # --- камеры: перегородки + решётка ---
-    for x in (28, 32):
-        box(x - .1, 0, 0, x + .1, 5, H, "wall_white")
-    for i, x0 in enumerate((24, 28, 32)):
-        cx0, cx1 = x0 + .1, x0 + 4 - .1
-        # решётка по y=5 с проходом 1 м
-        gate0, gate1 = (cx0 + cx1) / 2 - .5, (cx0 + cx1) / 2 + .5
-        for bx in [cx0 + k * 0.12 for k in range(int((cx1 - cx0) / 0.12) + 1)]:
-            if gate0 <= bx <= gate1:
+    # ───── КОРИДОР ─────
+    for x in (10.0, 24.0, 40.0):
+        place(x, 16.45, "N"); waiting_chairs(3); pop()
+    place(1.6, 19.7, "N"); water_cooler(); pop()
+    place(11.2, 19.75, "N"); fire_extinguisher(); pop()
+    place(39.0, 16.3, "S"); fire_extinguisher(); pop()
+    place(.9, 17.0, "N"); plant(1.4); pop(); place(W - .9, 17.0, "N"); plant(1.4); pop()
+    place(21.5, 16.5, "N"); trash_can(); pop()
+    for x, m in [(11.5, "art_city"), (14.0, "art_cert"), (31.5, "art_map"), (45.0, "art_portrait"), (50.5, "art_city")]:
+        pic_frame(x, 16.1, 0, 1, 1.0, .75, 1.5, m)
+    wall_plane(29.0, 16.11, 0, 1, 1.3, 1.25, 2.2, "noticeboard", .004)
+    wall_plane(21.0, 19.91, 0, -1, 1.3, 1.25, 2.2, "noticeboard", .004)
+    wall_plane(9.5, 19.91, 0, -1, .5, 1.4, 2.1, "poster_wanted", .004)
+    wall_plane(10.2, 19.91, 0, -1, .5, 1.4, 2.1, "poster_wanted", .004)
+    cctv_dome(14, 18, H); cctv_dome(42, 18, H)
+    decal(28, 18, 52, .25, "caution", 0, .045)
+
+    # ───── БРИФИНГ ─────
+    place(6.0, 27.5, "N"); conference_table(6.0, 1.7); pop()
+    for k in range(5):
+        x = 3.5 + k * 1.25
+        place(x, 26.1, "N"); office_chair(False, "fabric_blue"); pop()
+        place(x, 28.9, "S"); office_chair(False, "fabric_blue"); pop()
+    place(2.0, 27.5, "E"); office_chair(True, "leather"); pop()
+    place(10.0, 27.5, "W"); office_chair(False, "fabric_blue"); pop()
+    quad("screen_slide", (3.7, 35.88, .85), (8.3, 35.88, .85), (8.3, 35.88, 3.05), (3.7, 35.88, 3.05), (0, -1, 0))
+    box(3.6, 35.85, .78, 8.4, 35.9, .85, "metal_dark"); box(3.6, 35.85, 3.05, 8.4, 35.9, 3.12, "metal_dark")
+    box(5.8, 26.9, H - .5, 6.2, 27.5, H - .42, "plastic_black"); box(5.95, 26.85, H - .42, 6.05, 26.9, H, "metal_dark")
+    wall_plane(.11, 24.0, 1, 0, 4.0, 1.0, 2.9, "whiteboard_tex", .004)
+    for y0 in (33.0, 29.8):
+        place(11.58, y0, "E"); bookshelf(3.0, 2.1); pop()
+    place(10.5, 20.4, "S"); coffee_station(); pop()
+    for y in (22.6, 24.5):
+        station(10.85, y, "E", 1.7, 2, False, "fabric_blue")
+    place(.42, 30.2, "W"); filing_cabinet(); pop()
+    place(1.0, 35.0, "N"); plant(1.5); pop(); place(1.0, 21.0, "N"); plant(1.4); pop()
+    place(10.8, 35.0, "N"); plant(1.4); pop()
+    place(2.0, 35.3, "N"); flag_pole("flag_us"); pop()
+    for x, m in [(2.4, "art_cert"), (10.0, "art_city")]:
+        pic_frame(x, 20.11, 0, 1, 1.0, .75, 1.6, m)
+    clock_on_wall(11.9, 25.0, -1, 0, 2.7, .22)
+
+    # ───── КАБИНЕТ ШЕФА ─────
+    decal(17, 28.6, 6.8, 5.0, "rug_red", 0, .036)
+    station(17, 32.2, "S", 2.2, 2, True, "leather")
+    place(16.0, 29.3, "N"); office_chair(False, "leather"); pop(); place(18.0, 29.3, "N"); office_chair(False, "leather"); pop()
+    place(14.4, 35.4, "N"); flag_pole("flag_us"); pop(); place(19.4, 35.4, "N"); flag_pole("flag_state"); pop()
+    for y0 in (32.9, 29.7):
+        place(12.42, y0, "W"); bookshelf(3.0, 2.2); pop()
+    place(14.6, 35.45, "N"); credenza(2.6); pop()
+    place(15.4, 35.45, "N"); lift(.81, globe); pop()
+    place(18.6, 35.45, "N"); credenza(2.2); pop()
+    place(21.4, 25.0, "W"); sofa(2.2); pop()
+    box(19.4, 25.0, 0, 20.4, 26.2, .42, "wood_dark", True); box(19.35, 24.95, .42, 20.45, 26.25, .46, "glass")
+    place(21.55, 33.0, "W")
+    box(-.3, 0, 0, .3, .45, 1.8, "wood_dark", True); box(-.27, .03, .3, .27, .44, 1.7, "glass")
+    pop()
+    place(13.0, 21.2, "N"); plant(1.4); pop(); place(21.0, 35.0, "N"); plant(1.5); pop()
+    pic_frame(13.4, 20.11, 0, 1, 1.0, .75, 1.6, "art_cert"); pic_frame(20.6, 20.11, 0, 1, 1.0, .75, 1.6, "art_portrait")
+
+    # ───── ДОПРОСНАЯ ─────
+    place(26.5, 24.0, "N"); interrogation_table(); pop()
+    place(23.6, 21.2, "N"); tripod_camera(); pop()
+    place(30.4, 27.5, "N"); filing_cabinet(); pop()
+    place(22.6, 27.0, "N"); plant(1.1, .22); pop()
+    place(26.5, 22.9, "N"); metal_chair(); pop(); place(26.5, 25.1, "S"); metal_chair(); pop()
+    place(22.6, 24.0, "E"); metal_chair(); pop()
+    frustum(26.5, 24.0, 2.3, 1.0, .02, .02, "metal_dark", 6)
+    frustum(26.5, 24.0, 1.95, .35, .25, .06, "metal_dark", 14)
+    cctv_dome(29.6, 21.2, H)
+    clock_on_wall(30.89, 22.5, -1, 0, 2.6, .2)
+
+    # ───── НАБЛЮДЕНИЕ ─────
+    station(28.0, 29.7, "S", 2.8, 3, False, "fabric_grey", ["screen_cctv", "screen_cctv", "screen_map"])
+    place(25.0, 35.88, "N"); lift(1.4, wall_tv, 1.6, .8, "screen_cctv"); pop()
+    place(28.4, 35.88, "N"); lift(1.4, wall_tv, 1.6, .8, "screen_map"); pop()
+    place(22.45, 33.4, "W"); bookshelf(2.4, 2.0); pop()
+    station(24.6, 31.4, "S", 1.6, 2, False, "fabric_grey", ["screen_cctv", "screen_desktop"])
+    station(30.0, 33.0, "W", 1.6, 1, False, "fabric_grey")
+    place(26.4, 35.4, "N"); credenza(1.8); pop()
+    place(30.4, 35.0, "N"); plant(1.3); pop()
+
+    # ───── РАЗДЕВАЛКА ─────
+    place(31.6, 21.0, "W"); locker_bank(8); pop()
+    place(31.6, 24.7, "W"); locker_bank(7); pop()
+    place(39.4, 27.6, "E"); locker_bank(8); pop()
+    place(39.4, 23.9, "E"); locker_bank(7); pop()
+    place(33.6, 23.0, "N"); bench(3.6, .45); pop()
+    place(33.6, 25.6, "N"); bench(3.6, .45); pop()
+    place(37.0, 20.4, "S"); trash_can(); pop()
+    place(33.2, 27.45, "N"); sink_counter(3); pop()
+    box(33.2, 27.88, 1.1, 35.9, 27.92, 2.1, "mirror_glass")
+    pic_frame(33.0, 20.11, 0, 1, .9, .7, 1.6, "noticeboard")
+
+    # ───── САНУЗЛЫ ─────
+    for xc in (32.3, 33.3, 34.3):
+        place(xc, 35.6, "N"); toilet(); pop()
+        place(xc - .5, 34.1, "N"); stall_partition(1.8); pop()
+        place(xc - .45, 34.1, "N"); stall_door(.9); pop()
+    place(34.8, 34.1, "N"); stall_partition(1.8); pop()
+    for y in (29.6, 31.2, 32.8):
+        place(39.82, y, "E"); sink(); pop()
+        box(39.88, y - .4, 1.15, 39.9, y + .4, 2.1, "mirror_glass")
+    for y in (34.0, 35.0):
+        place(39.85, y, "E"); urinal(); pop()
+    place(36.5, 35.5, "N"); trash_can(); pop()
+
+    # ───── ХРАНИЛИЩЕ УЛИК ─────
+    place(40.62, 22.4, "W"); evidence_shelf(10.4, .5, 2.2, 5); pop()
+    place(45.38, 33.0, "E"); evidence_shelf(10.4, .5, 2.2, 5); pop()
+    place(42.4, 22.4, "W"); evidence_shelf(9.0, .5, 2.2, 5); pop()
+    station(43.0, 34.6, "S", 2.0, 1, False, "fabric_grey")
+    box(41.0, 21.3, 0, 45.0, 21.9, 1.0, "metal", True); box(40.9, 21.2, 1.0, 45.1, 22.0, 1.05, "granite")
+    cctv_dome(43, 28, H)
+
+    # ───── СОДЕРЖАНИЕ ПОД СТРАЖЕЙ ─────
+    place(46.6, 25.0, "E"); bench(2.4, .45, "metal"); pop()
+    station(47.5, 34.4, "S", 1.6, 1, False, "fabric_grey")
+    wall_plane(46.11, 30.5, 1, 0, .62, .05, 2.4, "heightchart", .005)
+    wall_plane(46.11, 27.5, 1, 0, 1.2, 1.3, 2.2, "noticeboard", .004)
+    cctv_dome(47.5, 28, H)
+    for j in range(4):
+        ya, yb = 20 + 4 * j, 24 + 4 * j
+        yc = (ya + yb) / 2
+        for k in range(int(4.0 / .11) + 1):
+            y = ya + .1 + k * .11
+            if y > yb - .1 or abs(y - yc) < .55:
                 continue
-            box(bx - .015, 4.95, 0, bx + .015, 5.05, H, "bars", collide=False)
-        box(cx0, 4.95, 0, gate0, 5.05, .06, "bars"); box(gate1, 4.95, 0, cx1, 5.05, .06, "bars")
-        box(cx0, 4.95, H - .06, cx1, 5.05, H, "bars", collide=False)
-        box(cx0, 4.95, 1.0, gate0, 5.05, 1.06, "bars"); box(gate1, 4.95, 1.0, cx1, 5.05, 1.06, "bars")
-        box(gate0, 4.95, DOOR_H, gate1, 5.05, H, "bars")
-        # нары + унитаз + раковина
-        box(cx0, 0.2, 0.4, cx0 + 0.9, 2.2, 0.55, "metal")
-        box(cx1 - .45, 0.2, 0, cx1 - .05, 0.6, .4, "metal")
-        box(cx1 - .45, 0.7, .8, cx1 - .05, 1.1, .9, "metal", collide=False)
+            box(48.97, y - .012, .06, 49.03, y + .012, H - .06, "bars")
+        for a0, a1 in ((ya + .08, yc - .55), (yc + .55, yb - .08)):
+            box(48.95, a0, 0, 49.05, a1, .08, "bars"); box(48.95, a0, 1.0, 49.05, a1, 1.05, "bars", True)
+            box(48.95, a0, H - .1, 49.05, a1, H - .06, "bars")
+        box(48.95, yc - .55, DOOR_H, 49.05, yc + .55, DOOR_H + .05, "bars")
+        box(48.95, yc - .55, DOOR_H + .05, 49.05, yc + .55, H, "bars")
+        place(55.15, yb - .2, "E"); mattress_bed(1.9, .75); pop()
+        place(55.15, yb - .2, "E"); lift(.95, mattress_bed, 1.9, .75); pop()
+        for cy in (yb - .22, yb - 2.08):
+            box(55.1, cy - .02, 0, 55.15, cy + .02, 1.5, "metal_dark")
+        place(55.68, ya + .9, "E"); toilet_sink(); pop()
+        ceiling_fixture(52.5, yc, .8, .4)
 
-    # --- холл: стойка приёма, скамейки, герб ---
-    box(5.0, 7.0, 0, 10.6, 7.9, 1.1, "wood")
-    box(4.9, 6.9, 1.1, 10.7, 8.0, 1.16, "metal_dark")
-    box(5.0, 9.5, 0.0, 10.6, 9.6, 2.0, "wood", collide=False)   # задняя панель
-    for x in (6.3, 8.8):
-        chair(x, 8.6); monitor(x, 7.5)
-    for y in (2.5, 4.0):  # скамьи для ожидающих
-        box(1.0, y, 0.0, 4.0, y + .45, .45, "wood")
-    box(0.1, 8.5, 1.4, 0.15, 11.5, 2.6, "badge_gold", collide=False)  # табличка/герб на запад. стене
-    box(11.5, 0.5, 0, 12.5, 1.5, 0.9, "metal_dark")             # стенд с информацией
-
-    # --- брифинг: ряды столов + кафедра + экран ---
-    for row, y in enumerate((20.5, 22.3)):
-        for x in (3.0, 6.5, 10.0):
-            desk(x, y, w=2.4, d=0.7); chair(x - .5, y - .9); chair(x + .5, y - .9)
-    box(3.0, 25.75, 1.2, 11.0, 25.8, 2.7, "glass", collide=False)   # экран
-    box(6.2, 24.2, 0, 7.8, 24.9, 1.1, "wood")                         # кафедра
-
-    # --- кабинет шефа ---
-    desk(18, 23.0, w=2.2, d=1.0); chair(18, 24.3); monitor(18, 23.2)
-    chair(17.0, 21.7); chair(19.0, 21.7)
-    box(14.3, 19.0, 0, 15.2, 21.5, 1.0, "metal")                      # диван/шкаф
-    box(21.3, 19.0, 0, 21.8, 25.0, 2.1, "wood")                       # книжный шкаф
-
-    # --- допросная ---
-    desk(25.5, 22.0, w=1.8, d=0.9, rot=False, mat="metal")
-    chair(25.5, 20.9, "metal_dark"); chair(25.5, 23.1, "metal_dark")
-    box(28.8, 20.5, 1.0, 28.85, 23.5, 2.4, "glass", collide=False)    # зеркало
-
-    # --- хранилище улик: стеллажи ---
-    for y in (19.3, 21.3, 23.3):
-        box(30.0, y, 0, 35.0, y + .5, 2.2, "metal")
-    desk(33.0, 25.2, w=2.0, d=0.6, mat="metal")
-
-    # --- раздевалка: шкафчики + скамья ---
-    for x in [14.4 + k * .5 for k in range(16)]:
-        if x + .45 > 23.8:
-            break
-        box(x, 0.2, 0, x + .45, 0.8, 1.9, "locker", collide=False)
-    box(14.4, 0.2, 0, 23.6, 0.8, 0.0, "locker", collide=False)
-    box(15.0, 3.2, 0, 22.0, 3.7, 0.45, "wood")
-
-    # --- оружейная: стойки + стол выдачи ---
-    box(14.3, 8.4, 0, 14.5, 13.6, 2.0, "metal_dark")
-    box(23.5, 8.4, 0, 23.7, 13.6, 2.0, "metal_dark")
-    box(15.5, 10.5, 0, 22.5, 11.3, 1.1, "metal")                      # выдача
-    box(16.0, 13.5, 0.3, 22.0, 13.9, 1.8, "metal_dark", collide=False)
-
-    # --- зал камер: стойка бронирования ---
-    box(26.0, 9.0, 0, 30.5, 9.8, 1.0, "wood")
-    chair(28.0, 10.4)
-    box(33.0, 12.0, 0, 34.0, 13.0, 0.5, "metal")                      # лавка арестованных
-
-    # --- коридор: двери-таблички и светильники ---
-    # потолочные светильники по всем комнатам
-    for (x0, y0, x1, y1) in [(0, 0, 14, 14), (0, 14, 36, 18), (0, 18, 14, 26),
-                             (14, 18, 22, 26), (22, 18, 29, 26), (29, 18, 36, 26),
-                             (14, 0, 24, 8), (14, 8, 24, 14), (24, 5, 36, 14)]:
-        nx = max(1, int((x1 - x0) // 6)); ny = max(1, int((y1 - y0) // 6))
-        for i in range(nx):
-            for j in range(ny):
-                cx = x0 + (i + .5) * (x1 - x0) / nx
-                cy = y0 + (j + .5) * (y1 - y0) / ny
-                box(cx - .6, cy - .15, H - .04, cx + .6, cy + .15, H, "light", collide=False)
-
-
-def write_obj():
-    used = sorted({m for m, _ in faces})
-    with open(os.path.join(OUT, "pd_interior.mtl"), "w") as f:
-        for m in used:
-            r, g, b = MATS[m]
-            f.write(f"newmtl {m}\nKd {r} {g} {b}\nKa 0 0 0\nKs 0.05 0.05 0.05\n")
-            if m == "light":
-                f.write("Ke 1 1 0.9\n")
-            f.write("\n")
-    with open(os.path.join(OUT, "pd_interior.obj"), "w") as f:
-        f.write("# SA-MP Police Department interior (Z-up, meters)\nmtllib pd_interior.mtl\no pd_interior\n")
-        for v in verts:
-            f.write("v %.3f %.3f %.3f\n" % v)
-        cur = None
-        for m, idx in faces:
-            if m != cur:
-                f.write(f"usemtl {m}\n"); cur = m
-            f.write("f " + " ".join(map(str, idx)) + "\n")
-    with open(os.path.join(OUT, "pd_interior_boxes.json"), "w") as f:
-        json.dump({"unit": "m", "boxes": boxes}, f)
+    # ───── освещение ─────
+    for rect in [(0, 0, W, 16), (0, 16, W, 20), (0, 20, 12, 36), (12, 20, 22, 36), (22, 20, 31, 28), (22, 28, 31, 36),
+                 (31, 20, 40, 28), (31, 28, 40, 36), (40, 20, 46, 36), (46, 20, 49, 36)]:
+        ceiling_light_grid(rect, 4.6 if rect[2] - rect[0] > 12 else 4.2)
 
 
 if __name__ == "__main__":
     build()
-    write_obj()
-    print(f"verts={len(verts)} faces={len(faces)} collision_boxes={len(boxes)} materials={len({m for m,_ in faces})}")
+    assert len(L._stack) == 1, "несбалансированный push/pop"
+    nv = L.write_files()
+    print(f"faces={len(L.faces)} verts={nv} collision_boxes={len(L.boxes)} lights={len(L.fixtures)} "
+          f"materials={len({m for m, *_ in L.faces})}")

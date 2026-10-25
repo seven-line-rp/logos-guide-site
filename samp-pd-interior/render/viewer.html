@@ -1,0 +1,145 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#000}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"/three/build/three.module.js","three/addons/":"/three/examples/jsm/"}}</script>
+</head><body>
+<script type="module">
+import * as THREE from 'three';
+import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { SMAAPass } from 'three/addons/postprocessing/SMAAPass.js';
+
+const q = new URLSearchParams(location.search);
+const shots = await (await fetch('/render/shots.json')).json();
+const shot = shots[q.get('shot')];
+const W = +q.get('w') || 1600, Hh = +q.get('h') || 900;
+const scene_json = await (await fetch('/scene.json')).json();
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(W, Hh); renderer.setPixelRatio(1);
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = shot.exposure ?? 0.85;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+const tl = new THREE.TextureLoader();
+const sky = await tl.loadAsync('/textures/cityscape.png');
+sky.colorSpace = THREE.SRGBColorSpace; sky.mapping = THREE.EquirectangularReflectionMapping;
+scene.background = sky;
+const pm = new THREE.PMREMGenerator(renderer);
+scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture;
+
+// Z-up → Y-up
+const root = new THREE.Group(); root.rotation.x = -Math.PI / 2; scene.add(root);
+const P = (x, y, z) => new THREE.Vector3(x, z, -y);
+
+const texCache = {};
+async function tex(name) {
+  if (!texCache[name]) {
+    const t = await tl.loadAsync(`/textures/${name}.png`);
+    t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.anisotropy = 8; texCache[name] = t;
+  }
+  return texCache[name];
+}
+const mats = {};
+for (const [name, m] of Object.entries(scene_json.materials)) {
+  const p = { color: new THREE.Color(...m.color), roughness: m.rough, metalness: m.metal, envMapIntensity: .45 };
+  if (m.tex) p.map = await tex(m.tex);
+  if (m.opacity) { p.transparent = true; p.opacity = m.opacity; p.depthWrite = false; p.side = THREE.DoubleSide; }
+  if (m.emissive) { p.emissive = new THREE.Color(1, 1, .92); p.emissiveIntensity = 2.2; }
+  if (m.alpha_test) { p.alphaTest = m.alpha_test; p.side = THREE.DoubleSide; if (m.alpha_test < .2) { p.transparent = true; p.depthWrite = false; p.polygonOffset = true; p.polygonOffsetFactor = -2; } }
+  if (m.emissive_map) { p.emissive = new THREE.Color(1, 1, 1); p.emissiveMap = p.map; p.emissiveIntensity = m.emissive_map * .9; }
+  mats[name] = new THREE.MeshStandardMaterial(p);
+  mats[name].userData.alpha = !!m.alpha_test;
+  if (shot.frontClip && ['brick_front', 'wall_cream_front', 'wainscot_front'].includes(name))
+    mats[name].clippingPlanes = [new THREE.Plane(new THREE.Vector3(0, -1, 0), shot.frontClip)];
+}
+renderer.localClippingEnabled = true;
+const obj = await new OBJLoader().loadAsync('/pd_interior.obj');
+const hide = new Set(shot.hide || []);
+obj.traverse(o => {
+  if (!o.isMesh) return;
+  const arr = Array.isArray(o.material);
+  const names = (arr ? o.material : [o.material]).map(m => m.name);
+  o.userData.names = names;
+  const mm = names.map(n => { if (!mats[n]) console.error('unknown material [' + n + ']'); return mats[n]; });
+  o.material = arr ? mm : mm[0];
+  if (names.some(n => hide.has(n))) {
+    // скрываем группы граней скрытых материалов
+    if (arr) o.geometry.groups = o.geometry.groups.filter(g => !hide.has(names[g.materialIndex]));
+    else o.visible = false;
+  }
+  const noCast = (arr ? mm : [mm[0]]).some(m => m && (m.userData.alpha || m.transparent));
+  o.castShadow = !noCast; o.receiveShadow = true;
+});
+const extra = [];
+const NOAO = new Set(['plant_card', 'seal_floor', 'badge_wall', 'glass', 'light']);
+obj.traverse(o => {
+  if (!o.isMesh || !Array.isArray(o.material)) return;
+  const names = o.material.map(m => m && m.name ? m.name : '');
+  const keep = [], move = [];
+  o.geometry.groups.forEach(g => (NOAO.has(o.userData.names[g.materialIndex]) ? move : keep).push(g));
+  if (!move.length) return;
+  const g2 = o.geometry.clone(); g2.groups = move;
+  const m2 = new THREE.Mesh(g2, o.material); m2.castShadow = false; m2.receiveShadow = true; m2.userData.noAO = true;
+  extra.push([o.parent, m2]);
+  o.geometry.groups = keep;
+});
+extra.forEach(([p, m]) => p.add(m));
+root.add(obj);
+if (shot.frontClip) {
+  const cap = new THREE.Mesh(new THREE.BoxGeometry(56.4, shot.frontClip, .2), new THREE.MeshStandardMaterial({ map: await tex('brick'), roughness: .9 }));
+  cap.material.map = cap.material.map.clone(); cap.material.map.repeat.set(20, 1); cap.material.map.needsUpdate = true;
+  cap.position.set(28, shot.frontClip / 2, 0); cap.castShadow = cap.receiveShadow = true; scene.add(cap);
+}
+if (shot.bg) scene.background = new THREE.Color(parseInt(shot.bg));
+
+// улица
+const asphalt = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshStandardMaterial({ color: 0x5b5d60, roughness: .95 }));
+asphalt.rotation.x = -Math.PI / 2; asphalt.position.y = -0.31; asphalt.receiveShadow = true; asphalt.visible = !shot.noGround; scene.add(asphalt);
+
+// свет
+const cam = new THREE.PerspectiveCamera(shot.fov, W / Hh, 0.05, 400);
+cam.position.copy(P(...shot.pos)); cam.lookAt(P(...shot.look));
+const hemi = new THREE.HemisphereLight(0xdfe8ff, 0x6a6258, shot.ambient ?? 0.4); scene.add(hemi);
+const lights = scene_json.lights.map(l => ({ l, d: P(...l).distanceTo(cam.position) })).sort((a, b) => a.d - b.d).slice(0, shot.maxLights ?? 8);
+lights.forEach(({ l }, i) => {
+  const L = new THREE.PointLight(0xfff1de, shot.lightI ?? 10, 16, 1.6);
+  L.position.copy(P(...l));
+  if (i < (shot.shadows ?? 2)) {
+    L.castShadow = true; L.shadow.mapSize.set(1024, 1024);
+    L.shadow.bias = -0.0008; L.shadow.normalBias = .03; L.shadow.camera.near = .1; L.shadow.camera.far = 14;
+  }
+  scene.add(L);
+});
+if (shot.sun) {
+  const s = new THREE.DirectionalLight(0xfff4e0, shot.sun); s.position.set(-30, 60, 40); s.target.position.set(18, 0, -13);
+  s.castShadow = true; s.shadow.mapSize.set(4096, 4096);
+  Object.assign(s.shadow.camera, { left: -40, right: 40, top: 40, bottom: -40, near: 1, far: 160 });
+  s.shadow.bias = -.0004; s.shadow.normalBias = .05; scene.add(s, s.target);
+}
+if (shot.ao === false) {
+  renderer.render(scene, cam);
+} else {
+  const composer = new EffectComposer(renderer);
+  composer.setSize(W, Hh);
+  composer.addPass(new RenderPass(scene, cam));
+  const gtao = new GTAOPass(scene, cam, W, Hh);
+  gtao.overrideVisibility = function () {
+    this._visibilityCache = new Map();
+    this.scene.traverse(o => { this._visibilityCache.set(o, o.visible); if (o.isPoints || o.isLine || o.userData.noAO) o.visible = false; });
+  };
+  gtao.updateGtaoMaterial({ radius: shot.aoRadius ?? 0.7, distanceExponent: 1.6, thickness: 1.5, scale: shot.aoScale ?? 1.6, samples: 16, distanceFallOff: 1.0, screenSpaceRadius: false });
+  gtao.blendIntensity = 1.0;
+  composer.addPass(gtao);
+  composer.addPass(new OutputPass());
+  composer.addPass(new SMAAPass(W, Hh));
+  composer.render();
+}
+window.__done = true;
+</script></body></html>
