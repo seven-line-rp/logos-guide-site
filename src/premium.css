@@ -153,18 +153,19 @@ body { transition: background-color var(--motion-med) var(--ease-out), color var
 /* Cursor glow (desktop) */
 .cursor-glow {
   position: fixed;
+  top: 0;
+  left: 0;
   width: 360px;
   height: 360px;
   border-radius: 50%;
   pointer-events: none;
   z-index: 1;
   background: radial-gradient(circle, rgba(36, 92, 229, .10), transparent 60%);
-  transform: translate(-50%, -50%);
   transition: opacity 300ms var(--ease-out);
-  mix-blend-mode: multiply;
   opacity: 0;
+  will-change: transform;
 }
-[data-theme="dark"] .cursor-glow { mix-blend-mode: screen; background: radial-gradient(circle, rgba(36, 92, 229, .16), transparent 60%); }
+[data-theme="dark"] .cursor-glow { background: radial-gradient(circle, rgba(70, 120, 255, .16), transparent 60%); }
 .cursor-glow.active { opacity: 1; }
 
 /* Floating animation */

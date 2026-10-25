@@ -78,3 +78,15 @@
   .ai-subject { padding-left: 12px; }
   .ai-thread { gap: 24px; }
 }
+
+/* ---------- Заставка пустого чата: 3D-нейросеть (neural-scene.js) ---------- */
+.ai-neural { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; opacity: 1; transition: opacity .5s ease, visibility 0s; }
+.ai-neural.is-off { visibility: hidden; opacity: 0; transition: opacity .35s ease, visibility 0s .35s; }
+.ai-neural canvas { width: 100%; height: 100%; display: block; }
+/* Мягкая подложка под заголовком и полем ввода: сеть видна по краям, текст читается. */
+.ai-neural::after { position: absolute; inset: 0; background: radial-gradient(ellipse 40% 36% at 50% 52%, color-mix(in srgb, var(--bg) 88%, transparent), transparent 100%); content: ''; }
+.ai-topbar, .ai-scroll, .ai-dock, .ai-disclaimer { position: relative; z-index: 1; }
+@media (max-width: 900px) {
+  .ai-neural::after { background: radial-gradient(ellipse 70% 30% at 50% 66%, color-mix(in srgb, var(--bg) 82%, transparent), transparent 100%); }
+}
+@media (prefers-reduced-motion: reduce) { .ai-neural, .ai-neural.is-off { transition: none; } }

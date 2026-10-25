@@ -1,15 +1,19 @@
-import { useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { ArrowDownRight, ArrowRight, ArrowUpRight, GraduationCap, ListChecks, MapPin, QrCode, Search } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { photoSrcSet, photosFor, rooms, quickPlaces } from '../data.js'
 import { HERO_ROUTES } from '../hero-scene-model.js'
-import HeroScene from '../components/HeroScene.jsx'
 import BreakWalk from '../components/BreakWalk.jsx'
 import AiPromoBanner from '../components/AiPromoBanner.jsx'
 import HomeDashboard from '../components/HomeDashboard.jsx'
 import { Reveal, SectionLabel } from '../components/Primitives.jsx'
 import VoiceSearchButton from '../components/VoiceSearchButton.jsx'
 import { cancelMiss, reportMiss, searchRooms, searchTeachers, shortName, useTeachers } from '../search.js'
+import { useScene3d } from '../use-scene3d.js'
+
+// 3D-корпус тяжёлый: грузим его отдельным файлом и только там, где он потянет
+// (компьютер с мышью, не «Лёгкий» режим). На телефонах остаётся градиентный фон.
+const HeroScene = lazy(() => import('../components/HeroScene.jsx'))
 
 // Разделы, до которых с главной иначе не добраться за один клик.
 const homeTasks = [
@@ -54,9 +58,10 @@ function HeroCaption() {
 }
 
 export default function HomePage() {
+  const scene3d = useScene3d()
   return <>
     <section className="home-hero hero-mesh home-hero-usual home-hero-scene" id="top">
-      <HeroScene />
+      {scene3d && <Suspense fallback={null}><HeroScene /></Suspense>}
       <div className="container home-hero-inner">
         <div className="home-hero-copy">
           <span className="home-eyebrow">

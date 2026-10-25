@@ -6,6 +6,7 @@ import WelcomeDialog from './components/WelcomeDialog'
 import CookieBanner from './components/CookieBanner.jsx'
 import OfflineNotice from './components/OfflineNotice.jsx'
 import SiteTour from './components/SiteTour.jsx'
+import ErrorBoundary from './components/ErrorBoundary.jsx'
 import HomePage from './pages/HomePage'
 import { translate, useLanguage } from './i18n.js'
 
@@ -65,7 +66,7 @@ function NotFoundPage() {
 function Site() {
   useLanguage()
   const location = useLocation()
-  return <><RouteEffects /><Header /><main id="main-content" className="site-main page-transition" key={location.pathname}><Suspense fallback={<div className="page-loading container" role="status"><span className="page-loading-dots" aria-hidden="true"><i /><i /><i /></span> Открываем раздел…</div>}><Routes location={location}><Route path="/" element={<HomePage />} /><Route path="/map" element={<MapPage />} /><Route path="/rooms" element={<RoomsPage />} /><Route path="/route" element={<RoutePage />} /><Route path="/games" element={<GamesPage />} /><Route path="/services" element={<ServicesPage />} /><Route path="/about" element={<AboutPage />} /><Route path="/docs" element={<DocsPage />} /><Route path="/privacy" element={<PrivacyPage />} /><Route path="/ai" element={<AiAgentPage />} /><Route path="/schedule" element={<SchedulePage />} /><Route path="/tour" element={<TourPage />} /><Route path="/teachers" element={<TeachersPage />} /><Route path="/start" element={<StartPage />} /><Route path="/here" element={<HerePage />} /><Route path="/feedback" element={<FeedbackPage />} /><Route path="/admin" element={<AdminPage />} /><Route path="*" element={<NotFoundPage />} /></Routes></Suspense></main>{location.pathname !== '/ai' && <Footer />}<WelcomeDialog /><SiteTour /><CookieBanner /><OfflineNotice /></>
+  return <><RouteEffects /><Header /><main id="main-content" className="site-main page-transition" key={location.pathname}><ErrorBoundary key={location.pathname}><Suspense fallback={<div className="page-loading container" role="status"><span className="page-loading-dots" aria-hidden="true"><i /><i /><i /></span> Открываем раздел…</div>}><Routes location={location}><Route path="/" element={<HomePage />} /><Route path="/map" element={<MapPage />} /><Route path="/rooms" element={<RoomsPage />} /><Route path="/route" element={<RoutePage />} /><Route path="/games" element={<GamesPage />} /><Route path="/services" element={<ServicesPage />} /><Route path="/about" element={<AboutPage />} /><Route path="/docs" element={<DocsPage />} /><Route path="/privacy" element={<PrivacyPage />} /><Route path="/ai" element={<AiAgentPage />} /><Route path="/schedule" element={<SchedulePage />} /><Route path="/tour" element={<TourPage />} /><Route path="/teachers" element={<TeachersPage />} /><Route path="/start" element={<StartPage />} /><Route path="/here" element={<HerePage />} /><Route path="/feedback" element={<FeedbackPage />} /><Route path="/admin" element={<AdminPage />} /><Route path="*" element={<NotFoundPage />} /></Routes></Suspense></ErrorBoundary></main>{location.pathname !== '/ai' && <Footer />}<WelcomeDialog /><SiteTour /><CookieBanner /><OfflineNotice /></>
 }
 
 export default function App() {

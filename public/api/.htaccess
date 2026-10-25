@@ -1,6 +1,7 @@
-# ИИ-агент: снаружи доступны только PHP-эндпоинты (ai-chat, notices, report, search-miss). Конфиг с ключом (если его
+# ИИ-агент: снаружи доступны только PHP-эндпоинты (ai-chat, notices, report, search-miss, client-error). Служебные ai-guard.php и
+# alert.php подключаются изнутри и снаружи закрыты. Конфиг с ключом (если его
 # положили сюда, а не уровнем выше) и база знаний напрямую не отдаются.
-<FilesMatch "^(?!(ai-chat|notices|report|search-miss)\.php$)">
+<FilesMatch "^(?!(ai-chat|notices|report|search-miss|client-error)\.php$)">
   <IfModule mod_authz_core.c>
     Require all denied
   </IfModule>

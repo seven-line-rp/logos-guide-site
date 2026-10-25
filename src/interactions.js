@@ -38,6 +38,9 @@ function initHeaderScroll() {
   update()
 }
 
+// Свечение едет за курсором только пока мышь движется: цикл кадров сам
+// останавливается, когда пятно догнало курсор. Двигаем transform, а не
+// left/top, — тогда страница не пересчитывает вёрстку.
 function initCursorGlow() {
   if (reduced || coarsePointer) return
   let glow = document.querySelector('.cursor-glow')
@@ -48,70 +51,64 @@ function initCursorGlow() {
   }
   let x = window.innerWidth / 2, y = window.innerHeight / 2
   let tx = x, ty = y
+  let frame = 0
+  const loop = () => {
+    x += (tx - x) * 0.18
+    y += (ty - y) * 0.18
+    glow.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0) translate(-50%, -50%)`
+    frame = Math.abs(tx - x) + Math.abs(ty - y) > 0.5 ? requestAnimationFrame(loop) : 0
+  }
   window.addEventListener('mousemove', (e) => {
     tx = e.clientX; ty = e.clientY
     glow.classList.add('active')
+    if (!frame) frame = requestAnimationFrame(loop)
+  }, { passive: true })
+  document.documentElement.addEventListener('mouseleave', () => glow.classList.remove('active'))
+}
+
+// Наведение на карточки и кнопки отслеживает один обработчик на документе
+// (делегирование), а не по обработчику на каждый элемент и наблюдатель за
+// всей страницей: раньше при каждом обновлении React страница пересканировалась.
+function hoverEffect(selector, onMove, onLeave) {
+  let current = null
+  let frame = 0
+  document.addEventListener('mousemove', (event) => {
+    const el = event.target instanceof Element ? event.target.closest(selector) : null
+    if (el !== current) {
+      cancelAnimationFrame(frame)
+      if (current) onLeave(current)
+      current = el
+    }
+    if (!el) return
+    const { clientX, clientY } = event
+    cancelAnimationFrame(frame)
+    frame = requestAnimationFrame(() => onMove(el, clientX, clientY))
+  }, { passive: true })
+  document.documentElement.addEventListener('mouseleave', () => {
+    cancelAnimationFrame(frame)
+    if (current) onLeave(current)
+    current = null
   })
-  window.addEventListener('mouseleave', () => glow.classList.remove('active'))
-  const loop = () => {
-    x += (tx - x) * 0.12
-    y += (ty - y) * 0.12
-    glow.style.left = x + 'px'
-    glow.style.top = y + 'px'
-    requestAnimationFrame(loop)
-  }
-  requestAnimationFrame(loop)
 }
 
 function initMagnetic() {
   if (reduced || coarsePointer) return
-  const selector = '.button, .header-cta, .magnetic, .text-link'
-  const attach = (el) => {
-    if (el.dataset.mag) return
-    el.dataset.mag = '1'
-    let raf = 0
-    const move = (e) => {
-      const rect = el.getBoundingClientRect()
-      const cx = rect.left + rect.width / 2
-      const cy = rect.top + rect.height / 2
-      const dx = (e.clientX - cx) * 0.18
-      const dy = (e.clientY - cy) * 0.18
-      cancelAnimationFrame(raf)
-      raf = requestAnimationFrame(() => { el.style.transform = `translate(${dx}px, ${dy}px)` })
-    }
-    const leave = () => {
-      cancelAnimationFrame(raf)
-      el.style.transform = ''
-    }
-    el.addEventListener('mousemove', move)
-    el.addEventListener('mouseleave', leave)
-  }
-  const scan = () => document.querySelectorAll(selector).forEach(attach)
-  scan()
-  const obs = new MutationObserver(scan)
-  obs.observe(document.body, { childList: true, subtree: true })
+  hoverEffect('.button, .header-cta, .magnetic, .text-link', (el, x, y) => {
+    const rect = el.getBoundingClientRect()
+    const dx = (x - (rect.left + rect.width / 2)) * 0.18
+    const dy = (y - (rect.top + rect.height / 2)) * 0.18
+    el.style.transform = `translate(${dx}px, ${dy}px)`
+  }, (el) => { el.style.transform = '' })
 }
 
 function initTilt() {
   if (reduced || coarsePointer) return
-  const selector = '.tilt, .quick-place-card, .floor-switch-card, .game-mode-tab, .quiz-option, .service-card, .about-person, .about-value-row, .faq-item, .directory-card'
-  const attach = (el) => {
-    if (el.dataset.tilt) return
-    el.dataset.tilt = '1'
-    const move = (e) => {
-      const rect = el.getBoundingClientRect()
-      const px = (e.clientX - rect.left) / rect.width - 0.5
-      const py = (e.clientY - rect.top) / rect.height - 0.5
-      el.style.transform = `perspective(900px) rotateY(${px * 8}deg) rotateX(${-py * 8}deg) translateY(-4px)`
-    }
-    const leave = () => { el.style.transform = '' }
-    el.addEventListener('mousemove', move)
-    el.addEventListener('mouseleave', leave)
-  }
-  const scan = () => document.querySelectorAll(selector).forEach(attach)
-  scan()
-  const obs = new MutationObserver(scan)
-  obs.observe(document.body, { childList: true, subtree: true })
+  hoverEffect('.tilt, .quick-place-card, .floor-switch-card, .game-mode-tab, .quiz-option, .service-card, .about-person, .about-value-row, .faq-item, .directory-card', (el, x, y) => {
+    const rect = el.getBoundingClientRect()
+    const px = (x - rect.left) / rect.width - 0.5
+    const py = (y - rect.top) / rect.height - 0.5
+    el.style.transform = `perspective(900px) rotateY(${px * 8}deg) rotateX(${-py * 8}deg) translateY(-4px)`
+  }, (el) => { el.style.transform = '' })
 }
 
 function initRipple() {
