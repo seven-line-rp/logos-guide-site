@@ -13,6 +13,7 @@ import { isSearchShortcut } from '../shortcuts.js'
 import { startTour } from '../tour-bus.js'
 import { openCookieSettings } from '../consent.js'
 import { SITE_AUTHOR, SITE_VERSION_LABEL } from '../version.js'
+import { isLitePerf } from '../perf.js'
 
 const ToastContext = createContext(() => {})
 
@@ -162,20 +163,31 @@ export function Header() {
   const [textSize, setTextSizeState] = useState(readTextSize)
   const location = useLocation()
   const closeSearch = useCallback(() => setSearchOpen(false), [])
-  // Смена темы кругом от кнопки (View Transitions API, где он есть).
+  // Смена темы кругом от кнопки (View Transitions API). Круг — это снимок всей
+  // страницы, поэтому на телефонах, в режиме «Лёгкий» и при «Уменьшить
+  // движение» тему просто переключаем. Там, где круг есть, 3D-сцена главной
+  // на время перехода замирает (data-theme-busy), чтобы снимок снимался с
+  // неподвижной картинки, а не с идущей анимации.
   const switchTheme = (next, event) => {
     if (next === theme) return
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    if (!document.startViewTransition || reduced) { setTheme(next); return }
+    const plain = window.matchMedia('(prefers-reduced-motion: reduce)').matches || window.matchMedia('(pointer: coarse)').matches || window.innerWidth <= 860 || isLitePerf()
+    if (!document.startViewTransition || plain) { setTheme(next); return }
     const rect = event?.currentTarget?.getBoundingClientRect()
     if (rect) {
       document.documentElement.style.setProperty('--theme-x', `${rect.left + rect.width / 2}px`)
       document.documentElement.style.setProperty('--theme-y', `${rect.top + rect.height / 2}px`)
     }
-    document.startViewTransition(() => {
+    const root = document.documentElement
+    root.setAttribute('data-theme-busy', '')
+    window.dispatchEvent(new Event('logos-theme-busy'))
+    const done = () => { root.removeAttribute('data-theme-busy'); window.dispatchEvent(new Event('logos-theme-busy')) }
+    const transition = document.startViewTransition(() => {
       flushSync(() => setTheme(next))
       document.documentElement.dataset.theme = next
     })
+    transition.finished.then(done, done)
+    // Страховка: если браузер не завершил переход, сцена всё равно оживёт.
+    window.setTimeout(done, 3000)
   }
   const changeTheme = (event) => switchTheme(theme === 'dark' ? 'light' : 'dark', event)
   const openSearch = () => { setMobileOpen(false); setSearchOpen(true) }

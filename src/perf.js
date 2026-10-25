@@ -5,18 +5,48 @@
 //
 // Как определяем слабое устройство:
 //   1. ?perf=lite или ?perf=full в адресе — ручной выбор, запоминается;
-//   2. мало памяти (deviceMemory ≤ 2 ГБ) или ядер (≤ 2), «Экономия трафика»;
+//   2. мало памяти (deviceMemory ≤ 2 ГБ, у Android — ≤ 4 ГБ) или ядер (≤ 2),
+//      «Экономия трафика»;
 //   3. замер частоты кадров в первые секунды: если средний кадр дольше 36 мс
 //      (меньше ~28 к/с), включаем лёгкий режим на время этой вкладки.
 
 export const PERF_KEY = 'logos-perf'
 const SESSION_KEY = 'logos-perf-auto'
 
-export function isWeakDevice({ memory, cores, saveData } = {}) {
+export function isWeakDevice({ memory, cores, saveData, android } = {}) {
   if (saveData) return true
-  if (Number.isFinite(memory) && memory <= 2) return true
+  if (Number.isFinite(memory) && memory <= (android ? 4 : 2)) return true
   if (Number.isFinite(cores) && cores <= 2) return true
   return false
+}
+
+// Большие 3D-сцены (главная, нейросеть в чате) тянет только заметно мощное
+// устройство с мышью. Телефоны и планшеты с касанием, узкие окна, режим
+// «Лёгкий», слабое железо и «Уменьшить движение» получают спокойную замену.
+export function canRunScene3d({ lite, reduced, coarse, narrow, memory, cores } = {}) {
+  if (lite || reduced || coarse || narrow) return false
+  if (Number.isFinite(memory) && memory < 4) return false
+  if (Number.isFinite(cores) && cores < 4) return false
+  return true
+}
+
+export function sceneAllowed() {
+  if (typeof window === 'undefined') return false
+  const media = (query) => window.matchMedia(query).matches
+  return canRunScene3d({
+    lite: isLitePerf(),
+    reduced: media('(prefers-reduced-motion: reduce)'),
+    coarse: media('(pointer: coarse)') || !media('(hover: hover)'),
+    narrow: media('(max-width: 860px)'),
+    memory: navigator.deviceMemory,
+    cores: navigator.hardwareConcurrency,
+  })
+}
+
+// Подписка на смену режима «Лёгкий»: сцены гасятся сразу, без перезагрузки.
+export function onPerfChange(listener) {
+  window.addEventListener('logos-perf', listener)
+  return () => window.removeEventListener('logos-perf', listener)
 }
 
 // Среднее время кадра в мс по списку отметок времени.
@@ -58,7 +88,7 @@ export function applyPerfMode() {
   const saved = read('localStorage', PERF_KEY)
   if (saved === 'lite' || saved === 'full') { setMode(saved); return }
   const nav = navigator
-  const weak = isWeakDevice({ memory: nav.deviceMemory, cores: nav.hardwareConcurrency, saveData: nav.connection?.saveData })
+  const weak = isWeakDevice({ memory: nav.deviceMemory, cores: nav.hardwareConcurrency, saveData: nav.connection?.saveData, android: /android/i.test(nav.userAgent) })
   if (weak || read('sessionStorage', SESSION_KEY) === 'lite') { setMode('lite'); return }
   watchFrameRate()
 }

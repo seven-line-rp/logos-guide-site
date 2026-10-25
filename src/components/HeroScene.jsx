@@ -54,7 +54,7 @@ const particles = Array.from({ length: 22 }, (_, index) => ({
 // CSS 3D, ступени и шар считает браузер по одной формуле (--n — номер ступени).
 const SPIRAL_STEPS = 56
 const spiralSteps = Array.from({ length: SPIRAL_STEPS }, (_, n) => n)
-const spiralTrail = Array.from({ length: 7 }, (_, n) => n)
+const spiralTrail = Array.from({ length: 5 }, (_, n) => n)
 
 function GrandSpiral() {
   return <div className="hs-spiral">
@@ -63,10 +63,10 @@ function GrandSpiral() {
       <div className="hs-spiral-turn">
         <i className="hs-spiral-pole" />
         {spiralSteps.map((n) => <i key={n} className="hs-spiral-step" style={{ '--n': n }} />)}
-        {spiralTrail.map((n) => <b key={n} className="hs-spiral-orb" style={{ '--t': n }} />)}
         <i className="hs-spiral-ring hs-spiral-ring-1" />
         <i className="hs-spiral-ring hs-spiral-ring-2" />
       </div>
+      <div className="hs-spiral-orbs">{spiralTrail.map((n) => <b key={n} className="hs-spiral-orb" style={{ '--t': n }} />)}</div>
     </div>
   </div>
 }
@@ -178,7 +178,9 @@ export default function HeroScene() {
       return () => observer?.disconnect()
     }
     let frameId = 0
-    const startedAt = performance.now()
+    let startedAt = performance.now()
+    let pausedAt = 0
+    let inView = true
     const tick = (now) => {
       const progress = (now - startedAt) / 1000 / FLIGHT_SECONDS
       // Цикл кончился общим планом: меняем маршрут, пока камера на нём.
@@ -186,8 +188,35 @@ export default function HeroScene() {
       apply(scene.flight(progress), now)
       frameId = requestAnimationFrame(tick)
     }
+    // Сцена работает только пока её видно: ушла за край экрана, вкладка в
+    // фоне или идёт смена темы — кадры не считаем и CSS-анимации стоят
+    // (.is-paused). Время пролёта при этом не теряется.
+    const sync = () => {
+      const run = inView && !document.hidden && !document.documentElement.hasAttribute('data-theme-busy')
+      if (run && pausedAt) {
+        startedAt += performance.now() - pausedAt
+        pausedAt = 0
+        root.classList.remove('is-paused')
+        frameId = requestAnimationFrame(tick)
+      } else if (!run && !pausedAt) {
+        pausedAt = performance.now()
+        cancelAnimationFrame(frameId)
+        root.classList.add('is-paused')
+      }
+    }
+    const viewObserver = typeof IntersectionObserver === 'undefined' ? null : new IntersectionObserver(([entry]) => { inView = entry.isIntersecting; sync() })
+    viewObserver?.observe(root)
+    document.addEventListener('visibilitychange', sync)
+    window.addEventListener('logos-theme-busy', sync)
     frameId = requestAnimationFrame(tick)
-    return () => { cancelAnimationFrame(frameId); observer?.disconnect() }
+    return () => {
+      cancelAnimationFrame(frameId)
+      observer?.disconnect()
+      viewObserver?.disconnect()
+      document.removeEventListener('visibilitychange', sync)
+      window.removeEventListener('logos-theme-busy', sync)
+      root.classList.remove('is-paused')
+    }
   }, [scene])
 
   // Лёгкий параллакс за курсором: сцена чуть поворачивается к мыши.
@@ -225,7 +254,6 @@ export default function HeroScene() {
     <GrandSpiral />
     <div className="hs-streak" />
     <div className="hs-spot" />
-    <div className="hs-dof" />
     <div className="hs-particles">{particles.map((particle, index) => <i key={index} style={{ left: `${particle.left}%`, top: `${particle.top}%`, width: particle.size, height: particle.size, animationDelay: `${particle.delay}s` }} />)}</div>
   </div>
 }
