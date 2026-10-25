@@ -210,3 +210,4 @@
 
 /* ---------- Мелочи ---------- */
 .directory-floor-filters > span { text-transform: none; }
+.here-signs-actions { display: flex; flex-wrap: wrap; gap: 8px; }

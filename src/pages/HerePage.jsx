@@ -1,17 +1,21 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { ArrowRight, MapPin, Printer, QrCode } from 'lucide-react'
+import { ArrowRight, Download, MapPin, Printer, QrCode } from 'lucide-react'
 import { PageHeading, Reveal } from '../components/Primitives.jsx'
 import RoomSearchSelect from '../components/RoomSearchSelect.jsx'
 import { quickPlaces, rooms } from '../data.js'
 import { findNearest, nearbyKinds } from '../places.js'
 import { setHere } from '../route-prefs.js'
 import { brandedQrSvg } from '../share.js'
+import { makeZip } from '../zip.js'
 
 // «Вы здесь». На дверях можно повесить QR-табличку со ссылкой
 // /here?room=<id>: человек сканирует её, и путеводитель сразу знает, откуда
 // строить маршрут (logos-here, как после пройденного маршрута). Без ?room
 // страница собирает листы с такими табличками для печати.
+
+// Имя файла из названия помещения: без символов, которые запрещены в Windows.
+export const signFileName = (room) => `${room.floor}-этаж_${roomName(room)}.svg`.replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, '_')
 
 const roomName = (room) => `${room.name}${room.number ? ` №${room.number}` : ''}`
 // Табличка нужна там, куда приходят люди: без лифтов, лестниц и самих входов.
@@ -53,6 +57,15 @@ function YouAreHere({ room }) {
 function SignSheet() {
   const [floor, setFloor] = useState('all')
   const [codes, setCodes] = useState({})
+  const download = () => {
+    const files = signRooms.filter((room) => codes[room.id]).map((room) => ({ name: signFileName(room), data: codes[room.id] }))
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(new Blob([makeZip(files)], { type: 'application/zip' }))
+    link.download = 'logos-qr-vy-zdes.zip'
+    link.click()
+    window.setTimeout(() => URL.revokeObjectURL(link.href), 1000)
+  }
+  const ready = signRooms.every((room) => codes[room.id])
   const list = signRooms.filter((room) => floor === 'all' || String(room.floor) === floor)
   useEffect(() => {
     let alive = true
@@ -67,7 +80,10 @@ function SignSheet() {
     <section className="here-signs container">
       <div className="here-signs-bar no-print">
         <div className="directory-category-filters" role="group" aria-label="Этаж">{[['all', 'Все'], ['1', '1 этаж'], ['2', '2 этаж']].map(([id, label]) => <button key={id} type="button" className={floor === id ? 'directory-chip directory-chip-active' : 'directory-chip'} aria-pressed={floor === id} onClick={() => setFloor(id)}>{label}</button>)}</div>
-        <button type="button" className="button button-primary" onClick={() => window.print()}><Printer size={16} /> Распечатать {list.length}</button>
+        <div className="here-signs-actions">
+          <button type="button" className="button" onClick={download} disabled={!ready}><Download size={16} /> Скачать все QR (ZIP, {signRooms.length})</button>
+          <button type="button" className="button button-primary" onClick={() => window.print()}><Printer size={16} /> Распечатать {list.length}</button>
+        </div>
       </div>
       <div className="here-sign-grid">
         {list.map((room) => <article key={room.id} className="here-sign">
