@@ -4,6 +4,7 @@ import { ArrowRight, Download, MapPin, Printer, QrCode } from 'lucide-react'
 import { PageHeading, Reveal } from '../components/Primitives.jsx'
 import RoomSearchSelect from '../components/RoomSearchSelect.jsx'
 import { quickPlaces, rooms } from '../data.js'
+import { hereLink, roomName, signFileName, signRooms } from '../signs.js'
 import { findNearest, nearbyKinds } from '../places.js'
 import { setHere } from '../route-prefs.js'
 import { brandedQrSvg, svgToPng } from '../share.js'
@@ -14,14 +15,7 @@ import { makeZip } from '../zip.js'
 // строить маршрут (logos-here, как после пройденного маршрута). Без ?room
 // страница собирает листы с такими табличками для печати.
 
-// Имя файла из названия помещения: без символов, которые запрещены в Windows.
-export const signFileName = (room) => `${room.floor}-этаж_${roomName(room)}.svg`.replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, '_')
-
-const roomName = (room) => `${room.name}${room.number ? ` №${room.number}` : ''}`
-// Табличка нужна там, куда приходят люди: без лифтов, лестниц и самих входов.
-const signRooms = rooms.filter((room) => !/^(lift|stairs)-/.test(room.id))
-
-export const hereLink = (origin, roomId) => `${origin}/here?room=${encodeURIComponent(roomId)}`
+export { hereLink }
 
 function YouAreHere({ room }) {
   const navigate = useNavigate()
