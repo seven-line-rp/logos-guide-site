@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
-import { routeFromLink, answerActions, askAgent, chatTitle, CHATS_KEY, containsProfanity, historyForRequest, loadChats, maskProfanity, MAX_HISTORY, parseBlocks, parseChats, parseInline, plainText, safeHref, saveChats } from './ai-chat.js'
+import { routeFromLink, answerActions, askAgent, chatTitle, CHATS_KEY, containsProfanity, historyForRequest, loadChats, maskProfanity, MAX_HISTORY, MAX_INPUT, parseBlocks, parseChats, parseInline, plainText, safeHref, saveChats } from './ai-chat.js'
 import { buildKnowledge } from './ai-knowledge.js'
 import { rooms } from './data.js'
 
@@ -18,7 +18,7 @@ test('request history keeps only real turns and caps length', () => {
 test('askAgent posts history and surfaces server errors', async () => {
   let sent
   const ok = async (url, init) => { sent = { url, body: JSON.parse(init.body) }; return { ok: true, status: 200, json: async () => ({ reply: 'Библиотека — кабинет 214.' }) } }
-  assert.deepEqual(await askAgent([{ role: 'user', content: 'Где библиотека?' }], { fetchImpl: ok, deep: true }), { reply: 'Библиотека — кабинет 214.', reasoning: '', vision: true, left: null })
+  assert.deepEqual(await askAgent([{ role: 'user', content: 'Где библиотека?' }], { fetchImpl: ok, deep: true }), { reply: 'Библиотека — кабинет 214.', sig: '', reasoning: '', vision: true, left: null })
   assert.equal(sent.url, '/api/ai-chat.php')
   assert.deepEqual(sent.body, { messages: [{ role: 'user', content: 'Где библиотека?' }], deep: true, rude: false })
   await askAgent([{ role: 'user', content: 'б*** ну ты и тормоз', rude: true }], { fetchImpl: ok })
@@ -137,4 +137,25 @@ test('fenced code blocks stay verbatim and are not parsed as lists or links', ()
   assert.equal(parseBlocks('```\nнедописано')[0].text, 'недописано')
   assert.match(plainText('```js\nlet a = 1\n```'), /let a = 1/)
   assert.deepEqual(answerActions('```\n[x](/route?to=a)\n```'), [])
+})
+
+test('assistant turns go out whole with the server signature, and requests are marked as from the site', async () => {
+  const long = 'я'.repeat(MAX_INPUT + 500)
+  const history = historyForRequest([
+    { role: 'user', content: 'вопрос' },
+    { role: 'assistant', content: long, sig: 'abc123' },
+    { role: 'assistant', content: 'старый ответ без подписи' },
+    { role: 'user', content: 'z'.repeat(MAX_INPUT + 10) },
+  ])
+  assert.equal(history[1].content.length, long.length)
+  assert.equal(history[1].sig, 'abc123')
+  assert.ok(!('sig' in history[2]))
+  assert.equal(history[3].content.length, MAX_INPUT)
+  assert.ok(!('sig' in history[0]) && !('sig' in history[3]))
+
+  let sentHeaders
+  const ok = async (url, init) => { sentHeaders = init.headers; return { ok: true, status: 200, json: async () => ({ reply: 'Ок', sig: 'feedbeef' }) } }
+  const answer = await askAgent([{ role: 'user', content: 'x' }], { fetchImpl: ok })
+  assert.equal(sentHeaders['X-Logos-Client'], 'web')
+  assert.equal(answer.sig, 'feedbeef')
 })

@@ -414,4 +414,6 @@ Object.assign(english, {
   'Распечатать QR-таблички «Вы здесь» для дверей': 'Print “You are here” QR signs for the doors', '— по ним маршрут строится от того места, где висит табличка.': '— routes start from wherever the sign hangs.',
   'Нецензурные слова маскируются звёздочками ещё в браузере, до отправки.': 'Swear words are masked with asterisks in your browser before sending.',
   'Крупный текст на сайте': 'Large text on the site', 'Отметки в чек-листе первой недели': 'Ticks in the first-week checklist', 'Избранные места, последние маршруты и места из поиска': 'Favourite places, recent routes and places from search',
+  'Что-то пошло не так': 'Something went wrong', 'Раздел не открылся.': 'This page did not open.', 'Попробуйте обновить.': 'Try refreshing.',
+  'Возможно, сайт только что обновился или пропала связь. Обычно помогает перезагрузка страницы. Если не помогло, напишите нам через «Сообщить о проблеме».': 'The site may have just been updated or the connection dropped. Reloading the page usually helps. If it does not, tell us through “Report a problem”.', 'Обновить страницу': 'Reload the page',
 })

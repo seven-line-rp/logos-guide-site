@@ -1,0 +1,56 @@
+# Проверка, что сайт жив, каждые 5 минут — снаружи хостинга. При падении и при
+# восстановлении шлёт сообщение в Telegram, а упавший запуск ещё и помечается
+# красным (GitHub пришлёт письмо владельцу репозитория). Настройка и что
+# делать при тревоге — deploy/alerts.md.
+#
+# Нужны (Settings → Secrets and variables → Actions):
+#   Variables: SITE_URL — адрес сайта, например https://logos-guide.ru
+#   Secrets:   TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID — по желанию
+# Расписание GitHub работает только в основной ветке и может запаздывать на
+# несколько минут; после 60 дней без активности в репозитории его нужно
+# включить заново (вкладка Actions).
+name: Uptime
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: uptime
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts/uptime-check.mjs
+          sparse-checkout-cone-mode: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Итог прошлого запуска
+        id: previous
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          CONCLUSION="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow uptime.yml --status completed --limit 1 --json conclusion --jq '.[0].conclusion // ""' 2>/dev/null || true)"
+          echo "conclusion=$CONCLUSION" >> "$GITHUB_OUTPUT"
+
+      - name: Проверка сайта
+        env:
+          SITE_URL: ${{ vars.SITE_URL }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          PREVIOUS_CONCLUSION: ${{ steps.previous.outputs.conclusion }}
+          CHECK_API: ${{ vars.CHECK_API }}
+        run: node scripts/uptime-check.mjs

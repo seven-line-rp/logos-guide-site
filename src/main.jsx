@@ -40,9 +40,12 @@ import './perf.css'
 import './interactions.js'
 import { applyMapContrast } from './map-contrast.js'
 import { applyTextSize, readTextSize } from './text-size.js'
+import { installErrorReporting } from './error-report.js'
 
 applyMapContrast()
 applyTextSize(readTextSize())
+// Сообщения о сбоях страницы для оповещений владельцу (только в рабочей сборке).
+if (import.meta.env.PROD) installErrorReporting()
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>

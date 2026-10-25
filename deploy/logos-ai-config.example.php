@@ -12,4 +12,18 @@ return [
     // 'deep_per_ip_daily' => 4,         // из них «Подумать глубже»
     // 'per_ip_limit' => 8,              // вопросов с одного IP за 10 минут
     // 'max_tokens' => 1400,              // предел длины ответа
+
+    // Оповещения владельцу (deploy/alerts.md): хватит одного способа.
+    // 'alert_telegram_token' => '123456:ABC…',   // токен бота от @BotFather
+    // 'alert_telegram_chat' => '123456789',      // ваш chat id (узнать у @userinfobot)
+    // 'alert_webhook' => 'https://…',            // Slack, Discord, Mattermost: принимает {"text": …}
+    // 'alert_email' => 'you@example.com',        // письмо через mail() хостинга
+
+    // Защита (deploy/ai-agent.md, раздел «Защита ИИ»). Всё необязательно.
+    // 'reports_key' => 'длинная-случайная-строка', // ключ для ?health&key=… (расход, модель), общий с report.php
+    // 'guard_secret' => 'ещё-одна-длинная-случайная-строка', // секрет подписи ответов; по умолчанию берётся из ключа API
+    // 'allowed_hosts' => ['www.logos-guide.ru'], // дополнительные адреса сайта (если он открывается не только по основному)
+    // За прокси (например, Cloudflare) посетители иначе выглядят одним адресом:
+    // 'ip_header' => 'HTTP_CF_CONNECTING_IP',
+    // 'trusted_proxies' => ['…адрес прокси…'],
 ];

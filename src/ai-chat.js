@@ -22,9 +22,12 @@ export function historyForRequest(messages) {
   const turns = messages
     .filter((message) => (message.role === 'user' || message.role === 'assistant') && !message.error && !message.curator)
     .slice(-MAX_HISTORY)
-  return turns.map(({ role, content, images }, index) => {
-    const text = String(content || '').slice(0, MAX_INPUT)
+  return turns.map(({ role, content, images, sig }, index) => {
+    // Ответ агента уходит целиком и с подписью сервера: по ней сервер отличает
+    // настоящие ответы от подделанных. Вопросы человека обрезаются до MAX_INPUT.
+    const text = role === 'assistant' ? String(content || '') : String(content || '').slice(0, MAX_INPUT)
     const item = { role, content: text }
+    if (role === 'assistant' && sig) item.sig = sig
     if (images?.length) {
       if (index === turns.length - 1) item.images = images.slice(0, MAX_IMAGES)
       else item.content = `${text}\n${IMAGE_NOTE}`.trim()
@@ -38,7 +41,7 @@ export async function askAgent(messages, { signal, deep = false, fetchImpl = fet
   try {
     response = await fetchImpl(AI_ENDPOINT, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-Logos-Client': 'web' },
       body: JSON.stringify({ messages: historyForRequest(messages), deep, rude: Boolean(messages[messages.length - 1]?.rude) }),
       signal,
     })
@@ -49,7 +52,7 @@ export async function askAgent(messages, { signal, deep = false, fetchImpl = fet
   const data = await response.json().catch(() => null)
   if (response.ok && typeof data?.reply === 'string') {
     const question = messages[messages.length - 1]?.content || ''
-    return { reply: cleanReply(data.reply, question), reasoning: typeof data.reasoning === 'string' ? cleanReply(data.reasoning, question) : '', vision: data.vision !== false, left: Number.isFinite(data.left) ? data.left : null }
+    return { reply: cleanReply(data.reply, question), sig: typeof data.sig === 'string' ? data.sig : '', reasoning: typeof data.reasoning === 'string' ? cleanReply(data.reasoning, question) : '', vision: data.vision !== false, left: Number.isFinite(data.left) ? data.left : null }
   }
   if (data?.error) throw Object.assign(new Error(data.error), { left: Number.isFinite(data.left) ? data.left : null })
   if (response.status === 404) throw new Error('ИИ-агент ещё не загружен на этот сервер.')
