@@ -159,3 +159,11 @@ test('assistant turns go out whole with the server signature, and requests are m
   assert.equal(sentHeaders['X-Logos-Client'], 'web')
   assert.equal(answer.sig, 'feedbeef')
 })
+
+test('branded QR: rounded modules, logo in the centre, high error correction', async () => {
+  const { brandedQrSvg } = await import('./share.js')
+  const svg = await brandedQrSvg('https://example.test/here?room=class-118')
+  assert.match(svg, /^<svg[^>]*viewBox="0 0 \d+ \d+"/)
+  assert.ok((svg.match(/rx="0\.32"/g) || []).length > 100, 'скруглённые точки')
+  assert.match(svg, /rx="[\d.]+" fill="#ffffff"\/><g transform/, 'плашка под логотип со скруглёнными краями')
+})

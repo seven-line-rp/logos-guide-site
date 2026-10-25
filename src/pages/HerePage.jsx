@@ -6,7 +6,7 @@ import RoomSearchSelect from '../components/RoomSearchSelect.jsx'
 import { quickPlaces, rooms } from '../data.js'
 import { findNearest, nearbyKinds } from '../places.js'
 import { setHere } from '../route-prefs.js'
-import { qrSvg } from '../share.js'
+import { brandedQrSvg } from '../share.js'
 
 // «Вы здесь». На дверях можно повесить QR-табличку со ссылкой
 // /here?room=<id>: человек сканирует её, и путеводитель сразу знает, откуда
@@ -56,7 +56,7 @@ function SignSheet() {
   const list = signRooms.filter((room) => floor === 'all' || String(room.floor) === floor)
   useEffect(() => {
     let alive = true
-    Promise.all(signRooms.map(async (room) => [room.id, await qrSvg(hereLink(window.location.origin, room.id))]))
+    Promise.all(signRooms.map(async (room) => [room.id, await brandedQrSvg(hereLink(window.location.origin, room.id))]))
       .then((entries) => { if (alive) setCodes(Object.fromEntries(entries)) })
       .catch(() => {})
     return () => { alive = false }
