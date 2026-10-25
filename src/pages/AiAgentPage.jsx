@@ -8,6 +8,9 @@ import { speakText, stopSpeech } from '../speech.js'
 import { AiMessageText, RawText, messageSubject } from '../components/ai-message.js'
 import RoutePreview from '../components/RoutePreview.jsx'
 import NeuralNet from '../components/NeuralNet.jsx'
+import AiIntro from '../components/AiIntro.jsx'
+import { INTRO_KEY, shouldShowIntro } from '../ai-intro.js'
+import { storageGet, storageSet } from '../storage.js'
 import { rooms } from '../data.js'
 
 // ЛОГОС AI: чат с DeepSeek через public/api/ai-chat.php. Чаты хранятся в
@@ -16,6 +19,8 @@ import { rooms } from '../data.js'
 // замаскированным. Режим «Зачёт» просит у агента теорию и практические задания
 // (блок quiz рисует components/ai-quiz.js), а под ответами появляются
 // вопросы-продолжения (блок next).
+
+const sessionGet = (key) => { try { return sessionStorage.getItem(key) } catch { return null } }
 
 const suggestions = [
   { icon: GraduationCap, text: 'Как решать химические реакции?', study: true },
@@ -98,6 +103,15 @@ export default function AiAgentPage() {
     const fresh = createChat()
     return { chats: [fresh, ...saved.chats], activeId: fresh.id }
   })
+  // Заставка при первом заходе (?intro=1 показывает её снова). Отметка лежит
+  // в localStorage, а если функциональные cookie отклонены — хотя бы в этой вкладке.
+  const [intro, setIntro] = useState(() => /[?&]intro=1\b/.test(window.location.search) || shouldShowIntro((key) => storageGet(key) ?? sessionGet(key)))
+  const closeIntro = () => {
+    storageSet(INTRO_KEY, '1')
+    try { sessionStorage.setItem(INTRO_KEY, '1') } catch { /* приватный режим */ }
+    setIntro(false)
+    window.setTimeout(() => inputRef.current?.focus(), 50)
+  }
   const [input, setInput] = useState('')
   const [attachments, setAttachments] = useState([])
   const [pending, setPending] = useState(null)
@@ -315,10 +329,11 @@ export default function AiAgentPage() {
   </form>
 
   return <section className={`ai-page ${collapsed ? 'ai-collapsed' : ''}`}>
+    {intro && <AiIntro onDone={closeIntro} />}
     {narrow ? createPortal(<div className={`ai-drawer ${sidebar ? 'ai-sidebar-open' : ''}`}>{sidebarView}</div>, document.body) : !collapsed && sidebarView}
 
     <div className={`ai-main ${dragging ? 'is-dragging' : ''} ${messages.length ? '' : 'is-empty'}`} onDragOver={(event) => { if ([...event.dataTransfer.types].includes('Files')) { event.preventDefault(); setDragging(true) } }} onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setDragging(false) }} onDrop={onDrop}>
-      <NeuralNet active={!messages.length} />
+      <NeuralNet active={!messages.length && !intro} />
       <div className="ai-topbar">
         {(narrow || collapsed) && <button className="ai-icon" type="button" onClick={() => (narrow ? setSidebar(true) : setCollapsed(false))} aria-label="Открыть список чатов" title="Чаты"><PanelLeft size={18} /></button>}
         {(narrow || collapsed) && <button className="ai-icon" type="button" onClick={newChat} aria-label="Новый чат" title="Новый чат"><SquarePen size={17} /></button>}

@@ -1,0 +1,67 @@
+/* Заставка ЛОГОС AI при первом заходе (components/AiIntro.jsx). Всегда тёмная,
+   как кинозал, независимо от темы сайта. */
+.ai-intro {
+  position: fixed; inset: 0; z-index: 400; overflow: hidden; color: #e6f4ff;
+  background: radial-gradient(ellipse 80% 70% at 50% 46%, #07162f 0%, #030a18 55%, #010308 100%);
+  opacity: 1; transform: none;
+  transition: opacity .9s ease, transform .9s cubic-bezier(.5, 0, .2, 1), filter .9s ease;
+  animation: ai-intro-in .6s ease both;
+}
+.ai-intro.is-leaving { opacity: 0; transform: scale(1.12); filter: blur(6px); pointer-events: none; }
+.ai-intro canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.ai-intro-vignette { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 75% 75% at 50% 50%, transparent 55%, rgba(0, 0, 0, .75) 100%); }
+.ai-intro-sr { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+.ai-intro-skip {
+  position: absolute; top: max(6.5vh, calc(env(safe-area-inset-top) + 14px)); right: max(20px, 3vw); z-index: 3;
+  min-height: 40px; padding: 0 16px; border: 1px solid rgba(140, 215, 255, .35); border-radius: 999px;
+  background: rgba(5, 20, 44, .55); color: rgba(220, 240, 255, .85); font: inherit; font-size: .85rem; letter-spacing: .06em; cursor: pointer;
+  transition: border-color .2s, color .2s, background .2s;
+}
+.ai-intro-skip:hover { border-color: rgba(140, 215, 255, .8); color: #fff; background: rgba(20, 60, 110, .6); }
+.ai-intro button:focus-visible { outline: 2px solid #8fdcff; outline-offset: 3px; }
+
+/* Надпись по центру, под «мозгом» на телефоне. */
+.ai-intro-caption, .ai-intro-final {
+  position: absolute; left: 50%; bottom: 14vh; z-index: 2; width: min(92vw, 880px); translate: -50% 0;
+  display: grid; justify-items: center; gap: 12px; text-align: center; pointer-events: none;
+}
+.ai-intro-caption { transition: opacity .12s linear; }
+.ai-intro-kicker { font-size: clamp(.72rem, 1.4vw, .9rem); font-weight: 600; letter-spacing: .38em; text-transform: uppercase; color: #6fd3ff; text-shadow: 0 0 18px rgba(86, 214, 255, .7); }
+.ai-intro-title { font-size: clamp(1.5rem, 4.4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -.01em; text-wrap: balance; text-shadow: 0 0 30px rgba(86, 160, 255, .55); }
+.ai-intro-title.is-brand { font-size: clamp(2.6rem, 9vw, 6rem); letter-spacing: .22em; padding-left: .22em; background: linear-gradient(180deg, #fff 20%, #7fd6ff 100%); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: none; filter: drop-shadow(0 0 24px rgba(86, 190, 255, .6)); }
+.ai-intro-caption > * { animation: ai-intro-rise .55s cubic-bezier(.2, .8, .2, 1) both; }
+.ai-intro-caption > :nth-child(2) { animation-delay: .06s; }
+
+.ai-intro-final { animation: ai-intro-rise .8s cubic-bezier(.2, .8, .2, 1) both; pointer-events: auto; bottom: 11vh; gap: 14px; }
+.ai-intro-final p { margin: 0; color: rgba(210, 232, 255, .75); font-size: clamp(.95rem, 1.8vw, 1.15rem); }
+.ai-intro-start {
+  position: relative; display: inline-flex; align-items: center; gap: 10px; min-height: 54px; margin-top: 10px; padding: 0 34px;
+  border: 1px solid rgba(160, 225, 255, .8); border-radius: 999px; cursor: pointer;
+  background: linear-gradient(180deg, rgba(60, 150, 255, .5), rgba(20, 70, 170, .55)); color: #fff;
+  font: inherit; font-size: 1.1rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  box-shadow: 0 0 0 0 rgba(86, 190, 255, .55), 0 0 36px rgba(60, 150, 255, .55), inset 0 0 20px rgba(140, 215, 255, .25);
+  animation: ai-intro-beat 2.2s ease-in-out infinite;
+  transition: transform .2s, background .2s;
+}
+.ai-intro-start:hover { transform: translateY(-2px) scale(1.04); background: linear-gradient(180deg, rgba(90, 175, 255, .65), rgba(30, 90, 200, .7)); }
+.ai-intro-start svg { transition: transform .2s; }
+.ai-intro-start:hover svg { transform: translateX(4px); }
+
+.ai-intro-progress { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; height: 2px; background: rgba(120, 200, 255, .12); }
+.ai-intro-progress i { display: block; height: 100%; transform-origin: left; background: linear-gradient(90deg, #3a7bff, #6fd3ff); box-shadow: 0 0 10px #6fd3ff; transition: transform .1s linear; }
+
+@keyframes ai-intro-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ai-intro-rise { from { opacity: 0; transform: translateY(18px); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes ai-intro-beat { 0%, 100% { box-shadow: 0 0 0 0 rgba(86, 190, 255, .5), 0 0 36px rgba(60, 150, 255, .55), inset 0 0 20px rgba(140, 215, 255, .25); } 50% { box-shadow: 0 0 0 14px rgba(86, 190, 255, 0), 0 0 54px rgba(60, 150, 255, .8), inset 0 0 26px rgba(140, 215, 255, .35); } }
+
+@media (max-width: 700px) {
+  .ai-intro-caption, .ai-intro-final { bottom: 12vh; }
+  .ai-intro-kicker { letter-spacing: .26em; }
+  .ai-intro-start { width: min(100%, 320px); justify-content: center; }
+}
+@media (max-height: 520px) { .ai-intro-caption, .ai-intro-final { bottom: 11vh; } .ai-intro-title.is-brand { font-size: 2.4rem; } }
+@media (prefers-reduced-motion: reduce) {
+  .ai-intro, .ai-intro.is-leaving { transition: opacity .2s linear; animation: none; transform: none; filter: none; }
+  .ai-intro-caption > *, .ai-intro-final, .ai-intro-start { animation: none; }
+}

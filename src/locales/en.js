@@ -418,3 +418,13 @@ Object.assign(english, {
   'Возможно, сайт только что обновился или пропала связь. Обычно помогает перезагрузка страницы. Если не помогло, напишите нам через «Сообщить о проблеме».': 'The site may have just been updated or the connection dropped. Reloading the page usually helps. If it does not, tell us through “Report a problem”.', 'Обновить страницу': 'Reload the page',
   'Карточки на двери': 'Door cards', 'Карточки на двери для печати': 'Door cards for printing', 'Для сотрудников': 'For staff', '← К объявлениям': '← Back to notices',
 })
+
+Object.assign(english, {
+  // Заставка ЛОГОС AI.
+  'Знакомство с ЛОГОС AI': 'Meet LOGOS AI', 'Приступить': 'Get started', 'Нейросеть колледжа': 'The college neural network',
+  'Знает всё о корпусе': 'Knows the whole building', 'Каждый кабинет, этаж и лестница': 'Every room, floor and staircase',
+  'Помогает учиться': 'Helps you study', 'Теория, задачи и подготовка к зачёту': 'Theory, practice and exam prep',
+  'Понимает вас': 'Understands you', 'Читает фото, слушает голос': 'Reads photos, listens to your voice',
+  'Ответ за секунды': 'Answers in seconds', 'Спросите о чём угодно': 'Ask about anything',
+  'Спросите про кабинеты, маршруты, учёбу и зачёты.': 'Ask about rooms, routes, studying and exams.',
+})
