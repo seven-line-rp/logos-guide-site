@@ -10,8 +10,8 @@ test('titles shrink and wrap so that they fit the frame', () => {
   const long = fitTitle('Лаборатория биотехнических и медицинских аппаратов №225')
   assert.ok(long.lines.length <= 4 && long.size < 132 && long.size >= 56)
   for (const room of signRooms) {
-    const { size, lines } = fitTitle(`${room.name}${room.number ? ` №${room.number}` : ''}`)
-    assert.ok(lines.length <= 4 && lines.every((line) => line.length * size * 0.72 <= 1000 + size), room.name)
+    const { size, lines } = fitTitle(`${room.name}${room.number ? ` №${room.number}` : ''}`, { width: 930, height: 340, max: 128 })
+    assert.ok(lines.length <= 4 && lines.every((line) => line.length * size * 0.72 <= 930 + size), room.name)
   }
 })
 
@@ -20,8 +20,8 @@ test('door card contains logo, title, floor, QR and the team credits', async () 
   const qr = await brandedQrSvg('https://example.test/here?room=x')
   const svg = doorCardSvg(room, qr)
   assert.match(svg, new RegExp(`width="${CARD.width}" height="${CARD.height}"`))
-  assert.ok(svg.includes('№214') && svg.includes(`${room.floor} ЭТАЖ`))
-  assert.ok(svg.includes('Разработано командой'))
+  assert.ok(svg.includes('№214') && svg.includes('ЭТАЖ') && svg.includes(`text-anchor="middle" fill="#ffffff">${room.floor}</text>`))
+  assert.ok(svg.includes('РАЗРАБОТАНО КОМАНДОЙ') && svg.includes('Ксения Давыдова'))
   assert.ok(svg.includes('M500.842 131.274'), 'логотип встроен')
   assert.ok(svg.includes('rx="0.32"'), 'QR встроен')
   assert.equal((svg.match(/<svg/g) || []).length, 3, 'корень, логотип и QR')
