@@ -58,7 +58,10 @@ export async function askAgent(messages, { signal, deep = false, study = false, 
   if (data?.error) throw Object.assign(new Error(data.error), { left: Number.isFinite(data.left) ? data.left : null })
   if (response.status === 404) throw new Error('ИИ-агент ещё не загружен на этот сервер.')
   if (response.status === 413) throw new Error('Картинки слишком большие. Попробуйте одну или поменьше.')
-  throw new Error('ИИ не ответил. Попробуйте ещё раз.')
+  if (response.ok) throw new Error('Сервер ИИ ответил не в том формате (возможно, ошибка PHP на хостинге). Сообщите команде сайта.')
+  if (response.status === 403) throw new Error('Сервер отклонил запрос (код 403). Обновите страницу; если не помогло, сообщите команде сайта.')
+  if (response.status >= 500) throw new Error(`Сервер ИИ вернул ошибку (код ${response.status}). Попробуйте позже; если повторяется, сообщите команде сайта.`)
+  throw new Error(`ИИ не ответил (код ${response.status}). Попробуйте ещё раз.`)
 }
 
 // ---------- Мат ----------

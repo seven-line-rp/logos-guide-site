@@ -54,6 +54,35 @@ const MAX_REPLY_CHARS = 9000;
 const MAX_IMAGES = 3;
 const MAX_IMAGE_BYTES = 1500000;
 
+// Ответ всегда JSON, даже при сбое: предупреждения PHP не выводим (они портили бы JSON,
+// а на общем хостинге display_errors часто включён), а фатальную ошибку превращаем
+// в понятное сообщение; подробности уходят в журнал ошибок PHP (строки «logos-ai:»).
+ob_start();
+@ini_set('display_errors', '0');
+function ai_fail(int $status, string $message): void
+{
+    while (ob_get_level() > 0) ob_end_clean();
+    if (!headers_sent()) {
+        http_response_code($status);
+        header('Content-Type: application/json; charset=utf-8');
+        header('Cache-Control: no-store');
+    }
+    echo json_encode(['error' => $message], JSON_UNESCAPED_UNICODE);
+}
+register_shutdown_function(function () {
+    $error = error_get_last();
+    if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR], true)) {
+        error_log('logos-ai: fatal ' . $error['message'] . ' in ' . basename((string) $error['file']) . ':' . $error['line']);
+        ai_fail(500, 'Сервер ИИ временно недоступен: ошибка скрипта на хостинге. Сообщите команде сайта (подробности в журнале PHP).');
+    }
+});
+foreach (['ai-guard.php', 'alert.php'] as $required) {
+    if (!is_file(__DIR__ . '/' . $required)) {
+        error_log('logos-ai: нет файла api/' . $required . ' — загрузите папку api целиком');
+        ai_fail(503, 'На сервере не хватает файлов ИИ (api/' . $required . '). Загрузите папку api из свежей сборки целиком.');
+        exit;
+    }
+}
 require_once __DIR__ . '/ai-guard.php';
 require_once __DIR__ . '/alert.php';
 
@@ -67,6 +96,7 @@ header('Cross-Origin-Resource-Policy: same-origin');
 
 function respond(int $status, array $body): void
 {
+    while (ob_get_level() > 0) ob_end_clean();
     http_response_code($status);
     echo json_encode($body, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     exit;
@@ -538,7 +568,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'GET' && isset($_GET['health'])) {
     $secret = (string) ($config['reports_key'] ?? '');
     if ($secret !== '' && hash_equals($secret, (string) ($_GET['key'] ?? ''))) {
         $today = with_limits(function (&$state) use ($config) { return $state === null ? null : ['messages' => $state['total'], 'spent_usd' => round($state['spent'], 4), 'month_spent_usd' => round((float) $state['month_spent'], 4), 'budget_usd' => round(daily_budget($config, $state), 4)]; });
-        $body += ['model' => $config['model'], 'vision' => (bool) $config['vision'], 'knowledge' => is_file(__DIR__ . '/ai-knowledge.txt'), 'curl' => function_exists('curl_init'), 'alerts' => logos_alerts_enabled($config), 'today' => $today, 'daily_budget_usd' => $today['budget_usd'] ?? round(daily_budget($config), 4)];
+        $body += ['php' => PHP_VERSION, 'extensions' => ['mbstring' => extension_loaded('mbstring'), 'intl' => class_exists('Normalizer'), 'curl' => function_exists('curl_init')], 'files' => ['ai-guard' => is_file(__DIR__ . '/ai-guard.php'), 'alert' => is_file(__DIR__ . '/alert.php'), 'knowledge' => is_file(__DIR__ . '/ai-knowledge.txt')], 'model' => $config['model'], 'vision' => (bool) $config['vision'], 'knowledge' => is_file(__DIR__ . '/ai-knowledge.txt'), 'curl' => function_exists('curl_init'), 'alerts' => logos_alerts_enabled($config), 'today' => $today, 'daily_budget_usd' => $today['budget_usd'] ?? round(daily_budget($config), 4)];
     }
     respond(200, $body);
 }
@@ -686,4 +716,4 @@ $messagesByStatus = [
     402 => 'На счёте DeepSeek закончились средства — сообщите команде сайта.',
     429 => 'ИИ сейчас перегружен. Попробуйте через минуту.',
 ];
-respond(502, ['error' => $messagesByStatus[$result['status']] ?? 'ИИ не ответил. Попробуйте ещё раз.']);
+respond(502, ['error' => $messagesByStatus[$result['status']] ?? 'ИИ не ответил (код ' . (int) $result['status'] . '). Попробуйте ещё раз; если повторяется, сообщите команде сайта.']);
