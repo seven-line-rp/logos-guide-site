@@ -55,7 +55,7 @@ export async function askAgent(messages, { signal, deep = false, study = false, 
     const question = messages[messages.length - 1]?.content || ''
     return { reply: cleanReply(data.reply, question), sig: typeof data.sig === 'string' ? data.sig : '', reasoning: typeof data.reasoning === 'string' ? cleanReply(data.reasoning, question) : '', vision: data.vision !== false, left: Number.isFinite(data.left) ? data.left : null }
   }
-  if (data?.error) throw Object.assign(new Error(data.error), { left: Number.isFinite(data.left) ? data.left : null })
+  if (data?.error) throw Object.assign(new Error(data.detail ? `${data.error} (${data.detail})` : data.error), { left: Number.isFinite(data.left) ? data.left : null })
   if (response.status === 404) throw new Error('ИИ-агент ещё не загружен на этот сервер.')
   if (response.status === 413) throw new Error('Картинки слишком большие. Попробуйте одну или поменьше.')
   if (response.ok) throw new Error('Сервер ИИ ответил не в том формате (возможно, ошибка PHP на хостинге). Сообщите команде сайта.')

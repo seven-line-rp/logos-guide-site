@@ -204,4 +204,5 @@ test('readable messages for server failures', async () => {
   assert.match(await message(fail(200, true)), /не в том формате/)
   assert.match(await message(fail(418)), /код 418/)
   assert.equal(await message(fail(502, false, { error: 'ИИ не ответил (код 400). Попробуйте ещё раз.' })), 'ИИ не ответил (код 400). Попробуйте ещё раз.')
+  assert.equal(await message(fail(200, true, { error: 'Сервер ИИ временно недоступен.', failed: true, detail: 'ai-guard.php:12 Call to undefined function' })), 'Сервер ИИ временно недоступен. (ai-guard.php:12 Call to undefined function)')
 })
