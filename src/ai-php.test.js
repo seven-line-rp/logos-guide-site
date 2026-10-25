@@ -247,3 +247,34 @@ test('persona is business-like (no hostile mode) and study mode adds the lesson 
   await ask([{ role: 'user', content: 'Привет' }], { rude: true })
   assert.ok(!/грубое/.test((await lastModelRequest()).messages[0].content))
 })
+
+test('a broken or incomplete upload gives a readable JSON error instead of an empty page', { skip }, async () => {
+  const start = async (port, tweak) => {
+    const dir = mkdtempSync(join(tmpdir(), 'logos-ai-broken-'))
+    mkdirSync(join(dir, 'api'))
+    cpSync(join(root, 'api'), join(dir, 'api'), { recursive: true })
+    tweak(join(dir, 'api'))
+    const server = spawn('php', ['-S', `127.0.0.1:${port}`, '-t', dir], { stdio: 'ignore' })
+    servers.push(server)
+    await waitFor(`http://127.0.0.1:${port}/api/ai-chat.php?health`)
+    return { dir, port }
+  }
+  const post = (port) => fetch(`http://127.0.0.1:${port}/api/ai-chat.php`, { method: 'POST', headers: { ...headers, Origin: `http://127.0.0.1:${port}` }, body: JSON.stringify({ messages: [{ role: 'user', content: 'Привет' }] }) })
+  const missing = await start(SITE_PORT + 1, (api) => rmSync(join(api, 'ai-guard.php')))
+  const absent = await post(missing.port)
+  assert.equal(absent.status, 503)
+  assert.match((await absent.json()).error, /ai-guard\.php/)
+  const fatal = await start(SITE_PORT + 2, (api) => writeFileSync(join(api, 'alert.php'), '<?php this_function_does_not_exist();\n'))
+  const crashed = await post(fatal.port)
+  assert.equal(crashed.status, 500)
+  assert.match((await crashed.json()).error, /ошибка скрипта/)
+  rmSync(missing.dir, { recursive: true, force: true })
+  rmSync(fatal.dir, { recursive: true, force: true })
+})
+
+test('health with the key reports PHP, extensions and files for diagnosis', { skip }, async () => {
+  const full = await (await fetch(`${site}/api/ai-chat.php?health&key=secret-reports-key`)).json()
+  assert.match(full.php, /^\d+\.\d+/)
+  assert.equal(full.extensions.mbstring, true)
+  assert.deepEqual(full.files, { 'ai-guard': true, alert: true, knowledge: true })
+})

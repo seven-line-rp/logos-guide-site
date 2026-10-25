@@ -194,3 +194,14 @@ test('answer blocks: labelled callouts, quizzes and follow-up chips', () => {
   assert.deepEqual(parseBlocks('Текст\n```quiz\nмусор\n```\nКонец').map((b) => b.type), ['p', 'p'])
   assert.match(plainText('> **Важно:** не забудьте коэффициенты\n```quiz\n{"tasks":[{"q":"Сколько?","answer":"2"}]}\n```'), /Важно: не забудьте[\s\S]*Задания:\n1\. Сколько\?/)
 })
+
+test('readable messages for server failures', async () => {
+  const fail = (status, ok = false, data = null) => async () => ({ ok, status, json: async () => { if (data === null) throw new Error('not json'); return data } })
+  const message = async (impl) => askAgent([{ role: 'user', content: 'x' }], { fetchImpl: impl }).catch((error) => error.message)
+  assert.match(await message(fail(500)), /код 500/)
+  assert.match(await message(fail(403)), /код 403/)
+  assert.match(await message(fail(404)), /ещё не загружен/)
+  assert.match(await message(fail(200, true)), /не в том формате/)
+  assert.match(await message(fail(418)), /код 418/)
+  assert.equal(await message(fail(502, false, { error: 'ИИ не ответил (код 400). Попробуйте ещё раз.' })), 'ИИ не ответил (код 400). Попробуйте ещё раз.')
+})
