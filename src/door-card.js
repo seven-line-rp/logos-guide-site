@@ -37,31 +37,45 @@ function logoAt(x, y, width) {
 }
 
 // qr — SVG-строка QR-кода (brandedQrSvg); вкладывается как вложенная картинка.
+// Макет: слева логотип, название и этаж на белом, справа синяя панель со скошенным
+// краем и QR на белой карточке. Все блоки стоят на фиксированных местах и не
+// накладываются друг на друга, а текст на цветном фоне только белый.
 export function doorCardSvg(room, qr) {
   const { width, height } = CARD
-  const title = fitTitle(roomName(room))
-  const titleTop = title.lines.length >= 3 ? 385 : 430
+  const title = fitTitle(roomName(room), { width: 930, height: 340, max: 128 })
   const lineHeight = title.size * 1.08
-  const lines = title.lines.map((line, index) => `<text x="96" y="${(titleTop + title.size * 0.86 + index * lineHeight).toFixed(1)}" font-size="${title.size}" font-weight="800" letter-spacing="-2" fill="#13213a">${escapeXml(line)}</text>`).join('')
-  const chipY = titleTop + title.lines.length * lineHeight + 30
-  const floor = `${room.floor} ЭТАЖ`
-  const chipW = 70 + floor.length * 26
-  const qrBox = { x: 1176, y: 118, size: 648 }
-  const inner = qr.replace(/<svg[^>]*>/, `<svg x="${qrBox.x + 36}" y="${qrBox.y + 36}" width="${qrBox.size - 72}" height="${qrBox.size - 72}" viewBox="${(qr.match(/viewBox="([^"]+)"/) || [])[1] || '0 0 1 1'}">`)
+  const titleTop = 400
+  const lines = title.lines.map((line, index) => `<text x="96" y="${(titleTop + title.size * 0.86 + index * lineHeight).toFixed(1)}" font-size="${title.size}" font-weight="800" letter-spacing="-2" fill="#0f1b36">${escapeXml(line)}</text>`).join('')
+  const card = { x: 1210, y: 140, size: 620 }
+  const viewBox = (qr.match(/viewBox="([^"]+)"/) || [])[1] || '0 0 1 1'
+  const inner = qr.replace(/<svg[^>]*>/, `<svg x="${card.x + 34}" y="${card.y + 34}" width="${card.size - 68}" height="${card.size - 68}" viewBox="${viewBox}">`)
+  const cx = card.x + card.size / 2
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" font-family="${FONT}">
-<defs><linearGradient id="dc-a" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#0a22d8"/><stop offset=".55" stop-color="#2f4bff"/><stop offset="1" stop-color="#58b4ff"/></linearGradient><linearGradient id="dc-b" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#061a9e"/><stop offset="1" stop-color="#1f3df0"/></linearGradient></defs>
+<defs>
+<linearGradient id="dc-panel" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2447f5"/><stop offset=".6" stop-color="#1230d8"/><stop offset="1" stop-color="#0a1cab"/></linearGradient>
+<linearGradient id="dc-bar" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#0a1cab"/><stop offset="1" stop-color="#4f8bff"/></linearGradient>
+<linearGradient id="dc-glow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".16"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></linearGradient>
+</defs>
 <rect width="${width}" height="${height}" fill="#ffffff"/>
-<path d="M0 800 C250 840 470 935 620 1040 L0 1040 Z" fill="url(#dc-a)"/>
-<path d="M0 800 C250 840 470 935 620 1040" fill="none" stroke="#ffffff" stroke-width="12" transform="translate(0 40)"/>
-<path d="M0 905 C170 930 330 985 430 1040 L0 1040 Z" fill="url(#dc-b)"/>
-${logoAt(96, 70, 1000)}
+<polygon points="1110,0 ${width},0 ${width},${height} 990,${height}" fill="url(#dc-panel)"/>
+<polygon points="1110,0 ${width},0 ${width},520 1030,520" fill="url(#dc-glow)"/>
+<path d="M1010 1040 L1360 470 L1710 1040" fill="none" stroke="#ffffff" stroke-opacity=".07" stroke-width="64" stroke-linejoin="round"/>
+<path d="M1330 1040 L1620 620 L1910 1040" fill="none" stroke="#ffffff" stroke-opacity=".06" stroke-width="40" stroke-linejoin="round"/>
+${logoAt(96, 70, 920)}
+<rect x="96" y="${titleTop - 38}" width="84" height="10" rx="5" fill="#245ce5"/>
 ${lines}
-<rect x="96" y="${chipY.toFixed(1)}" width="${chipW}" height="74" rx="37" fill="#245ce5"/>
-<text x="${96 + chipW / 2}" y="${(chipY + 51).toFixed(1)}" font-size="40" font-weight="800" letter-spacing="2" text-anchor="middle" fill="#ffffff">${escapeXml(floor)}</text>
-<rect x="${qrBox.x}" y="${qrBox.y}" width="${qrBox.size}" height="${qrBox.size}" rx="56" fill="#ffffff" stroke="#dbe4f5" stroke-width="3"/>
+<line x1="96" y1="752" x2="930" y2="752" stroke="#e3e9f5" stroke-width="3"/>
+<rect x="96" y="780" width="132" height="132" rx="34" fill="#245ce5"/>
+<text x="162" y="${780 + 100}" font-size="92" font-weight="800" text-anchor="middle" fill="#ffffff">${escapeXml(room.floor)}</text>
+<text x="262" y="840" font-size="56" font-weight="800" letter-spacing="3" fill="#0f1b36">ЭТАЖ</text>
+<text x="262" y="892" font-size="32" fill="#5d6c86">Технический колледж «Логос»</text>
+<rect x="0" y="${height - 12}" width="1000" height="12" fill="url(#dc-bar)"/>
+<text x="96" y="${height - 76}" font-size="22" font-weight="700" letter-spacing="1" fill="#0f1b36">РАЗРАБОТАНО КОМАНДОЙ</text>
+<text x="96" y="${height - 40}" font-size="26" fill="#5d6c86">${escapeXml(CREDITS.replace('Разработано командой: ', ''))}</text>
+<rect x="${card.x + 6}" y="${card.y + 14}" width="${card.size}" height="${card.size}" rx="64" fill="#050f6b" fill-opacity=".28"/>
+<rect x="${card.x}" y="${card.y}" width="${card.size}" height="${card.size}" rx="64" fill="#ffffff"/>
 ${inner}
-<text x="${qrBox.x + qrBox.size / 2}" y="${qrBox.y + qrBox.size + 70}" font-size="42" font-weight="800" text-anchor="middle" fill="#245ce5">Вы здесь · сканируйте</text>
-<text x="${qrBox.x + qrBox.size / 2}" y="${qrBox.y + qrBox.size + 116}" font-size="30" text-anchor="middle" fill="#5d6c86">Маршрут построится от этой двери</text>
-<text x="${width - 56}" y="${height - 44}" font-size="23" text-anchor="end" fill="#13213a">${escapeXml(CREDITS)}</text>
+<text x="${cx}" y="${card.y + card.size + 92}" font-size="50" font-weight="800" text-anchor="middle" fill="#ffffff">Вы здесь · сканируйте</text>
+<text x="${cx}" y="${card.y + card.size + 144}" font-size="31" text-anchor="middle" fill="#ffffff" fill-opacity=".82">Маршрут построится от этой двери</text>
 </svg>`
 }
