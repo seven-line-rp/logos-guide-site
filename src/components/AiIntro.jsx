@@ -5,6 +5,10 @@ import { isLitePerf, sceneAllowed } from '../perf.js'
 import { INTRO_BUTTON_AT, INTRO_CAPTIONS, INTRO_FADE_OUT, captionAt, introMode } from '../ai-intro.js'
 import { createIntroScene } from '../ai-intro-scene.js'
 import { lockBodyScroll } from '../storage.js'
+import '@fontsource/jost/cyrillic-300.css'
+import '@fontsource/jost/cyrillic-500.css'
+import '@fontsource/jost/latin-300.css'
+import '@fontsource/jost/latin-500.css'
 
 // Заставка при первом заходе в ЛОГОС AI (см. ai-intro.js): на весь экран, как
 // кино. Сцену рисует ai-intro-scene.js, здесь — надписи, кнопка «Приступить»,
