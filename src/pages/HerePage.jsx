@@ -6,7 +6,7 @@ import RoomSearchSelect from '../components/RoomSearchSelect.jsx'
 import { quickPlaces, rooms } from '../data.js'
 import { findNearest, nearbyKinds } from '../places.js'
 import { setHere } from '../route-prefs.js'
-import { brandedQrSvg } from '../share.js'
+import { brandedQrSvg, svgToPng } from '../share.js'
 import { makeZip } from '../zip.js'
 
 // «Вы здесь». На дверях можно повесить QR-табличку со ссылкой
@@ -57,13 +57,24 @@ function YouAreHere({ room }) {
 function SignSheet() {
   const [floor, setFloor] = useState('all')
   const [codes, setCodes] = useState({})
-  const download = () => {
-    const files = signRooms.filter((room) => codes[room.id]).map((room) => ({ name: signFileName(room), data: codes[room.id] }))
-    const link = document.createElement('a')
-    link.href = URL.createObjectURL(new Blob([makeZip(files)], { type: 'application/zip' }))
-    link.download = 'logos-qr-vy-zdes.zip'
-    link.click()
-    window.setTimeout(() => URL.revokeObjectURL(link.href), 1000)
+  const [packing, setPacking] = useState(false)
+  // Архив: SVG для печати и PNG 1024 px для Word, Canva и мессенджеров.
+  const download = async () => {
+    setPacking(true)
+    try {
+      const files = []
+      for (const room of signRooms) {
+        if (!codes[room.id]) continue
+        const name = signFileName(room)
+        files.push({ name: `svg/${name}`, data: codes[room.id] })
+        try { files.push({ name: `png/${name.replace(/\.svg$/, '.png')}`, data: await svgToPng(codes[room.id]) }) } catch { /* без PNG архив всё равно полезен */ }
+      }
+      const link = document.createElement('a')
+      link.href = URL.createObjectURL(new Blob([makeZip(files)], { type: 'application/zip' }))
+      link.download = 'logos-qr-vy-zdes.zip'
+      link.click()
+      window.setTimeout(() => URL.revokeObjectURL(link.href), 1000)
+    } finally { setPacking(false) }
   }
   const ready = signRooms.every((room) => codes[room.id])
   const list = signRooms.filter((room) => floor === 'all' || String(room.floor) === floor)
@@ -81,7 +92,7 @@ function SignSheet() {
       <div className="here-signs-bar no-print">
         <div className="directory-category-filters" role="group" aria-label="Этаж">{[['all', 'Все'], ['1', '1 этаж'], ['2', '2 этаж']].map(([id, label]) => <button key={id} type="button" className={floor === id ? 'directory-chip directory-chip-active' : 'directory-chip'} aria-pressed={floor === id} onClick={() => setFloor(id)}>{label}</button>)}</div>
         <div className="here-signs-actions">
-          <button type="button" className="button" onClick={download} disabled={!ready}><Download size={16} /> Скачать все QR (ZIP, {signRooms.length})</button>
+          <button type="button" className="button" onClick={download} disabled={!ready || packing}><Download size={16} /> {packing ? 'Собираем архив…' : `Скачать все QR (ZIP, ${signRooms.length})`}</button>
           <button type="button" className="button button-primary" onClick={() => window.print()}><Printer size={16} /> Распечатать {list.length}</button>
         </div>
       </div>
