@@ -45,16 +45,17 @@ export async function brandedQrSvg(text, { dark = '#13213a', light = '#ffffff', 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${total} ${total}" shape-rendering="geometricPrecision"><rect width="${total}" height="${total}" fill="${light}"/><g fill="${dark}">${dots}</g>${eye(0, 0)}${eye(n - 7, 0)}${eye(0, n - 7)}<rect x="${c - box / 2 - 0.35}" y="${c - box / 2 - 0.35}" width="${box + 0.7}" height="${box + 0.7}" rx="${(box + 0.7) * 0.28}" fill="${light}"/>${mark}</svg>`
 }
 
-// SVG → PNG (по умолчанию 1024 px) через canvas; результат — байты файла.
-export async function svgToPng(svg, size = 1024) {
+// SVG → PNG (по умолчанию квадрат 1024 px) через canvas; результат — байты файла.
+export async function svgToPng(svg, width = 1024, height = width) {
   const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }))
   try {
     const image = new Image()
     image.src = url
     await image.decode()
     const canvas = document.createElement('canvas')
-    canvas.width = canvas.height = size
-    canvas.getContext('2d').drawImage(image, 0, 0, size, size)
+    canvas.width = width
+    canvas.height = height
+    canvas.getContext('2d').drawImage(image, 0, 0, width, height)
     const blob = await new Promise((resolve, reject) => canvas.toBlob((value) => (value ? resolve(value) : reject(new Error('png'))), 'image/png'))
     return new Uint8Array(await blob.arrayBuffer())
   } finally { URL.revokeObjectURL(url) }
