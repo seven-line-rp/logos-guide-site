@@ -7,6 +7,7 @@ import { functionalStorageAllowed, onConsentChange } from '../consent.js'
 import { speakText, stopSpeech } from '../speech.js'
 import { AiMessageText, RawText, messageSubject } from '../components/ai-message.js'
 import RoutePreview from '../components/RoutePreview.jsx'
+import NeuralNet from '../components/NeuralNet.jsx'
 import { rooms } from '../data.js'
 
 // ЛОГОС AI: чат с DeepSeek через public/api/ai-chat.php. Чаты хранятся в
@@ -180,7 +181,7 @@ export default function AiAgentPage() {
       const answer = await askAgent(next, { signal: controller.current.signal, deep: useDeep })
       if (!answer.vision) setNotice('Модель пока не видит картинки, поэтому отвечает по тексту вопроса.')
       if (answer.left !== null) setLeft(answer.left)
-      updateChat(chatId, (item) => ({ ...item, messages: [...item.messages, { role: 'assistant', content: answer.reply, reasoning: answer.reasoning || undefined, at: Date.now() }] }))
+      updateChat(chatId, (item) => ({ ...item, messages: [...item.messages, { role: 'assistant', content: answer.reply, sig: answer.sig || undefined, reasoning: answer.reasoning || undefined, at: Date.now() }] }))
     } catch (error) {
       if (error.left !== null && error.left !== undefined) setLeft(error.left)
       if (error.name !== 'AbortError') updateChat(chatId, (item) => ({ ...item, messages: [...item.messages, { role: 'assistant', content: error.message, error: true, at: Date.now() }] }))
@@ -344,6 +345,7 @@ export default function AiAgentPage() {
     {narrow ? createPortal(<div className={`ai-drawer ${sidebar ? 'ai-sidebar-open' : ''}`}>{sidebarView}</div>, document.body) : !collapsed && sidebarView}
 
     <div className={`ai-main ${dragging ? 'is-dragging' : ''} ${messages.length ? '' : 'is-empty'}`} onDragOver={(event) => { if ([...event.dataTransfer.types].includes('Files')) { event.preventDefault(); setDragging(true) } }} onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setDragging(false) }} onDrop={onDrop}>
+      <NeuralNet active={!messages.length} />
       <div className="ai-topbar">
         {(narrow || collapsed) && <button className="ai-icon" type="button" onClick={() => (narrow ? setSidebar(true) : setCollapsed(false))} aria-label="Открыть список чатов" title="Чаты"><PanelLeft size={18} /></button>}
         {(narrow || collapsed) && <button className="ai-icon" type="button" onClick={newChat} aria-label="Новый чат" title="Новый чат"><SquarePen size={17} /></button>}
