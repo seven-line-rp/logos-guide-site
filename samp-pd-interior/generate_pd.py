@@ -8,6 +8,7 @@
 (у предмета, стоящего у стены, — в сторону этой стены).
 """
 import pd_lib as L
+import pd_models  # noqa: F401  — подмена деталированной мебелью
 from pd_lib import *   # noqa: F401,F403
 from pd_props import *  # noqa: F401,F403
 
@@ -267,8 +268,36 @@ def build():
         ceiling_light_grid(rect, 4.6 if rect[2] - rect[0] > 12 else 4.2)
 
 
+def wall_fixtures():
+    """Розетки по периметру каждого помещения (мимо проёмов и углов), выключатели, пожарные извещатели."""
+    M = pd_models
+    off = .1 + .02
+    for name, (x0, y0, x1, y1) in L.ROOMS.items():
+        if name in ("cells",):
+            continue
+        for t in [x0 + 1.4 + k * 3.7 for k in range(int((x1 - x0 - 2.0) / 3.7) + 1)]:
+            if t < x1 - .9 and not L.in_opening("x", y0, t, .45):
+                M.outlet(t, y0 + off, 0, 1, .4)
+            if t < x1 - .9 and not L.in_opening("x", y1, t + 1.0, .45) and name not in ("lobby",):
+                M.outlet(t + 1.0, y1 - off, 0, -1, .4)
+        for t in [y0 + 1.4 + k * 3.7 for k in range(int((y1 - y0 - 2.0) / 3.7) + 1)]:
+            if t < y1 - .9 and not L.in_opening("y", x0, t, .45):
+                M.outlet(x0 + off, t, 1, 0, .4)
+            if t < y1 - .9 and not L.in_opening("y", x1, t + 1.0, .45):
+                M.outlet(x1 - off, t + 1.0, -1, 0, .4)
+    # выключатели у дверей кабинетов (внутри комнат)
+    for d in (6.3, 17.3, 26.8, 35.8, 43.3):
+        M.switch(d + .95, 20.1 + .02, 0, 1, 1.25)
+    for x in (20.0, 46.0):
+        M.fire_alarm(x, 16.12, 0, 1, 1.25)
+    M.fire_alarm(10.0, 19.88, 0, -1, 1.25)
+    M.fire_alarm(2.0, 15.88, 0, -1, 1.25)
+    M.fire_alarm(54.0, 15.88, 0, -1, 1.25)
+
+
 if __name__ == "__main__":
     build()
+    wall_fixtures()
     assert len(L._stack) == 1, "несбалансированный push/pop"
     nv = L.write_files()
     print(f"faces={len(L.faces)} verts={nv} collision_boxes={len(L.boxes)} lights={len(L.fixtures)} "

@@ -10,6 +10,8 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { SMAAPass } from 'three/addons/postprocessing/SMAAPass.js';
 
 const q = new URLSearchParams(location.search);
@@ -25,6 +27,7 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 document.body.appendChild(renderer.domElement);
 
+RectAreaLightUniformsLib.init();
 const scene = new THREE.Scene();
 const tl = new THREE.TextureLoader();
 const sky = await tl.loadAsync('/textures/cityscape.png');
@@ -40,8 +43,8 @@ const P = (x, y, z) => new THREE.Vector3(x, z, -y);
 const texCache = {};
 async function tex(name) {
   if (!texCache[name]) {
-    const t = await tl.loadAsync(`/textures/${name}.png`);
-    t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    const t = await tl.loadAsync('/' + name);
+    if (!name.includes('_n.') && !name.includes('_r.')) t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping;
     t.anisotropy = 8; texCache[name] = t;
   }
   return texCache[name];
@@ -50,8 +53,11 @@ const mats = {};
 for (const [name, m] of Object.entries(scene_json.materials)) {
   const p = { color: new THREE.Color(...m.color), roughness: m.rough, metalness: m.metal, envMapIntensity: .45 };
   if (m.tex) p.map = await tex(m.tex);
+  if (m.normal) { p.normalMap = await tex(m.normal); p.normalScale = new THREE.Vector2(1, 1); }
+  if (m.rmap) p.roughnessMap = await tex(m.rmap);
   if (m.opacity) { p.transparent = true; p.opacity = m.opacity; p.depthWrite = false; p.side = THREE.DoubleSide; }
   if (m.emissive) { p.emissive = new THREE.Color(1, 1, .92); p.emissiveIntensity = 2.2; }
+  if (m.double) p.side = THREE.DoubleSide;
   if (m.alpha_test) { p.alphaTest = m.alpha_test; p.side = THREE.DoubleSide; if (m.alpha_test < .2) { p.transparent = true; p.depthWrite = false; p.polygonOffset = true; p.polygonOffsetFactor = -2; } }
   if (m.emissive_map) { p.emissive = new THREE.Color(1, 1, 1); p.emissiveMap = p.map; p.emissiveIntensity = m.emissive_map * .9; }
   mats[name] = new THREE.MeshStandardMaterial(p);
@@ -93,7 +99,7 @@ obj.traverse(o => {
 extra.forEach(([p, m]) => p.add(m));
 root.add(obj);
 if (shot.frontClip) {
-  const cap = new THREE.Mesh(new THREE.BoxGeometry(56.4, shot.frontClip, .2), new THREE.MeshStandardMaterial({ map: await tex('brick'), roughness: .9 }));
+  const cap = new THREE.Mesh(new THREE.BoxGeometry(56.4, shot.frontClip, .2), new THREE.MeshStandardMaterial({ map: await tex('textures/brick.jpg'), roughness: .9 }));
   cap.material.map = cap.material.map.clone(); cap.material.map.repeat.set(20, 1); cap.material.map.needsUpdate = true;
   cap.position.set(28, shot.frontClip / 2, 0); cap.castShadow = cap.receiveShadow = true; scene.add(cap);
 }
@@ -109,13 +115,17 @@ cam.position.copy(P(...shot.pos)); cam.lookAt(P(...shot.look));
 const hemi = new THREE.HemisphereLight(0xdfe8ff, 0x6a6258, shot.ambient ?? 0.4); scene.add(hemi);
 const lights = scene_json.lights.map(l => ({ l, d: P(...l).distanceTo(cam.position) })).sort((a, b) => a.d - b.d).slice(0, shot.maxLights ?? 8);
 lights.forEach(({ l }, i) => {
-  const L = new THREE.PointLight(0xfff1de, shot.lightI ?? 10, 16, 1.6);
+  const L = new THREE.PointLight(0xfff1de, shot.lightI ?? 4, 16, 1.6);
   L.position.copy(P(...l));
   if (i < (shot.shadows ?? 2)) {
     L.castShadow = true; L.shadow.mapSize.set(1024, 1024);
     L.shadow.bias = -0.0008; L.shadow.normalBias = .03; L.shadow.camera.near = .1; L.shadow.camera.far = 14;
   }
   scene.add(L);
+});
+lights.slice(0, shot.areaLights ?? 8).forEach(({ l }) => {
+  const A = new THREE.RectAreaLight(0xfff1de, shot.areaI ?? 12, 1.2, .6);
+  A.position.copy(P(l[0], l[1], l[2] + .27)); A.lookAt(P(l[0], l[1], 0)); scene.add(A);
 });
 if (shot.sun) {
   const s = new THREE.DirectionalLight(0xfff4e0, shot.sun); s.position.set(-30, 60, 40); s.target.position.set(18, 0, -13);
@@ -137,6 +147,7 @@ if (shot.ao === false) {
   gtao.updateGtaoMaterial({ radius: shot.aoRadius ?? 0.7, distanceExponent: 1.6, thickness: 1.5, scale: shot.aoScale ?? 1.6, samples: 16, distanceFallOff: 1.0, screenSpaceRadius: false });
   gtao.blendIntensity = 1.0;
   composer.addPass(gtao);
+  if (shot.bloom !== false) composer.addPass(new UnrealBloomPass(new THREE.Vector2(W, Hh), shot.bloom ?? .32, .55, .88));
   composer.addPass(new OutputPass());
   composer.addPass(new SMAAPass(W, Hh));
   composer.render();

@@ -42,9 +42,9 @@ MATS = {
     "locker":       (None, (.20, .31, .52), 1.0, .4, .6, {}),
     "plastic_black": (None, (.04, .04, .045), 1.0, .5, 0, {}),
     "plastic_white": (None, (.9, .9, .88), 1.0, .5, 0, {}),
-    "leather":      (None, (.05, .05, .055), 1.0, .45, 0, {}),
-    "fabric_blue":  (None, (.08, .16, .38), 1.0, .95, 0, {}),
-    "fabric_grey":  (None, (.30, .31, .34), 1.0, .95, 0, {}),
+    "leather":      ("leather", (1, 1, 1), .6, 1.0, 0, {}),
+    "fabric_blue":  ("fabric_blue", (1, 1, 1), .7, 1.0, 0, {}),
+    "fabric_grey":  ("fabric_grey", (1, 1, 1), .7, 1.0, 0, {}),
     "fabric_red":   (None, (.26, .035, .05), 1.0, .95, 0, {}),
     "navy":         (None, (.06, .09, .18), 1.0, .8, 0, {}),
     "bars":         (None, (.07, .07, .08), 1.0, .5, .9, {}),
@@ -186,12 +186,12 @@ def _record(x0, y0, z0, x1, y1, z1):
     boxes.append([round(v, 3) for v in (min(c[0] for c in cs), min(c[1] for c in cs), min(c[2] for c in cs),
                                         max(c[0] for c in cs), max(c[1] for c in cs), max(c[2] for c in cs))])
 
-def box(x0, y0, z0, x1, y1, z1, mat, col=False, sides=None):
-    """sides: dict с ключами 'x-','x+','y-','y+','z-','z+' для разных материалов."""
-    x0, x1 = sorted((x0, x1)); y0, y1 = sorted((y0, y1)); z0, z1 = sorted((z0, z1))
-    if x1 - x0 < 1e-6 or y1 - y0 < 1e-6 or z1 - z0 < 1e-6:
-        return
-    sd = sides or {}
+NOBEV = {"bars", "glass", "paper", "caution", "light", "rope_red", "mirror_glass", "wainscot", "wainscot_front", "roof",
+         "ceiling_tile", "fixture_frame", "fixture_dark", "concrete", "plastic_white_flat"}
+BEVEL_ON = True
+
+
+def _plain_box(x0, y0, z0, x1, y1, z1, mat, sd):
     P = lambda x, y, z: (x, y, z)
     face(sd.get("z-", mat), [P(x0, y0, z0), P(x0, y1, z0), P(x1, y1, z0), P(x1, y0, z0)], (0, 0, -1))
     face(sd.get("z+", mat), [P(x0, y0, z1), P(x1, y0, z1), P(x1, y1, z1), P(x0, y1, z1)], (0, 0, 1))
@@ -199,8 +199,89 @@ def box(x0, y0, z0, x1, y1, z1, mat, col=False, sides=None):
     face(sd.get("y+", mat), [P(x1, y1, z0), P(x0, y1, z0), P(x0, y1, z1), P(x1, y1, z1)], (0, 1, 0))
     face(sd.get("x-", mat), [P(x0, y1, z0), P(x0, y0, z0), P(x0, y0, z1), P(x0, y1, z1)], (-1, 0, 0))
     face(sd.get("x+", mat), [P(x1, y0, z0), P(x1, y1, z0), P(x1, y1, z1), P(x1, y0, z1)], (1, 0, 0))
+
+
+def _bevel_box(x0, y0, z0, x1, y1, z1, mat, sd, r):
+    """Коробка со скруглённой (фаска + сглаженные нормали) кромкой."""
+    X = [(x0, x0 + r), (x1, x1 - r)]
+    Y = [(y0, y0 + r), (y1, y1 - r)]
+    Z = [(z0, z0 + r), (z1, z1 - r)]
+    xi0, xi1, yi0, yi1, zi0, zi1 = x0 + r, x1 - r, y0 + r, y1 - r, z0 + r, z1 - r
+    P = lambda x, y, z: (x, y, z)
+    face(sd.get("z-", mat), [P(xi0, yi0, z0), P(xi0, yi1, z0), P(xi1, yi1, z0), P(xi1, yi0, z0)], (0, 0, -1))
+    face(sd.get("z+", mat), [P(xi0, yi0, z1), P(xi1, yi0, z1), P(xi1, yi1, z1), P(xi0, yi1, z1)], (0, 0, 1))
+    face(sd.get("y-", mat), [P(xi0, y0, zi0), P(xi1, y0, zi0), P(xi1, y0, zi1), P(xi0, y0, zi1)], (0, -1, 0))
+    face(sd.get("y+", mat), [P(xi1, y1, zi0), P(xi0, y1, zi0), P(xi0, y1, zi1), P(xi1, y1, zi1)], (0, 1, 0))
+    face(sd.get("x-", mat), [P(x0, yi1, zi0), P(x0, yi0, zi0), P(x0, yi0, zi1), P(x0, yi1, zi1)], (-1, 0, 0))
+    face(sd.get("x+", mat), [P(x1, yi0, zi0), P(x1, yi1, zi0), P(x1, yi1, zi1), P(x1, yi0, zi1)], (1, 0, 0))
+    nx = lambda s: (-1, 0, 0) if s == 0 else (1, 0, 0)
+    ny = lambda s: (0, -1, 0) if s == 0 else (0, 1, 0)
+    nz = lambda s: (0, 0, -1) if s == 0 else (0, 0, 1)
+    for sa in (0, 1):
+        for sb in (0, 1):
+            # рёбра вдоль X (грани y и z)
+            A = P(xi0, Y[sa][0], Z[sb][1]); B = P(xi0, Y[sa][1], Z[sb][0])
+            A2 = P(xi1, Y[sa][0], Z[sb][1]); B2 = P(xi1, Y[sa][1], Z[sb][0])
+            face(mat, [A, A2, B2, B], [ny(sa), ny(sa), nz(sb), nz(sb)])
+            # рёбра вдоль Y (грани x и z)
+            A = P(X[sa][0], yi0, Z[sb][1]); B = P(X[sa][1], yi0, Z[sb][0])
+            A2 = P(X[sa][0], yi1, Z[sb][1]); B2 = P(X[sa][1], yi1, Z[sb][0])
+            face(mat, [A, A2, B2, B], [nx(sa), nx(sa), nz(sb), nz(sb)])
+            # рёбра вдоль Z (грани x и y)
+            A = P(X[sa][0], Y[sb][1], zi0); B = P(X[sa][1], Y[sb][0], zi0)
+            A2 = P(X[sa][0], Y[sb][1], zi1); B2 = P(X[sa][1], Y[sb][0], zi1)
+            face(mat, [A, A2, B2, B], [nx(sa), nx(sa), ny(sb), ny(sb)])
+            for sc in (0, 1):
+                face(mat, [P(X[sa][0], Y[sb][1], Z[sc][1]), P(X[sa][1], Y[sb][0], Z[sc][1]), P(X[sa][1], Y[sb][1], Z[sc][0])],
+                     [nx(sa), ny(sb), nz(sc)])
+
+
+def box(x0, y0, z0, x1, y1, z1, mat, col=False, sides=None, bev=None):
+    """sides: dict 'x-','x+','y-','y+','z-','z+' (разные материалы). bev: радиус скругления (None — авто, 0 — выкл)."""
+    x0, x1 = sorted((x0, x1)); y0, y1 = sorted((y0, y1)); z0, z1 = sorted((z0, z1))
+    if x1 - x0 < 1e-6 or y1 - y0 < 1e-6 or z1 - z0 < 1e-6:
+        return
+    sd = sides or {}
+    mn = min(x1 - x0, y1 - y0, z1 - z0); mx = max(x1 - x0, y1 - y0, z1 - z0)
+    if bev is None:
+        r = min(.011, mn * .3) if (BEVEL_ON and not sides and mn >= .03 and mx < 12 and mat not in NOBEV) else 0
+    else:
+        r = min(bev, mn * .45)
+    if r > .002:
+        _bevel_box(x0, y0, z0, x1, y1, z1, mat, sd, r)
+    else:
+        _plain_box(x0, y0, z0, x1, y1, z1, mat, sd)
     if col:
         _record(x0, y0, z0, x1, y1, z1)
+
+
+def extrude_x(profile, x0, x1, mat, smooth=True):
+    """Призма из профиля в плоскости (y,z), вытянутая вдоль X. Профиль — выпуклый полигон."""
+    pts = list(profile)
+    area = sum(pts[i][0] * pts[(i + 1) % len(pts)][1] - pts[(i + 1) % len(pts)][0] * pts[i][1] for i in range(len(pts)))
+    if area < 0:
+        pts.reverse()
+    n = len(pts)
+    en = []
+    for i in range(n):
+        (ay, az), (by, bz) = pts[i], pts[(i + 1) % n]
+        dy, dz = by - ay, bz - az
+        ln = math.hypot(dy, dz) or 1
+        en.append((dz / ln, -dy / ln))
+    for i in range(n):
+        (ay, az), (by, bz) = pts[i], pts[(i + 1) % n]
+        e = en[i]
+        if smooth:
+            p = en[i - 1]; q = en[(i + 1) % n]
+            na = ((e[0] + p[0]) / 2, (e[1] + p[1]) / 2); nb = ((e[0] + q[0]) / 2, (e[1] + q[1]) / 2)
+            la = math.hypot(*na) or 1; lb = math.hypot(*nb) or 1
+            nas = (0, na[0] / la, na[1] / la); nbs = (0, nb[0] / lb, nb[1] / lb)
+        else:
+            nas = nbs = (0, e[0], e[1])
+        face(mat, [(x0, ay, az), (x1, ay, az), (x1, by, bz), (x0, by, bz)], [nas, nas, nbs, nbs])
+    face(mat, [(x1, y, z) for y, z in pts], (1, 0, 0))
+    face(mat, [(x0, y, z) for y, z in pts], (-1, 0, 0))
+
 
 def rbox(cx, cy, w, d, z0, z1, ang, mat, col=False):
     """Повёрнутый (вокруг Z) прямоугольный брус."""
@@ -271,10 +352,20 @@ def wall_plane(x, y, nx, ny, width, z0, z1, mat, off=.004):
          (px + rx * h, py + ry * h, z1), (px - rx * h, py - ry * h, z1), (nx, ny, 0))
 
 # ───────────────────────── стены, двери, окна ─────────────────────────
+OPENINGS = []
+
+
+def in_opening(axis, c, t, tol=.35):
+    """Попадает ли точка t на линии c (стена вдоль axis) в проём/окно."""
+    return any(o[0] == axis and abs(o[1] - c) < .01 and o[2] - tol < t < o[3] + tol for o in OPENINGS)
+
+
 def wall(axis, c, a, b, ops=(), side_mats=("wall_cream", "wall_cream"), wains=(True, True), panel="wainscot", cap="plastic_white"):
     """axis 'x': стена вдоль X на y=c; 'y': вдоль Y на x=c.
     ops: dict(c, w, z0, z1). side_mats: (отрицательная сторона, положительная)."""
     ops = sorted(ops, key=lambda o: o["c"])
+    for o in ops:
+        OPENINGS.append((axis, c, o["c"] - o["w"] / 2, o["c"] + o["w"] / 2))
     lo, hi = c - T / 2, c + T / 2
     sm = {"y-": side_mats[0], "y+": side_mats[1]} if axis == "x" else {"x-": side_mats[0], "x+": side_mats[1]}
 
@@ -727,6 +818,18 @@ def ac_vent(x, y):
     for k in range(7):
         box(x - .26, y - .26 + k * .08, H - .065, x + .26, y - .22 + k * .08, H - .05, "fixture_dark")
 
+def _tex_file(name):
+    for ext in ("jpg", "png"):
+        if os.path.exists(os.path.join(OUT, "textures", f"{name}.{ext}")):
+            return f"textures/{name}.{ext}"
+    return f"textures/{name}.png"
+
+
+def _map(name, suf):
+    p = os.path.join(OUT, "textures", f"{name}{suf}.jpg")
+    return f"textures/{name}{suf}.jpg" if os.path.exists(p) else None
+
+
 def write_files():
     used = sorted({m for m, *_ in faces})
     with open(os.path.join(OUT, "pd_interior.mtl"), "w") as f:
@@ -734,11 +837,13 @@ def write_files():
             tex, col, tile, rough, metal, ex = MATS[m]
             f.write(f"newmtl {m}\nKd {col[0]} {col[1]} {col[2]}\nKa 0 0 0\nKs 0.1 0.1 0.1\n")
             if tex:
-                f.write(f"map_Kd textures/{tex}.png\n")
+                f.write(f"map_Kd {_tex_file(tex)}\n")
+                if _map(tex, "_n"):
+                    f.write(f"map_Bump {_map(tex, '_n')}\n")
             if "opacity" in ex:
                 f.write(f"d {ex['opacity']}\n")
             if "alpha_test" in ex and tex:
-                f.write(f"map_d textures/{tex}.png\n")
+                f.write(f"map_d {_tex_file(tex)}\n")
             if "emissive" in ex:
                 f.write("Ke 1 1 0.95\n")
             f.write("\n")
@@ -762,7 +867,10 @@ def write_files():
     with open(os.path.join(OUT, "pd_interior_boxes.json"), "w") as f:
         json.dump({"unit": "m", "boxes": boxes}, f)
     scene = {
-        "materials": {m: {"tex": MATS[m][0], "color": MATS[m][1], "rough": MATS[m][3], "metal": MATS[m][4], **MATS[m][5]}
+        "materials": {m: {"tex": _tex_file(MATS[m][0]) if MATS[m][0] else None, "color": MATS[m][1],
+                          "rough": 1.0 if (MATS[m][0] and _map(MATS[m][0], "_r")) else MATS[m][3],
+                          "metal": MATS[m][4], "normal": _map(MATS[m][0], "_n") if MATS[m][0] else None,
+                          "rmap": _map(MATS[m][0], "_r") if MATS[m][0] else None, **MATS[m][5]}
                       for m in used},
         "lights": fixtures,
         "rooms": ROOMS,

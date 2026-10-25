@@ -1,6 +1,7 @@
 """Дополнительный реквизит для интерьера LSPD (поверх pd_lib)."""
 import math
 import pd_lib as L
+import pd_models  # noqa: F401  (подменяет функции в pd_lib)
 from pd_lib import *   # noqa: F401,F403  (face, box, place, push, pop, MATS, R, H ...)
 
 lift = L._lift
@@ -15,23 +16,26 @@ def decal(cx, cy, w, d, mat, ang=0.0, z=.04):
 
 
 def waiting_chairs(n=3):
-    """Ряд чёрных кресел ожидания; сидящий смотрит в +y."""
+    """Ряд кресел ожидания на балке: формованные оболочки (профиль), хромированные ножки. Сидящий смотрит в +y."""
     w = .56
     Lw = n * w
-    box(0, -.03, .30, Lw, .03, .34, "metal_dark", True)
+    box(0, -.04, .27, Lw, .04, .33, "metal_dark", True, bev=.008)
     for k in range(n + 1):
         sx = k * w
-        box(sx - .015, -.34, 0, sx + .015, .0, .30, "metal_dark")
-        box(sx - .02, -.36, 0, sx + .02, -.30, .03, "metal_dark")
+        box(sx - .018, -.02, .0, sx + .018, .02, .3, "metal_dark", bev=.006)
+        box(sx - .022, -.40, .0, sx + .022, .04, .03, "metal_dark", bev=.008)
     for i in range(n):
-        x0 = i * w + .035
-        box(x0, -.27, .40, x0 + .49, .24, .46, "leather", True)
-        box(x0 + .02, -.27, .46, x0 + .47, .22, .50, "leather")
-        box(x0, -.31, .46, x0 + .49, -.25, .94, "leather")
-        box(x0 + .03, -.32, .55, x0 + .46, -.31, .86, "plastic_black")
+        x0 = i * w + .04
+        x1 = x0 + .48
+        seat = [(-.30, .40), (.18, .40), (.235, .415), (.25, .44), (.235, .465), (-.30, .475)]
+        extrude_x([(y - .0, z + .0) for y, z in seat], x0, x1, "leather")
+        back = [(-.325, .44), (-.29, .44), (-.30, .66), (-.325, .93), (-.36, .955), (-.375, .93), (-.355, .66)]
+        extrude_x(back, x0, x1, "leather")
+        box(x0 + .02, -.322, .56, x1 - .02, -.316, .86, "plastic_black", bev=.004)
     for k in range(n + 1):
         sx = k * w
-        box(sx - .02, -.26, .46, sx + .02, .16, .62, "plastic_black")
+        box(sx - .022, -.28, .475, sx + .022, .12, .52, "plastic_black", bev=.01)
+        box(sx - .016, -.24, .33, sx + .016, -.2, .475, "metal_dark", bev=.006)
     return Lw
 
 
@@ -52,14 +56,6 @@ def rope(x0, y0, x1, y1, z=.82, sag=.12, n=8):
         push((ax + bx) / 2, (ay + by) / 2, ang)
         box(-ln / 2 - .01, -.012, min(za, zb) - .012, ln / 2 + .01, .012, max(za, zb) + .012, "rope_red")
         pop()
-
-
-def monitor2(screen="screen_desktop", w=.56, h=.34):
-    """Экран смотрит в -y."""
-    cyl(0, 0, .0, .015, .11, "plastic_black", 10)
-    box(-.025, -.025, .015, .025, .02, .12, "plastic_black")
-    box(-w / 2 - .015, -.02, .12, w / 2 + .015, .02, .12 + h + .03, "plastic_black")
-    quad(screen, (-w / 2, -.0225, .135), (w / 2, -.0225, .135), (w / 2, -.0225, .135 + h), (-w / 2, -.0225, .135 + h))
 
 
 def mug(x, y, z):

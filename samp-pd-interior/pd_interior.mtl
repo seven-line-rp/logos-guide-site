@@ -54,13 +54,15 @@ newmtl brick
 Kd 1 1 1
 Ka 0 0 0
 Ks 0.1 0.1 0.1
-map_Kd textures/brick.png
+map_Kd textures/brick.jpg
+map_Bump textures/brick_n.jpg
 
 newmtl brick_front
 Kd 1 1 1
 Ka 0 0 0
 Ks 0.1 0.1 0.1
-map_Kd textures/brick.png
+map_Kd textures/brick.jpg
+map_Bump textures/brick_n.jpg
 
 newmtl cardboard
 Kd 1 1 1
@@ -72,7 +74,8 @@ newmtl carpet_grey
 Kd 1 1 1
 Ka 0 0 0
 Ks 0.1 0.1 0.1
-map_Kd textures/carpet_grey.png
+map_Kd textures/carpet_grey.jpg
+map_Bump textures/carpet_grey_n.jpg
 
 newmtl caution
 Kd 0.9 0.75 0.05
@@ -83,7 +86,8 @@ newmtl ceiling_tile
 Kd 1 1 1
 Ka 0 0 0
 Ks 0.1 0.1 0.1
-map_Kd textures/ceiling_tile.png
+map_Kd textures/ceiling_tile.jpg
+map_Bump textures/ceiling_tile_n.jpg
 
 newmtl chrome
 Kd 0.8 0.82 0.85
@@ -100,7 +104,8 @@ newmtl concrete
 Kd 1 1 1
 Ka 0 0 0
 Ks 0.1 0.1 0.1
-map_Kd textures/concrete.png
+map_Kd textures/concrete.jpg
+map_Bump textures/concrete_n.jpg
 
 newmtl exit_light
 Kd 1 1 1
@@ -109,20 +114,32 @@ Ks 0.1 0.1 0.1
 map_Kd textures/sign_exit.png
 
 newmtl fabric_blue
-Kd 0.08 0.16 0.38
+Kd 1 1 1
 Ka 0 0 0
 Ks 0.1 0.1 0.1
+map_Kd textures/fabric_blue.jpg
+map_Bump textures/fabric_blue_n.jpg
 
 newmtl fabric_grey
-Kd 0.3 0.31 0.34
+Kd 1 1 1
 Ka 0 0 0
 Ks 0.1 0.1 0.1
+map_Kd textures/fabric_grey.jpg
+map_Bump textures/fabric_grey_n.jpg
+
+newmtl fixture_dark
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/metal_dark.jpg
+map_Bump textures/metal_dark_n.jpg
 
 newmtl fixture_frame
 Kd 1 1 1
 Ka 0 0 0
 Ks 0.1 0.1 0.1
-map_Kd textures/metal.png
+map_Kd textures/metal.jpg
+map_Bump textures/metal_n.jpg
 
 newmtl flag_state
 Kd 1 1 1
@@ -140,7 +157,8 @@ newmtl floor_vinyl
 Kd 1 1 1
 Ka 0 0 0
 Ks 0.1 0.1 0.1
-map_Kd textures/floor_vinyl.png
+map_Kd textures/floor_vinyl.jpg
+map_Bump textures/floor_vinyl_n.jpg
 
 newmtl glass
 Kd 0.65 0.82 0.9
@@ -157,7 +175,8 @@ newmtl granite
 Kd 1 1 1
 Ka 0 0 0
 Ks 0.1 0.1 0.1
-map_Kd textures/granite.png
+map_Kd textures/granite.jpg
+map_Bump textures/granite_n.jpg
 
 newmtl heightchart
 Kd 1 1 1
@@ -171,10 +190,19 @@ Ka 0 0 0
 Ks 0.1 0.1 0.1
 map_Kd textures/keyboard.png
 
-newmtl leather
-Kd 0.05 0.05 0.055
+newmtl leaf_blade
+Kd 1 1 1
 Ka 0 0 0
 Ks 0.1 0.1 0.1
+map_Kd textures/leaf_blade.jpg
+map_Bump textures/leaf_blade_n.jpg
+
+newmtl leather
+Kd 1 1 1
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+map_Kd textures/leather.jpg
+map_Bump textures/leather_n.jpg
 
 newmtl light
 Kd 1 1 0.95
@@ -203,13 +231,15 @@ newmtl metal
 Kd 1 1 1
 Ka 0 0 0
 Ks 0.1 0.1 0.1
-map_Kd textures/metal.png
+map_Kd textures/metal.jpg
+map_Bump textures/metal_n.jpg
 
 newmtl metal_dark
 Kd 1 1 1
 Ka 0 0 0
 Ks 0.1 0.1 0.1
-map_Kd textures/metal_dark.png
+map_Kd textures/metal_dark.jpg
+map_Bump textures/metal_dark_n.jpg
 
 newmtl mirror_glass
 Kd 1 1 1
@@ -232,14 +262,8 @@ newmtl parquet
 Kd 1 1 1
 Ka 0 0 0
 Ks 0.1 0.1 0.1
-map_Kd textures/parquet.png
-
-newmtl plant_card
-Kd 1 1 1
-Ka 0 0 0
-Ks 0.1 0.1 0.1
-map_Kd textures/plant_a.png
-map_d textures/plant_a.png
+map_Kd textures/parquet.jpg
+map_Bump textures/parquet_n.jpg
 
 newmtl plastic_black
 Kd 0.04 0.04 0.045
@@ -258,9 +282,11 @@ Ks 0.1 0.1 0.1
 map_Kd textures/poster_wanted.png
 
 newmtl pot
-Kd 0.55 0.55 0.52
+Kd 0.82 0.8 0.76
 Ka 0 0 0
 Ks 0.1 0.1 0.1
+map_Kd textures/concrete.jpg
+map_Bump textures/concrete_n.jpg
 
 newmtl red
 Kd 0.65 0.05 0.04
@@ -271,7 +297,8 @@ newmtl roof
 Kd 1 1 1
 Ka 0 0 0
 Ks 0.1 0.1 0.1
-map_Kd textures/concrete.png
+map_Kd textures/concrete.jpg
+map_Bump textures/concrete_n.jpg
 
 newmtl rope_red
 Kd 0.5 0.02 0.03
@@ -389,43 +416,50 @@ newmtl tile_beige
 Kd 1 1 1
 Ka 0 0 0
 Ks 0.1 0.1 0.1
-map_Kd textures/tile_beige.png
+map_Kd textures/tile_beige.jpg
+map_Bump textures/tile_beige_n.jpg
 
 newmtl tile_grey
 Kd 1 1 1
 Ka 0 0 0
 Ks 0.1 0.1 0.1
-map_Kd textures/tile_grey.png
+map_Kd textures/tile_grey.jpg
+map_Bump textures/tile_grey_n.jpg
 
 newmtl tile_white
 Kd 1 1 1
 Ka 0 0 0
 Ks 0.1 0.1 0.1
-map_Kd textures/tile_white.png
+map_Kd textures/tile_white.jpg
+map_Bump textures/tile_white_n.jpg
 
 newmtl wainscot
 Kd 1 1 1
 Ka 0 0 0
 Ks 0.1 0.1 0.1
-map_Kd textures/wainscot.png
+map_Kd textures/wainscot.jpg
+map_Bump textures/wainscot_n.jpg
 
 newmtl wainscot_front
 Kd 1 1 1
 Ka 0 0 0
 Ks 0.1 0.1 0.1
-map_Kd textures/wainscot.png
+map_Kd textures/wainscot.jpg
+map_Bump textures/wainscot_n.jpg
 
 newmtl wall_cream
 Kd 1 1 1
 Ka 0 0 0
 Ks 0.1 0.1 0.1
-map_Kd textures/wall_cream.png
+map_Kd textures/wall_cream.jpg
+map_Bump textures/wall_cream_n.jpg
 
 newmtl wall_cream_front
 Kd 1 1 1
 Ka 0 0 0
 Ks 0.1 0.1 0.1
-map_Kd textures/wall_cream.png
+map_Kd textures/wall_cream.jpg
+map_Bump textures/wall_cream_n.jpg
 
 newmtl whiteboard_tex
 Kd 1 1 1
@@ -437,11 +471,13 @@ newmtl wood_dark
 Kd 1 1 1
 Ka 0 0 0
 Ks 0.1 0.1 0.1
-map_Kd textures/wood_dark.png
+map_Kd textures/wood_dark.jpg
+map_Bump textures/wood_dark_n.jpg
 
 newmtl wood_light
 Kd 1 1 1
 Ka 0 0 0
 Ks 0.1 0.1 0.1
-map_Kd textures/wood_light.png
+map_Kd textures/wood_light.jpg
+map_Bump textures/wood_light_n.jpg
 
