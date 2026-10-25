@@ -269,7 +269,7 @@ Object.assign(english, {
   'Размышляю над вопросом': 'Thinking it over', 'Перебираю варианты': 'Weighing the options', 'Проверяю себя': 'Double-checking', 'Собираю подробный ответ': 'Writing a detailed answer',
   'Рассматриваю картинку': 'Looking at the picture', 'Ищу важное на снимке': 'Finding what matters in the image', 'Связываю с планом корпуса': 'Matching it with the floor plan',
   'Режим «Подумать глубже»': 'Deep thinking mode', 'ЛОГОС AI думает': 'LOGOS AI is thinking',
-  'Упаковываем сообщение…': 'Packing your message…', 'Отправляем куратору…': 'Sending it to your curator…', 'Куратор читает…': 'The curator is reading…', 'Доставлено куратору': 'Delivered to your curator',
+  
   'Шутка 🙂 Никуда ничего не ушло. Но давайте без мата: так я помогу быстрее. Переформулируйте вопрос, и продолжим.': 'Just kidding 🙂 Nothing was sent anywhere. But let’s keep it clean, I can help faster that way. Rephrase your question and we’ll carry on.',
   'Ход мыслей': 'Reasoning', 'Скопировать ответ': 'Copy answer', 'Озвучить ответ': 'Read aloud', 'Остановить озвучку': 'Stop reading', 'Ответить заново': 'Regenerate',
   'Приложенная картинка': 'Attached picture', 'Убрать картинку': 'Remove picture', 'Картинка': 'Picture',

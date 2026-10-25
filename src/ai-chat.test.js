@@ -20,9 +20,10 @@ test('askAgent posts history and surfaces server errors', async () => {
   const ok = async (url, init) => { sent = { url, body: JSON.parse(init.body) }; return { ok: true, status: 200, json: async () => ({ reply: 'Библиотека — кабинет 214.' }) } }
   assert.deepEqual(await askAgent([{ role: 'user', content: 'Где библиотека?' }], { fetchImpl: ok, deep: true }), { reply: 'Библиотека — кабинет 214.', sig: '', reasoning: '', vision: true, left: null })
   assert.equal(sent.url, '/api/ai-chat.php')
-  assert.deepEqual(sent.body, { messages: [{ role: 'user', content: 'Где библиотека?' }], deep: true, rude: false })
-  await askAgent([{ role: 'user', content: 'б*** ну ты и тормоз', rude: true }], { fetchImpl: ok })
-  assert.equal(sent.body.rude, true)
+  assert.deepEqual(sent.body, { messages: [{ role: 'user', content: 'Где библиотека?' }], deep: true, study: false })
+  await askAgent([{ role: 'user', content: 'Как решать реакции?' }], { fetchImpl: ok, study: true })
+  assert.equal(sent.body.study, true)
+  assert.equal('rude' in sent.body, false)
 
   const limited = async () => ({ ok: false, status: 429, json: async () => ({ error: 'Вы задали все 8 вопросов на сегодня.', left: 0 }) })
   await assert.rejects(askAgent([{ role: 'user', content: 'x' }], { fetchImpl: limited }), (error) => error.left === 0 && /8 вопросов/.test(error.message))
@@ -65,7 +66,7 @@ test('no API key is committed to the site sources', () => {
   for (const file of files) assert.doesNotMatch(readFileSync(file, 'utf8'), /sk-[a-f0-9]{24,}/, file)
 })
 
-test('only the latest question carries images; curator replies never reach the model', () => {
+test('only the latest question carries images; old curator messages are ignored', () => {
   const history = historyForRequest([
     { role: 'user', content: 'Что тут?', images: ['data:image/jpeg;base64,AAA'] },
     { role: 'assistant', content: 'Расписание.' },
@@ -166,4 +167,30 @@ test('branded QR: rounded modules, logo in the centre, high error correction', a
   assert.match(svg, /^<svg[^>]*viewBox="0 0 \d+ \d+"/)
   assert.ok((svg.match(/rx="0\.32"/g) || []).length > 100, 'скруглённые точки')
   assert.match(svg, /rx="[\d.]+" fill="#ffffff"\/><g transform/, 'плашка под логотип со скруглёнными краями')
+})
+
+test('answer blocks: labelled callouts, quizzes and follow-up chips', () => {
+  const blocks = parseBlocks([
+    '> **Кратко:** реакция — превращение веществ.',
+    '',
+    '> **Формула:** закон сохранения массы',
+    '> $m_1 = m_2$',
+    '',
+    '### Практика',
+    '```quiz',
+    '{"tasks":[{"type":"input","q":"Уравняйте $H_2 + O_2 \\to H_2O$","answer":"2 1 2","explain":"Так."}]}',
+    '```',
+    '```next',
+    '["Разобрать пример","Дай ещё задания"]',
+    '```',
+  ].join('\n'))
+  assert.deepEqual(blocks.map((b) => b.type), ['callout', 'callout', 'h', 'quiz', 'next'])
+  assert.deepEqual([blocks[0].kind, blocks[0].label], ['summary', 'Кратко'])
+  assert.equal(blocks[0].blocks[0].text, 'реакция — превращение веществ.', 'подпись вынесена из текста')
+  assert.deepEqual([blocks[1].kind, blocks[1].label], ['rule', 'Формула'])
+  assert.equal(blocks[3].spec.tasks[0].answer, '2 1 2')
+  assert.deepEqual(blocks[4].items, ['Разобрать пример', 'Дай ещё задания'])
+  // Негодный блок quiz пропадает, а не ломает ответ.
+  assert.deepEqual(parseBlocks('Текст\n```quiz\nмусор\n```\nКонец').map((b) => b.type), ['p', 'p'])
+  assert.match(plainText('> **Важно:** не забудьте коэффициенты\n```quiz\n{"tasks":[{"q":"Сколько?","answer":"2"}]}\n```'), /Важно: не забудьте[\s\S]*Задания:\n1\. Сколько\?/)
 })

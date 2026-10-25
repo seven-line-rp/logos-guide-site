@@ -1,5 +1,6 @@
 import { functionalStorageAllowed } from './consent.js'
 import { calloutKind, cleanReply, parseChartSpec, splitSubject } from './ai-format.js'
+import { parseNextSpec, parseQuizSpec } from './ai-quiz.js'
 
 // Клиентская часть ИИ-агента: запрос к public/api/ai-chat.php, хранение
 // чатов в браузере, маскировка мата и разбор ответа. Ответ модели — Markdown,
@@ -20,7 +21,7 @@ const IMAGE_NOTE = '[к сообщению было приложено изоб�
 // заменяются пометкой, чтобы не платить за них в каждом запросе.
 export function historyForRequest(messages) {
   const turns = messages
-    .filter((message) => (message.role === 'user' || message.role === 'assistant') && !message.error && !message.curator)
+    .filter((message) => (message.role === 'user' || message.role === 'assistant') && !message.error)
     .slice(-MAX_HISTORY)
   return turns.map(({ role, content, images, sig }, index) => {
     // Ответ агента уходит целиком и с подписью сервера: по ней сервер отличает
@@ -36,13 +37,13 @@ export function historyForRequest(messages) {
   })
 }
 
-export async function askAgent(messages, { signal, deep = false, fetchImpl = fetch } = {}) {
+export async function askAgent(messages, { signal, deep = false, study = false, fetchImpl = fetch } = {}) {
   let response
   try {
     response = await fetchImpl(AI_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Logos-Client': 'web' },
-      body: JSON.stringify({ messages: historyForRequest(messages), deep, rude: Boolean(messages[messages.length - 1]?.rude) }),
+      body: JSON.stringify({ messages: historyForRequest(messages), deep, study }),
       signal,
     })
   } catch (error) {
@@ -104,7 +105,7 @@ export function chatTitle(text) {
 }
 
 function validMessage(message) {
-  return message && ['user', 'assistant', 'curator'].includes(message.role) && typeof message.content === 'string'
+  return message && ['user', 'assistant'].includes(message.role) && typeof message.content === 'string'
 }
 
 export function parseChats(raw) {
@@ -235,6 +236,12 @@ export function parseBlocks(text) {
     if (code.lang.toLowerCase() === 'chart') {
       const spec = parseChartSpec(code.text)
       blocks.push(spec ? { type: 'chart', spec } : { type: 'code', lang: 'json', text: code.text })
+    } else if (code.lang.toLowerCase() === 'quiz') {
+      const spec = parseQuizSpec(code.text)
+      if (spec) blocks.push({ type: 'quiz', spec })
+    } else if (code.lang.toLowerCase() === 'next') {
+      const items = parseNextSpec(code.text)
+      if (items) blocks.push({ type: 'next', items })
     } else blocks.push(code)
     code = null
   }
@@ -280,8 +287,11 @@ export function parseBlocks(text) {
       const quote = []
       while (index < lines.length && /^>\s?/.test(lines[index].trim())) { quote.push(lines[index].trim().replace(/^>\s?/, '')); index += 1 }
       index -= 1
-      const label = quote[0].match(/^\*\*([^*]+)\*\*/)?.[1] || quote[0].match(/^([А-Яа-яЁёA-Za-z ]{3,24}):/)?.[1] || ''
-      blocks.push({ type: 'callout', kind: calloutKind(label), blocks: parseBlocks(quote.join('\n')) })
+      // Подпись плашки («**Важно:**») уходит в заголовок со значком, а не в текст.
+      const titled = quote[0].match(/^\*\*([^*]+?)\*\*:?\s*(.*)$/) || quote[0].match(/^([А-Яа-яЁёA-Za-z ]{3,24}):\s*(.*)$/)
+      const label = titled ? titled[1].replace(/[:\s]+$/, '') : ''
+      if (titled) { if (titled[2]) quote[0] = titled[2]; else quote.shift() }
+      blocks.push({ type: 'callout', kind: calloutKind(label), label, blocks: parseBlocks(quote.join('\n')) })
       continue
     }
     if (/^(?:-{3,}|\*{3,}|_{3,})$/.test(line)) { flush(); blocks.push({ type: 'hr' }); continue }
@@ -340,7 +350,9 @@ export function plainText(text) {
     if (block.type === 'chart') return block.spec.title ? `[график: ${block.spec.title}]` : '[график]'
     if (block.type === 'hr') return ''
     if (block.type === 'table') return [block.head, ...block.rows].map((row) => row.map(line).join(' | ')).join('\n')
-    if (block.type === 'callout') return flat(block.blocks)
+    if (block.type === 'callout') return [block.label ? `${block.label}:` : '', flat(block.blocks)].filter(Boolean).join(' ')
+    if (block.type === 'quiz') return ['Задания:', ...block.spec.tasks.map((task, i) => `${i + 1}. ${line(task.q)}`)].join('\n')
+    if (block.type === 'next') return ''
     if (block.items) return block.items.map((item) => `— ${line(item)}`).join('\n')
     return line(block.text)
   }).filter((part) => part !== '').join('\n')
@@ -350,7 +362,7 @@ export function plainText(text) {
 export function chatToMarkdown(chat) {
   const lines = [`# ${chat.title}`, '', `ЛОГОС AI · ${new Date(chat.created).toLocaleString('ru-RU')}`, '']
   for (const message of chat.messages) {
-    const who = message.role === 'user' ? 'Вы' : message.role === 'curator' ? 'Куратор' : 'ЛОГОС AI'
+    const who = message.role === 'user' ? 'Вы' : 'ЛОГОС AI'
     lines.push(`**${who}:** ${message.content}${message.images?.length ? `\n_(картинок: ${message.images.length})_` : ''}`, '')
   }
   return lines.join('\n')
