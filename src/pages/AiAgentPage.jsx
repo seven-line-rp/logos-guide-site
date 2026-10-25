@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, useSearchParams } from 'react-router-dom'
-import { ArrowUp, Brain, Check, ChevronDown, Code, Copy, Download, GraduationCap, ImagePlus, Lightbulb, MapPin, Mic, MicOff, PanelLeft, RefreshCw, Route, Sparkles, SquarePen, Square, Trash2, TriangleAlert, UserRound, Volume2, VolumeX, X } from 'lucide-react'
+import { ArrowUp, Brain, Check, ChevronDown, Code, Copy, Download, GraduationCap, ImagePlus, Lightbulb, MapPin, Mic, MicOff, PanelLeft, RefreshCw, Route, Sparkles, SquarePen, Square, Trash2, TriangleAlert, Volume2, VolumeX, X } from 'lucide-react'
 import { answerActions, askAgent, routeFromLink, chatTitle, chatToMarkdown, compressImage, containsProfanity, createChat, loadChats, maskProfanity, MAX_IMAGES, MAX_INPUT, plainText, saveChats } from '../ai-chat.js'
 import { functionalStorageAllowed, onConsentChange } from '../consent.js'
 import { speakText, stopSpeech } from '../speech.js'
@@ -13,10 +13,12 @@ import { rooms } from '../data.js'
 // ЛОГОС AI: чат с DeepSeek через public/api/ai-chat.php. Чаты хранятся в
 // localStorage (ключ logos-ai-chats, если человек не отказался от
 // функциональных cookie), картинки сжимаются в браузере. Мат уходит в модель
-// замаскированным вместе с пометкой rude: агент сам включает «враждебный
-// режим» (подсказка в ai-chat.php), а в чате проигрывается «отправка куратору».
+// замаскированным. Режим «Зачёт» просит у агента теорию и практические задания
+// (блок quiz рисует components/ai-quiz.js), а под ответами появляются
+// вопросы-продолжения (блок next).
 
 const suggestions = [
+  { icon: GraduationCap, text: 'Как решать химические реакции?', study: true },
   { icon: MapPin, text: 'Где библиотека и как до неё дойти?' },
   { icon: GraduationCap, text: 'Какие специальности есть в колледже?' },
   { icon: Lightbulb, text: 'Объясни закон Ома на простом примере' },
@@ -26,53 +28,22 @@ const suggestions = [
 const thinkingStages = {
   normal: ['Читаю вопрос', 'Ищу в плане корпуса', 'Сверяюсь с колледжлогос.рф', 'Собираю ответ'],
   deep: ['Размышляю над вопросом', 'Перебираю варианты', 'Проверяю себя', 'Собираю подробный ответ'],
+  study: ['Определяю тему', 'Готовлю теорию', 'Составляю примеры', 'Подбираю задания для практики'],
   image: ['Рассматриваю картинку', 'Ищу важное на снимке', 'Связываю с планом корпуса', 'Собираю ответ'],
 }
 
-const curatorStages = ['Упаковываем сообщение…', 'Отправляем куратору…', 'Куратор читает…', 'Доставлено куратору']
-
-function Thinking({ deep, image }) {
+function Thinking({ deep, image, study }) {
   const [tick, setTick] = useState(0)
   useEffect(() => {
     const timer = window.setInterval(() => setTick((value) => value + 1), 1000)
     return () => window.clearInterval(timer)
   }, [])
-  const stages = thinkingStages[image ? 'image' : deep ? 'deep' : 'normal']
+  const stages = thinkingStages[image ? 'image' : study ? 'study' : deep ? 'deep' : 'normal']
   const stage = Math.min(stages.length - 1, Math.floor(tick / (deep ? 3 : 2)))
   return <div className={`ai-thinking ${deep ? 'ai-thinking-deep' : ''}`} role="status">
     <span className="ai-thinking-orb" aria-hidden="true"><Sparkles size={14} /></span>
     <strong key={stage} className="ai-thinking-label">{stages[stage]}</strong>
     <small>{`${Math.floor(tick / 60)}:${String(tick % 60).padStart(2, '0')}`}</small>
-  </div>
-}
-
-function CuratorCard({ animate }) {
-  const [stage, setStage] = useState(animate ? 0 : curatorStages.length - 1)
-  useEffect(() => {
-    if (!animate) return undefined
-    const timers = [900, 1900, 2900].map((delay, index) => window.setTimeout(() => setStage(index + 1), delay))
-    return () => timers.forEach(window.clearTimeout)
-  }, [animate])
-  const done = stage === curatorStages.length - 1
-  // После «доставлено» идёт обратный отсчёт на извинения; в старых чатах — уже «время вышло».
-  const [left, setLeft] = useState(animate ? 3 : 0)
-  useEffect(() => {
-    if (!animate || !done || left <= 0) return undefined
-    const timer = window.setTimeout(() => setLeft((value) => value - 1), 1000)
-    return () => window.clearTimeout(timer)
-  }, [animate, done, left])
-  const ref = useRef(null)
-  // Ультиматум появляется в конце анимации: докручиваем чат, чтобы её было видно.
-  useEffect(() => { if (animate && done) ref.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }) }, [animate, done])
-  return <div ref={ref} className={`ai-curator ${done ? 'ai-curator-done' : ''}`} role="status">
-    <div className="ai-curator-track" aria-hidden="true">
-      <span className="ai-curator-node"><UserRound size={15} /></span>
-      <span className="ai-curator-line"><span className="ai-curator-letter" style={{ '--stage': stage }}>✉</span></span>
-      <span className="ai-curator-node ai-curator-target">{done ? <Check size={15} /> : <GraduationCap size={15} />}</span>
-    </div>
-    <strong>{curatorStages[stage]}</strong>
-    <div className="ai-curator-progress" aria-hidden="true"><span style={{ width: `${(stage + 1) * 25}%` }} /></div>
-    {done && <p className="ai-curator-joke ai-curator-threat">{left > 0 ? <>Даю пару секунд, чтобы извиниться. <b>{left}</b></> : 'Время вышло. Карьера оформляется в пух и прах.'}</p>}
   </div>
 }
 
@@ -131,6 +102,9 @@ export default function AiAgentPage() {
   const [attachments, setAttachments] = useState([])
   const [pending, setPending] = useState(null)
   const [deep, setDeep] = useState(false)
+  // «Зачёт»: теория и практические задания. Запоминаем выбор в этой вкладке.
+  const [study, setStudy] = useState(() => { try { return sessionStorage.getItem('logos-ai-study') === '1' } catch { return false } })
+  const toggleStudy = () => setStudy((value) => { const next = !value; try { sessionStorage.setItem('logos-ai-study', next ? '1' : '0') } catch { /* приватный режим */ } return next })
   const [sidebar, setSidebar] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
   const [dragging, setDragging] = useState(false)
@@ -146,7 +120,6 @@ export default function AiAgentPage() {
   const inputRef = useRef(null)
   const fileRef = useRef(null)
   const recognition = useRef(null)
-  const mountedAt = useRef(Date.now())
 
   const { chats, activeId } = store
   const chat = chats.find((item) => item.id === activeId) || chats[0]
@@ -174,11 +147,11 @@ export default function AiAgentPage() {
     setStore((current) => ({ ...current, chats: current.chats.map((item) => item.id === id ? { ...change(item), updated: Date.now() } : item) }))
   }, [])
 
-  const run = async (chatId, next, useDeep) => {
-    setPending({ chatId, deep: useDeep, image: Boolean(next[next.length - 1]?.images?.length) })
+  const run = async (chatId, next, useDeep, useStudy = study) => {
+    setPending({ chatId, deep: useDeep, study: useStudy, image: Boolean(next[next.length - 1]?.images?.length) })
     controller.current = new AbortController()
     try {
-      const answer = await askAgent(next, { signal: controller.current.signal, deep: useDeep })
+      const answer = await askAgent(next, { signal: controller.current.signal, deep: useDeep, study: useStudy })
       if (!answer.vision) setNotice('Модель пока не видит картинки, поэтому отвечает по тексту вопроса.')
       if (answer.left !== null) setLeft(answer.left)
       updateChat(chatId, (item) => ({ ...item, messages: [...item.messages, { role: 'assistant', content: answer.reply, sig: answer.sig || undefined, reasoning: answer.reasoning || undefined, at: Date.now() }] }))
@@ -191,19 +164,17 @@ export default function AiAgentPage() {
     }
   }
 
-  const send = async (text = input) => {
+  const send = async (text = input, studyMode = study) => {
     const content = text.trim().slice(0, MAX_INPUT)
     if ((!content && !attachments.length) || pending) return
     const chatId = chat.id
-    const rude = containsProfanity(content)
-    const userMessage = { role: 'user', content: rude ? maskProfanity(content) : content, at: Date.now(), ...(rude ? { rude: true } : {}), ...(attachments.length ? { images: attachments } : {}) }
+    const userMessage = { role: 'user', content: containsProfanity(content) ? maskProfanity(content) : content, at: Date.now(), ...(attachments.length ? { images: attachments } : {}) }
     const next = [...messages.filter((m) => !m.error), userMessage]
-    const shown = rude ? [...next, { role: 'curator', content: 'Сообщение передано куратору', at: Date.now() }] : next
-    updateChat(chatId, (item) => ({ ...item, title: item.messages.length ? item.title : chatTitle(userMessage.content), messages: shown }))
+    updateChat(chatId, (item) => ({ ...item, title: item.messages.length ? item.title : chatTitle(userMessage.content), messages: next }))
     setInput('')
     setAttachments([])
     inputRef.current?.focus()
-    await run(chatId, next, deep)
+    await run(chatId, next, deep, studyMode)
   }
 
   // «Спросить про это место» с карты и маршрута: /ai?about=<id> сразу задаёт
@@ -212,6 +183,7 @@ export default function AiAgentPage() {
   const asked = useRef(false)
   useEffect(() => {
     if (asked.current) return
+    if (params.get('mode') === 'study') setStudy(true)
     const room = rooms.find((item) => item.id === params.get('about'))
     const question = room
       ? `Расскажи про «${room.name}${room.number ? ` №${room.number}` : ''}» (${room.floor} этаж): что это за место, что там бывает и как туда пройти от главного входа.`
@@ -229,7 +201,7 @@ export default function AiAgentPage() {
     if (lastUser < 0 || pending) return
     const next = messages.slice(0, lastUser + 1)
     updateChat(chat.id, (item) => ({ ...item, messages: next }))
-    run(chat.id, next, deep)
+    run(chat.id, next, deep, study)
   }
 
   const stop = () => controller.current?.abort()
@@ -333,6 +305,7 @@ export default function AiAgentPage() {
       <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={(event) => { addFiles(event.target.files); event.target.value = '' }} />
       <button className="ai-icon" type="button" onClick={() => fileRef.current?.click()} disabled={attachments.length >= MAX_IMAGES} title="Приложить картинку (можно вставить Ctrl+V или перетащить)" aria-label="Приложить картинку"><ImagePlus size={18} /></button>
       <button type="button" className={`ai-deep ${deep ? 'is-on' : ''}`} onClick={() => setDeep((value) => !value)} aria-pressed={deep} title="Модель рассуждает дольше, но точнее: для сложных вопросов и задач"><Brain size={15} /><span>Подумать глубже</span></button>
+      <button type="button" className={`ai-deep ai-study ${study ? 'is-on' : ''}`} onClick={toggleStudy} aria-pressed={study} title="Режим «Зачёт»: сначала теория, затем практические задания с проверкой"><GraduationCap size={15} /><span>Зачёт</span></button>
       <span className="ai-composer-gap" />
       {SpeechRecognition && <button className={`ai-icon ${listening ? 'is-listening' : ''}`} type="button" onClick={toggleVoice} title={listening ? 'Остановить запись' : 'Сказать голосом'} aria-label={listening ? 'Остановить запись' : 'Сказать голосом'}>{listening ? <MicOff size={18} /> : <Mic size={18} />}</button>}
       {busyHere
@@ -359,24 +332,23 @@ export default function AiAgentPage() {
           <h1>Чем помочь?</h1>
           <p>Спросите о чём угодно: найду кабинет и построю маршрут, расскажу о колледже, решу задачу, объясню тему, помогу с кодом или текстом.</p>
           {composer}
-          <div className="ai-suggestions">{suggestions.map(({ icon: Icon, text }) => <button key={text} type="button" onClick={() => send(text)}><Icon size={15} />{text}</button>)}</div>
+          <div className="ai-suggestions">{suggestions.map(({ icon: Icon, text, study: asStudy }) => <button key={text} type="button" onClick={() => { if (asStudy) setStudy(true); send(text, asStudy || study) }}><Icon size={15} />{text}{asStudy && <em className="ai-suggestion-tag">Зачёт</em>}</button>)}</div>
         </div> : <div className="ai-thread">
           {messages.map((message, index) => {
-            if (message.role === 'curator') return <div key={index} className="ai-message ai-message-assistant"><CuratorCard animate={message.at > mountedAt.current} /></div>
             if (message.role === 'user') return <div key={index} className="ai-message ai-message-user">{message.images?.length > 0 && <div className="ai-user-images">{message.images.map((src, i) => <img key={i} src={src} alt="Приложенная картинка" />)}</div>}{message.content && <div className="ai-bubble"><AiMessageText text={message.content} plain /></div>}</div>
             const actions = message.error ? [] : answerActions(message.content)
             const routeLink = actions.find((action) => action.kind === 'route')
             const preview = routeLink ? routeFromLink(routeLink.href) : null
             return <div key={index} className={`ai-message ai-message-assistant ${message.error ? 'ai-message-error' : ''}`}>
               {message.reasoning && <Reasoning text={message.reasoning} />}
-              <div className={`ai-text${messageSubject(message.content) ? ` ai-subject ai-subject-${messageSubject(message.content)}` : ''}`}>{message.error && <TriangleAlert size={16} className="ai-error-icon" />}<AiMessageText text={message.content} /></div>
+              <div className={`ai-text${messageSubject(message.content) ? ` ai-subject ai-subject-${messageSubject(message.content)}` : ''}`}>{message.error && <TriangleAlert size={16} className="ai-error-icon" />}<AiMessageText text={message.content} onAsk={index === lastAssistant && !pending && !message.error ? (question) => send(question, study || /самопроверки/.test(question)) : undefined} /></div>
               {message.error && index === messages.length - 1 && <button type="button" className="ai-chip" onClick={regenerate}>Повторить</button>}
               {preview && <RoutePreview {...preview} live={index === lastAssistant} />}
               {actions.length > 0 && <div className="ai-actions">{actions.map((action) => <Link key={action.href} to={action.href} className="ai-chip">{action.kind === 'route' ? <Route size={14} /> : <MapPin size={14} />}<RawText text={action.label} /></Link>)}</div>}
               {!message.error && <MessageTools message={message} onRegenerate={index === lastAssistant && !pending ? regenerate : null} />}
             </div>
           })}
-          {busyHere && <div className="ai-message ai-message-assistant"><Thinking deep={pending.deep} image={pending.image} /></div>}
+          {busyHere && <div className="ai-message ai-message-assistant"><Thinking deep={pending.deep} image={pending.image} study={pending.study} /></div>}
         </div>}
       </div>
 

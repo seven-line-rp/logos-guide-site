@@ -38,7 +38,6 @@
 .ai-tools button { border-radius: 6px; }
 
 .ai-thinking-orb, .ai-thinking-deep .ai-thinking-orb { width: 22px; height: 22px; border-radius: 7px; color: var(--surface); background: var(--ink); }
-.ai-curator { border-radius: 12px; }
 
 /* ---------- Пустой чат ---------- */
 .ai-welcome h1 { margin: 14px 0 4px; font-size: clamp(24px, 3vw, 30px); font-weight: 650; letter-spacing: -.02em; }
@@ -65,9 +64,88 @@
 /* ---------- Предметы: тонкая линия вместо заливки ---------- */
 .ai-subject { padding: 2px 0 2px 16px; border: 0; border-left: 2px solid var(--ai-accent); border-radius: 0; background: none; }
 .ai-subject-badge { margin-bottom: 4px; padding: 0; border-radius: 0; background: none; font-size: 11.5px; font-weight: 650; letter-spacing: .06em; text-transform: uppercase; }
-.ai-callout { padding: 2px 0 2px 14px; border-left: 2px solid var(--k); border-radius: 0; background: none; }
-.ai-callout-answer { background: none; }
-.ai-callout > :first-child strong:first-child { color: var(--k); }
+/* Плашки (Кратко, Определение, Формула, Пример, Важно…): значок и подпись в заголовке. */
+.ai-callout { padding: 12px 14px 12px 16px; border: 1px solid color-mix(in srgb, var(--k) 22%, var(--line)); border-left: 3px solid var(--k); border-radius: 12px; background: color-mix(in srgb, var(--k) 5%, var(--surface)); }
+.ai-callout-answer { background: color-mix(in srgb, var(--k) 8%, var(--surface)); }
+.ai-callout-head { margin-bottom: 6px; display: flex; align-items: center; gap: 8px; color: var(--k); font-size: 12.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.ai-callout-head svg { flex: 0 0 auto; }
+.ai-callout-body > * + * { margin-top: 6px; }
+.ai-callout-body > :first-child { margin-top: 0; }
+.ai-callout-summary { --k: #245ce5; }
+.ai-callout-definition { --k: #0f766e; }
+.ai-callout-example { --k: #0891b2; }
+.ai-callout-tip { --k: #a16207; }
+.ai-callout-check { --k: #16a34a; }
+:root[data-theme='dark'] .ai-callout-summary { --k: #7ba4ff; }
+:root[data-theme='dark'] .ai-callout-definition { --k: #5eead4; }
+:root[data-theme='dark'] .ai-callout-example { --k: #67e8f9; }
+:root[data-theme='dark'] .ai-callout-tip { --k: #fbbf24; }
+:root[data-theme='dark'] .ai-callout-check { --k: #4ade80; }
+
+/* Заголовки разделов со значком в рамке. */
+.ai-message-heading-icon { margin-top: 18px; display: flex; align-items: center; gap: 10px; font-size: 16.5px; }
+.ai-heading-mark { width: 28px; height: 28px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 9px; color: var(--ai-accent, var(--blue)); background: color-mix(in srgb, var(--ai-accent, var(--blue)) 12%, transparent); }
+
+/* Вопросы-продолжения под ответом. */
+.ai-next { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
+.ai-next-item { min-height: 34px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); border-radius: 999px; color: var(--ink); background: var(--surface); font: inherit; font-size: 13px; font-weight: 550; text-align: left; cursor: pointer; transition: border-color .15s, background .15s; }
+.ai-next-item svg { color: var(--muted); flex: 0 0 auto; }
+.ai-next-item:hover { border-color: var(--ink); background: var(--ai-soft); }
+
+/* ---------- Практика: задания с проверкой ---------- */
+.ai-quiz { margin: 14px 0 6px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); overflow: hidden; }
+.ai-quiz-head { padding: 12px 16px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--line); background: var(--ai-soft); }
+.ai-quiz-head > div { min-width: 0; flex: 1; display: grid; }
+.ai-quiz-head strong { font-size: 15px; }
+.ai-quiz-head small { color: var(--muted); font-size: 12.5px; }
+.ai-quiz-icon { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 10px; color: #fff; background: var(--blue); }
+.ai-quiz-progress { padding: 3px 10px; border-radius: 999px; color: var(--muted); background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); font-size: 12.5px; font-variant-numeric: tabular-nums; font-weight: 650; }
+.ai-quiz-list { margin: 0; padding: 0; list-style: none; }
+.ai-quiz-task { padding: 16px; display: grid; gap: 10px; }
+.ai-quiz-task + .ai-quiz-task { border-top: 1px solid var(--line); }
+.ai-quiz-question { display: flex; align-items: flex-start; gap: 12px; font-size: 15px; line-height: 1.6; }
+.ai-quiz-question > div { min-width: 0; }
+.ai-quiz-question p { margin: 0; }
+.ai-quiz-num { width: 26px; height: 26px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 50%; color: var(--blue); background: color-mix(in srgb, var(--blue) 12%, transparent); font-size: 13px; font-weight: 750; }
+.ai-quiz-options { margin-left: 38px; display: grid; gap: 8px; }
+.ai-quiz-option { padding: 9px 12px; display: flex; align-items: center; gap: 10px; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); background: var(--surface); font: inherit; font-size: 14.5px; text-align: left; cursor: pointer; transition: border-color .15s, background .15s; }
+.ai-quiz-option:hover:not(:disabled) { border-color: var(--blue); background: color-mix(in srgb, var(--blue) 5%, var(--surface)); }
+.ai-quiz-option:disabled { cursor: default; }
+.ai-quiz-option p { margin: 0; }
+.ai-quiz-letter { width: 24px; height: 24px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 8px; color: var(--muted); background: var(--ai-soft); font-size: 12.5px; font-weight: 700; }
+.ai-quiz-option.is-ok { border-color: #16a34a; background: color-mix(in srgb, #16a34a 9%, var(--surface)); }
+.ai-quiz-option.is-ok .ai-quiz-letter { color: #fff; background: #16a34a; }
+.ai-quiz-option.is-bad { border-color: #dc2626; background: color-mix(in srgb, #dc2626 8%, var(--surface)); }
+.ai-quiz-option.is-bad .ai-quiz-letter { color: #fff; background: #dc2626; }
+.ai-quiz-input { margin-left: 38px; display: flex; flex-wrap: wrap; gap: 8px; }
+.ai-quiz-input input { min-width: 0; min-height: 40px; flex: 1 1 180px; padding: 0 12px; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); background: var(--surface); font: inherit; font-size: 15px; }
+.ai-quiz-input input:focus { border-color: var(--blue); outline: none; }
+.ai-quiz-input input.is-ok { border-color: #16a34a; background: color-mix(in srgb, #16a34a 8%, var(--surface)); }
+.ai-quiz-input input.is-bad { border-color: #dc2626; }
+.ai-quiz-check, .ai-quiz-actions button { min-height: 40px; padding: 0 16px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); background: var(--surface); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.ai-quiz-check { color: #fff; border-color: var(--blue); background: var(--blue); }
+.ai-quiz-check:disabled { opacity: .45; cursor: default; }
+.ai-quiz-verdict { margin: 0 0 0 38px; display: flex; align-items: center; gap: 7px; font-size: 13.5px; font-weight: 650; }
+.ai-quiz-verdict.is-ok { color: #16a34a; }
+.ai-quiz-verdict.is-bad { color: #dc2626; }
+.ai-quiz-link { margin-left: 38px; width: fit-content; padding: 0; display: inline-flex; align-items: center; gap: 6px; border: 0; color: var(--muted); background: none; font: inherit; font-size: 13px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.ai-quiz-link:hover { color: var(--ink); }
+.ai-quiz-explain { margin-left: 38px; padding: 10px 12px; display: grid; gap: 4px; border-radius: 12px; background: var(--ai-soft); font-size: 14px; line-height: 1.6; }
+.ai-quiz-explain-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; }
+.ai-quiz-explain-head svg { align-self: center; color: var(--blue); }
+.ai-quiz-explain p { margin: 0; display: inline; }
+.ai-quiz-explain-text { color: var(--muted); }
+.ai-quiz-result { padding: 14px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; border-top: 1px solid var(--line); background: var(--ai-soft); }
+.ai-quiz-result > div:nth-child(2) { min-width: 0; flex: 1 1 200px; display: grid; }
+.ai-quiz-result small { color: var(--muted); font-size: 13px; }
+.ai-quiz-trophy { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 12px; color: #a16207; background: color-mix(in srgb, #f59e0b 20%, transparent); }
+.ai-quiz-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.ai-quiz-actions button.is-primary { color: #fff; border-color: var(--blue); background: var(--blue); }
+@media (max-width: 560px) { .ai-quiz-options, .ai-quiz-input, .ai-quiz-verdict, .ai-quiz-link, .ai-quiz-explain { margin-left: 0; } .ai-quiz-task { padding: 14px 12px; } }
+
+/* Режим «Зачёт» и метка на подсказке. */
+.ai-study.is-on, :root[data-theme='dark'] .ai-study.is-on { border-color: var(--blue); color: var(--blue); background: color-mix(in srgb, var(--blue) 8%, transparent); }
+.ai-suggestion-tag { margin-left: auto; padding: 1px 8px; border-radius: 999px; color: var(--blue); background: color-mix(in srgb, var(--blue) 11%, transparent); font-size: 11px; font-style: normal; font-weight: 700; }
 .ai-table-wrap { border-radius: 8px; }
 .ai-table th { background: none; color: var(--muted); font-size: 12px; font-weight: 650; letter-spacing: .03em; text-transform: uppercase; }
 .ai-table tbody tr:nth-child(even) td { background: none; }

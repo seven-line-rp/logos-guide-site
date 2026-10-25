@@ -86,4 +86,5 @@ test('отметки осей и подписи плашек', () => {
   assert.equal(calloutKind('Дано:'), 'given')
   assert.equal(calloutKind('Итог'), 'answer')
   assert.equal(calloutKind('Что-то'), 'note')
+  for (const [label, kind] of [['Кратко:', 'summary'], ['Определение', 'definition'], ['Формула:', 'rule'], ['Пример', 'example'], ['Важно:', 'warn'], ['Совет:', 'tip'], ['Проверка', 'check'], ['Типичные ошибки', 'warn']]) assert.equal(calloutKind(label), kind, label)
 })
