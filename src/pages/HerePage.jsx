@@ -7,6 +7,7 @@ import { quickPlaces, rooms } from '../data.js'
 import { hereLink, roomName, signFileName, signRooms } from '../signs.js'
 import { findNearest, nearbyKinds } from '../places.js'
 import { setHere } from '../route-prefs.js'
+import { trackQr } from '../stats.js'
 import { brandedQrSvg, svgToPng } from '../share.js'
 import { makeZip } from '../zip.js'
 
@@ -20,7 +21,7 @@ export { hereLink }
 function YouAreHere({ room }) {
   const navigate = useNavigate()
   const [target, setTarget] = useState('')
-  useEffect(() => { setHere(room.id) }, [room.id])
+  useEffect(() => { setHere(room.id); trackQr(room.id) }, [room.id])
   const nearest = useMemo(() => nearbyKinds.map((kind) => ({ kind, found: findNearest(room.id, kind.id, room.id) })).filter((item) => item.found), [room.id])
   const go = (to) => navigate(`/route?from=${encodeURIComponent(room.id)}&to=${encodeURIComponent(to)}`)
   const popular = quickPlaces.map((place) => rooms.find((item) => item.id === place.roomId)).filter((item) => item && item.id !== room.id)

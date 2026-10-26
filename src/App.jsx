@@ -9,11 +9,14 @@ import SiteTour from './components/SiteTour.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import HomePage from './pages/HomePage'
 import { translate, useLanguage } from './i18n.js'
+import { trackView } from './stats.js'
 
 const MapPage = lazy(() => import('./pages/MapPage'))
 const RoomsPage = lazy(() => import('./pages/RoomsPage'))
 const RoutePage = lazy(() => import('./pages/RoutePage'))
-const AdminPage = lazy(() => import('./pages/AdminPage'))
+const AdminLayout = lazy(() => import('./admin/AdminLayout'))
+const AdminOverview = lazy(() => import('./admin/AdminOverview'))
+const AdminNotices = lazy(() => import('./admin/AdminNotices'))
 const AdminCardsPage = lazy(() => import('./pages/AdminCardsPage'))
 const GamesPage = lazy(() => import('./pages/GamesPage'))
 const ServicesPage = lazy(() => import('./pages/ServicesPage'))
@@ -44,7 +47,8 @@ const titles = {
   '/teachers': 'Преподаватели | Путеводитель колледжа',
   '/start': 'Первая неделя | Путеводитель колледжа',
   '/here': 'Вы здесь | Путеводитель колледжа',
-  '/admin': 'Объявления | Путеводитель колледжа',
+  '/admin': 'Панель | Путеводитель колледжа',
+  '/admin/notices': 'Объявления | Путеводитель колледжа',
   '/admin/cards': 'Карточки на двери | Путеводитель колледжа',
 }
 
@@ -59,6 +63,7 @@ function RouteEffects() {
     window.scrollTo({ top: 0, left: 0, behavior: 'smooth' })
     document.title = translate(titles[location.pathname] || notFoundTitle, language)
   }, [location.pathname, language])
+  useEffect(() => { trackView(location.pathname) }, [location.pathname])
   return null
 }
 
@@ -69,7 +74,9 @@ function NotFoundPage() {
 function Site() {
   useLanguage()
   const location = useLocation()
-  return <><RouteEffects /><Header /><main id="main-content" className="site-main page-transition" key={location.pathname}><ErrorBoundary key={location.pathname}><Suspense fallback={<div className="page-loading container" role="status"><span className="page-loading-dots" aria-hidden="true"><i /><i /><i /></span> Открываем раздел…</div>}><Routes location={location}><Route path="/" element={<HomePage />} /><Route path="/map" element={<MapPage />} /><Route path="/rooms" element={<RoomsPage />} /><Route path="/route" element={<RoutePage />} /><Route path="/games" element={<GamesPage />} /><Route path="/services" element={<ServicesPage />} /><Route path="/about" element={<AboutPage />} /><Route path="/docs" element={<DocsPage />} /><Route path="/privacy" element={<PrivacyPage />} /><Route path="/ai" element={<AiAgentPage />} /><Route path="/schedule" element={<SchedulePage />} /><Route path="/tour" element={<TourPage />} /><Route path="/teachers" element={<TeachersPage />} /><Route path="/start" element={<StartPage />} /><Route path="/here" element={<HerePage />} /><Route path="/feedback" element={<FeedbackPage />} /><Route path="/admin" element={<AdminPage />} /><Route path="/admin/cards" element={<AdminCardsPage />} /><Route path="*" element={<NotFoundPage />} /></Routes></Suspense></ErrorBoundary></main>{location.pathname !== '/ai' && <Footer />}<WelcomeDialog /><SiteTour /><CookieBanner /><OfflineNotice /></>
+  const admin = location.pathname.startsWith('/admin')
+  const pageKey = admin ? 'admin' : location.pathname
+  return <><RouteEffects />{!admin && <Header />}<main id="main-content" className="site-main page-transition" key={pageKey}><ErrorBoundary key={pageKey}><Suspense fallback={<div className="page-loading container" role="status"><span className="page-loading-dots" aria-hidden="true"><i /><i /><i /></span> Открываем раздел…</div>}><Routes location={location}><Route path="/" element={<HomePage />} /><Route path="/map" element={<MapPage />} /><Route path="/rooms" element={<RoomsPage />} /><Route path="/route" element={<RoutePage />} /><Route path="/games" element={<GamesPage />} /><Route path="/services" element={<ServicesPage />} /><Route path="/about" element={<AboutPage />} /><Route path="/docs" element={<DocsPage />} /><Route path="/privacy" element={<PrivacyPage />} /><Route path="/ai" element={<AiAgentPage />} /><Route path="/schedule" element={<SchedulePage />} /><Route path="/tour" element={<TourPage />} /><Route path="/teachers" element={<TeachersPage />} /><Route path="/start" element={<StartPage />} /><Route path="/here" element={<HerePage />} /><Route path="/feedback" element={<FeedbackPage />} /><Route path="/admin" element={<AdminLayout />}><Route index element={<AdminOverview />} /><Route path="notices" element={<AdminNotices />} /><Route path="cards" element={<AdminCardsPage />} /></Route><Route path="*" element={<NotFoundPage />} /></Routes></Suspense></ErrorBoundary></main>{location.pathname !== '/ai' && !admin && <Footer />}{!admin && <><WelcomeDialog /><SiteTour /><CookieBanner /></>}<OfflineNotice /></>
 }
 
 export default function App() {
