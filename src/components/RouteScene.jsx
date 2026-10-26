@@ -8,7 +8,7 @@ import { planSizes, roomOutline } from '../map-geometry.js'
 import { floorDoors, floorWalls } from '../hero-scene-model.js'
 import { useLanguage } from '../i18n.js'
 import { isLitePerf } from '../perf.js'
-import { FOLLOW_ZOOM, TILT_3D, cameraTransform, clampCamera, fitCamera, flyDuration, flyFrame, headingYaw, panCamera, pathData, pathHeading, projectPoint, zoomCamera } from '../route-scene-model.js'
+import { FOLLOW_ZOOM, TILT_3D, cameraTransform, clampCamera, fitCamera, flyDuration, flyFrame, headingYaw, panCamera, pathData, pinchCamera, pathHeading, projectPoint, zoomCamera } from '../route-scene-model.js'
 
 // Интерактивная карта маршрута. Пол — настоящий план, стены и двери подняты
 // в CSS 3D из той же геометрии, что и кликабельные помещения
@@ -161,12 +161,10 @@ export default function RouteScene({ floor, points = [], progress = null, follow
       if (!g.pinch || !next) { g.pinch = next; return }
       const rect = rootRef.current.getBoundingClientRect()
       const offset = [next.center[0] - rect.left - rect.width / 2, next.center[1] - rect.top - rect.height / 2]
-      setCamera((current) => {
-        let value = zoomCamera(current || cam, next.distance / g.pinch.distance, offset, size)
-        value = panCamera(value, next.center[0] - g.pinch.center[0], next.center[1] - g.pinch.center[1], size)
-        if (mode === '3d') value = { ...value, yaw: value.yaw + (next.angle - g.pinch.angle) * 180 / Math.PI }
-        return value
-      })
+      // Состояние до движения берём сейчас: функция внутри setCamera выполняется позже,
+      // когда g.pinch уже заменён, и щипок давал обратное приближение.
+      const previous = g.pinch
+      setCamera((current) => pinchCamera(current || cam, previous, next, offset, size, mode === '3d'))
       g.pinch = next
       return
     }

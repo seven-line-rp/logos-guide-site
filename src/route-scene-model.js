@@ -4,7 +4,9 @@
 // без React и DOM, её проверяют тесты.
 
 export const TILT_3D = 52
-export const ZOOM_MIN = 0.3
+// Меньше 0.45 весь этаж (≈760 px) уже мельче ладони, а сотни 3D-слоёв при сильном
+// отдалении перегружают видеопамять телефона: вкладку перезагружает браузер.
+export const ZOOM_MIN = 0.45
 export const ZOOM_MAX = 4.5
 export const FOLLOW_ZOOM = { '3d': 2.1, top: 1.7 }
 
@@ -55,6 +57,15 @@ export function zoomCamera(camera, factor, offset, size) {
   const [px, py] = screenToPlanDelta(camera, offset[0], offset[1])
   const k = 1 - camera.zoom / zoom
   return clampCamera({ ...camera, zoom, x: camera.x + px * k, y: camera.y + py * k }, size)
+}
+
+// Щипок двумя пальцами: prev и next — состояния пальцев до и после движения
+// ({ distance, angle, center }); offset — центр щипка относительно центра кадра.
+// Пальцы расходятся — приближаем, сходятся — отдаляем; в 3D ещё и поворачиваем.
+export function pinchCamera(camera, prev, next, offset, size, rotate = false) {
+  let value = zoomCamera(camera, next.distance / prev.distance, offset, size)
+  value = panCamera(value, next.center[0] - prev.center[0], next.center[1] - prev.center[1], size)
+  return rotate ? { ...value, yaw: value.yaw + (next.angle - prev.angle) * 180 / Math.PI } : value
 }
 
 // Камера, в которую целиком помещаются точки (маршрут этажа) с отступом.
