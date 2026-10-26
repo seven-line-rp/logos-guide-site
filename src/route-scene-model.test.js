@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { cameraTransform, clampCamera, flyDuration, flyFrame, projectPoint, fitCamera, headingYaw, nearestAngle, panCamera, pathData, pathHeading, screenToPlanDelta, zoomCamera, ZOOM_MAX, ZOOM_MIN } from './route-scene-model.js'
+import { cameraTransform, clampCamera, flyDuration, flyFrame, projectPoint, fitCamera, headingYaw, nearestAngle, panCamera, pathData, pinchCamera, pathHeading, screenToPlanDelta, zoomCamera, ZOOM_MAX, ZOOM_MIN } from './route-scene-model.js'
 
 const size = { width: 758, height: 552 }
 const near = (a, b, eps = 1e-6) => assert.ok(Math.abs(a - b) < eps, `${a} ≈ ${b}`)
@@ -79,4 +79,18 @@ test('camera flight starts and ends exactly, eases, and lifts on long jumps', ()
   assert.ok(flyFrame(from, to, 0.1).x < 60) // мягкий разгон
   assert.ok(flyDuration(from, to) > flyDuration(from, { ...from, x: 10 }))
   assert.ok(flyDuration(from, to) <= 1700)
+})
+
+test('pinch: spreading fingers zooms in, pinching zooms out, rotation only in 3D', () => {
+  const camera = { x: 300, y: 200, zoom: 1, tilt: 0, yaw: 0 }
+  const finger = (distance, angle = 0) => ({ distance, angle, center: [200, 200] })
+  assert.ok(pinchCamera(camera, finger(100), finger(150), [0, 0], size).zoom > 1)
+  assert.ok(pinchCamera(camera, finger(150), finger(100), [0, 0], size).zoom < 1)
+  assert.equal(pinchCamera(camera, finger(100), finger(100, 0.5), [0, 0], size).yaw, 0)
+  near(pinchCamera(camera, finger(100), finger(100, Math.PI / 2), [0, 0], size, true).yaw, 90)
+})
+
+test('zoom out stops where the whole floor is still readable', () => {
+  assert.ok(ZOOM_MIN >= 0.45)
+  near(zoomCamera({ x: 300, y: 200, zoom: 1, tilt: 0, yaw: 0 }, 0.01, [0, 0], size).zoom, ZOOM_MIN)
 })
