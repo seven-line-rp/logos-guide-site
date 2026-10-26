@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { Download, Image, Printer } from 'lucide-react'
 import { CARD, doorCardSvg } from '../door-card.js'
 import { brandedQrSvg, svgToPng } from '../share.js'
@@ -72,6 +71,5 @@ export default function AdminCardsPage() {
         <button type="button" className="door-card-save no-print" onClick={() => downloadOne(room)} disabled={!cards[room.id] || Boolean(busy)} aria-label={`Скачать PNG: ${roomName(room)}`}><Image size={15} /> {busy === room.id ? 'Готовим…' : 'PNG 2K'}</button>
       </article>)}
     </div>
-    <p className="admin-foot no-print"><Link to="/admin">← К объявлениям</Link></p>
   </section>
 }
