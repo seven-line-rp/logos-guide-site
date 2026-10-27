@@ -21,3 +21,7 @@ export async function fetchStats(key) {
   if (!data || typeof data.days !== 'object' || Array.isArray(data.days) || typeof data.today !== 'string') throw new Error('Сервер прислал статистику в неожиданном виде.')
   return data
 }
+
+export async function postPush(key, body) {
+  return parse(await fetch('/api/push.php', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Admin-Key': key }, body: JSON.stringify(body) }))
+}

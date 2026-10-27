@@ -30,6 +30,8 @@ const TeachersPage = lazy(() => import('./pages/TeachersPage'))
 const StartPage = lazy(() => import('./pages/StartPage'))
 const HerePage = lazy(() => import('./pages/HerePage'))
 const FeedbackPage = lazy(() => import('./pages/FeedbackPage'))
+const TestNotificationsPage = lazy(() => import('./pages/TestNotificationsPage'))
+const AdminPush = lazy(() => import('./admin/AdminPush'))
 
 const titles = {
   '/': 'Путеводитель по колледжу',
@@ -47,9 +49,12 @@ const titles = {
   '/teachers': 'Преподаватели | Путеводитель колледжа',
   '/start': 'Первая неделя | Путеводитель колледжа',
   '/here': 'Вы здесь | Путеводитель колледжа',
+  '/testNotification': 'Уведомления (тест) | Путеводитель колледжа',
+  '/testnotification': 'Уведомления (тест) | Путеводитель колледжа',
   '/admin': 'Панель | Путеводитель колледжа',
   '/admin/notices': 'Объявления | Путеводитель колледжа',
   '/admin/cards': 'Карточки на двери | Путеводитель колледжа',
+  '/admin/push': 'Уведомления | Путеводитель колледжа',
 }
 
 // Адрес вне списка выше — это страница приложения «404»: показываем это и в заголовке вкладки,
@@ -76,7 +81,7 @@ function Site() {
   const location = useLocation()
   const admin = location.pathname.startsWith('/admin')
   const pageKey = admin ? 'admin' : location.pathname
-  return <><RouteEffects />{!admin && <Header />}<main id="main-content" className="site-main page-transition" key={pageKey}><ErrorBoundary key={pageKey}><Suspense fallback={<div className="page-loading container" role="status"><span className="page-loading-dots" aria-hidden="true"><i /><i /><i /></span> Открываем раздел…</div>}><Routes location={location}><Route path="/" element={<HomePage />} /><Route path="/map" element={<MapPage />} /><Route path="/rooms" element={<RoomsPage />} /><Route path="/route" element={<RoutePage />} /><Route path="/games" element={<GamesPage />} /><Route path="/services" element={<ServicesPage />} /><Route path="/about" element={<AboutPage />} /><Route path="/docs" element={<DocsPage />} /><Route path="/privacy" element={<PrivacyPage />} /><Route path="/ai" element={<AiAgentPage />} /><Route path="/schedule" element={<SchedulePage />} /><Route path="/tour" element={<TourPage />} /><Route path="/teachers" element={<TeachersPage />} /><Route path="/start" element={<StartPage />} /><Route path="/here" element={<HerePage />} /><Route path="/feedback" element={<FeedbackPage />} /><Route path="/admin" element={<AdminLayout />}><Route index element={<AdminOverview />} /><Route path="notices" element={<AdminNotices />} /><Route path="cards" element={<AdminCardsPage />} /></Route><Route path="*" element={<NotFoundPage />} /></Routes></Suspense></ErrorBoundary></main>{location.pathname !== '/ai' && !admin && <Footer />}{!admin && <><WelcomeDialog /><SiteTour /><CookieBanner /></>}<OfflineNotice /></>
+  return <><RouteEffects />{!admin && <Header />}<main id="main-content" className="site-main page-transition" key={pageKey}><ErrorBoundary key={pageKey}><Suspense fallback={<div className="page-loading container" role="status"><span className="page-loading-dots" aria-hidden="true"><i /><i /><i /></span> Открываем раздел…</div>}><Routes location={location}><Route path="/" element={<HomePage />} /><Route path="/map" element={<MapPage />} /><Route path="/rooms" element={<RoomsPage />} /><Route path="/route" element={<RoutePage />} /><Route path="/games" element={<GamesPage />} /><Route path="/services" element={<ServicesPage />} /><Route path="/about" element={<AboutPage />} /><Route path="/docs" element={<DocsPage />} /><Route path="/privacy" element={<PrivacyPage />} /><Route path="/ai" element={<AiAgentPage />} /><Route path="/schedule" element={<SchedulePage />} /><Route path="/tour" element={<TourPage />} /><Route path="/teachers" element={<TeachersPage />} /><Route path="/start" element={<StartPage />} /><Route path="/here" element={<HerePage />} /><Route path="/feedback" element={<FeedbackPage />} /><Route path="/testNotification" element={<TestNotificationsPage />} /><Route path="/admin" element={<AdminLayout />}><Route index element={<AdminOverview />} /><Route path="notices" element={<AdminNotices />} /><Route path="cards" element={<AdminCardsPage />} /><Route path="push" element={<AdminPush />} /></Route><Route path="*" element={<NotFoundPage />} /></Routes></Suspense></ErrorBoundary></main>{location.pathname !== '/ai' && !admin && <Footer />}{!admin && <><WelcomeDialog /><SiteTour /><CookieBanner /></>}<OfflineNotice /></>
 }
 
 export default function App() {

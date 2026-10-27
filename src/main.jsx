@@ -37,16 +37,20 @@ import './ai-math.css'
 import './ai-minimal.css'
 import './feedback.css'
 import './perf.css'
+import './notify.css'
 import './admin/admin.css'
 import './interactions.js'
 import { applyMapContrast } from './map-contrast.js'
 import { applyTextSize, readTextSize } from './text-size.js'
 import { installErrorReporting } from './error-report.js'
+import { keepScheduleForPush } from './push.js'
 
 applyMapContrast()
 applyTextSize(readTextSize())
 // Сообщения о сбоях страницы для оповещений владельцу (только в рабочей сборке).
 if (import.meta.env.PROD) installErrorReporting()
+// Уведомления о парах берут предмет и кабинет из копии расписания (src/push.js).
+keepScheduleForPush()
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
