@@ -23,5 +23,5 @@ export async function fetchStats(key) {
 }
 
 export async function postPush(key, body) {
-  return parse(await fetch('/api/push.php', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Admin-Key': key }, body: JSON.stringify(body) }))
+  return parse(await fetch('/api/notify.php', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Admin-Key': key }, body: JSON.stringify(body) }))
 }

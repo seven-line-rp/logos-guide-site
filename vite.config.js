@@ -50,7 +50,7 @@ export default defineConfig({
       this.emitFile({ type: 'asset', fileName: 'api/ai-knowledge.txt', source: buildKnowledge() })
     },
   }, {
-    // Звонки и версия для рассылки уведомлений по крону (public/api/push.php, deploy/push.md).
+    // Звонки и версия для рассылки уведомлений по крону (public/api/notify.php, deploy/push.md).
     name: 'logos-push-meta',
     apply: 'build',
     generateBundle() {

@@ -7,13 +7,13 @@
 // POST subscribe / unsubscribe   подписка этого браузера и выбранные темы
 // POST test                   пробное уведомление только себе
 // POST count / send           панель /admin (ключ notices_key)
-// GET ?cron=ключ или php push.php cron   звонки, события и новая версия сайта
+// GET ?cron=ключ или php notify.php cron   звонки, события и новая версия сайта
 //
 // Настройка — deploy/push.md. PHP 7.4+ с openssl и curl.
 
 declare(strict_types=1);
 
-require __DIR__ . '/push-lib.php';
+require __DIR__ . '/notify-lib.php';
 
 date_default_timezone_set('Europe/Moscow');
 
@@ -292,7 +292,7 @@ $config = load_config();
 
 if (PHP_SAPI === 'cli') {
     // Второй аргумент — время в секундах Unix вместо текущего (для проверки).
-    if (($argv[1] ?? '') !== 'cron') respond(400, ['error' => 'Использование: php push.php cron [время]']);
+    if (($argv[1] ?? '') !== 'cron') respond(400, ['error' => 'Использование: php notify.php cron [время]']);
     respond(200, ['ok' => true, 'sent' => run_cron(isset($argv[2]) ? (int) $argv[2] : time())]);
 }
 
