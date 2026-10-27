@@ -94,7 +94,14 @@ export function pushSupport() {
     // На iPhone уведомления есть только у сайта, добавленного на экран «Домой» (iOS 16.4+).
     needsInstall: platform === 'ios' && !push,
     permission: notifications ? Notification.permission : 'unsupported',
+    inApp: inAppBrowser(),
   }
+}
+
+// Встроенные браузеры (Telegram, ВК, Instagram, WebView) не дают включить уведомления:
+// разрешение там всегда «нет». Ссылку надо открыть в Chrome или Safari.
+export function inAppBrowser(agent = globalThis.navigator?.userAgent || '') {
+  return /; wv\)|\bwv\b|FBAN|FBAV|Instagram|Telegram|VKAndroid|VKClient|MicroMessenger|Line\/|Snapchat|OKApp/i.test(agent)
 }
 
 export function readTopics() {
@@ -156,7 +163,7 @@ export async function subscribePush(topics) {
   const registration = await pushRegistration()
   if (!registration?.pushManager) throw new Error('Push в этом браузере недоступен. Откройте собранный сайт по https.')
   const { publicKey } = await fetch(PUSH_API, { cache: 'no-store' }).then((response) => {
-    if (!response.ok) throw new Error('Сервер уведомлений не отвечает. Попробуйте позже.')
+    if (!response.ok) throw new Error(`Разрешение получено, но сервер уведомлений ответил ${response.status}. Проблема на стороне сайта (api/push.php), сообщите команде.`)
     return response.json()
   })
   let subscription = await registration.pushManager.getSubscription()

@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { ALL_TOPICS, PUSH_KINDS, base64UrlToBytes, detectPlatform, notificationOptions, readTopics, samplePush } from './push.js'
+import { ALL_TOPICS, inAppBrowser, PUSH_KINDS, base64UrlToBytes, detectPlatform, notificationOptions, readTopics, samplePush } from './push.js'
 
 test('platform detection covers Android, iPhone, iPad in desktop mode and computers', () => {
   assert.equal(detectPlatform('Mozilla/5.0 (Linux; Android 14; Pixel 8) Chrome/130.0'), 'android')
@@ -37,4 +37,11 @@ test('the service worker shows pushes, opens links and keeps the schedule cache'
   assert.match(sw, /caches\.open\('push-data'\)/)
   // Очистка старых версий удаляет только кэши «logos-…», кэш расписания под другим именем.
   assert.ok(!'push-data'.startsWith('logos-'))
+})
+
+test('in-app browsers are recognised, normal ones are not', () => {
+  assert.equal(inAppBrowser('Mozilla/5.0 (Linux; Android 14; Pixel 8; wv) AppleWebKit/537.36 Chrome/130.0 Mobile Safari/537.36'), true)
+  assert.equal(inAppBrowser('Mozilla/5.0 (iPhone) Mobile/15E148 Instagram 300.0'), true)
+  assert.equal(inAppBrowser('Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/130.0 Mobile Safari/537.36'), false)
+  assert.equal(inAppBrowser('Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/130.0'), false)
 })

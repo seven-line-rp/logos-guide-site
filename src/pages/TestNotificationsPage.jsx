@@ -70,9 +70,10 @@ function StatusCard({ support, subscription, busy, onEnable, onDisable }) {
   else if (!support.secure) { title = 'Нужно защищённое соединение'; text = 'Уведомления работают только по https://, откройте logos-guide.ru.'; tone = 'bad' }
   else if (support.needsInstall) { title = 'Сначала добавьте сайт на экран «Домой»'; text = 'На iPhone уведомления приходят только от сайта, открытого с иконки. Как это сделать — ниже.'; tone = 'warn' }
   else if (!support.notifications) { title = 'Браузер не умеет уведомления'; text = 'Попробуйте Chrome, Edge, Firefox или Safari последней версии.'; tone = 'bad' }
-  else if (support.permission === 'denied') { title = 'Уведомления запрещены'; text = 'Разрешите их для сайта в настройках браузера (значок слева от адреса) и обновите страницу.'; tone = 'bad' }
+  else if (support.inApp) { title = 'Откройте сайт в браузере'; text = 'Вы смотрите сайт во встроенном браузере (Telegram, ВК и т. п.), в нём разрешить уведомления нельзя. Нажмите ⋮ → «Открыть в браузере» или скопируйте ссылку в Chrome или Safari.'; tone = 'warn' }
+  else if (support.permission === 'denied') { title = 'Уведомления запрещены'; text = 'Разрешите их для сайта: нажмите на значок слева от адреса (на Android: ⋮ → «Информация» → «Разрешения» → «Уведомления») и обновите страницу.'; tone = 'bad' }
   else if (!support.push) { title = 'Можно только проверить'; text = 'Здесь работают уведомления, пока сайт открыт. Фоновые приходят в собранной версии сайта.'; tone = 'warn' }
-  const canEnable = support.notifications && support.permission !== 'denied' && support.secure
+  const canEnable = support.notifications && support.permission !== 'denied' && support.secure && !support.inApp
   return <section className={`tn-status tn-status-${tone}`} aria-live="polite">
     <span className="tn-status-icon" aria-hidden="true">{on ? <BellRing size={26} /> : tone === 'bad' ? <BellOff size={26} /> : <BellRing size={26} />}</span>
     <div className="tn-status-copy">
