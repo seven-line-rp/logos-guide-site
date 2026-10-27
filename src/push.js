@@ -5,11 +5,11 @@ import { SITE_VERSION_LABEL } from './version.js'
 
 // Push-уведомления (тестовый режим, страница /testNotification). Браузер
 // подписывается через сервис-воркер, подписка и выбранные темы уходят в
-// public/api/push.php. Расписание пар сервер не видит: перед каждым
+// public/api/notify.php. Расписание пар сервер не видит: перед каждым
 // уведомлением о паре сервис-воркер сам подставляет из него предмет и кабинет
 // (копия лежит в кэше браузера, см. syncScheduleForPush). Настройка — deploy/push.md.
 
-export const PUSH_API = '/api/push.php'
+export const PUSH_API = '/api/notify.php'
 export const PUSH_TOPICS_KEY = 'logos-push-topics'
 // Кэш, из которого сервис-воркер читает расписание. Не начинается с «logos-»,
 // иначе его удалит очистка старых версий сайта в sw.js.
@@ -163,7 +163,7 @@ export async function subscribePush(topics) {
   const registration = await pushRegistration()
   if (!registration?.pushManager) throw new Error('Push в этом браузере недоступен. Откройте собранный сайт по https.')
   const { publicKey } = await fetch(PUSH_API, { cache: 'no-store' }).then((response) => {
-    if (!response.ok) throw new Error(`Разрешение получено, но сервер уведомлений ответил ${response.status}. Проблема на стороне сайта (api/push.php), сообщите команде.`)
+    if (!response.ok) throw new Error(`Разрешение получено, но сервер уведомлений ответил ${response.status}. Проблема на стороне сайта (api/notify.php), сообщите команде.`)
     return response.json()
   })
   let subscription = await registration.pushManager.getSubscription()

@@ -1,7 +1,7 @@
 <?php
 // Web Push без сторонних библиотек: ключи VAPID (RFC 8292) и шифрование
 // aes128gcm (RFC 8291) на расширении openssl, отправка через curl. Хватает
-// обычного PHP 7.4+ на хостинге reg.ru. Подключается из push.php.
+// обычного PHP 7.4+ на хостинге reg.ru. Подключается из notify.php.
 
 declare(strict_types=1);
 

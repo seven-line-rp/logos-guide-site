@@ -50,7 +50,7 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(caches.match(request, { ignoreSearch: url.pathname.startsWith('/assets/') }).then((cached) => cached || fromNetwork(request)))
 })
 
-// ---------- Push-уведомления (src/push.js, public/api/push.php) ----------
+// ---------- Push-уведомления (src/push.js, public/api/notify.php) ----------
 
 const PUSH_ICON = '/apple-touch-icon.png'
 const PUSH_BADGE = '/push-badge.png'
@@ -120,6 +120,6 @@ self.addEventListener('pushsubscriptionchange', (event) => {
     const options = old?.options || event.newSubscription?.options
     if (!options?.applicationServerKey) return
     const subscription = event.newSubscription || await self.registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: options.applicationServerKey })
-    await fetch('/api/push.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'subscribe', subscription: subscription.toJSON(), previous: old?.endpoint || '' }) })
+    await fetch('/api/notify.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'subscribe', subscription: subscription.toJSON(), previous: old?.endpoint || '' }) })
   })())
 })

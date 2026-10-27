@@ -11,7 +11,7 @@ import { Buffer } from 'node:buffer'
 import { join } from 'node:path'
 import { BELLS, LUNCH } from './schedule.js'
 
-// Push-уведомления (public/api/push.php) на настоящем PHP. Вместо FCM и Apple —
+// Push-уведомления (public/api/notify.php) на настоящем PHP. Вместо FCM и Apple —
 // свой HTTP-сервер: он принимает зашифрованные сообщения, а тест расшифровывает
 // их по RFC 8291 и проверяет подпись VAPID. Без php тесты пропускаются.
 
@@ -57,7 +57,7 @@ function writeMeta(version) {
   writeFileSync(join(root, 'public_html', 'api', 'push-meta.json'), JSON.stringify({ bells: BELLS, lunch: LUNCH, version, versionLabel: `${version} тест` }))
 }
 
-const post = (body, headers = {}) => fetch(`${site}/api/push.php`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers }, body: JSON.stringify(body) })
+const post = (body, headers = {}) => fetch(`${site}/api/notify.php`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers }, body: JSON.stringify(body) })
 const b64url = (buffer) => Buffer.from(buffer).toString('base64url')
 
 function browser(path) {
@@ -99,11 +99,11 @@ function checkVapid(header, publicKey) {
 }
 
 // Асинхронно: пока PHP шлёт сообщения, приёмник в этом же процессе должен отвечать.
-const cron = async (time) => JSON.parse((await promisify(execFile)('php', [join(root, 'public_html', 'api', 'push.php'), 'cron', String(Math.floor(time / 1000))])).stdout)
+const cron = async (time) => JSON.parse((await promisify(execFile)('php', [join(root, 'public_html', 'api', 'notify.php'), 'cron', String(Math.floor(time / 1000))])).stdout)
 
 test('the server hands out one stable VAPID key', { skip }, async () => {
-  const first = await (await fetch(`${site}/api/push.php`)).json()
-  const second = await (await fetch(`${site}/api/push.php`)).json()
+  const first = await (await fetch(`${site}/api/notify.php`)).json()
+  const second = await (await fetch(`${site}/api/notify.php`)).json()
   assert.equal(Buffer.from(first.publicKey, 'base64url').length, 65)
   assert.equal(first.publicKey, second.publicKey)
   assert.ok(existsSync(join(root, 'logos-push', 'vapid.json')), 'ключи лежат вне public_html')
@@ -122,7 +122,7 @@ test('subscriptions only go to real push services', { skip }, async () => {
 })
 
 test('a test push reaches the browser encrypted and signed', { skip }, async () => {
-  const { publicKey } = await (await fetch(`${site}/api/push.php`)).json()
+  const { publicKey } = await (await fetch(`${site}/api/notify.php`)).json()
   const me = browser('/me')
   const subscribed = await post({ action: 'subscribe', subscription: me.subscription, topics: ['events', 'nonsense'], platform: 'android' })
   assert.equal(subscribed.status, 200)

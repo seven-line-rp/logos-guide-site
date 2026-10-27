@@ -8,7 +8,7 @@ import { PUSH_KINDS, PUSH_TOPICS, currentSubscription, pushSupport, readTopics, 
 
 // Тестовые push-уведомления: включить их пока можно только здесь (в меню
 // страницы нет). Каждый вид можно показать сразу на устройстве или прислать
-// через сервер, как придёт настоящее. Устройство — src/push.js, сервер — public/api/push.php.
+// через сервер, как придёт настоящее. Устройство — src/push.js, сервер — public/api/notify.php.
 
 const KIND_ICONS = { 'lesson-start': CalendarClock, 'lesson-end': CalendarCheck2, event: PartyPopper, update: Sparkles, news: Megaphone }
 
