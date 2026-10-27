@@ -76,7 +76,6 @@
 :root[data-theme='dark'] :is(.page-heading h1, .section-top h2, .play-teaser-copy h2, .about-team-heading h2, .about-access h2, .about-bottom h2, .faq-heading h2, .services-help-inner h2, .not-found h1, .docs-hero h1, .legal-head h1) em { color: var(--blue); }
 :root[data-theme='dark'] .page-heading { border-color: var(--line); }
 :root[data-theme='dark'] .floor-tag { color: var(--ink); background: var(--surface-soft); }
-:root[data-theme='dark'] .cursor-glow { display: none; }
 
 /* ---------- Главная ---------- */
 /* Первый экран — та же графитовая поверхность с едва заметным синим светом,

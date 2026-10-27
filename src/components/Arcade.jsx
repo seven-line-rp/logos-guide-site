@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Grid2x2, Pause, Play, RotateCcw, Hash, X as Cross, Circle, Waypoints } from 'lucide-react'
 import { canMove2048, maxTile, move2048, newGame2048, addTile, newSnake, stepSnake, turnSnake, SNAKE_GRID, tttMove, tttWinner } from '../arcade.js'
 import { storageGet, storageSet } from '../storage.js'
-import { SectionLabel } from './Primitives'
 
 const KEY_DIRS = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', w: 'up', s: 'down', a: 'left', d: 'right', ц: 'up', ы: 'down', ф: 'left', в: 'right' }
 
@@ -151,7 +150,7 @@ export default function Arcade() {
   const [active, setActive] = useState(ARCADE[0].id)
   const current = ARCADE.find((item) => item.id === active)
   return <section className="arcade container" aria-labelledby="arcade-title">
-    <div className="arcade-intro"><SectionLabel>На перемену</SectionLabel><h2 id="arcade-title">Просто <em>поиграть.</em></h2><p>Пара минут без карты и кабинетов. Рекорды остаются в этом браузере.</p></div>
+    <div className="arcade-intro"><h2 id="arcade-title">Мини-игры</h2><p>2048, змейка и крестики-нолики. Рекорды сохраняются в браузере.</p></div>
     <div className="arcade-tabs" role="tablist" aria-label="Мини-игры">{ARCADE.map(({ id, title, note, icon: Icon }) => <button key={id} role="tab" aria-selected={active === id} className={active === id ? 'arcade-tab arcade-tab-active' : 'arcade-tab'} onClick={() => setActive(id)}><span className="arcade-tab-icon"><Icon size={18} /></span><span><strong>{title}</strong><small>{note}</small></span></button>)}</div>
     <div className="arcade-stage" role="tabpanel" aria-label={current.title}><current.Game key={current.id} /></div>
   </section>

@@ -41,36 +41,6 @@ const routes = HERO_ROUTES.map((route) => {
   }
 }).filter(Boolean)
 
-// Детерминированные «пылинки»: одинаковые при каждом рендере, без Math.random.
-const particles = Array.from({ length: 22 }, (_, index) => ({
-  left: (index * 37 + 11) % 100,
-  top: (index * 53 + 7) % 100,
-  delay: (index * 0.7) % 9,
-  size: 2 + (index % 3),
-}))
-
-// Огромная винтовая лестница справа: ступени-плиты по спирали, перила, светящийся
-// стержень и шар-«гость», который спускается по ступеням с шлейфом. Всё на
-// CSS 3D, ступени и шар считает браузер по одной формуле (--n — номер ступени).
-const SPIRAL_STEPS = 56
-const spiralSteps = Array.from({ length: SPIRAL_STEPS }, (_, n) => n)
-const spiralTrail = Array.from({ length: 5 }, (_, n) => n)
-
-function GrandSpiral() {
-  return <div className="hs-spiral">
-    <div className="hs-spiral-glow" />
-    <div className="hs-spiral-stage">
-      <div className="hs-spiral-turn">
-        <i className="hs-spiral-pole" />
-        {spiralSteps.map((n) => <i key={n} className="hs-spiral-step" style={{ '--n': n }} />)}
-        <i className="hs-spiral-ring hs-spiral-ring-1" />
-        <i className="hs-spiral-ring hs-spiral-ring-2" />
-      </div>
-      <div className="hs-spiral-orbs">{spiralTrail.map((n) => <b key={n} className="hs-spiral-orb" style={{ '--t': n }} />)}</div>
-    </div>
-  </div>
-}
-
 function FloorPlate({ floor }) {
   const language = useLanguage()
   const html = useMemo(() => composePlanArt(floor === 1 ? floorOnePlan : floorTwoPlan, floor, language), [floor, language])
@@ -250,10 +220,5 @@ export default function HeroScene() {
         <div className="hs-walker" ref={walkerRef}><i /></div>
       </div>
     </div>
-    <div className="hs-aurora"><i /><i /><i /></div>
-    <GrandSpiral />
-    <div className="hs-streak" />
-    <div className="hs-spot" />
-    <div className="hs-particles">{particles.map((particle, index) => <i key={index} style={{ left: `${particle.left}%`, top: `${particle.top}%`, width: particle.size, height: particle.size, animationDelay: `${particle.delay}s` }} />)}</div>
   </div>
 }

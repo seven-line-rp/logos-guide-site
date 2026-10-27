@@ -61,7 +61,7 @@ export default function TeachersPage() {
   }, [teachers, query, group])
 
   return <>
-    <PageHeading className="page-heading-compact" eyebrow="Кто где" title={<>Преподаватели <em>и сотрудники</em></>} description="Найдите человека по фамилии или предмету — покажем кабинет и проложим маршрут." />
+    <PageHeading className="page-heading-compact" title="Преподаватели" description="Найдите человека по фамилии или предмету — покажем кабинет и проложим маршрут." />
     <section className="teachers-section container">
       <Reveal className="directory-search-bar"><Search size={19} /><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Фамилия, предмет или должность…" aria-label="Поиск преподавателя" /><VoiceSearchButton onText={setQuery} />{query && <button onClick={() => setQuery('')} aria-label="Очистить поиск"><X size={17} /></button>}</Reveal>
       <div className="directory-category-filters teachers-filters" role="group" aria-label="Кого показать">{groups.map((item) => <button key={item.id} type="button" onClick={() => setGroup(item.id)} className={group === item.id ? 'directory-chip directory-chip-active' : 'directory-chip'} aria-pressed={group === item.id}>{item.label}</button>)}</div>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, BookOpen, Cookie, Gamepad2, Keyboard, Layers, List, Map as MapIcon, Palette, Route, Search, Sparkles, Star } from 'lucide-react'
+import { ArrowRight, BookOpen, Compass, Cookie, Gamepad2, Keyboard, Layers, List, Map as MapIcon, Palette, Route, Search, Star } from 'lucide-react'
 import { Reveal } from '../components/Primitives.jsx'
 import { startTour } from '../tour-bus.js'
 
@@ -8,7 +8,7 @@ import { startTour } from '../tour-bus.js'
 // конкретных действий. Цвет раздела совпадает с цветом шага в обучении.
 const sections = [
   {
-    id: 'start', tone: 'blue', icon: Sparkles, title: 'Быстрый старт',
+    id: 'start', tone: 'blue', icon: Compass, title: 'Быстрый старт',
     lead: 'Путеводитель помогает найти кабинет, увидеть его на плане и дойти по коридорам. Начать можно с любого места.',
     items: [
       ['Знаете номер', 'Нажмите «Найти место» в шапке или клавишу K и введите номер, например 217.'],
@@ -119,11 +119,10 @@ export default function DocsPage() {
     <section className="docs-hero">
       <div className="container docs-hero-inner">
         <div className="docs-hero-copy">
-          <span className="eyebrow">Документация</span>
-          <h1>Как пользоваться <em>путеводителем.</em></h1>
+          <h1>Как пользоваться сайтом</h1>
           <p>Все разделы сайта по порядку: карта, поиск, маршруты, справочник и игры. Если удобнее смотреть, а не читать, пройдите интерактивное обучение.</p>
           <div className="docs-hero-actions">
-            <button type="button" className="button button-primary docs-tour-button" onClick={startTour}><Sparkles size={16} /> Пройти обучение</button>
+            <button type="button" className="button button-primary docs-tour-button" onClick={startTour}><Compass size={16} /> Пройти обучение</button>
             <a className="docs-hero-link" href="#start">Читать с начала <ArrowRight size={14} /></a>
           </div>
         </div>

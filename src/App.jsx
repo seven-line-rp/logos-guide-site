@@ -68,7 +68,7 @@ function RouteEffects() {
 }
 
 function NotFoundPage() {
-  return <section className="not-found container"><span className="eyebrow">Маршрут не найден</span><strong>404</strong><h1>Кажется, мы<br /><em>свернули не туда.</em></h1><p>Такой страницы нет даже в подвале. А подвала у нас, кстати, тоже нет. Карта знает дорогу лучше.</p><div><Link className="button button-primary" to="/map"><ArrowLeft size={15} /> Открыть карту</Link><Link to="/">На главную <ArrowRight size={14} /></Link></div></section>
+  return <section className="not-found container"><span className="eyebrow">Маршрут не найден</span><strong>404</strong><h1>Такой страницы нет</h1><p>Возможно, ссылка устарела или в адресе опечатка.</p><div><Link className="button button-primary" to="/map"><ArrowLeft size={15} /> Открыть карту</Link><Link to="/">На главную <ArrowRight size={14} /></Link></div></section>
 }
 
 function Site() {

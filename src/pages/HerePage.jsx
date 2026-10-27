@@ -27,7 +27,7 @@ function YouAreHere({ room }) {
   const popular = quickPlaces.map((place) => rooms.find((item) => item.id === place.roomId)).filter((item) => item && item.id !== room.id)
 
   return <>
-    <PageHeading className="page-heading-compact" eyebrow="Вы здесь" title={<>{room.name}{room.number && <em> №{room.number}</em>}</>} description={`${room.floor} этаж. Куда идём? Маршрут начнётся отсюда.`} />
+    <PageHeading className="page-heading-compact" eyebrow="Вы здесь" title={room.number ? `${room.name} №${room.number}` : room.name} description={`${room.floor} этаж. Куда идём? Маршрут начнётся отсюда.`} />
     <section className="here-section container">
       <Reveal className="here-card">
         <span className="here-pin" aria-hidden="true"><MapPin size={22} /></span>
@@ -82,7 +82,7 @@ function SignSheet() {
   }, [])
 
   return <>
-    <PageHeading className="page-heading-compact no-print" eyebrow="QR-таблички" title={<>Таблички <em>«Вы здесь»</em></>} description="Распечатайте и повесьте у дверей. Человек сканирует код — и маршрут начинается от этого места, без поиска «где я»." />
+    <PageHeading className="page-heading-compact no-print" title="Таблички «Вы здесь»" description="Распечатайте и повесьте у дверей. Человек сканирует код — и маршрут начинается от этого места, без поиска «где я»." />
     <section className="here-signs container">
       <div className="here-signs-bar no-print">
         <div className="directory-category-filters" role="group" aria-label="Этаж">{[['all', 'Все'], ['1', '1 этаж'], ['2', '2 этаж']].map(([id, label]) => <button key={id} type="button" className={floor === id ? 'directory-chip directory-chip-active' : 'directory-chip'} aria-pressed={floor === id} onClick={() => setFloor(id)}>{label}</button>)}</div>

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { ArrowRight, ArrowUpRight, Building2, GraduationCap, Search, X } from 'lucide-react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { rooms, categoryLabels, photoSrcSet, photosFor } from '../data'
-import { FloorTag, PageHeading, Reveal, SectionLabel } from '../components/Primitives'
+import { FloorTag, PageHeading, Reveal } from '../components/Primitives'
 import VoiceSearchButton from '../components/VoiceSearchButton.jsx'
 import { cancelMiss, reportMiss, searchRooms, searchTeachers, shortName, useTeachers } from '../search.js'
 
@@ -43,15 +43,15 @@ export default function RoomsPage() {
   const resetFilters = () => { setQuery(''); setFloor('all'); setCategory('Все места') }
 
   return <>
-    <PageHeading eyebrow="Справочник помещений" title={<>Кабинеты<br /><em>и другие места.</em></>} description="Ищите по номеру или названию. Нажмите на помещение, чтобы увидеть его на карте и построить маршрут." />
+    <PageHeading title="Кабинеты" description="Ищите по номеру или названию. Нажмите на помещение, чтобы увидеть его на карте и построить маршрут." />
 
     <section className="directory-section container"><Reveal className="directory-search-bar"><Search size={19} /><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Например: 217, физика, библиотека или фамилия…" aria-label="Поиск кабинета или преподавателя" /><VoiceSearchButton onText={setQuery} />{query && <button onClick={() => setQuery('')} aria-label="Очистить поиск"><X size={17} /></button>}<kbd>⌕</kbd></Reveal>
       <Reveal className="directory-filters"><div className="directory-floor-filters" role="group" aria-label="Фильтр по этажу"><span>Этаж</span>{[['all', 'Все'], ['1', '1 этаж'], ['2', '2 этаж']].map(([id, label]) => <button key={id} onClick={() => setFloor(id)} className={floor === id ? 'directory-chip directory-chip-active' : 'directory-chip'} aria-pressed={floor === id}>{label}</button>)}</div><div className="directory-category-filters" role="group" aria-label="Категория места">{categoryLabels.map((item) => <button key={item} onClick={() => setCategory(item)} className={category === item ? 'directory-chip directory-chip-active' : 'directory-chip'} aria-pressed={category === item}>{item}</button>)}</div></Reveal>
       {teacherHits.length > 0 && <div className="directory-teachers" aria-label="Преподаватели">{teacherHits.map(({ teacher, room, bySubject }) => <Link key={teacher.name} className="directory-teacher" to={room ? `/map?floor=${room.floor}&room=${room.id}` : '/map?floor=1&room=academic-office'}><GraduationCap size={17} aria-hidden="true" /><span><strong>{shortName(teacher.name)}</strong><small>{room ? `${room.name}${room.number ? ` №${room.number}` : ''}${bySubject ? ', по предмету' : ''}` : 'Кабинет уточните в учебной части'}</small></span></Link>)}</div>}
       <div className="directory-results-head"><span><strong>{visibleRooms.length}</strong> {formatRoomCount(visibleRooms.length)}{query && <> по запросу «{query}»</>}</span><Link to="/map">Смотреть на карте <ArrowUpRight size={14} /></Link></div>
-      {visibleRooms.length ? <div className="directory-grid" aria-live="polite">{visibleRooms.map((room, index) => <Reveal key={room.id} delay={index % 8 * 30}><RoomCard room={room} /></Reveal>)}</div> : <div className="directory-empty"><span className="directory-empty-icon"><Search size={20} /></span><h2>Пока не нашли.</h2><p>Попробуйте другой номер или снимите часть фильтров.</p><button className="button button-primary" onClick={resetFilters}>Сбросить фильтры <ArrowRight size={15} /></button></div>}
+      {visibleRooms.length ? <div className="directory-grid" aria-live="polite">{visibleRooms.map((room, index) => <Reveal key={room.id} delay={index % 8 * 30}><RoomCard room={room} /></Reveal>)}</div> : <div className="directory-empty"><span className="directory-empty-icon"><Search size={20} /></span><h2>Ничего не найдено</h2><p>Попробуйте другой номер или снимите часть фильтров.</p><button className="button button-primary" onClick={resetFilters}>Сбросить фильтры <ArrowRight size={15} /></button></div>}
     </section>
 
-    <section className="directory-help container"><div className="directory-help-line" /><SectionLabel>Не знаете номер?</SectionLabel><p>Введите часть названия или назначение кабинета, например «лаборатория» или «туалет».</p><Link to="/route">Нужен маршрут? <ArrowRight size={14} /></Link></section>
+    <section className="directory-help container"><div className="directory-help-line" /><p><strong>Не знаете номер?</strong> Введите часть названия или назначение кабинета, например «лаборатория» или «туалет».</p><Link to="/route">Нужен маршрут? <ArrowRight size={14} /></Link></section>
   </>
 }

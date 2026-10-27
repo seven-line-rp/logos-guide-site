@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, BookOpen, Check, Compass, Gamepad2, Layers, List, Map as MapIcon, MapPin, RotateCcw, Route, Search, Sparkles, Star, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, BookOpen, Check, Compass, Gamepad2, Layers, List, Map as MapIcon, MapPin, RotateCcw, Route, Search, Star, X } from 'lucide-react'
 import { TOUR_STEPS, markTutorialDone } from '../tutorial.js'
 import { onTourStart } from '../tour-bus.js'
 
@@ -243,7 +243,7 @@ export default function SiteTour() {
   const step = TOUR_STEPS[index]
   const isDone = phase === 'done'
   const tone = isDone ? 'green' : step.tone
-  const StepIcon = STEP_ICONS[step.icon] || Sparkles
+  const StepIcon = STEP_ICONS[step.icon] || Compass
   const positioned = Boolean(layout?.card)
   const cardStyle = positioned
     ? { top: `${Math.round(layout.card.top)}px`, left: `${Math.round(layout.card.left)}px`, '--tour-arrow-x': `${Math.round(layout.card.arrowX ?? 40)}px` }
@@ -289,7 +289,7 @@ export default function SiteTour() {
           </div>
           <div className="tour-body">
             <span className="tour-eyebrow">Обучение завершено</span>
-            <h2>Теперь вы <em>знаете сайт.</em></h2>
+            <h2>Готово</h2>
             <p>Пройти обучение ещё раз можно в разделе «Документация» или в меню. Там же есть ответы на частые вопросы.</p>
             <ul className="tour-summary" aria-label="Что вы узнали">
               {TOUR_STEPS.slice(1).map((item) => <li key={item.id} data-tone={item.tone}>{item.eyebrow}</li>)}

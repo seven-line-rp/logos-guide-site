@@ -32,20 +32,6 @@
 html { scroll-behavior: smooth; }
 body { transition: background-color var(--motion-med) var(--ease-out), color var(--motion-med) var(--ease-out); }
 
-/* Scroll progress bar */
-.scroll-progress {
-  position: fixed;
-  top: 0;
-  left: 0;
-  height: 3px;
-  width: 0%;
-  z-index: 200;
-  background: linear-gradient(90deg, var(--blue), var(--blue-bright), var(--yellow));
-  box-shadow: 0 0 12px rgba(36, 92, 229, .45);
-  transition: width 80ms linear;
-  pointer-events: none;
-}
-
 /* Reveal variants */
 .reveal { will-change: opacity, transform; }
 .reveal-up { transform: translateY(28px); }
@@ -59,30 +45,6 @@ body { transition: background-color var(--motion-med) var(--ease-out), color var
   opacity: 1 !important;
   transform: none !important;
   filter: none !important;
-}
-
-/* Glass utility */
-
-/* Gradient text */
-
-/* Magnetic hover base */
-.magnetic { transition: transform var(--motion-fast) var(--ease-out); will-change: transform; }
-
-/* Tilt card base */
-.tilt { transform-style: preserve-3d; transition: transform var(--motion-med) var(--ease-out), box-shadow var(--motion-med) var(--ease-out); will-change: transform; }
-
-/* Ripple */
-.ripple-host { position: relative; overflow: hidden; }
-.ripple {
-  position: absolute;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(255,255,255,.55) 0%, rgba(255,255,255,0) 70%);
-  transform: scale(0);
-  animation: ripple-anim 600ms var(--ease-out) forwards;
-  pointer-events: none;
-}
-@keyframes ripple-anim {
-  to { transform: scale(2.6); opacity: 0; }
 }
 
 /* Interactive cards global hover */
@@ -150,24 +112,6 @@ body { transition: background-color var(--motion-med) var(--ease-out), color var
   100% { transform: translate(4%, -3%) scale(1.08); }
 }
 
-/* Cursor glow (desktop) */
-.cursor-glow {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 360px;
-  height: 360px;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 1;
-  background: radial-gradient(circle, rgba(36, 92, 229, .10), transparent 60%);
-  transition: opacity 300ms var(--ease-out);
-  opacity: 0;
-  will-change: transform;
-}
-[data-theme="dark"] .cursor-glow { background: radial-gradient(circle, rgba(70, 120, 255, .16), transparent 60%); }
-.cursor-glow.active { opacity: 1; }
-
 /* Floating animation */
 @keyframes float-slow {
   0%, 100% { transform: translateY(0); }
@@ -181,8 +125,6 @@ body { transition: background-color var(--motion-med) var(--ease-out), color var
   animation: shimmer 1.6s linear infinite;
 }
 @keyframes shimmer { to { background-position: 200% 0; } }
-
-/* Progress ring */
 
 /* Game feedback pop */
 .game-feedback-pop { animation: pop-in var(--motion-med) var(--ease-spring); }
@@ -218,7 +160,6 @@ body { transition: background-color var(--motion-med) var(--ease-out), color var
 
 /* Mobile tweaks */
 @media (max-width: 720px) {
-  .cursor-glow { display: none; }
   .hero-mesh::after { filter: blur(24px); }
 }
 

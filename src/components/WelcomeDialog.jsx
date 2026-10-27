@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Construction, Smartphone, Sparkles, Wrench, X } from 'lucide-react'
+import { Compass, Construction, Smartphone, Wrench, X } from 'lucide-react'
 import { lockBodyScroll, storageGet, storageSet } from '../storage.js'
 import { startTour } from '../tour-bus.js'
 import { readTutorialDone } from '../tutorial.js'
@@ -66,7 +66,7 @@ export default function WelcomeDialog() {
         </label>
 
         <div className="welcome-actions">
-          {!tourDone && <button className="button welcome-tour" onClick={() => { close(); startTour() }}><Sparkles size={16} /> Пройти обучение</button>}
+          {!tourDone && <button className="button welcome-tour" onClick={() => { close(); startTour() }}><Compass size={16} /> Пройти обучение</button>}
           <button ref={closeRef} className="button button-primary welcome-submit" onClick={close}>Понятно, к карте!</button>
         </div>
       </section>
