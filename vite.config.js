@@ -3,6 +3,8 @@ import react from '@vitejs/plugin-react'
 import localizeJsx from './scripts/localize-jsx.js'
 import { transformAsync } from '@babel/core'
 import { buildKnowledge } from './src/ai-knowledge.js'
+import { BELLS, LUNCH } from './src/schedule.js'
+import { SITE_VERSION, SITE_VERSION_LABEL } from './src/version.js'
 import { createHash } from 'node:crypto'
 import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
@@ -46,6 +48,13 @@ export default defineConfig({
     apply: 'build',
     generateBundle() {
       this.emitFile({ type: 'asset', fileName: 'api/ai-knowledge.txt', source: buildKnowledge() })
+    },
+  }, {
+    // Звонки и версия для рассылки уведомлений по крону (public/api/push.php, deploy/push.md).
+    name: 'logos-push-meta',
+    apply: 'build',
+    generateBundle() {
+      this.emitFile({ type: 'asset', fileName: 'api/push-meta.json', source: JSON.stringify({ bells: BELLS, lunch: LUNCH, version: SITE_VERSION, versionLabel: SITE_VERSION_LABEL }) })
     },
   }, offlineServiceWorker(), react()],
   server: {
