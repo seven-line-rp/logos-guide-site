@@ -1,6 +1,6 @@
 {
   "name": "logos-guide-site",
-  "version": "1.0.0-alpha.beta",
+  "version": "0.9.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -14,7 +14,6 @@
   },
   "dependencies": {
     "@fontsource-variable/onest": "^5.2.5",
-    "@fontsource/jost": "^5.3.0",
     "katex": "0.19.0",
     "lucide-react": "1.57.0",
     "qrcode": "^1.5.4",

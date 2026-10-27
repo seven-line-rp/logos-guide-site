@@ -191,7 +191,7 @@
 .here-sign-copy small { color: #697891; font-size: 11.5px; line-height: 1.4; }
 @media (max-width: 680px) { .here-card { flex-direction: column; } }
 @media print {
-  .site-header, .site-footer, .no-print, .scroll-progress, .cursor-glow, .cookie-banner, .offline-notice { display: none !important; }
+  .site-header, .site-footer, .no-print, .cookie-banner, .offline-notice { display: none !important; }
   .here-signs { padding: 0; }
   .here-sign-grid { grid-template-columns: repeat(2, 1fr); gap: 8mm; }
   .here-sign { border: 1px dashed #9aa7bd; border-radius: 4mm; }

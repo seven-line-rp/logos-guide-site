@@ -30,7 +30,7 @@ export default function HomeDashboard() {
   const recent = useRecentRoutes()
 
   return <section className="home-day container" aria-labelledby="home-day-title">
-    <div className="section-top"><div><span className="section-label"><span>Мой день</span></span><h2 id="home-day-title">Всё под <em>рукой.</em></h2></div></div>
+    <div className="section-top"><div><h2 id="home-day-title">Мой день</h2></div></div>
     <div className="home-day-grid">
       <article className="day-card day-card-lesson">
         <BellNow now={now} />

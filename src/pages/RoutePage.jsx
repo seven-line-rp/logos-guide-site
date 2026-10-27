@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Accessibility, AlarmClock, ArrowLeft, ArrowRight, ArrowUpDown, ArrowUpRight, Check, ChevronDown, Flag, Footprints, Handshake, Info, Map as MapIcon, MapPin, MoveDown, MoveUp, Navigation, Pause, Play, Plus, RotateCcw, Share2, Sparkles, Star, TriangleAlert, Users, Volume2, VolumeX, X } from 'lucide-react'
+import { Accessibility, AlarmClock, ArrowLeft, ArrowRight, ArrowUpDown, ArrowUpRight, Check, ChevronDown, Flag, Footprints, Handshake, Info, Map as MapIcon, MapPin, MessageCircle, MoveDown, MoveUp, Navigation, Pause, Play, Plus, RotateCcw, Share2, Star, TriangleAlert, Users, Volume2, VolumeX, X } from 'lucide-react'
 import { rooms } from '../data.js'
 import RouteScene from '../components/RouteScene.jsx'
 import RoomSearchSelect from '../components/RoomSearchSelect.jsx'
@@ -432,7 +432,7 @@ export default function RoutePage() {
             <div className="nv-pick-actions">
               <button type="button" className="nv-pick-go" onClick={() => pickAs('to')} disabled={picked.id === target.id}><Flag size={14} /> Сюда</button>
               <button type="button" onClick={() => pickAs('from')} disabled={picked.id === startId}><Navigation size={14} /> Отсюда</button>
-              <Link to={`/ai?about=${encodeURIComponent(picked.id)}`} title="Спросить ЛОГОС AI про это место"><Sparkles size={14} /> Спросить</Link>
+              <Link to={`/ai?about=${encodeURIComponent(picked.id)}`} title="Спросить ЛОГОС AI про это место"><MessageCircle size={14} /> Спросить</Link>
             </div>
           </div>}
           <div className="nv-map-tools">

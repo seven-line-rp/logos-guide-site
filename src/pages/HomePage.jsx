@@ -1,12 +1,12 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
-import { ArrowDownRight, ArrowRight, ArrowUpRight, GraduationCap, ListChecks, MapPin, QrCode, Search } from 'lucide-react'
+import { ArrowDownRight, ArrowRight, ArrowUpRight, GraduationCap, ListChecks, QrCode, Search } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { photoSrcSet, photosFor, rooms, quickPlaces } from '../data.js'
 import { HERO_ROUTES } from '../hero-scene-model.js'
 import BreakWalk from '../components/BreakWalk.jsx'
 import AiPromoBanner from '../components/AiPromoBanner.jsx'
 import HomeDashboard from '../components/HomeDashboard.jsx'
-import { Reveal, SectionLabel } from '../components/Primitives.jsx'
+import { Reveal } from '../components/Primitives.jsx'
 import VoiceSearchButton from '../components/VoiceSearchButton.jsx'
 import { cancelMiss, reportMiss, searchRooms, searchTeachers, shortName, useTeachers } from '../search.js'
 import { useScene3d } from '../use-scene3d.js'
@@ -64,12 +64,8 @@ export default function HomePage() {
       {scene3d && <Suspense fallback={null}><HeroScene /></Suspense>}
       <div className="container home-hero-inner">
         <div className="home-hero-copy">
-          <span className="home-eyebrow">
-            <MapPin size={15} aria-hidden="true" />
-            Навигатор по колледжу
-          </span>
-          <h1><span>Куда идти</span><em>на следующую пару?</em></h1>
-          <p>Найдите кабинет по номеру или названию. Покажем его на карте и подскажем маршрут.</p>
+          <h1>Где найти кабинет</h1>
+          <p>Введите номер, название или фамилию преподавателя. Кабинет откроется на карте, оттуда можно построить маршрут.</p>
           <div className="home-search-group">
             <label className="home-search-label" htmlFor="home-room-search">Поиск по колледжу</label>
             <HomeSearch />
@@ -86,16 +82,16 @@ export default function HomePage() {
 
     <HomeDashboard />
 
-    <section className="quick-places container section-pad" id="quick-places"><div className="section-top"><div><SectionLabel>Часто ищут</SectionLabel><h2>Начните <em>здесь.</em></h2></div><Link className="text-link" to="/rooms">Все помещения <span><ArrowRight size={15} /></span></Link></div><div className="quick-place-grid">{quickPlaces.map((place, index) => { const room = rooms.find((item) => item.id === place.roomId); return <Reveal key={place.roomId} delay={index * 60} variant="up"><Link className={`quick-place-card quick-place-${place.tone}${photosFor(room).length ? ' quick-place-media' : ''}`} to={`/map?floor=${room.floor}&room=${room.id}`}>{photosFor(room).length > 0 && <img className="quick-place-photo" src={photosFor(room)[0]} srcSet={photoSrcSet(photosFor(room)[0])} sizes="(max-width: 680px) 100vw, 320px" alt="" loading="lazy" decoding="async" />}<span className="quick-place-num">{room.floor} этаж</span><span className="quick-place-copy"><strong>{place.label}</strong><small>{place.meta}</small></span><span className="quick-place-arrow"><ArrowUpRight size={16} /></span></Link></Reveal> })}</div></section>
+    <section className="quick-places container section-pad" id="quick-places"><div className="section-top"><div><h2>Часто ищут</h2></div><Link className="text-link" to="/rooms">Все помещения <span><ArrowRight size={15} /></span></Link></div><div className="quick-place-grid">{quickPlaces.map((place, index) => { const room = rooms.find((item) => item.id === place.roomId); return <Reveal key={place.roomId} delay={index * 60} variant="up"><Link className={`quick-place-card quick-place-${place.tone}${photosFor(room).length ? ' quick-place-media' : ''}`} to={`/map?floor=${room.floor}&room=${room.id}`}>{photosFor(room).length > 0 && <img className="quick-place-photo" src={photosFor(room)[0]} srcSet={photoSrcSet(photosFor(room)[0])} sizes="(max-width: 680px) 100vw, 320px" alt="" loading="lazy" decoding="async" />}<span className="quick-place-num">{room.floor} этаж</span><span className="quick-place-copy"><strong>{place.label}</strong><small>{place.meta}</small></span><span className="quick-place-arrow"><ArrowUpRight size={16} /></span></Link></Reveal> })}</div></section>
 
     <section className="home-tasks container" aria-labelledby="home-tasks-title">
-      <div className="section-top"><div><SectionLabel>Ещё пригодится</SectionLabel><h2 id="home-tasks-title">Что ещё <em>умеет сайт.</em></h2></div></div>
+      <div className="section-top"><div><h2 id="home-tasks-title">Ещё на сайте</h2></div></div>
       <div className="home-task-grid">{homeTasks.map((task, index) => { const Icon = task.icon; return <Reveal key={task.to} delay={index * 60} variant="up"><Link className={`home-task home-task-${task.tone}`} to={task.to}><span className="home-task-icon" aria-hidden="true"><Icon size={20} /></span><strong>{task.title}</strong><span>{task.text}</span><span className="home-task-go">{task.action} <ArrowRight size={14} /></span></Link></Reveal> })}</div>
     </section>
 
     <AiPromoBanner />
 
-    <section className="floor-preview-band"><div className="container floor-preview-inner"><Reveal className="floor-preview-copy" variant="left"><SectionLabel>Планы этажей</SectionLabel><h2>Первый<br />или <em>второй?</em></h2><p>Переключайтесь между этажами, выбирайте помещения и находите ближайшую лестницу.</p><Link className="button button-white" to="/map">Открыть карту <ArrowRight size={15} /></Link></Reveal><Reveal className="floor-switch-cards" delay={90} variant="right">{[1, 2].map((floor) => <Link key={floor} to={`/map?floor=${floor}`} className={`floor-switch-card floor-switch-${floor}`}><span className="floor-switch-number">{floor}</span><span className="floor-switch-copy"><small>{floor === 1 ? 'Первый этаж' : 'Второй этаж'}</small><strong>{floor === 1 ? 'Столовая, актовый зал, учебная часть' : 'Библиотека, лаборатории, кабинеты'}</strong></span><ArrowUpRight size={17} /></Link>)}</Reveal></div></section>
+    <section className="floor-preview-band"><div className="container floor-preview-inner"><Reveal className="floor-preview-copy" variant="left"><h2>Планы этажей</h2><p>Переключайтесь между этажами, выбирайте помещения и находите ближайшую лестницу.</p><Link className="button button-white" to="/map">Открыть карту <ArrowRight size={15} /></Link></Reveal><Reveal className="floor-switch-cards" delay={90} variant="right">{[1, 2].map((floor) => <Link key={floor} to={`/map?floor=${floor}`} className={`floor-switch-card floor-switch-${floor}`}><span className="floor-switch-number">{floor}</span><span className="floor-switch-copy"><small>{floor === 1 ? 'Первый этаж' : 'Второй этаж'}</small><strong>{floor === 1 ? 'Столовая, актовый зал, учебная часть' : 'Библиотека, лаборатории, кабинеты'}</strong></span><ArrowUpRight size={17} /></Link>)}</Reveal></div></section>
 
     <BreakWalk />
   </>

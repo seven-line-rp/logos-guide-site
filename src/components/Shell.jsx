@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { ArrowUpRight, BookOpen, Bot, CalendarDays, Check, Compass, Flag, Gamepad2, GraduationCap, History, Info, LayoutGrid, ListChecks, Map as MapIcon, MapPin, Moon, Navigation, Search, Sparkles, Sun, Type, Users, X } from 'lucide-react'
+import { ArrowUpRight, BookOpen, Building2, Bot, CalendarDays, Check, Compass, Flag, Gamepad2, GraduationCap, History, Info, LayoutGrid, ListChecks, Map as MapIcon, MapPin, Moon, Navigation, Search, Sun, Type, Users, X } from 'lucide-react'
 import { navigation, quickPlaces, rooms } from '../data'
 import { clearRecentPlaces, readRecentPlaces, rememberPlace } from '../places.js'
 import { readTextSize, setTextSize } from '../text-size.js'
@@ -45,7 +45,7 @@ const menuGroups = [
     { to: '/route', label: 'Маршрут', hint: 'Путь по шагам с голосом', icon: Navigation, tone: 'violet' },
     { to: '/rooms', label: 'Кабинеты', hint: 'Справочник помещений', icon: LayoutGrid, tone: 'sky' },
     { to: '/teachers', label: 'Преподаватели', hint: 'Кто где сидит', icon: Users, tone: 'green' },
-    { to: '/services', label: 'Пространства', hint: 'Столовая, библиотека, залы', icon: Sparkles, tone: 'amber' },
+    { to: '/services', label: 'Пространства', hint: 'Столовая, библиотека, залы', icon: Building2, tone: 'amber' },
   ] },
   { title: 'Учёба', items: [
     { to: '/schedule', label: 'Моё расписание', hint: 'Пары и звонки', icon: CalendarDays, tone: 'green' },
@@ -260,7 +260,7 @@ export function Header() {
               <div className="hd-seg" role="group" aria-label="Размер текста"><button type="button" aria-pressed={textSize !== 'large'} onClick={() => changeTextSize('normal')}>Обычный</button><button type="button" aria-pressed={textSize === 'large'} onClick={() => changeTextSize('large')}><Type size={14} /> Крупный</button></div>
             </div>
             <div className="hd-menu-actions">
-              <button type="button" className="hd-menu-link hd-menu-tour" onClick={takeTour}><Sparkles size={16} /> Пройти обучение</button>
+              <button type="button" className="hd-menu-link hd-menu-tour" onClick={takeTour}><Compass size={16} /> Пройти обучение</button>
             </div>
           </div>
         </div>

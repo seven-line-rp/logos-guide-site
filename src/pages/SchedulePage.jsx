@@ -65,8 +65,7 @@ export default function SchedulePage() {
 
   return <section className="schedule-page container">
     <header className="schedule-head">
-      <span className="eyebrow">Моё расписание</span>
-      <h1>Пары и <em>маршруты к ним.</em></h1>
+      <h1>Расписание</h1>
       <p>Расписание в колледже каждый день новое, поэтому пары добавляются на конкретный день. На главной появится следующая пара с маршрутом, а навигатор подскажет, успеваете ли вы. Всё хранится только в этом браузере.</p>
       {!saving && <p className="schedule-warn">Вы отказались от функциональных cookie, поэтому расписание не сохранится после перезагрузки.</p>}
     </header>

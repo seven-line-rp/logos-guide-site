@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, BookOpen, CalendarDays, Check, Compass, HeartPulse, Landmark, MessageCircle, RotateCcw, Shirt, Sparkles, Users, UtensilsCrossed } from 'lucide-react'
+import { ArrowRight, BookOpen, CalendarDays, Check, Compass, HeartPulse, Info, Landmark, MessageCircle, RotateCcw, Shirt, Users, UtensilsCrossed } from 'lucide-react'
 import { PageHeading, Reveal } from '../components/Primitives.jsx'
 import { storageGet, storageSet } from '../storage.js'
 
@@ -39,7 +39,7 @@ export default function StartPage() {
   const finished = done.length === startSteps.length
 
   return <>
-    <PageHeading className="page-heading-compact" eyebrow="Для новичков" title={<>Первая <em>неделя</em></>} description="Девять мест и дел, с которыми первые дни в колледже пройдут спокойнее. Отмечайте, что уже сделали." />
+    <PageHeading className="page-heading-compact" title="Первая неделя" description="Девять мест и дел, с которыми первые дни в колледже пройдут спокойнее. Отмечайте, что уже сделали." />
     <section className="start-section container">
       <div className={`start-progress ${finished ? 'is-done' : ''}`} role="status">
         <div className="start-progress-copy">
@@ -62,7 +62,7 @@ export default function StartPage() {
           </Reveal>
         })}
       </ol>
-      <p className="start-hint"><Sparkles size={15} aria-hidden="true" /> Пункт отмечается сам, когда вы переходите по его кнопке.</p>
+      <p className="start-hint"><Info size={15} aria-hidden="true" /> Пункт отмечается сам, когда вы переходите по его кнопке.</p>
     </section>
   </>
 }

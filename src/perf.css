@@ -28,10 +28,7 @@
 :root[data-perf='lite'] :is(.day-card, .quick-place-card, .directory-card, .service-card, .game-panel, .room-detail-panel, .map-settings-panel, .search-dialog, .welcome-dialog, .ex-card, .nv-pick, .nv-floors, .nv-view, .rs-controls button, .ai-promo, .ai-promo-button, .hd-menu-inner, .header-cta, .button) { box-shadow: none !important; }
 :root[data-perf='lite'] [style*='filter'], :root[data-perf='lite'] :is(.hero-scene, .hs-camera, .quick-place-photo, .brand-mark) { filter: none !important; }
 :root[data-perf='lite'] .reveal { opacity: 1 !important; transform: none !important; filter: none !important; }
-/* Украшения: свечение за курсором, полоса прокрутки, ripple, большие SVG-звёзды. */
-:root[data-perf='lite'] :is(.cursor-glow, .scroll-progress, .ripple, .ai-promo-art, .hero-scene-caption) { display: none !important; }
-:root[data-perf='lite'] .ai-promo { grid-template-columns: 1fr; min-height: 0; }
-:root[data-perf='lite'] .ai-promo::after { display: none; }
+:root[data-perf='lite'] .hero-scene-caption { display: none !important; }
 /* Бесконечные «дыхания» и бегущие линии маршрута. */
 :root[data-perf='lite'] :is(.plan-route-flow, .plan-route-pulse, .plan-route-guide-pulse, .voice-search, .walk) { animation: none !important; }
 /* Длинные страницы рисуем по мере прокрутки. */

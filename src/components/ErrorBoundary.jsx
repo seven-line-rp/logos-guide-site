@@ -17,6 +17,6 @@ export default class ErrorBoundary extends Component {
 
   render() {
     if (!this.state.failed) return this.props.children
-    return <section className="not-found container" role="alert"><span className="eyebrow">Что-то пошло не так</span><h1>Раздел не открылся.<br /><em>Попробуйте обновить.</em></h1><p>Возможно, сайт только что обновился или пропала связь. Обычно помогает перезагрузка страницы. Если не помогло, напишите нам через «Сообщить о проблеме».</p><div><button className="button button-primary" type="button" onClick={() => window.location.reload()}><RotateCw size={15} /> Обновить страницу</button><a href="/">На главную</a></div></section>
+    return <section className="not-found container" role="alert"><span className="eyebrow">Что-то пошло не так</span><h1>Страница не загрузилась</h1><p>Возможно, сайт только что обновился или пропала связь. Обычно помогает перезагрузка страницы. Если не помогло, напишите нам через «Сообщить о проблеме».</p><div><button className="button button-primary" type="button" onClick={() => window.location.reload()}><RotateCw size={15} /> Обновить страницу</button><a href="/">На главную</a></div></section>
   }
 }

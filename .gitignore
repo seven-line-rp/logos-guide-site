@@ -8,3 +8,4 @@ coverage/
 !.env.example
 public/api/ai-config.php
 logos-ai-config.php
+__pycache__/

@@ -14,7 +14,6 @@
 }
 /* Сайтовые украшения (свечение за курсором, фон страницы) в панели не нужны. */
 body:has(.adm) { background: var(--bg); }
-body:has(.adm) .cursor-glow, body:has(.adm) .scroll-progress { display: none; }
 :root[data-theme='dark'] .adm { --adm-accent: #6d97ff; --adm-up: #4fd08a; --adm-down: #ff8f80; }
 
 /* ---------- Шапка ---------- */

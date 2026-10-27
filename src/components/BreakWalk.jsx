@@ -3,7 +3,7 @@ import { ArrowRight, Check, Footprints, TimerReset } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { rooms } from '../data.js'
 import { buildRouteOptions } from '../map-routing.js'
-import { Reveal, SectionLabel } from './Primitives.jsx'
+import { Reveal } from './Primitives.jsx'
 
 // «Успеете за перемену?»: время пути от выбранного места до кабинетов, которые
 // ищут чаще всего. Считаем по тем же коридорам и лестницам, что и маршрут
@@ -29,9 +29,8 @@ export default function BreakWalk() {
   return <section className="break-walk container section-pad" aria-labelledby="break-walk-title">
     <Reveal className="break-walk-head" variant="up">
       <div>
-        <SectionLabel>Перемена 10 минут</SectionLabel>
-        <h2 id="break-walk-title">Успеете <em>дойти?</em></h2>
-        <p>Время в пути до самых частых кабинетов. Считаем по коридорам и лестницам, как в маршруте: шаг за шагом, с ожиданием лифта.</p>
+        <h2 id="break-walk-title">Успеете за перемену?</h2>
+        <p>Сколько идти до популярных кабинетов. Перемена 10 минут, время считается так же, как в маршруте.</p>
       </div>
       <div className="break-walk-from" role="group" aria-label="Откуда идём">
         <span>Откуда идёте</span>

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Bug, Check, Lightbulb, MessageCircleQuestion, Send, Sparkles } from 'lucide-react'
+import { Bot, Bug, Check, Lightbulb, MessageCircleQuestion, Send } from 'lucide-react'
 import { PageHeading } from '../components/Primitives.jsx'
 
 // «Сообщить о проблеме»: общая форма сайта. Сообщение уходит на /api/report.php
@@ -10,7 +10,7 @@ import { PageHeading } from '../components/Primitives.jsx'
 
 export const FEEDBACK_KINDS = [
   { id: 'bug', icon: Bug, title: 'Что-то сломалось', hint: 'Не открывается, зависает, текст налезает' },
-  { id: 'ai', icon: Sparkles, title: 'Ошибка ИИ', hint: 'Неверный ответ, иероглифы, странности' },
+  { id: 'ai', icon: Bot, title: 'Ошибка ИИ', hint: 'Неверный ответ, иероглифы, странности' },
   { id: 'idea', icon: Lightbulb, title: 'Идея', hint: 'Чего не хватает на сайте' },
   { id: 'question', icon: MessageCircleQuestion, title: 'Вопрос', hint: 'Не нашли, как что-то сделать' },
 ]
@@ -44,7 +44,7 @@ export default function FeedbackPage() {
   }
 
   return <>
-    <PageHeading eyebrow="Обратная связь" title="Сообщить о проблеме" description="Нашли баг, ошибку ИИ или хотите что-то предложить? Напишите: сообщение попадёт к команде сайта." />
+    <PageHeading title="Сообщить о проблеме" description="Нашли баг, ошибку ИИ или хотите что-то предложить? Напишите: сообщение попадёт к команде сайта." />
     <section className="container feedback">
       {state.status === 'sent'
         ? <div className="feedback-done" role="status"><Check size={22} /><div><strong>Спасибо, сообщение отправлено.</strong><p>Команда прочитает его и поправит сайт. Если оставили контакт, мы можем написать в ответ.</p><Link className="button button-primary" to="/">На главную</Link></div></div>

@@ -1,16 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, useSearchParams } from 'react-router-dom'
-import { ArrowUp, Brain, Check, ChevronDown, Code, Copy, Download, GraduationCap, ImagePlus, Lightbulb, MapPin, Mic, MicOff, PanelLeft, RefreshCw, Route, Sparkles, SquarePen, Square, Trash2, TriangleAlert, Volume2, VolumeX, X } from 'lucide-react'
+import { ArrowUp, Bot, Brain, Check, ChevronDown, Code, Copy, Download, GraduationCap, ImagePlus, Lightbulb, MapPin, Mic, MicOff, PanelLeft, RefreshCw, Route, Square, SquarePen, Trash2, TriangleAlert, Volume2, VolumeX, X } from 'lucide-react'
 import { answerActions, askAgent, routeFromLink, chatTitle, chatToMarkdown, compressImage, containsProfanity, createChat, loadChats, maskProfanity, MAX_IMAGES, MAX_INPUT, plainText, saveChats } from '../ai-chat.js'
 import { functionalStorageAllowed, onConsentChange } from '../consent.js'
 import { speakText, stopSpeech } from '../speech.js'
 import { AiMessageText, RawText, messageSubject } from '../components/ai-message.js'
 import RoutePreview from '../components/RoutePreview.jsx'
-import NeuralNet from '../components/NeuralNet.jsx'
-import AiIntro from '../components/AiIntro.jsx'
-import { INTRO_KEY, shouldShowIntro } from '../ai-intro.js'
-import { storageGet, storageSet } from '../storage.js'
 import { rooms } from '../data.js'
 
 // ЛОГОС AI: чат с DeepSeek через public/api/ai-chat.php. Чаты хранятся в
@@ -20,7 +16,6 @@ import { rooms } from '../data.js'
 // (блок quiz рисует components/ai-quiz.js), а под ответами появляются
 // вопросы-продолжения (блок next).
 
-const sessionGet = (key) => { try { return sessionStorage.getItem(key) } catch { return null } }
 
 const suggestions = [
   { icon: GraduationCap, text: 'Как решать химические реакции?', study: true },
@@ -46,7 +41,7 @@ function Thinking({ deep, image, study }) {
   const stages = thinkingStages[image ? 'image' : study ? 'study' : deep ? 'deep' : 'normal']
   const stage = Math.min(stages.length - 1, Math.floor(tick / (deep ? 3 : 2)))
   return <div className={`ai-thinking ${deep ? 'ai-thinking-deep' : ''}`} role="status">
-    <span className="ai-thinking-orb" aria-hidden="true"><Sparkles size={14} /></span>
+    <span className="ai-thinking-orb" aria-hidden="true"><Bot size={14} /></span>
     <strong key={stage} className="ai-thinking-label">{stages[stage]}</strong>
     <small>{`${Math.floor(tick / 60)}:${String(tick % 60).padStart(2, '0')}`}</small>
   </div>
@@ -103,15 +98,6 @@ export default function AiAgentPage() {
     const fresh = createChat()
     return { chats: [fresh, ...saved.chats], activeId: fresh.id }
   })
-  // Заставка при первом заходе (?intro=1 показывает её снова). Отметка лежит
-  // в localStorage, а если функциональные cookie отклонены — хотя бы в этой вкладке.
-  const [intro, setIntro] = useState(() => /[?&]intro=1\b/.test(window.location.search) || shouldShowIntro((key) => storageGet(key) ?? sessionGet(key)))
-  const closeIntro = () => {
-    storageSet(INTRO_KEY, '1')
-    try { sessionStorage.setItem(INTRO_KEY, '1') } catch { /* приватный режим */ }
-    setIntro(false)
-    window.setTimeout(() => inputRef.current?.focus(), 50)
-  }
   const [input, setInput] = useState('')
   const [attachments, setAttachments] = useState([])
   const [pending, setPending] = useState(null)
@@ -292,7 +278,7 @@ export default function AiAgentPage() {
   const sidebarView = <>
     <aside className="ai-sidebar" aria-label="Чаты">
       <div className="ai-sidebar-top">
-        <span className="ai-brand"><span className="ai-mark" aria-hidden="true"><Sparkles size={14} /></span>ЛОГОС AI<span className="nav-badge">АЛЬФА</span></span>
+        <span className="ai-brand"><span className="ai-mark" aria-hidden="true"><Bot size={14} /></span>ЛОГОС AI<span className="nav-badge">АЛЬФА</span></span>
         <button className="ai-icon" type="button" onClick={() => (narrow ? setSidebar(false) : setCollapsed(true))} aria-label="Скрыть список чатов" title="Скрыть"><PanelLeft size={18} /></button>
       </div>
       <button className="ai-new" type="button" onClick={newChat}><SquarePen size={16} /> Новый чат</button>
@@ -329,11 +315,9 @@ export default function AiAgentPage() {
   </form>
 
   return <section className={`ai-page ${collapsed ? 'ai-collapsed' : ''}`}>
-    {intro && <AiIntro onDone={closeIntro} />}
     {narrow ? createPortal(<div className={`ai-drawer ${sidebar ? 'ai-sidebar-open' : ''}`}>{sidebarView}</div>, document.body) : !collapsed && sidebarView}
 
     <div className={`ai-main ${dragging ? 'is-dragging' : ''} ${messages.length ? '' : 'is-empty'}`} onDragOver={(event) => { if ([...event.dataTransfer.types].includes('Files')) { event.preventDefault(); setDragging(true) } }} onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setDragging(false) }} onDrop={onDrop}>
-      <NeuralNet active={!messages.length && !intro} />
       <div className="ai-topbar">
         {(narrow || collapsed) && <button className="ai-icon" type="button" onClick={() => (narrow ? setSidebar(true) : setCollapsed(false))} aria-label="Открыть список чатов" title="Чаты"><PanelLeft size={18} /></button>}
         {(narrow || collapsed) && <button className="ai-icon" type="button" onClick={newChat} aria-label="Новый чат" title="Новый чат"><SquarePen size={17} /></button>}
@@ -343,7 +327,7 @@ export default function AiAgentPage() {
 
       <div className="ai-scroll" ref={listRef} role="log" aria-live="polite" aria-label="Сообщения">
         {!messages.length ? <div className="ai-welcome">
-          <span className="ai-mark ai-mark-big" aria-hidden="true"><Sparkles size={22} /></span>
+          <span className="ai-mark ai-mark-big" aria-hidden="true"><Bot size={22} /></span>
           <h1>Чем помочь?</h1>
           <p>Спросите о чём угодно: найду кабинет и построю маршрут, расскажу о колледже, решу задачу, объясню тему, помогу с кодом или текстом.</p>
           {composer}
