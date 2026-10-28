@@ -185,17 +185,10 @@
 .ab-part:nth-child(5n + 5) { --tone: var(--tone-pink); }
 .day-card h3 svg { color: var(--tone-blue); }
 
-/* ---------- Подвал: значки у ссылок в цвет раздела ---------- */
+/* ---------- Подвал: бесцветные значки у ссылок, цвет берут от текста ---------- */
 .footer-links-group > a.footer-link { display: inline-flex; align-items: center; gap: 8px; width: fit-content; }
-.footer-link svg { flex: none; color: var(--tone, var(--muted)); opacity: .85; transition: transform .2s var(--ease-out), opacity .18s ease; }
+.footer-link svg { flex: none; color: currentColor; opacity: .6; transition: transform .2s var(--ease-out), opacity .18s ease; }
 .footer-link:hover svg { opacity: 1; transform: translateX(1px); }
-.footer-tone-blue { --tone: var(--tone-blue); }
-.footer-tone-sky { --tone: var(--tone-sky); }
-.footer-tone-violet { --tone: var(--tone-violet); }
-.footer-tone-green { --tone: var(--tone-green); }
-.footer-tone-amber { --tone: var(--tone-amber); }
-.footer-tone-pink { --tone: var(--tone-pink); }
-.footer-tone-slate { --tone: var(--tone-slate); }
 
 /* ---------- Плавное появление блоков при прокрутке ----------
    Раньше было отключено целиком; теперь короткое и дешёвое: прозрачность и
@@ -266,3 +259,13 @@
 
 /* ---------- Формы: поле в фокусе подсвечивается кольцом ---------- */
 :is(input:not([type='checkbox']):not([type='radio']):not([type='range']), select, textarea):focus-visible { outline: none; border-color: var(--blue); box-shadow: var(--ring); }
+
+/* ---------- Форма обратной связи: согласие на обработку контакта ---------- */
+.feedback-consent { display: flex; align-items: flex-start; gap: 10px; color: var(--muted); font-size: 14px; line-height: 1.5; cursor: pointer; }
+.feedback-consent input { width: 18px; height: 18px; flex: none; margin-top: 2px; accent-color: var(--blue); }
+.feedback-consent a { color: var(--blue); text-decoration: underline; text-underline-offset: 3px; }
+.footer-top { background: none; }
+
+/* ---------- Юридические страницы: ссылки в тексте видно ---------- */
+.legal :is(.legal-head, .legal-body) a { color: var(--blue); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.legal :is(.legal-head, .legal-body) a:hover { text-decoration-thickness: 2px; }

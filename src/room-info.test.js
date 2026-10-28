@@ -26,6 +26,13 @@ test('canteen lists lunch times and says whose lunch is now', () => {
 test('administration shows college office hours; other places stay quiet', () => {
   assert.equal(roomDetails(room('academic-office'), at(20, '09:00')).status.tone, 'free')
   assert.equal(roomDetails(room('academic-office'), at(24, '09:00')).status.tone, 'idle')
-  assert.deepEqual(roomDetails(room('toilet-men-1'), at(20, '10:00')), { status: null, facts: [] })
-  assert.deepEqual(roomDetails(null), { status: null, facts: [] })
+  assert.deepEqual(roomDetails(room('toilet-men-1'), at(20, '10:00')), { status: null, facts: [], notes: [] })
+  assert.deepEqual(roomDetails(null), { status: null, facts: [], notes: [] })
+})
+
+test('notable rooms list what happens there', () => {
+  assert.deepEqual(roomDetails(room('canteen'), at(20, '12:15')).notes, ['Проходит обед после определённых пар.', 'Можно купить булочки или сладости.'])
+  assert.equal(roomDetails(room('library-214')).notes.length, 3)
+  for (const id of ['auditorium-104', 'training-centre-113', 'chemistry-biology-202', 'informatics-222']) assert.ok(roomDetails(room(id)).notes.length > 0, id)
+  assert.deepEqual(roomDetails(room('class-118')).notes, [])
 })

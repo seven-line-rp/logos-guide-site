@@ -11,6 +11,17 @@ const OFFICE_HOURS = { start: 8 * 60, end: 18 * 60, label: 'по будням 08
 // Сюда можно добавлять известные факты о помещениях: { 'physics-211': [['Преподаватель', 'Иванова А. А.']] }
 export const roomFacts = {}
 
+// «Что здесь»: короткие пункты о том, зачем приходят в помещение. Показываются
+// списком в карточке на карте и попадают в базу знаний ИИ-помощника.
+export const roomNotes = {
+  canteen: ['Проходит обед после определённых пар.', 'Можно купить булочки или сладости.'],
+  'auditorium-104': ['Проходят различные мероприятия.', 'Иногда приезжают гости из компаний-спонсоров и не только.'],
+  'library-214': ['Можно почитать книги.', 'Проходит пара по русскому языку.', 'Иногда проводятся мероприятия.'],
+  'training-centre-113': ['Проходит практика по беспилотным работам.'],
+  'chemistry-biology-202': ['Оснащён специальными партами.', 'Проводятся лабораторные работы.'],
+  'informatics-222': ['Оснащён компьютерами.', 'Изучают программирование.'],
+}
+
 const pairWord = (bell) => bell.label.replace('-я пара', '-й паре').replace('РОВ', '«Разговорам о важном»')
 
 function studyStatus(now) {
@@ -45,10 +56,10 @@ function officeStatus(now) {
 }
 
 export function roomDetails(room, now = new Date()) {
-  if (!room) return { status: null, facts: [] }
+  if (!room) return { status: null, facts: [], notes: [] }
   let result = { status: null, facts: [] }
   if (room.id === 'canteen') result = canteenStatus(now)
   else if (room.category === 'Администрация' && room.id !== 'psychologist-224') result = officeStatus(now)
   else if (STUDY.has(room.category)) result = { status: studyStatus(now), facts: [] }
-  return { status: result.status, facts: [...result.facts, ...(roomFacts[room.id] || [])] }
+  return { status: result.status, facts: [...result.facts, ...(roomFacts[room.id] || [])], notes: roomNotes[room.id] || [] }
 }

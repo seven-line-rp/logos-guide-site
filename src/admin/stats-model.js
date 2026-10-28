@@ -99,7 +99,7 @@ export function pageRanking(days, keys) {
 export const PAGE_NAMES = {
   '/': 'Главная', '/map': 'Карта', '/rooms': 'Кабинеты', '/route': 'Маршрут', '/ai': 'ИИ-помощник', '/schedule': 'Расписание',
   '/here': 'Вы здесь (QR)', '/teachers': 'Преподаватели', '/start': 'Первая неделя', '/tour': 'Экскурсия 3D', '/games': 'Игры',
-  '/services': 'Пространства', '/about': 'О проекте', '/docs': 'Документация', '/privacy': 'Конфиденциальность', '/feedback': 'Обратная связь',
+  '/services': 'Пространства', '/about': 'О проекте', '/docs': 'Документация', '/privacy': 'Конфиденциальность', '/terms': 'Соглашение', '/consent': 'Согласие на обработку данных', '/feedback': 'Обратная связь',
 }
 
 export const formatNumber = (value) => new Intl.NumberFormat('ru-RU').format(value)

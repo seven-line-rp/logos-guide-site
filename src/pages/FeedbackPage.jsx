@@ -6,7 +6,8 @@ import { PageHeading } from '../components/Primitives.jsx'
 // «Сообщить о проблеме»: общая форма сайта. Сообщение уходит на /api/report.php
 // (файл logos-reports/reports.jsonl на хостинге, см. deploy/reports.md) вместе с
 // адресом страницы, с которой человек пришёл, и названием браузера. Контакт
-// необязателен: нужен, только если хочется получить ответ.
+// необязателен: нужен, только если хочется получить ответ. С контактом нужна
+// отметка о согласии на обработку персональных данных (страница /consent).
 
 export const FEEDBACK_KINDS = [
   { id: 'bug', icon: Bug, title: 'Что-то сломалось', hint: 'Не открывается, зависает, текст налезает' },
@@ -22,18 +23,21 @@ export default function FeedbackPage() {
   const [kind, setKind] = useState('bug')
   const [text, setText] = useState('')
   const [contact, setContact] = useState('')
+  const [agreed, setAgreed] = useState(false)
+  const hasContact = contact.trim() !== ''
   const [state, setState] = useState({ status: 'idle', error: '' })
 
   const send = async (event) => {
     event.preventDefault()
     if (text.trim().length < 5) { setState({ status: 'idle', error: 'Опишите проблему хотя бы парой слов.' }); return }
+    if (hasContact && !agreed) { setState({ status: 'idle', error: 'Чтобы оставить контакт, отметьте согласие на обработку персональных данных или сотрите контакт.' }); return }
     if (typeof navigator !== 'undefined' && navigator.onLine === false) { setState({ status: 'idle', error: 'Нет интернета. Попробуйте, когда появится сеть.' }); return }
     setState({ status: 'sending', error: '' })
     try {
       const response = await fetch('/api/report.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ kind, text, contact, page: from, agent: navigator.userAgent.slice(0, 160), website: event.currentTarget.website?.value || '' }),
+        body: JSON.stringify({ kind, text, contact: hasContact && agreed ? contact.trim() : '', consent: hasContact && agreed, page: from, agent: navigator.userAgent.slice(0, 160), website: event.currentTarget.website?.value || '' }),
       })
       const data = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(data.error || 'Не получилось отправить. Попробуйте позже.')
@@ -62,10 +66,14 @@ export default function FeedbackPage() {
           <label className="feedback-field"><span>Как с вами связаться <em>(необязательно)</em></span>
             <input type="text" value={contact} onChange={(event) => setContact(event.target.value)} maxLength={80} autoComplete="off" placeholder="Почта или @ник в Telegram" />
           </label>
+          {hasContact && <label className="feedback-consent">
+            <input type="checkbox" checked={agreed} onChange={(event) => setAgreed(event.target.checked)} />
+            <span>Согласен(на) на <Link to="/consent" target="_blank">обработку персональных данных</Link>: контакт нужен только для ответа на это обращение.</span>
+          </label>}
           <input className="report-trap" type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" />
           {state.error && <p className="report-error" role="alert">{state.error}</p>}
           <button className="button button-primary" type="submit" disabled={state.status === 'sending'}><Send size={15} /> {state.status === 'sending' ? 'Отправляем…' : 'Отправить'}</button>
-          <p className="feedback-note">Вместе с текстом отправятся адрес страницы, с которой вы пришли, и название браузера. Больше ничего.</p>
+          <p className="feedback-note">Вместе с текстом отправятся адрес страницы, с которой вы пришли, и название браузера. Подробнее — в <Link to="/privacy#feedback">политике конфиденциальности</Link>.</p>
         </form>}
     </section>
   </>
