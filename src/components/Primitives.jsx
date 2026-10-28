@@ -2,6 +2,28 @@ import { useEffect, useRef, useState } from 'react'
 import { ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
+// Один IntersectionObserver на все блоки: на длинных страницах их десятки,
+// и отдельный наблюдатель на каждый заметно грузит слабые телефоны.
+const revealCallbacks = new WeakMap()
+let revealObserver = null
+
+function observeReveal(node, onVisible) {
+  if (typeof window === 'undefined' || !('IntersectionObserver' in window)) { onVisible(); return () => {} }
+  if (!revealObserver) {
+    revealObserver = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue
+        revealObserver.unobserve(entry.target)
+        revealCallbacks.get(entry.target)?.()
+        revealCallbacks.delete(entry.target)
+      }
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' })
+  }
+  revealCallbacks.set(node, onVisible)
+  revealObserver.observe(node)
+  return () => { revealObserver.unobserve(node); revealCallbacks.delete(node) }
+}
+
 export function Reveal({ children, className = '', delay = 0, as: Tag = 'div', style, variant = 'up', ...props }) {
   const ref = useRef(null)
   const [visible, setVisible] = useState(false)
@@ -9,12 +31,7 @@ export function Reveal({ children, className = '', delay = 0, as: Tag = 'div', s
   useEffect(() => {
     const node = ref.current
     if (!node) return undefined
-    if (!('IntersectionObserver' in window)) { setVisible(true); return undefined }
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) { setVisible(true); observer.unobserve(node) }
-    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' })
-    observer.observe(node)
-    return () => observer.disconnect()
+    return observeReveal(node, () => setVisible(true))
   }, [])
 
   const variantClass = `reveal-${variant}`

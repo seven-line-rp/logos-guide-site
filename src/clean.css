@@ -1,0 +1,268 @@
+/* Чистый слой: единые кнопки, карточки и цветные значки, спокойные тени и
+   плавные, но дешёвые анимации. Анимируем только transform и opacity (их
+   считает видеокарта), тени и рамки меняем без «прыжков». Подключается после
+   остальных слоёв, но до perf.css: лёгкий режим по-прежнему всё выключает. */
+
+:root {
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 18px;
+  --ease-out: cubic-bezier(.22, 1, .36, 1);
+  --shadow-rest: 0 1px 2px rgba(16, 30, 60, .04), 0 1px 3px rgba(16, 30, 60, .05);
+  --shadow-hover: 0 10px 28px -8px rgba(16, 30, 60, .16);
+  --ring: 0 0 0 3px color-mix(in srgb, var(--blue) 30%, transparent);
+
+  /* Цвета значков: насыщенный тон + мягкая подложка из него же. */
+  --tone-blue: #2563eb;
+  --tone-sky: #0284c7;
+  --tone-violet: #7c3aed;
+  --tone-green: #16a34a;
+  --tone-amber: #d97706;
+  --tone-pink: #db2777;
+  --tone-slate: #475569;
+}
+:root[data-theme='dark'] {
+  --shadow-rest: 0 1px 2px rgba(0, 0, 0, .25);
+  --shadow-hover: 0 12px 30px -10px rgba(0, 0, 0, .55);
+  --tone-blue: #7aa7ff;
+  --tone-sky: #5cc4f5;
+  --tone-violet: #b69bff;
+  --tone-green: #5fd68a;
+  --tone-amber: #f5b85a;
+  --tone-pink: #f48bbd;
+  --tone-slate: #a7b6cf;
+}
+
+::selection { color: #fff; background: var(--blue); }
+
+/* ---------- Фокус: одно кольцо для всего, только с клавиатуры ---------- */
+:is(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+/* ---------- Кнопки ---------- */
+.button {
+  min-height: 46px;
+  gap: 8px;
+  padding: 0 18px;
+  border-radius: 12px;
+  font-weight: 650;
+  line-height: 1;
+  transition: background-color .18s ease, border-color .18s ease, color .18s ease, box-shadow .18s ease, transform .18s var(--ease-out);
+}
+.button:hover, .button-primary:hover, .button:active { transform: none; }
+.button-primary {
+  color: #fff;
+  border-color: var(--action-bg, var(--blue));
+  background: var(--action-bg, var(--blue));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14), 0 1px 2px rgba(16, 40, 110, .2);
+}
+.button-primary:hover { background: var(--action-hover, var(--blue)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14), 0 6px 16px -6px rgba(24, 84, 232, .55); }
+.button-white { border: 1px solid var(--line); color: var(--ink); background: var(--surface); box-shadow: var(--shadow-rest); }
+.button-white:hover { border-color: color-mix(in srgb, var(--blue) 45%, var(--line)); color: var(--blue); background: var(--surface); }
+/* На синем фоне героя и полосы этажей белая кнопка остаётся белой. */
+:is(.home-hero, .floor-preview-band) .button-white { border-color: transparent; color: #0d2a6b; background: #fff; }
+:is(.home-hero, .floor-preview-band) .button-white:hover { color: #0d2a6b; background: #eef3ff; }
+.button:active { transform: scale(.98); transition-duration: .08s; }
+.button:focus-visible { outline: none; box-shadow: var(--ring); }
+.button[disabled], .button[aria-disabled='true'] { opacity: .55; cursor: not-allowed; box-shadow: none; }
+.button svg { flex: none; }
+
+/* ---------- Шапка ----------
+   Края шапки совпадают с краями контента (.container), все кнопки одной
+   высоты, навигация ровно по центру: сетка «логотип | меню | кнопки». */
+.hd.site-header {
+  --hd-h: 68px;
+  --hd-ctl: 42px;
+  padding: 0;
+  border-bottom: 1px solid transparent;
+  background: color-mix(in srgb, var(--bg) 86%, transparent);
+}
+.hd.site-header.scrolled { border-bottom-color: var(--line); background: color-mix(in srgb, var(--surface) 92%, transparent); box-shadow: 0 1px 0 rgba(13, 28, 59, .02), 0 8px 24px -12px rgba(13, 28, 59, .12); }
+.hd.site-header .header-inner {
+  width: min(var(--container), calc(100% - 88px));
+  height: var(--hd-h);
+  min-height: 0;
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: minmax(max-content, 1fr) auto minmax(max-content, 1fr);
+  align-items: center;
+  gap: 16px;
+}
+.hd.site-header .brand { grid-column: 1; justify-self: start; }
+.hd.site-header .header-actions { grid-column: 3; justify-self: end; margin: 0; gap: 8px; }
+.hd.site-header :is(.search-trigger, .hd-icon, .hd-burger, .mobile-map-link) { height: var(--hd-ctl); min-height: 0; border-radius: 999px; }
+.hd.site-header .hd-icon { width: var(--hd-ctl); }
+.hd.site-header .search-trigger kbd { height: 26px; border-radius: 8px; }
+@media (min-width: 1221px) {
+  .hd.site-header .desktop-nav {
+    grid-column: 2;
+    position: static;
+    transform: none;
+    height: var(--hd-ctl);
+    margin: 0;
+    padding: 3px;
+    gap: 2px;
+    align-items: center;
+    box-shadow: none;
+    background: var(--surface);
+  }
+  .hd.site-header .nav-link { height: 34px; padding: 0 14px; gap: 7px; font-size: 14px; }
+  .hd.site-header .nav-link-active, .hd.site-header .nav-link-active:hover {
+    color: var(--blue);
+    background: color-mix(in srgb, var(--blue) 10%, var(--surface));
+    box-shadow: none;
+  }
+}
+@media (min-width: 1221px) and (max-width: 1439px) {
+  .hd.site-header .search-trigger { width: var(--hd-ctl); padding: 0; justify-content: center; }
+  .hd.site-header .search-trigger span, .hd.site-header .search-trigger kbd { display: none; }
+}
+@media (min-width: 1221px) and (max-width: 1320px) {
+  .hd.site-header .nav-link { padding: 0 11px; }
+  .hd.site-header .hd-burger { width: var(--hd-ctl); padding: 0; justify-content: center; }
+  .hd.site-header .hd-burger-label { display: none; }
+}
+.nav-link-icon { flex: none; opacity: .65; transition: opacity .18s ease; }
+.nav-link:hover .nav-link-icon, .nav-link-active .nav-link-icon { opacity: 1; }
+@media (max-width: 1440px) { .nav-link-icon { display: none; } }
+@media (max-width: 1120px) {
+  .hd.site-header .header-inner { width: calc(100% - 64px); }
+}
+@media (max-width: 900px) {
+  .hd.site-header .search-trigger { width: var(--hd-ctl); padding: 0; justify-content: center; }
+  .hd.site-header .search-trigger span, .hd.site-header .search-trigger kbd { display: none; }
+}
+@media (max-width: 680px) {
+  .hd.site-header { --hd-h: 60px; --hd-ctl: 42px; padding: env(safe-area-inset-top) 0 0; border-bottom-color: var(--line); }
+  .hd.site-header .header-inner { width: calc(100% - 32px); gap: 8px; }
+  .hd.site-header :is(.search-trigger, .hd-burger) { width: var(--hd-ctl); }
+}
+
+/* ---------- Карточки: одна рамка, одна тень, одно поведение ---------- */
+:is(.home-task, .day-card, .ab-part, .ai-promo, .service-card, .directory-card, .teacher-card) {
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-rest);
+  transition: transform .28s var(--ease-out), box-shadow .28s ease, border-color .18s ease;
+}
+@media (hover: hover) {
+  :is(.home-task, .day-card, a.ab-part, .ai-promo, .service-card, .directory-card, .teacher-card):hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--blue) 35%, var(--line));
+    box-shadow: var(--shadow-hover);
+  }
+}
+/* На телефоне «подъём» под пальцем только мешает. */
+@media (hover: none) {
+  :is(.home-task, .day-card, a.ab-part, .ai-promo, .service-card, .directory-card, .teacher-card, .quick-place-card):hover { transform: none; }
+}
+.day-card-lesson { background: linear-gradient(165deg, color-mix(in srgb, var(--blue) 6%, var(--surface)), var(--surface) 55%); }
+
+/* ---------- Значки в цветных подложках ---------- */
+:is(.home-task-icon, .ab-part-icon, .ai-promo-icon) {
+  width: 44px; height: 44px;
+  display: grid; place-items: center; flex: none;
+  border-radius: 12px;
+  color: var(--tone, var(--tone-blue));
+  background: color-mix(in srgb, var(--tone, var(--tone-blue)) 13%, transparent);
+  transition: transform .35s var(--ease-out);
+}
+@media (hover: hover) {
+  :is(.home-task, a.ab-part, .ai-promo):hover :is(.home-task-icon, .ab-part-icon, .ai-promo-icon) { transform: scale(1.06) rotate(-4deg); }
+}
+.home-task-blue { --task: var(--tone-blue); --tone: var(--tone-blue); }
+.home-task-green { --task: var(--tone-green); --tone: var(--tone-green); }
+.home-task-amber { --task: var(--tone-amber); --tone: var(--tone-amber); }
+.ai-promo { --tone: var(--tone-violet); border-radius: var(--r-lg); }
+.ai-promo-button { color: var(--tone-violet); }
+.ab-part:nth-child(5n + 1) { --tone: var(--tone-blue); }
+.ab-part:nth-child(5n + 2) { --tone: var(--tone-violet); }
+.ab-part:nth-child(5n + 3) { --tone: var(--tone-green); }
+.ab-part:nth-child(5n + 4) { --tone: var(--tone-amber); }
+.ab-part:nth-child(5n + 5) { --tone: var(--tone-pink); }
+.day-card h3 svg { color: var(--tone-blue); }
+
+/* ---------- Подвал: значки у ссылок в цвет раздела ---------- */
+.footer-links-group > a.footer-link { display: inline-flex; align-items: center; gap: 8px; width: fit-content; }
+.footer-link svg { flex: none; color: var(--tone, var(--muted)); opacity: .85; transition: transform .2s var(--ease-out), opacity .18s ease; }
+.footer-link:hover svg { opacity: 1; transform: translateX(1px); }
+.footer-tone-blue { --tone: var(--tone-blue); }
+.footer-tone-sky { --tone: var(--tone-sky); }
+.footer-tone-violet { --tone: var(--tone-violet); }
+.footer-tone-green { --tone: var(--tone-green); }
+.footer-tone-amber { --tone: var(--tone-amber); }
+.footer-tone-pink { --tone: var(--tone-pink); }
+.footer-tone-slate { --tone: var(--tone-slate); }
+
+/* ---------- Плавное появление блоков при прокрутке ----------
+   Раньше было отключено целиком; теперь короткое и дешёвое: прозрачность и
+   сдвиг на 12px, без размытия. Лёгкий режим и «Уменьшить движение» его гасят. */
+.reveal { will-change: auto; }
+@media screen and (prefers-reduced-motion: no-preference) {
+  .reveal:not(.reveal-visible) { opacity: 0 !important; transform: translateY(12px) !important; filter: none !important; }
+  .reveal.reveal-visible { transition: opacity .5s ease var(--reveal-delay, 0ms), transform .6s var(--ease-out) var(--reveal-delay, 0ms) !important; }
+}
+
+/* ---------- Смена страниц ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  .page-transition { animation: clean-page-in .32s var(--ease-out) both; }
+}
+@keyframes clean-page-in { from { opacity: 0; transform: translateY(6px); } }
+
+/* ---------- Оптимизация ----------
+   Размытое пятно на героe крутилось бесконечно и с filter: blur(40px) —
+   самое дорогое, что было на главной. Оставляем его неподвижным. */
+.hero-mesh::after { animation: none; filter: none; opacity: .7; }
+.page-heading-aside { animation: none; }
+/* Стрелка «Часто ищут» больше не подпрыгивает вечно. */
+.home-hero-edge a svg { animation: none; }
+/* На касаниях размытие под шапкой и диалогами не нужно и тормозит прокрутку. */
+@media (hover: none), (pointer: coarse) {
+  .site-header, .hd, .search-backdrop, .share-backdrop { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+}
+
+/* ---------- Заголовки страниц: одинаковые отступы и размер везде ---------- */
+.page-heading {
+  min-height: 0;
+  padding-block: 52px 32px;
+  align-items: flex-end;
+  border-bottom: 0;
+}
+.page-heading h1 { margin: 0; font-size: clamp(34px, 4.2vw, 52px); line-height: 1.06; letter-spacing: -.035em; }
+.page-heading .eyebrow + h1 { margin-top: 10px; }
+.page-heading-main > p { max-width: 640px; margin: 14px 0 0; color: var(--muted); font-size: 16px !important; line-height: 1.65; }
+@media (max-width: 680px) {
+  .page-heading { padding-block: 28px 20px; }
+  .page-heading-main > p { font-size: 15px !important; }
+}
+
+/* ---------- Подвал: светлая поверхность вместо серо-зелёной ---------- */
+.site-footer { border-top: 1px solid var(--line); background: var(--surface); }
+.site-footer::before { display: none; }
+.services-help-band { background: var(--surface); border-block: 1px solid var(--line); }
+.footer-version { border-color: var(--line); }
+
+/* ---------- Преподаватели: кнопки в одну строку ---------- */
+.teachers-grid { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+.teacher-card-actions { flex-wrap: wrap; }
+.teacher-action { flex: 1 1 auto; min-height: 42px; white-space: nowrap; border-radius: 12px; }
+
+/* ---------- Таблички «Вы здесь»: длинные названия не вылезают ---------- */
+.here-sign-copy strong { overflow-wrap: anywhere; hyphens: auto; }
+
+/* ---------- Чипы и фильтры: одна форма ---------- */
+:is(.directory-chip, .day-chip, .here-chip) { transition: background-color .16s ease, border-color .16s ease, color .16s ease, transform .16s var(--ease-out); }
+
+/* ---------- 404 ---------- */
+.not-found { min-height: 56vh; display: flex; flex-direction: column; justify-content: center; padding-block: 64px; }
+.not-found strong { color: var(--blue); font-size: clamp(64px, 10vw, 120px); line-height: 1; letter-spacing: -.05em; }
+.not-found h1 { margin: 8px 0 0; }
+.not-found p { margin: 14px 0 24px; color: var(--muted); font-size: 16px; line-height: 1.6; }
+.not-found > div { display: flex; flex-wrap: wrap; gap: 10px; }
+.not-found > div > a:last-child { font-size: 15px; }
+
+/* ---------- Формы: поле в фокусе подсвечивается кольцом ---------- */
+:is(input:not([type='checkbox']):not([type='radio']):not([type='range']), select, textarea):focus-visible { outline: none; border-color: var(--blue); box-shadow: var(--ring); }

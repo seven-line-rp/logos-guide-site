@@ -64,7 +64,6 @@ a.ab-part:hover { border-color: color-mix(in srgb, var(--blue) 55%, var(--line))
 .ab-part-text { color: var(--muted); font-size: 13.5px; line-height: 1.55; }
 .ab-part-arrow { position: absolute; top: 20px; right: 20px; color: var(--muted-2); transition: color .18s, transform .18s; }
 a.ab-part:hover .ab-part-arrow { color: var(--blue); transform: translate(2px, -2px); }
-.ab-part-app { border-style: dashed; background: transparent; }
 
 /* ---------- Команда ---------- */
 .ab-team { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; margin: 32px 0 0; padding: 0; list-style: none; }

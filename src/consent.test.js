@@ -42,7 +42,7 @@ test('broken or outdated answers are asked again', () => {
 
 test('the privacy policy lists every key the site stores', () => {
   const listed = storedItems.flatMap((item) => item.key.split(', '))
-  for (const key of [CONSENT_KEY, 'site-theme', 'site-language', 'map-show-labels', 'map-show-doors', 'map-manual-point', 'map-gps-anchors', 'route-voice', 'route-voice-preset', 'route-voice-name', 'game-quiz-best', 'game-speed-best', 'logos-welcome-hidden', 'logos-tour-done', 'logos-ai-chats', 'logos-favorites', 'logos-recent-routes', 'logos-schedule']) {
+  for (const key of [CONSENT_KEY, 'site-theme', 'site-language', 'map-show-labels', 'map-show-doors', 'map-manual-point', 'map-gps-anchors', 'route-voice', 'route-voice-preset', 'route-voice-name', 'game-quiz-best', 'game-speed-best', 'logos-tour-done', 'logos-ai-chats', 'logos-favorites', 'logos-recent-routes', 'logos-schedule']) {
     assert.ok(listed.includes(key), key)
   }
 })

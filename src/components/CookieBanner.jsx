@@ -57,7 +57,7 @@ export default function CookieBanner() {
           <span className="cookie-locked"><Lock size={13} /> Всегда</span>
         </div>
         <label className="cookie-option">
-          <span className="cookie-option-copy"><strong>Функциональные</strong><small>Тема, язык, голос, настройки карты, рекорды, отметки о приветствии и обучении.</small></span>
+          <span className="cookie-option-copy"><strong>Функциональные</strong><small>Тема, язык, голос, настройки карты, рекорды, отметка о пройденном обучении.</small></span>
           <input type="checkbox" checked={functional} onChange={(event) => setFunctional(event.target.checked)} />
           <i className="cookie-switch" aria-hidden="true"><b /></i>
         </label>
