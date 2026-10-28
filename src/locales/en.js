@@ -118,7 +118,7 @@ Object.assign(english, {
   'Рекламных и аналитических cookie здесь нет. В браузере сохраняются только ваши настройки: тема, язык, голос, метка на карте и рекорды в играх.': 'There are no advertising or analytics cookies here. Your browser only keeps your settings: theme, language, voice, map pin and game records.',
   'Подробнее': 'Learn more', 'Необходимые': 'Necessary', 'Функциональные': 'Functional', 'Всегда': 'Always',
   'Запоминают ваш ответ на этот вопрос.': 'Remember your answer to this question.',
-  'Тема, язык, голос, настройки карты, рекорды, отметки о приветствии и обучении.': 'Theme, language, voice, map settings, records, welcome and tour flags.',
+  'Тема, язык, голос, настройки карты, рекорды, отметка о пройденном обучении.': 'Theme, language, voice, map settings, records, tour completion flag.',
   'Сохранить выбор': 'Save choice', 'Принять': 'Accept', 'Только необходимые': 'Necessary only', 'Настроить': 'Customise',
 
   // Документация.
@@ -182,7 +182,7 @@ Object.assign(english, {
   'Функциональные cookie разрешены': 'Functional cookies allowed', 'Разрешены только необходимые': 'Only necessary cookies allowed',
   'Ваш ответ на вопрос о cookie': 'Your answer about cookies', 'Светлая или тёмная тема': 'Light or dark theme', 'Язык интерфейса': 'Interface language',
   'Показывать ли подписи и двери на плане': 'Whether to show labels and doors on the plan', 'Ваша метка на плане и точки привязки GPS': 'Your pin on the plan and GPS anchors',
-  'Озвучка маршрута и выбранный голос': 'Route voice and chosen voice', 'Лучшие результаты в играх': 'Best game scores', 'Не показывать приветствие, обучение пройдено': 'Welcome hidden, tour completed',
+  'Озвучка маршрута и выбранный голос': 'Route voice and chosen voice', 'Лучшие результаты в играх': 'Best game scores', 'Обучение по сайту пройдено': 'Site tour completed',
   'Аналитические и рекламные': 'Analytics and advertising',
 
   // Главная: превью квиза.

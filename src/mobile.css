@@ -15,11 +15,6 @@ html, body { overflow-x: clip; }
   /* Модалки: отступы с учётом чёлки и home-indicator (работает вместе с
      viewport-fit=cover в index.html), высота — через dvh, а не 100vh:
      на iOS 100vh включает зону под адресной строкой и диалог уезжал вниз */
-  .welcome-backdrop {
-    display: flex; /* margin:auto у диалога — безопасное центрирование при малой высоте */
-    padding: max(14px, env(safe-area-inset-top)) 12px max(14px, env(safe-area-inset-bottom));
-  }
-  .welcome-dialog { margin: auto; max-height: calc(100dvh - 28px); overflow-y: auto; }
   .search-backdrop { padding-bottom: max(14px, env(safe-area-inset-bottom)); }
   .search-results { max-height: min(54dvh, 440px); }
 
@@ -30,13 +25,6 @@ html, body { overflow-x: clip; }
   .footer-links-group > a, .footer-about-link { display: inline-block; padding-block: 5px; }
 }
 
-/* Альбомный телефон (высота меньше 500px): welcome-диалог компактнее и в ряд */
-@media (max-height: 500px) and (orientation: landscape) {
-  .welcome-dialog { padding: 18px 20px 16px; }
-  .welcome-dialog h2 { font-size: 23px; margin-top: 10px; }
-  .welcome-toggle { margin-top: 12px; }
-  .welcome-submit { margin-top: 12px; }
-}
 
 /* Язык интерфейса перенесён из шапки в бургер-меню */
 

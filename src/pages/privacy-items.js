@@ -17,5 +17,5 @@ export const storedItems = [
   { key: 'logos-schedule', purpose: 'Ваше расписание пар', kind: 'Функциональные' },
   { key: 'logos-push-topics', purpose: 'Какие уведомления присылать (пары, события, версии, сообщения)', kind: 'Функциональные' },
   { key: 'logos-here, route-need-lift', purpose: 'Где закончился последний маршрут (на 3 часа) и настройка «Мне нужен лифт»', kind: 'Функциональные' },
-  { key: 'logos-welcome-hidden, logos-tour-done', purpose: 'Не показывать приветствие, обучение пройдено', kind: 'Функциональные' },
+  { key: 'logos-tour-done', purpose: 'Обучение по сайту пройдено', kind: 'Функциональные' },
 ]

@@ -2,7 +2,6 @@ import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Link, Route, Routes, useLocation } from 'react-router-dom'
 import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { Footer, Header, ToastProvider } from './components/Shell'
-import WelcomeDialog from './components/WelcomeDialog'
 import CookieBanner from './components/CookieBanner.jsx'
 import OfflineNotice from './components/OfflineNotice.jsx'
 import SiteTour from './components/SiteTour.jsx'
@@ -75,7 +74,7 @@ function RouteEffects() {
 }
 
 function NotFoundPage() {
-  return <section className="not-found container"><span className="eyebrow">Маршрут не найден</span><strong>404</strong><h1>Такой страницы нет</h1><p>Возможно, ссылка устарела или в адресе опечатка.</p><div><Link className="button button-primary" to="/map"><ArrowLeft size={15} /> Открыть карту</Link><Link to="/">На главную <ArrowRight size={14} /></Link></div></section>
+  return <section className="not-found container"><strong>404</strong><h1>Такой страницы нет</h1><p>Возможно, ссылка устарела или в адресе опечатка.</p><div><Link className="button button-primary" to="/map"><ArrowLeft size={15} /> Открыть карту</Link><Link className="button button-white" to="/">На главную <ArrowRight size={14} /></Link></div></section>
 }
 
 function Site() {
@@ -83,7 +82,7 @@ function Site() {
   const location = useLocation()
   const admin = location.pathname.startsWith('/admin')
   const pageKey = admin ? 'admin' : location.pathname
-  return <><RouteEffects />{!admin && <Header />}<main id="main-content" className="site-main page-transition" key={pageKey}><ErrorBoundary key={pageKey}><Suspense fallback={<div className="page-loading container" role="status"><span className="page-loading-dots" aria-hidden="true"><i /><i /><i /></span> Открываем раздел…</div>}><Routes location={location}><Route path="/" element={<HomePage />} /><Route path="/map" element={<MapPage />} /><Route path="/rooms" element={<RoomsPage />} /><Route path="/route" element={<RoutePage />} /><Route path="/games" element={<GamesPage />} /><Route path="/services" element={<ServicesPage />} /><Route path="/about" element={<AboutPage />} /><Route path="/docs" element={<DocsPage />} /><Route path="/privacy" element={<PrivacyPage />} /><Route path="/ai" element={<AiAgentPage />} /><Route path="/schedule" element={<SchedulePage />} /><Route path="/tour" element={<TourPage />} /><Route path="/teachers" element={<TeachersPage />} /><Route path="/start" element={<StartPage />} /><Route path="/here" element={<HerePage />} /><Route path="/feedback" element={<FeedbackPage />} /><Route path="/testNotification" element={<TestNotificationsPage />} /><Route path="/admin" element={<AdminLayout />}><Route index element={<AdminOverview />} /><Route path="notices" element={<AdminNotices />} /><Route path="cards" element={<AdminCardsPage />} /><Route path="push" element={<AdminPush />} /></Route><Route path="*" element={<NotFoundPage />} /></Routes></Suspense></ErrorBoundary></main>{location.pathname !== '/ai' && !admin && <Footer />}{!admin && <><WelcomeDialog /><SiteTour /><CookieBanner /></>}<OfflineNotice /></>
+  return <><RouteEffects />{!admin && <Header />}<main id="main-content" className="site-main page-transition" key={pageKey}><ErrorBoundary key={pageKey}><Suspense fallback={<div className="page-loading container" role="status"><span className="page-loading-dots" aria-hidden="true"><i /><i /><i /></span> Открываем раздел…</div>}><Routes location={location}><Route path="/" element={<HomePage />} /><Route path="/map" element={<MapPage />} /><Route path="/rooms" element={<RoomsPage />} /><Route path="/route" element={<RoutePage />} /><Route path="/games" element={<GamesPage />} /><Route path="/services" element={<ServicesPage />} /><Route path="/about" element={<AboutPage />} /><Route path="/docs" element={<DocsPage />} /><Route path="/privacy" element={<PrivacyPage />} /><Route path="/ai" element={<AiAgentPage />} /><Route path="/schedule" element={<SchedulePage />} /><Route path="/tour" element={<TourPage />} /><Route path="/teachers" element={<TeachersPage />} /><Route path="/start" element={<StartPage />} /><Route path="/here" element={<HerePage />} /><Route path="/feedback" element={<FeedbackPage />} /><Route path="/testNotification" element={<TestNotificationsPage />} /><Route path="/admin" element={<AdminLayout />}><Route index element={<AdminOverview />} /><Route path="notices" element={<AdminNotices />} /><Route path="cards" element={<AdminCardsPage />} /><Route path="push" element={<AdminPush />} /></Route><Route path="*" element={<NotFoundPage />} /></Routes></Suspense></ErrorBoundary></main>{location.pathname !== '/ai' && !admin && <Footer />}{!admin && <><SiteTour /><CookieBanner /></>}<OfflineNotice /></>
 }
 
 export default function App() {

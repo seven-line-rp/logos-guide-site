@@ -69,11 +69,76 @@
 .button[disabled], .button[aria-disabled='true'] { opacity: .55; cursor: not-allowed; box-shadow: none; }
 .button svg { flex: none; }
 
-/* ---------- Навигация в шапке: значок перед подписью ---------- */
-.hd .nav-link { display: inline-flex; align-items: center; gap: 7px; }
-.nav-link-icon { flex: none; opacity: .7; transition: opacity .18s ease; }
+/* ---------- Шапка ----------
+   Края шапки совпадают с краями контента (.container), все кнопки одной
+   высоты, навигация ровно по центру: сетка «логотип | меню | кнопки». */
+.hd.site-header {
+  --hd-h: 68px;
+  --hd-ctl: 42px;
+  padding: 0;
+  border-bottom: 1px solid transparent;
+  background: color-mix(in srgb, var(--bg) 86%, transparent);
+}
+.hd.site-header.scrolled { border-bottom-color: var(--line); background: color-mix(in srgb, var(--surface) 92%, transparent); box-shadow: 0 1px 0 rgba(13, 28, 59, .02), 0 8px 24px -12px rgba(13, 28, 59, .12); }
+.hd.site-header .header-inner {
+  width: min(var(--container), calc(100% - 88px));
+  height: var(--hd-h);
+  min-height: 0;
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: minmax(max-content, 1fr) auto minmax(max-content, 1fr);
+  align-items: center;
+  gap: 16px;
+}
+.hd.site-header .brand { grid-column: 1; justify-self: start; }
+.hd.site-header .header-actions { grid-column: 3; justify-self: end; margin: 0; gap: 8px; }
+.hd.site-header :is(.search-trigger, .hd-icon, .hd-burger, .mobile-map-link) { height: var(--hd-ctl); min-height: 0; border-radius: 999px; }
+.hd.site-header .hd-icon { width: var(--hd-ctl); }
+.hd.site-header .search-trigger kbd { height: 26px; border-radius: 8px; }
+@media (min-width: 1221px) {
+  .hd.site-header .desktop-nav {
+    grid-column: 2;
+    position: static;
+    transform: none;
+    height: var(--hd-ctl);
+    margin: 0;
+    padding: 3px;
+    gap: 2px;
+    align-items: center;
+    box-shadow: none;
+    background: var(--surface);
+  }
+  .hd.site-header .nav-link { height: 34px; padding: 0 14px; gap: 7px; font-size: 14px; }
+  .hd.site-header .nav-link-active, .hd.site-header .nav-link-active:hover {
+    color: var(--blue);
+    background: color-mix(in srgb, var(--blue) 10%, var(--surface));
+    box-shadow: none;
+  }
+}
+@media (min-width: 1221px) and (max-width: 1439px) {
+  .hd.site-header .search-trigger { width: var(--hd-ctl); padding: 0; justify-content: center; }
+  .hd.site-header .search-trigger span, .hd.site-header .search-trigger kbd { display: none; }
+}
+@media (min-width: 1221px) and (max-width: 1320px) {
+  .hd.site-header .nav-link { padding: 0 11px; }
+  .hd.site-header .hd-burger { width: var(--hd-ctl); padding: 0; justify-content: center; }
+  .hd.site-header .hd-burger-label { display: none; }
+}
+.nav-link-icon { flex: none; opacity: .65; transition: opacity .18s ease; }
 .nav-link:hover .nav-link-icon, .nav-link-active .nav-link-icon { opacity: 1; }
 @media (max-width: 1440px) { .nav-link-icon { display: none; } }
+@media (max-width: 1120px) {
+  .hd.site-header .header-inner { width: calc(100% - 64px); }
+}
+@media (max-width: 900px) {
+  .hd.site-header .search-trigger { width: var(--hd-ctl); padding: 0; justify-content: center; }
+  .hd.site-header .search-trigger span, .hd.site-header .search-trigger kbd { display: none; }
+}
+@media (max-width: 680px) {
+  .hd.site-header { --hd-h: 60px; --hd-ctl: 42px; padding: env(safe-area-inset-top) 0 0; border-bottom-color: var(--line); }
+  .hd.site-header .header-inner { width: calc(100% - 32px); gap: 8px; }
+  .hd.site-header :is(.search-trigger, .hd-burger) { width: var(--hd-ctl); }
+}
 
 /* ---------- Карточки: одна рамка, одна тень, одно поведение ---------- */
 :is(.home-task, .day-card, .ab-part, .ai-promo, .service-card, .directory-card, .teacher-card) {
@@ -132,15 +197,6 @@
 .footer-tone-pink { --tone: var(--tone-pink); }
 .footer-tone-slate { --tone: var(--tone-slate); }
 
-/* ---------- Приветствие: строже и легче ---------- */
-.welcome-dialog { border-radius: 22px; box-shadow: 0 24px 64px -12px rgba(4, 14, 34, .35); }
-.welcome-backdrop { background: rgba(7, 18, 38, .5); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
-.welcome-actions { display: flex; gap: 10px; margin-top: 18px; }
-.welcome-actions .button { flex: 1; margin-top: 0; }
-@media (max-width: 560px) { .welcome-actions { flex-direction: column-reverse; } }
-/* Пока открыто приветствие, плашку cookie не показываем поверх него. */
-.welcome-backdrop ~ .cookie-banner { display: none; }
-
 /* ---------- Плавное появление блоков при прокрутке ----------
    Раньше было отключено целиком; теперь короткое и дешёвое: прозрачность и
    сдвиг на 12px, без размытия. Лёгкий режим и «Уменьшить движение» его гасят. */
@@ -165,5 +221,48 @@
 .home-hero-edge a svg { animation: none; }
 /* На касаниях размытие под шапкой и диалогами не нужно и тормозит прокрутку. */
 @media (hover: none), (pointer: coarse) {
-  .site-header, .hd, .welcome-backdrop, .search-backdrop, .share-backdrop { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+  .site-header, .hd, .search-backdrop, .share-backdrop { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
 }
+
+/* ---------- Заголовки страниц: одинаковые отступы и размер везде ---------- */
+.page-heading {
+  min-height: 0;
+  padding-block: 52px 32px;
+  align-items: flex-end;
+  border-bottom: 0;
+}
+.page-heading h1 { margin: 0; font-size: clamp(34px, 4.2vw, 52px); line-height: 1.06; letter-spacing: -.035em; }
+.page-heading .eyebrow + h1 { margin-top: 10px; }
+.page-heading-main > p { max-width: 640px; margin: 14px 0 0; color: var(--muted); font-size: 16px !important; line-height: 1.65; }
+@media (max-width: 680px) {
+  .page-heading { padding-block: 28px 20px; }
+  .page-heading-main > p { font-size: 15px !important; }
+}
+
+/* ---------- Подвал: светлая поверхность вместо серо-зелёной ---------- */
+.site-footer { border-top: 1px solid var(--line); background: var(--surface); }
+.site-footer::before { display: none; }
+.services-help-band { background: var(--surface); border-block: 1px solid var(--line); }
+.footer-version { border-color: var(--line); }
+
+/* ---------- Преподаватели: кнопки в одну строку ---------- */
+.teachers-grid { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+.teacher-card-actions { flex-wrap: wrap; }
+.teacher-action { flex: 1 1 auto; min-height: 42px; white-space: nowrap; border-radius: 12px; }
+
+/* ---------- Таблички «Вы здесь»: длинные названия не вылезают ---------- */
+.here-sign-copy strong { overflow-wrap: anywhere; hyphens: auto; }
+
+/* ---------- Чипы и фильтры: одна форма ---------- */
+:is(.directory-chip, .day-chip, .here-chip) { transition: background-color .16s ease, border-color .16s ease, color .16s ease, transform .16s var(--ease-out); }
+
+/* ---------- 404 ---------- */
+.not-found { min-height: 56vh; display: flex; flex-direction: column; justify-content: center; padding-block: 64px; }
+.not-found strong { color: var(--blue); font-size: clamp(64px, 10vw, 120px); line-height: 1; letter-spacing: -.05em; }
+.not-found h1 { margin: 8px 0 0; }
+.not-found p { margin: 14px 0 24px; color: var(--muted); font-size: 16px; line-height: 1.6; }
+.not-found > div { display: flex; flex-wrap: wrap; gap: 10px; }
+.not-found > div > a:last-child { font-size: 15px; }
+
+/* ---------- Формы: поле в фокусе подсвечивается кольцом ---------- */
+:is(input:not([type='checkbox']):not([type='radio']):not([type='range']), select, textarea):focus-visible { outline: none; border-color: var(--blue); box-shadow: var(--ring); }

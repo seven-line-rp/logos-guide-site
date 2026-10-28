@@ -42,19 +42,6 @@
 }
 .footer-legal a:hover, .footer-legal button:hover { opacity: 1; text-decoration: underline; text-underline-offset: 3px; }
 
-/* ---------- Приветствие ---------- */
-.welcome-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
-.welcome-actions .welcome-submit { width: auto; flex: 1 1 200px; margin-top: 0; }
-.welcome-tour {
-  flex: 1 1 180px;
-  justify-content: center;
-  gap: 8px;
-  border-color: color-mix(in srgb, #7c3aed 35%, transparent);
-  color: #6d28d9;
-  background: linear-gradient(120deg, rgba(124, 58, 237, .1), rgba(56, 189, 248, .12));
-}
-.welcome-tour:hover { color: #5b21b6; background: linear-gradient(120deg, rgba(124, 58, 237, .16), rgba(56, 189, 248, .18)); }
-html[data-theme='dark'] .welcome-tour { color: #d8c5ff; border-color: rgba(192, 132, 252, .35); }
 
 /* ---------- Плашка cookie ---------- */
 .cookie-banner {
