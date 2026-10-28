@@ -1,5 +1,6 @@
 import { floors, games, navigation, rooms } from './data.js'
 import { BELLS, LUNCH } from './schedule.js'
+import { roomNotes } from './room-info.js'
 
 // База знаний ИИ-агента. Vite при сборке кладёт её в dist/api/ai-knowledge.txt,
 // а public/api/ai-chat.php добавляет в системную подсказку вместе с текстом
@@ -29,6 +30,8 @@ const siteSections = {
   '/about': 'о проекте и команде студентов, которая сделала путеводитель',
   '/docs': 'документация по сайту и кнопка «Пройти обучение»',
   '/privacy': 'политика конфиденциальности и настройки cookie',
+  '/terms': 'пользовательское соглашение: условия пользования сайтом',
+  '/consent': 'согласие на обработку персональных данных для формы обратной связи',
   '/ai': 'этот чат с ИИ-агентом (тестовый режим)',
   '/schedule': '«Моё расписание»: студент добавляет свои пары, главная показывает следующую пару с маршрутом',
   '/teachers': 'преподаватели и сотрудники: поиск по фамилии и предмету, кабинет и маршрут к нему',
@@ -40,11 +43,12 @@ const siteSections = {
 
 function roomLine(room) {
   const number = room.number ? `кабинет ${room.number}` : 'без номера'
-  return `- ${room.name} — ${number}, ${room.floor} этаж, «${room.category}». ${room.description} [id: ${room.id}]`
+  const notes = roomNotes[room.id] ? ` ${roomNotes[room.id].join(' ')}` : ''
+  return `- ${room.name} — ${number}, ${room.floor} этаж, «${room.category}». ${room.description}${notes} [id: ${room.id}]`
 }
 
 export function buildKnowledge() {
-  const sections = navigation.map((item) => item.to).concat(['/', '/games', '/services', '/about', '/teachers', '/start', '/tour', '/docs', '/privacy', '/feedback'])
+  const sections = navigation.map((item) => item.to).concat(['/', '/games', '/services', '/about', '/teachers', '/start', '/tour', '/docs', '/privacy', '/terms', '/consent', '/feedback'])
   const unique = [...new Set(sections)]
   return [
     '# Сайт «ЛОГОС: Путеводитель»',

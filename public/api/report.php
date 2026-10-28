@@ -118,7 +118,8 @@ if (!is_array($data)) respond(400, ['error' => 'Не получилось про
 $room = clean_text($data['room'] ?? '', 60);
 $kind = clean_text($data['kind'] ?? '', 20);
 $site = in_array($kind, SITE_KINDS, true);
-$contact = clean_text($data['contact'] ?? '', 80);
+// Контакт — персональные данные: сохраняем его только с согласием (страница /consent).
+$contact = !empty($data['consent']) ? clean_text($data['contact'] ?? '', 80) : '';
 $agent = clean_text($data['agent'] ?? '', 160);
 $text = clean_text($data['text'] ?? '', REPORT_MAX_TEXT);
 $page = clean_text($data['page'] ?? '', 200);
