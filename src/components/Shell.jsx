@@ -39,6 +39,14 @@ export function ToastProvider({ children }) {
 export function useToast() { return useContext(ToastContext) }
 
 // Меню: разделы сгруппированы по задачам человека, а не по устройству сайта.
+// Иконки пунктов верхней навигации (сами пункты — в data.js).
+const navIcons = { '/map': MapIcon, '/route': Navigation, '/rooms': LayoutGrid, '/schedule': CalendarDays, '/ai': Bot }
+
+function NavIcon({ to }) {
+  const Icon = navIcons[to]
+  return Icon ? <Icon className="nav-link-icon" size={15} aria-hidden="true" /> : null
+}
+
 const menuGroups = [
   { title: 'Найти дорогу', items: [
     { to: '/map', label: 'Карта этажей', hint: 'План 1 и 2 этажа', icon: MapIcon, tone: 'blue' },
@@ -222,7 +230,7 @@ export function Header() {
       <div className="header-inner">
         <Brand />
         <nav className="desktop-nav" aria-label="Основная навигация">
-          {navigation.map((item) => <NavLink end key={item.to} to={item.to} className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}>{item.label}{item.badge && <span className="nav-badge">{item.badge}</span>}</NavLink>)}
+          {navigation.map((item) => <NavLink end key={item.to} to={item.to} className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}><NavIcon to={item.to} />{item.label}{item.badge && <span className="nav-badge">{item.badge}</span>}</NavLink>)}
         </nav>
         <div className="header-actions">
           <button className="search-trigger" type="button" aria-keyshortcuts="K" onClick={openSearch} aria-label="Найти кабинет"><Search size={17} /><span>Найти место</span><kbd>K</kbd></button>
@@ -272,5 +280,5 @@ export function Header() {
 }
 
 export function Footer() {
-  return <footer className="site-footer"><div className="footer-top container"><div className="footer-brand-block"><Brand /><p>Карта, маршруты и всё, что<br />нужно найти в колледже.</p><span className="footer-version">Версия {SITE_VERSION_LABEL}, by {SITE_AUTHOR}</span></div>{menuGroups.map((group) => <div key={group.title} className="footer-links-group"><span className="footer-label">{group.title}</span>{group.items.map((item) => <Link key={item.to} to={item.to}>{item.label}</Link>)}</div>)}</div><div className="footer-bottom container"><span>Путеводитель колледжа «Логос»</span><nav className="footer-legal" aria-label="Правовая информация"><Link to="/privacy">Политика конфиденциальности</Link><Link to="/privacy#cookies">Cookie</Link><Link to="/testNotification">Уведомления</Link><button type="button" onClick={openCookieSettings}>Настройки cookie</button></nav><a href="#top" onClick={(event) => { event.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>Наверх ↑</a></div></footer>
+  return <footer className="site-footer"><div className="footer-top container"><div className="footer-brand-block"><Brand /><p>Карта, маршруты и всё, что<br />нужно найти в колледже.</p><span className="footer-version">Версия {SITE_VERSION_LABEL}, by {SITE_AUTHOR}</span></div>{menuGroups.map((group) => <div key={group.title} className="footer-links-group"><span className="footer-label">{group.title}</span>{group.items.map((item) => <Link key={item.to} to={item.to} className={`footer-link footer-tone-${item.tone}`}><item.icon size={15} aria-hidden="true" />{item.label}</Link>)}</div>)}</div><div className="footer-bottom container"><span>Путеводитель колледжа «Логос»</span><nav className="footer-legal" aria-label="Правовая информация"><Link to="/privacy">Политика конфиденциальности</Link><Link to="/privacy#cookies">Cookie</Link><Link to="/testNotification">Уведомления</Link><button type="button" onClick={openCookieSettings}>Настройки cookie</button></nav><a href="#top" onClick={(event) => { event.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>Наверх ↑</a></div></footer>
 }

@@ -34,7 +34,6 @@ html, body { overflow-x: clip; }
 @media (max-height: 500px) and (orientation: landscape) {
   .welcome-dialog { padding: 18px 20px 16px; }
   .welcome-dialog h2 { font-size: 23px; margin-top: 10px; }
-  .welcome-app { margin-top: 12px; padding: 12px; }
   .welcome-toggle { margin-top: 12px; }
   .welcome-submit { margin-top: 12px; }
 }

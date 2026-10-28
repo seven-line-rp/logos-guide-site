@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowRight, ArrowUpRight, BookOpen, Footprints, Gamepad2, List, Map as MapIcon, Smartphone } from 'lucide-react'
+import { ArrowRight, ArrowUpRight, BookOpen, Footprints, Gamepad2, List, Map as MapIcon } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Reveal } from '../components/Primitives.jsx'
 import { games, rooms } from '../data.js'
@@ -89,11 +89,6 @@ export default function AboutPage() {
             <ArrowUpRight className="ab-part-arrow" size={16} aria-hidden="true" />
           </Link>
         })}
-        <div className="ab-part ab-part-app">
-          <span className="ab-part-icon" aria-hidden="true"><Smartphone size={18} /></span>
-          <strong>Приложение для Android</strong>
-          <span className="ab-part-text">Сейчас на техническом обслуживании и пока не поддерживается. Пользуйтесь сайтом, он работает на телефоне.</span>
-        </div>
       </div>
     </section>
 

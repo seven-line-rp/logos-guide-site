@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Compass, Construction, Smartphone, Wrench, X } from 'lucide-react'
+import { Compass, Construction, X } from 'lucide-react'
 import { lockBodyScroll, storageGet, storageSet } from '../storage.js'
 import { startTour } from '../tour-bus.js'
 import { readTutorialDone } from '../tutorial.js'
@@ -28,7 +28,7 @@ export default function WelcomeDialog() {
       unlock()
       window.removeEventListener('keydown', onKeyDown)
     }
-  }, [open ])
+  }, [open])
 
   if (!open) return null
 
@@ -50,14 +50,6 @@ export default function WelcomeDialog() {
           Если заметите баг или неточность на карте, сообщите{' '}
           <Link to="/about" onClick={close}>команде проекта</Link>: так мы быстрее всё исправим.
         </p>
-
-        <div className="welcome-app welcome-app-paused" role="note">
-          <span className="welcome-app-icon" aria-hidden="true"><Wrench size={20} /></span>
-          <div className="welcome-app-copy">
-            <span className="welcome-app-title"><Smartphone size={17} /> Приложение для Android</span>
-            <p>Сейчас на техническом обслуживании и пока не поддерживается. Пользуйтесь сайтом, он удобно работает и на телефоне.</p>
-          </div>
-        </div>
 
         <label className="welcome-toggle">
           <input type="checkbox" checked={dontShow} onChange={(event) => setDontShow(event.target.checked)} />

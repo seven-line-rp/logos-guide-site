@@ -65,7 +65,9 @@ function RouteEffects() {
   const language = useLanguage()
   const location = useLocation()
   useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' })
+    // Новая страница открывается сверху сразу: плавная прокрутка через всю
+    // длинную страницу на слабых телефонах дёргается.
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
     document.title = translate(titles[location.pathname] || notFoundTitle, language)
   }, [location.pathname, language])
   useEffect(() => { trackView(location.pathname) }, [location.pathname])
