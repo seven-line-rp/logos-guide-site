@@ -223,7 +223,7 @@ test('mass client-side failures raise an alert, a single one does not', { skip }
   assert.equal(foreign.status, 403)
 })
 
-test('persona is business-like (no hostile mode) and study mode adds the lesson format', { skip }, async () => {
+test('persona is business-like (no hostile mode)', { skip }, async () => {
   await reset()
   await ask([{ role: 'user', content: 'Как решать химические реакции?' }])
   const plain = await lastModelRequest()
@@ -231,20 +231,10 @@ test('persona is business-like (no hostile mode) and study mode adds the lesson 
   assert.match(system, /деловая и доброжелательная/)
   assert.match(system, /Если собеседник груб:/)
   assert.ok(!/враждебн|куратор|шуточн/i.test(system), 'враждебного режима и шуток в подсказке больше нет')
-  assert.ok(!system.includes('Режим «Зачёт»'), 'без переключателя режима нет')
+  assert.ok(!system.includes('Режим «Зачёт»'), 'режима «Зачёт» больше нет')
   assert.match(system, /блок ```quiz/, 'формат заданий описан всегда')
   assert.match(system, /блок ```next/)
-  const normalTokens = plain.max_tokens
 
-  await reset()
-  const study = await ask([{ role: 'user', content: 'Как решать химические реакции?' }], { study: true })
-  assert.equal(study.status, 200)
-  const sent = await lastModelRequest()
-  const notes = sent.messages[0].content
-  assert.match(notes, /# Режим «Зачёт»/)
-  assert.match(notes, /### Теория[\s\S]*### Практика/)
-  assert.ok(notes.indexOf('# Режим «Зачёт»') < notes.indexOf('# Безопасность'), 'правила безопасности остаются в самом конце')
-  assert.ok(sent.max_tokens > normalTokens, 'на урок отводится больше токенов')
   // Старое поле rude больше не действует.
   await reset()
   await ask([{ role: 'user', content: 'Привет' }], { rude: true })
@@ -291,6 +281,6 @@ test('health with the key reports PHP, extensions and files for diagnosis', { sk
 test('selftest shows which step fails on a hosting, without secrets', { skip }, async () => {
   const body = await (await fetch(`${site}/api/ai-chat.php?selftest`)).json()
   assert.equal(body.ok, true)
-  for (const step of ['curl', 'mbstring', 'временная папка', 'защита: поиск атак', 'защита: подпись', 'подсказка модели', 'режим «Зачёт»']) assert.equal(body.steps[step], 'ok', step)
+  for (const step of ['curl', 'mbstring', 'временная папка', 'защита: поиск атак', 'защита: подпись', 'подсказка модели']) assert.equal(body.steps[step], 'ok', step)
   assert.ok(!JSON.stringify(body).includes('sk-test'), 'ключ не показывается')
 })

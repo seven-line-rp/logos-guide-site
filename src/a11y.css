@@ -13,7 +13,7 @@
 .schedule-bells button[aria-pressed='true'] small { color: #fff; }
 .legal-kind { color: #115e59; }
 .legal-kind-required { color: #92400e; }
-.nv-option-on > em, .quiz-preview-options .quiz-preview-right { color: #166534; }
+.rt-option-on > em, .quiz-preview-options .quiz-preview-right { color: #166534; }
 .quick-place-num { color: #4a5970; }
 /* Метка начала маршрута и событий: белый текст на тёмно-оранжевом. */
 .rs-mark-head, .rs-mark-notice-event .rs-mark-head { background: #b45309; }
@@ -23,7 +23,7 @@
 :root[data-theme='dark'] :is(.ai-history-empty, .ai-sidebar-note, .quiz-preview-foot, .directory-floor-filters > span, .directory-results-head > span, .room-detail-number) { color: var(--muted); }
 :root[data-theme='dark'] .map-under-note { background: var(--surface); }
 :root[data-theme='dark'] :is(.map-under-note > a, .map-under-note > span) { color: #a9c3ff; }
-:root[data-theme='dark'] :is(.nv-floors, .nv-view) > button[aria-pressed='true'] { color: #0b1630; }
+:root[data-theme='dark'] :is(.rt-floors, .rt-view) > button[aria-pressed='true'] { color: #0b1630; }
 :root[data-theme='dark'] .footer-legal a, :root[data-theme='dark'] .site-footer a[href$='privacy'] { color: var(--muted); }
 :root[data-theme='dark'] .quick-place-num { color: var(--muted); }
 :root[data-theme='dark'] .schedule-days button.is-off { color: #9a9993; }

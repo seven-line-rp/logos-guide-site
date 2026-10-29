@@ -5,7 +5,7 @@ import { PUSH_KINDS } from '../push.js'
 import { SITE_VERSION_LABEL } from '../version.js'
 import { postPush } from './admin-api.js'
 
-// Рассылка push-уведомлений всем, кто включил их на /testNotification и
+// Рассылка push-уведомлений всем, кто включил их на /notifications и
 // выбрал нужную тему. Звонки, события из объявлений и новую версию сайта
 // сервер присылает и сам, по крону (deploy/push.md).
 
@@ -60,7 +60,7 @@ export default function AdminPush() {
 
   return <>
     <div className="adm-head">
-      <div><h1>Уведомления</h1><p>Push-сообщение всем, кто включил уведомления на <a className="adm-inline-link" href="/testNotification" target="_blank" rel="noreferrer">/testNotification</a>. Пока это тестовый режим.</p></div>
+      <div><h1>Уведомления</h1><p>Push-сообщение всем, кто включил уведомления на <a className="adm-inline-link" href="/notifications" target="_blank" rel="noreferrer">/testNotification</a>. Пока это тестовый режим.</p></div>
       <button type="button" className="adm-button" onClick={load}><RefreshCw size={15} /> Обновить</button>
     </div>
 

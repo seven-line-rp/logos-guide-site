@@ -1,0 +1,159 @@
+/* Мягкий слой дизайна: спокойная палитра, крупные скругления, «таблетки» вместо
+   прямоугольных кнопок, тихие тени. Подключается после всех остальных стилей и
+   только переопределяет токены и радиусы, поэтому раскладку старых слоёв не
+   трогает. Тёмная тема — глубокий сине-графитовый фон с мягким индиго-акцентом. */
+
+/* ---------- Токены: светлая тема ---------- */
+:root:not([data-theme='dark']) {
+  --bg: #f3f6fb;
+  --surface: #ffffff;
+  --surface-soft: #eef2f9;
+  --line: #e2e8f2;
+  --line-strong: #cdd6e6;
+  --ink: #16233b;
+  --muted: #62718b;
+  --blue: #2f5fe8;
+  --blue-bright: #3f70ff;
+  --blue-pale: #dde7ff;
+  --blue-soft: #eef3ff;
+  --action-bg: #2f5fe8;
+  --action-hover: #2450d0;
+  --shadow-xs: 0 1px 2px rgba(22, 35, 59, .06);
+  --shadow-sm: 0 1px 3px rgba(22, 35, 59, .05), 0 8px 24px -10px rgba(22, 35, 59, .1);
+  --shadow-md: 0 2px 6px rgba(22, 35, 59, .05), 0 16px 36px -12px rgba(22, 35, 59, .2);
+  --shadow-lg: 0 4px 10px rgba(22, 35, 59, .06), 0 28px 60px -18px rgba(22, 35, 59, .32);
+  background: var(--bg);
+}
+
+/* ---------- Токены: тёмная тема ---------- */
+:root[data-theme='dark'] {
+  --bg: #11131b;
+  --surface: #191c27;
+  --surface-soft: #212535;
+  --surface-raised: #292e41;
+  --line: rgba(255, 255, 255, .075);
+  --line-strong: rgba(255, 255, 255, .15);
+  --ink: #e9ebf4;
+  --muted: #a0a7bc;
+  --muted-2: #8b93a9;
+  --blue: #8aa8ff;
+  --blue-bright: #8aa8ff;
+  --blue-deep: #e9ebf4;
+  --blue-night: #11131b;
+  --blue-pale: #29335a;
+  --blue-soft: #1f2640;
+  --accent-tint: rgba(138, 168, 255, .14);
+  --action-bg: #5b7cf7;
+  --action-hover: #7390ff;
+  --glass: rgba(17, 19, 27, .82);
+  --glass-border: rgba(255, 255, 255, .07);
+  --glass-dark: rgba(17, 19, 27, .76);
+  --glass-strong: rgba(17, 19, 27, .9);
+  --map-bg: #151822;
+  --map-room: #232839;
+  --map-wall: #5a6178;
+  --map-label: #e4e7f2;
+  --map-door: #8aa8ff;
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, .3);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, .25), 0 10px 26px -12px rgba(0, 0, 0, .5);
+  --shadow-md: 0 2px 6px rgba(0, 0, 0, .25), 0 18px 40px -14px rgba(0, 0, 0, .6);
+  --shadow-lg: 0 4px 10px rgba(0, 0, 0, .3), 0 30px 64px -20px rgba(0, 0, 0, .75);
+}
+:root[data-theme='dark'] ::selection { background: #5b7cf7; }
+:root[data-theme='dark'] :is(button, a, input, select):focus-visible { outline-color: #8aa8ff; }
+:root[data-theme='dark'] .rs {
+  --rs-bg-1: #1e2230;
+  --rs-bg-2: #141722;
+  --rs-floor: #212637;
+  --rs-room: #2a3043;
+  --rs-shaft: #3a4157;
+  --rs-line: #444c64;
+  --rs-label: #a7aec6;
+  --rs-icon: #9db6ff;
+  --rs-wall-top: #6b7390;
+  --rs-wall-1: rgba(72, 79, 102, .95);
+  --rs-wall-2: rgba(46, 52, 70, .9);
+  --rs-door: #8aa8ff;
+  --rs-route: #7c9bff;
+  --rs-route-2: #a8bcff;
+  --rs-route-glow: rgba(124, 155, 255, .4);
+  --rs-passed: #4a5680;
+}
+
+/* ---------- Кнопки и чипы: таблетки ---------- */
+:is(.button, .button-primary, .button-white, .header-cta, .cookie-primary, .cookie-secondary, .tn-button, .adm-button, .adm-chip,
+  .ai-chip, .day-chip, .directory-chip, .here-chip, .map-gps-button, .map-settings-button, .map-manual-button, .map-anchor-button,
+  .room-route-button, .room-floor-button, .fav-button, .ai-promo-button, .docs-tour-button, .floor-map-3d-toggle-btn, .route-submit,
+  .search-trigger, .theme-toggle, .mobile-menu-toggle, .mobile-map-link, .header-docs, .icon-button, .map-zoom-button,
+  .floor-tab, .map-filter, .share-button, .hd-menu-search) { border-radius: 999px; }
+.nav-badge, .floor-tag { border-radius: 999px; }
+.button { padding-inline: 22px; }
+.button-primary, .header-cta { box-shadow: 0 8px 20px -8px color-mix(in srgb, var(--action-bg) 70%, transparent); }
+.button-primary:hover, .header-cta:hover { box-shadow: 0 12px 26px -8px color-mix(in srgb, var(--action-bg) 75%, transparent); }
+.button-white { box-shadow: var(--shadow-xs); }
+
+/* ---------- Карточки и поверхности ---------- */
+:is(.directory-card, .service-card, .teacher-card, .quick-place-card, .day-card, .bells-card, .tour-card, .find-target-card, .door-card,
+  .game-panel, .find-game-panel, .ex-card, .tn-card, .tn-panel, .tn-status, .about-person, .about-access, .faq-item, .docs-section,
+  .room-detail-panel, .map-panel, .map-settings-panel, .map-plan-panel, .floor-switch-card, .here-card, .break-walk-card, .cookie-banner,
+  .search-dialog, .share-dialog, .home-search-suggestions) { border-radius: 24px; }
+:is(.room-detail-panel, .map-panel, .map-plan-panel, .day-card, .directory-card, .service-card, .teacher-card, .quick-place-card, .floor-switch-card, .tn-card, .tn-panel) { box-shadow: var(--shadow-sm); }
+.floor-map-viewport { border-radius: 24px; }
+.toast { border-radius: 999px; }
+
+/* ---------- Поля ввода ---------- */
+.route-room-search-field { height: 50px; border-radius: 18px; padding-inline: 14px; }
+.route-room-search-list { border-radius: 20px; box-shadow: var(--shadow-lg); }
+.search-input-wrap, .home-search { border-radius: 20px; }
+.route-room-search-floor { border-radius: 999px; }
+:is(input[type='text'], input[type='search'], input[type='number'], input[type='time'], textarea, select):not(.route-room-search-field input) { border-radius: 14px; }
+
+/* ---------- Шапка ---------- */
+.site-header { border-bottom-color: var(--line); background: color-mix(in srgb, var(--surface) 82%, transparent); -webkit-backdrop-filter: blur(20px) saturate(1.5); backdrop-filter: blur(20px) saturate(1.5); }
+.desktop-nav { border-radius: 999px; }
+.nav-link { border-radius: 999px; }
+
+/* ---------- Колокольчик уведомлений ---------- */
+.nbell { position: relative; display: inline-flex; }
+.nbell-button { position: relative; }
+.nbell-badge { position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px; display: grid; place-items: center; padding: 0 5px; border: 2px solid var(--surface); border-radius: 999px; color: #fff; background: #ef4444; font-size: 10.5px; font-weight: 800; line-height: 1; }
+.nbell-panel { position: absolute; z-index: 90; top: calc(100% + 10px); right: 0; width: min(360px, calc(100vw - 24px)); padding: 16px; border: 1px solid var(--line); border-radius: 24px; color: var(--ink); background: var(--surface); box-shadow: var(--shadow-lg); animation: nbell-in .2s ease-out; }
+@keyframes nbell-in { from { opacity: 0; transform: translateY(-6px) scale(.98); } }
+.nbell-panel h2 { margin: 0 0 10px; font-size: 15px; font-weight: 750; letter-spacing: -.01em; }
+.nbell-list { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.nbell-item { display: flex; align-items: flex-start; gap: 11px; padding: 10px 12px; border-radius: 16px; color: var(--ink); background: var(--surface-soft); transition: background .2s; }
+.nbell-item:hover { background: color-mix(in srgb, var(--blue) 10%, var(--surface-soft)); }
+.nbell-item > span:last-child { display: grid; min-width: 0; gap: 1px; }
+.nbell-item strong { font-size: 13.5px; font-weight: 700; line-height: 1.3; }
+.nbell-item small { color: var(--muted); font-size: 12px; line-height: 1.35; }
+.nbell-item-icon { width: 30px; height: 30px; display: grid; flex: none; place-items: center; border-radius: 50%; }
+.nbell-closed .nbell-item-icon { color: #dc2626; background: rgba(220, 38, 38, .12); }
+.nbell-event .nbell-item-icon { color: #d97706; background: rgba(217, 119, 6, .14); }
+.nbell-info .nbell-item-icon { color: #2563eb; background: rgba(37, 99, 235, .12); }
+.nbell-empty { margin: 0 0 4px; padding: 12px 14px; border-radius: 16px; color: var(--muted); background: var(--surface-soft); font-size: 13px; line-height: 1.45; }
+.nbell-foot { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; margin-top: 12px; border-radius: 999px; color: #fff; background: var(--action-bg); font-size: 13.5px; font-weight: 700; transition: background .2s; }
+.nbell-foot:hover { color: #fff; background: var(--action-hover); }
+@media (max-width: 640px) { .nbell-panel { position: fixed; top: 72px; right: 12px; left: 12px; width: auto; } }
+@media (prefers-reduced-motion: reduce) { .nbell-panel { animation: none; } }
+
+/* ---------- Страница уведомлений: объявления ---------- */
+.tn-notices { display: grid; gap: 8px; margin: 14px 0 0; padding: 0; list-style: none; }
+.tn-notice { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 12px 16px; border: 1px solid var(--line); border-radius: 20px; background: var(--surface); box-shadow: var(--shadow-xs); }
+.tn-notice > span { padding: 4px 11px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+.tn-notice-closed > span { color: #b91c1c; background: rgba(220, 38, 38, .12); }
+.tn-notice-event > span { color: #b45309; background: rgba(217, 119, 6, .14); }
+.tn-notice-info > span { color: #1d4ed8; background: rgba(37, 99, 235, .12); }
+.tn-notice > div { display: grid; gap: 2px; min-width: 0; }
+.tn-notice small { color: var(--muted); font-size: 12.5px; }
+.tn-notice > a { padding: 8px 14px; border-radius: 999px; color: var(--blue); background: var(--surface-soft); font-size: 13px; font-weight: 650; }
+.tn-notice > a:hover { color: #fff; background: var(--action-bg); }
+:root[data-theme='dark'] .tn-notice-closed > span { color: #fca5a5; }
+:root[data-theme='dark'] .tn-notice-event > span { color: #fcd34d; }
+:root[data-theme='dark'] .tn-notice-info > span { color: #93c5fd; }
+@media (max-width: 560px) { .tn-notice { grid-template-columns: auto minmax(0, 1fr); } .tn-notice > a { grid-column: 1 / -1; text-align: center; } }
+
+/* На телефоне в шапке рядом с колокольчиком остаются только значки. */
+@media (max-width: 520px) {
+  .mobile-map-link span { display: none; }
+  .mobile-map-link { width: 42px; padding: 0; justify-content: center; }
+}

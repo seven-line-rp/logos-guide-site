@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { BellOff, BellRing, CalendarClock, CalendarCheck2, Check, Laptop, Megaphone, PartyPopper, Send, Smartphone, Sparkles, TriangleAlert, Zap } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { PageHeading } from '../components/Primitives.jsx'
+import { noticeRoomLabel } from '../components/NotificationBell.jsx'
+import { NOTICE_TYPES, useNotices } from '../notices.js'
 import { useSchedule } from '../components/NextLesson.jsx'
 import { rooms } from '../data.js'
 import { nextLesson } from '../schedule.js'
 import { PUSH_KINDS, PUSH_TOPICS, currentSubscription, pushSupport, readTopics, samplePush, sendTestPush, showLocalPush, subscribePush, syncScheduleForPush, unsubscribePush } from '../push.js'
 
-// Тестовые push-уведомления: включить их пока можно только здесь (в меню
-// страницы нет). Каждый вид можно показать сразу на устройстве или прислать
+// Уведомления сайта: здесь их включают и выбирают темы (колокольчик в шапке
+// и пункт меню ведут сюда). Каждый вид можно показать сразу на устройстве или прислать
 // через сервер, как придёт настоящее. Устройство — src/push.js, сервер — public/api/notify.php.
 
 const KIND_ICONS = { 'lesson-start': CalendarClock, 'lesson-end': CalendarCheck2, event: PartyPopper, update: Sparkles, news: Megaphone }
@@ -77,7 +80,7 @@ function StatusCard({ support, subscription, busy, onEnable, onDisable }) {
   return <section className={`tn-status tn-status-${tone}`} aria-live="polite">
     <span className="tn-status-icon" aria-hidden="true">{on ? <BellRing size={26} /> : tone === 'bad' ? <BellOff size={26} /> : <BellRing size={26} />}</span>
     <div className="tn-status-copy">
-      <span className="tn-status-badge">{on ? 'Включено' : 'Тест'}</span>
+      <span className="tn-status-badge">{on ? 'Включено' : 'Выключено'}</span>
       <h2>{title}</h2>
       <p>{text}</p>
     </div>
@@ -89,9 +92,10 @@ function StatusCard({ support, subscription, busy, onEnable, onDisable }) {
   </section>
 }
 
-export default function TestNotificationsPage() {
+export default function NotificationsPage() {
   const { support, subscription, refresh } = useSubscription()
   const lessons = useSchedule()
+  const notices = useNotices()
   const [topics, setTopics] = useState(readTopics)
   const [busy, setBusy] = useState('')
   const [flash, setFlash] = useState({ kind: '', text: '' })
@@ -135,10 +139,15 @@ export default function TestNotificationsPage() {
 
   const Guide = GUIDES[guide]
   return <>
-    <PageHeading eyebrow="Тестовый режим" title="Уведомления" description="Напоминания о парах, события в колледже и новые версии сайта. Работают на Android, iPhone и компьютере. Пока их можно включить только на этой странице." />
+    <PageHeading eyebrow="Напоминания" title="Уведомления" description="Напоминания о парах, события в колледже и новые версии сайта. Работают на Android, iPhone и компьютере." />
     <div className="container tn">
       <StatusCard support={support} subscription={subscription} busy={busy === 'enable'} onEnable={enable} onDisable={disable} />
       {flash.text && <p className={`tn-flash tn-flash-${flash.kind}`} role="status">{flash.kind === 'ok' ? <Check size={16} /> : <TriangleAlert size={16} />} {flash.text}</p>}
+
+      {notices.length > 0 && <section className="tn-section">
+        <div className="tn-section-head"><div><h2>Сейчас на карте</h2><p>Действующие объявления: закрытые проходы и события.</p></div></div>
+        <ul className="tn-notices">{notices.map((notice, index) => <li key={index} className={`tn-notice tn-notice-${NOTICE_TYPES[notice.type].tone}`}><span>{NOTICE_TYPES[notice.type].label}</span><div><strong>{notice.title}</strong><small>{notice.text || noticeRoomLabel(notice)}</small></div><Link to={`/map?room=${encodeURIComponent(notice.roomId)}`}>На карте</Link></li>)}</ul>
+      </section>}
 
       <section className="tn-section">
         <div className="tn-section-head">

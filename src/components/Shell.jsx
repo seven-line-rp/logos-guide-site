@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { ArrowUpRight, BookOpen, Building2, Bot, CalendarDays, Check, Compass, Flag, Gamepad2, GraduationCap, History, Info, LayoutGrid, ListChecks, Map as MapIcon, MapPin, Moon, Navigation, Search, Sun, Type, Users, X } from 'lucide-react'
+import { ArrowUpRight, Bell, BookOpen, Building2, Bot, CalendarDays, Check, Compass, Flag, Gamepad2, GraduationCap, History, Info, LayoutGrid, ListChecks, Map as MapIcon, MapPin, Moon, Navigation, Search, Sun, Type, Users, X } from 'lucide-react'
 import { navigation, quickPlaces, rooms } from '../data'
 import { clearRecentPlaces, readRecentPlaces, rememberPlace } from '../places.js'
 import { readTextSize, setTextSize } from '../text-size.js'
@@ -14,6 +14,7 @@ import { startTour } from '../tour-bus.js'
 import { openCookieSettings } from '../consent.js'
 import { SITE_AUTHOR, SITE_VERSION_LABEL } from '../version.js'
 import { isLitePerf } from '../perf.js'
+import NotificationBell from './NotificationBell.jsx'
 
 const ToastContext = createContext(() => {})
 
@@ -58,6 +59,7 @@ const menuGroups = [
   { title: 'Учёба', items: [
     { to: '/schedule', label: 'Моё расписание', hint: 'Пары и звонки', icon: CalendarDays, tone: 'green' },
     { to: '/start', label: 'Первая неделя', hint: 'Чек-лист для новичков', icon: ListChecks, tone: 'blue' },
+    { to: '/notifications', label: 'Уведомления', hint: 'Пары, события, новые версии', icon: Bell, tone: 'amber' },
     { to: '/ai', label: 'ИИ-помощник', badge: 'АЛЬФА', hint: 'Спросите о чём угодно', icon: Bot, tone: 'violet' },
   ] },
   { title: 'Познакомиться', items: [
@@ -206,7 +208,7 @@ export function Header() {
   useEffect(() => {
     document.documentElement.dataset.theme = theme
     storageSet('site-theme', theme)
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#1d1d1c' : '#1854e8')
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#11131b' : '#2f5fe8')
   }, [theme])
   useEffect(() => {
     const onKeyDown = (event) => {
@@ -235,6 +237,7 @@ export function Header() {
         <div className="header-actions">
           <button className="search-trigger" type="button" aria-keyshortcuts="K" onClick={openSearch} aria-label="Найти кабинет"><Search size={17} /><span>Найти место</span><kbd>K</kbd></button>
           <button className="theme-toggle header-theme hd-icon" type="button" onClick={changeTheme} aria-label={theme === 'dark' ? 'Включить светлую тему' : 'Включить тёмную тему'} title={theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}>{theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}</button>
+          <NotificationBell />
           <NavLink className={({ isActive }) => `mobile-map-link ${isActive ? 'mobile-map-link-active' : ''}`} to="/map" aria-label="Открыть карту"><MapPin size={18} /><span>Карта</span></NavLink>
           <button ref={menuToggleRef} className={`mobile-menu-toggle hd-burger ${mobileOpen ? 'is-open' : ''}`} type="button" onClick={() => setMobileOpen((value) => !value)} aria-controls="site-menu" aria-label={mobileOpen ? 'Закрыть меню' : 'Открыть меню'} aria-expanded={mobileOpen}><span className="hd-burger-lines" aria-hidden="true"><i /><i /><i /></span><span className="hd-burger-label">Ещё</span></button>
         </div>
@@ -280,5 +283,5 @@ export function Header() {
 }
 
 export function Footer() {
-  return <footer className="site-footer"><div className="footer-top container"><div className="footer-brand-block"><Brand /><p>Карта, маршруты и всё, что<br />нужно найти в колледже.</p><span className="footer-version">Версия {SITE_VERSION_LABEL}, by {SITE_AUTHOR}</span></div>{menuGroups.map((group) => <div key={group.title} className="footer-links-group"><span className="footer-label">{group.title}</span>{group.items.map((item) => <Link key={item.to} to={item.to} className="footer-link"><item.icon size={15} aria-hidden="true" />{item.label}</Link>)}</div>)}</div><div className="footer-bottom container"><span>Путеводитель колледжа «Логос»</span><nav className="footer-legal" aria-label="Правовая информация"><Link to="/privacy">Политика конфиденциальности</Link><Link to="/terms">Пользовательское соглашение</Link><Link to="/consent">Согласие на обработку данных</Link><Link to="/privacy#cookies">Cookie</Link><Link to="/testNotification">Уведомления</Link><button type="button" onClick={openCookieSettings}>Настройки cookie</button></nav><a href="#top" onClick={(event) => { event.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>Наверх ↑</a></div></footer>
+  return <footer className="site-footer"><div className="footer-top container"><div className="footer-brand-block"><Brand /><p>Карта, маршруты и всё, что<br />нужно найти в колледже.</p><span className="footer-version">Версия {SITE_VERSION_LABEL}, by {SITE_AUTHOR}</span></div>{menuGroups.map((group) => <div key={group.title} className="footer-links-group"><span className="footer-label">{group.title}</span>{group.items.map((item) => <Link key={item.to} to={item.to} className="footer-link"><item.icon size={15} aria-hidden="true" />{item.label}</Link>)}</div>)}</div><div className="footer-bottom container"><span>Путеводитель колледжа «Логос»</span><nav className="footer-legal" aria-label="Правовая информация"><Link to="/privacy">Политика конфиденциальности</Link><Link to="/terms">Пользовательское соглашение</Link><Link to="/consent">Согласие на обработку данных</Link><Link to="/privacy#cookies">Cookie</Link><Link to="/notifications">Уведомления</Link><button type="button" onClick={openCookieSettings}>Настройки cookie</button></nav><a href="#top" onClick={(event) => { event.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>Наверх ↑</a></div></footer>
 }
