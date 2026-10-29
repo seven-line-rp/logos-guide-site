@@ -3,7 +3,7 @@ import { readSchedule, subscribeSchedule } from './schedule.js'
 import { storageGet, storageSet } from './storage.js'
 import { SITE_VERSION_LABEL } from './version.js'
 
-// Push-уведомления (тестовый режим, страница /testNotification). Браузер
+// Push-уведомления (страница /notifications). Браузер
 // подписывается через сервис-воркер, подписка и выбранные темы уходят в
 // public/api/notify.php. Расписание пар сервер не видит: перед каждым
 // уведомлением о паре сервис-воркер сам подставляет из него предмет и кабинет

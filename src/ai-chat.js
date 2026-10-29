@@ -37,13 +37,13 @@ export function historyForRequest(messages) {
   })
 }
 
-export async function askAgent(messages, { signal, deep = false, study = false, fetchImpl = fetch } = {}) {
+export async function askAgent(messages, { signal, deep = false, fetchImpl = fetch } = {}) {
   let response
   try {
     response = await fetchImpl(AI_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Logos-Client': 'web' },
-      body: JSON.stringify({ messages: historyForRequest(messages), deep, study }),
+      body: JSON.stringify({ messages: historyForRequest(messages), deep }),
       signal,
     })
   } catch (error) {

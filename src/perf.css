@@ -8,8 +8,8 @@
 @media (max-width: 960px) {
   .site-header, .hd, .hd-scrim, .hd-menu-inner, .search-backdrop, .search-dialog, .share-backdrop,
   .home-search, .map-settings-panel, .room-detail-panel, .game-panel, .directory-card, .floor-tab,
-  .theme-toggle, .search-trigger, .mobile-menu-toggle, .floor-map-zoom-controls, .floor-map-hint, .nv-floors, .nv-view,
-  .nv-pick, .ex-card, .rs-controls button, .start-progress, .arcade-overlay {
+  .theme-toggle, .search-trigger, .mobile-menu-toggle, .floor-map-zoom-controls, .floor-map-hint, .rt-floors, .rt-view,
+  .rt-pick, .ex-card, .rs-controls button, .start-progress, .arcade-overlay {
     -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
   }
   .site-header, .hd { background: var(--surface, #fff) !important; }
@@ -25,7 +25,7 @@
 }
 :root[data-perf='lite'] .site-header, :root[data-perf='lite'] .hd { background: var(--surface, #fff) !important; }
 /* Тени и мягкие подложки — самое дорогое при перерисовке. */
-:root[data-perf='lite'] :is(.day-card, .quick-place-card, .directory-card, .service-card, .game-panel, .room-detail-panel, .map-settings-panel, .search-dialog, .ex-card, .nv-pick, .nv-floors, .nv-view, .rs-controls button, .ai-promo, .ai-promo-button, .hd-menu-inner, .header-cta, .button) { box-shadow: none !important; }
+:root[data-perf='lite'] :is(.day-card, .quick-place-card, .directory-card, .service-card, .game-panel, .room-detail-panel, .map-settings-panel, .search-dialog, .ex-card, .rt-pick, .rt-floors, .rt-view, .rs-controls button, .ai-promo, .ai-promo-button, .hd-menu-inner, .header-cta, .button) { box-shadow: none !important; }
 :root[data-perf='lite'] [style*='filter'], :root[data-perf='lite'] :is(.hero-scene, .hs-camera, .quick-place-photo, .brand-mark) { filter: none !important; }
 :root[data-perf='lite'] .reveal { opacity: 1 !important; transform: none !important; filter: none !important; }
 :root[data-perf='lite'] .hero-scene-caption { display: none !important; }

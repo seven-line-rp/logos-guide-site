@@ -12,13 +12,12 @@ import { rooms } from '../data.js'
 // ЛОГОС AI: чат с DeepSeek через public/api/ai-chat.php. Чаты хранятся в
 // localStorage (ключ logos-ai-chats, если человек не отказался от
 // функциональных cookie), картинки сжимаются в браузере. Мат уходит в модель
-// замаскированным. Режим «Зачёт» просит у агента теорию и практические задания
-// (блок quiz рисует components/ai-quiz.js), а под ответами появляются
-// вопросы-продолжения (блок next).
+// замаскированным. Практические задания (блок quiz рисует components/ai-quiz.js) и
+// вопросы-продолжения под ответами (блок next) приходят прямо в ответе модели.
 
 
 const suggestions = [
-  { icon: GraduationCap, text: 'Как решать химические реакции?', study: true },
+  { icon: GraduationCap, text: 'Как решать химические реакции?' },
   { icon: MapPin, text: 'Где библиотека и как до неё дойти?' },
   { icon: GraduationCap, text: 'Какие специальности есть в колледже?' },
   { icon: Lightbulb, text: 'Объясни закон Ома на простом примере' },
@@ -28,17 +27,16 @@ const suggestions = [
 const thinkingStages = {
   normal: ['Читаю вопрос', 'Ищу в плане корпуса', 'Сверяюсь с колледжлогос.рф', 'Собираю ответ'],
   deep: ['Размышляю над вопросом', 'Перебираю варианты', 'Проверяю себя', 'Собираю подробный ответ'],
-  study: ['Определяю тему', 'Готовлю теорию', 'Составляю примеры', 'Подбираю задания для практики'],
   image: ['Рассматриваю картинку', 'Ищу важное на снимке', 'Связываю с планом корпуса', 'Собираю ответ'],
 }
 
-function Thinking({ deep, image, study }) {
+function Thinking({ deep, image }) {
   const [tick, setTick] = useState(0)
   useEffect(() => {
     const timer = window.setInterval(() => setTick((value) => value + 1), 1000)
     return () => window.clearInterval(timer)
   }, [])
-  const stages = thinkingStages[image ? 'image' : study ? 'study' : deep ? 'deep' : 'normal']
+  const stages = thinkingStages[image ? 'image' : deep ? 'deep' : 'normal']
   const stage = Math.min(stages.length - 1, Math.floor(tick / (deep ? 3 : 2)))
   return <div className={`ai-thinking ${deep ? 'ai-thinking-deep' : ''}`} role="status">
     <span className="ai-thinking-orb" aria-hidden="true"><Bot size={14} /></span>
@@ -102,9 +100,6 @@ export default function AiAgentPage() {
   const [attachments, setAttachments] = useState([])
   const [pending, setPending] = useState(null)
   const [deep, setDeep] = useState(false)
-  // «Зачёт»: теория и практические задания. Запоминаем выбор в этой вкладке.
-  const [study, setStudy] = useState(() => { try { return sessionStorage.getItem('logos-ai-study') === '1' } catch { return false } })
-  const toggleStudy = () => setStudy((value) => { const next = !value; try { sessionStorage.setItem('logos-ai-study', next ? '1' : '0') } catch { /* приватный режим */ } return next })
   const [sidebar, setSidebar] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
   const [dragging, setDragging] = useState(false)
@@ -147,11 +142,11 @@ export default function AiAgentPage() {
     setStore((current) => ({ ...current, chats: current.chats.map((item) => item.id === id ? { ...change(item), updated: Date.now() } : item) }))
   }, [])
 
-  const run = async (chatId, next, useDeep, useStudy = study) => {
-    setPending({ chatId, deep: useDeep, study: useStudy, image: Boolean(next[next.length - 1]?.images?.length) })
+  const run = async (chatId, next, useDeep) => {
+    setPending({ chatId, deep: useDeep, image: Boolean(next[next.length - 1]?.images?.length) })
     controller.current = new AbortController()
     try {
-      const answer = await askAgent(next, { signal: controller.current.signal, deep: useDeep, study: useStudy })
+      const answer = await askAgent(next, { signal: controller.current.signal, deep: useDeep })
       if (!answer.vision) setNotice('Модель пока не видит картинки, поэтому отвечает по тексту вопроса.')
       if (answer.left !== null) setLeft(answer.left)
       updateChat(chatId, (item) => ({ ...item, messages: [...item.messages, { role: 'assistant', content: answer.reply, sig: answer.sig || undefined, reasoning: answer.reasoning || undefined, at: Date.now() }] }))
@@ -164,7 +159,7 @@ export default function AiAgentPage() {
     }
   }
 
-  const send = async (text = input, studyMode = study) => {
+  const send = async (text = input) => {
     const content = text.trim().slice(0, MAX_INPUT)
     if ((!content && !attachments.length) || pending) return
     const chatId = chat.id
@@ -174,7 +169,7 @@ export default function AiAgentPage() {
     setInput('')
     setAttachments([])
     inputRef.current?.focus()
-    await run(chatId, next, deep, studyMode)
+    await run(chatId, next, deep)
   }
 
   // «Спросить про это место» с карты и маршрута: /ai?about=<id> сразу задаёт
@@ -183,7 +178,6 @@ export default function AiAgentPage() {
   const asked = useRef(false)
   useEffect(() => {
     if (asked.current) return
-    if (params.get('mode') === 'study') setStudy(true)
     const room = rooms.find((item) => item.id === params.get('about'))
     const question = room
       ? `Расскажи про «${room.name}${room.number ? ` №${room.number}` : ''}» (${room.floor} этаж): что это за место, что там бывает и как туда пройти от главного входа.`
@@ -201,7 +195,7 @@ export default function AiAgentPage() {
     if (lastUser < 0 || pending) return
     const next = messages.slice(0, lastUser + 1)
     updateChat(chat.id, (item) => ({ ...item, messages: next }))
-    run(chat.id, next, deep, study)
+    run(chat.id, next, deep)
   }
 
   const stop = () => controller.current?.abort()
@@ -305,7 +299,6 @@ export default function AiAgentPage() {
       <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={(event) => { addFiles(event.target.files); event.target.value = '' }} />
       <button className="ai-icon" type="button" onClick={() => fileRef.current?.click()} disabled={attachments.length >= MAX_IMAGES} title="Приложить картинку (можно вставить Ctrl+V или перетащить)" aria-label="Приложить картинку"><ImagePlus size={18} /></button>
       <button type="button" className={`ai-deep ${deep ? 'is-on' : ''}`} onClick={() => setDeep((value) => !value)} aria-pressed={deep} title="Модель рассуждает дольше, но точнее: для сложных вопросов и задач"><Brain size={15} /><span>Подумать глубже</span></button>
-      <button type="button" className={`ai-deep ai-study ${study ? 'is-on' : ''}`} onClick={toggleStudy} aria-pressed={study} title="Режим «Зачёт»: сначала теория, затем практические задания с проверкой"><GraduationCap size={15} /><span>Зачёт</span></button>
       <span className="ai-composer-gap" />
       {SpeechRecognition && <button className={`ai-icon ${listening ? 'is-listening' : ''}`} type="button" onClick={toggleVoice} title={listening ? 'Остановить запись' : 'Сказать голосом'} aria-label={listening ? 'Остановить запись' : 'Сказать голосом'}>{listening ? <MicOff size={18} /> : <Mic size={18} />}</button>}
       {busyHere
@@ -331,7 +324,7 @@ export default function AiAgentPage() {
           <h1>Чем помочь?</h1>
           <p>Спросите о чём угодно: найду кабинет и построю маршрут, расскажу о колледже, решу задачу, объясню тему, помогу с кодом или текстом.</p>
           {composer}
-          <div className="ai-suggestions">{suggestions.map(({ icon: Icon, text, study: asStudy }) => <button key={text} type="button" onClick={() => { if (asStudy) setStudy(true); send(text, asStudy || study) }}><Icon size={15} />{text}{asStudy && <em className="ai-suggestion-tag">Зачёт</em>}</button>)}</div>
+          <div className="ai-suggestions">{suggestions.map(({ icon: Icon, text }) => <button key={text} type="button" onClick={() => send(text)}><Icon size={15} />{text}</button>)}</div>
         </div> : <div className="ai-thread">
           {messages.map((message, index) => {
             if (message.role === 'user') return <div key={index} className="ai-message ai-message-user">{message.images?.length > 0 && <div className="ai-user-images">{message.images.map((src, i) => <img key={i} src={src} alt="Приложенная картинка" />)}</div>}{message.content && <div className="ai-bubble"><AiMessageText text={message.content} plain /></div>}</div>
@@ -340,14 +333,14 @@ export default function AiAgentPage() {
             const preview = routeLink ? routeFromLink(routeLink.href) : null
             return <div key={index} className={`ai-message ai-message-assistant ${message.error ? 'ai-message-error' : ''}`}>
               {message.reasoning && <Reasoning text={message.reasoning} />}
-              <div className={`ai-text${messageSubject(message.content) ? ` ai-subject ai-subject-${messageSubject(message.content)}` : ''}`}>{message.error && <TriangleAlert size={16} className="ai-error-icon" />}<AiMessageText text={message.content} onAsk={index === lastAssistant && !pending && !message.error ? (question) => send(question, study || /самопроверки/.test(question)) : undefined} /></div>
+              <div className={`ai-text${messageSubject(message.content) ? ` ai-subject ai-subject-${messageSubject(message.content)}` : ''}`}>{message.error && <TriangleAlert size={16} className="ai-error-icon" />}<AiMessageText text={message.content} onAsk={index === lastAssistant && !pending && !message.error ? (question) => send(question) : undefined} /></div>
               {message.error && index === messages.length - 1 && <button type="button" className="ai-chip" onClick={regenerate}>Повторить</button>}
               {preview && <RoutePreview {...preview} live={index === lastAssistant} />}
               {actions.length > 0 && <div className="ai-actions">{actions.map((action) => <Link key={action.href} to={action.href} className="ai-chip">{action.kind === 'route' ? <Route size={14} /> : <MapPin size={14} />}<RawText text={action.label} /></Link>)}</div>}
               {!message.error && <MessageTools message={message} onRegenerate={index === lastAssistant && !pending ? regenerate : null} />}
             </div>
           })}
-          {busyHere && <div className="ai-message ai-message-assistant"><Thinking deep={pending.deep} image={pending.image} study={pending.study} /></div>}
+          {busyHere && <div className="ai-message ai-message-assistant"><Thinking deep={pending.deep} image={pending.image} /></div>}
         </div>}
       </div>
 

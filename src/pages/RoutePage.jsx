@@ -280,136 +280,134 @@ export default function RoutePage() {
   const progress = steps.length > 1 ? stepIndex / (steps.length - 1) : 1
   const viaLabel = via ? `через: ${via.name.toLowerCase()}` : crossFloor ? route.transfer?.method || route.transfer?.label : 'по одному этажу'
 
-  return <div className="nv">
-    <header className="nv-head container">
+  return <div className="rt">
+    <header className="rt-head container">
       <div>
-        <span className="eyebrow">Маршрут</span>
-        <h1>Куда идём?</h1>
-        <p>Выберите, откуда и куда. Путь построится по коридорам, с лестницами и лифтом, и его можно пройти по шагам с голосом.</p>
+        <h1>Маршрут</h1>
       </div>
-      <Link className="nv-head-link" to="/map"><MapIcon size={16} /> Карта этажей</Link>
+      <Link className="rt-head-link" to="/map"><MapIcon size={16} /> Карта этажей</Link>
     </header>
 
-    <div className="nv-layout container">
-      <aside className="nv-panel" aria-label="Параметры маршрута">
-        <section className="nv-card nv-places">
-          <div className="nv-place-rail" aria-hidden="true"><i className="nv-dot-start" /><span /><i className="nv-dot-end" /></div>
-          <div className="nv-place-fields">
+    <div className="rt-layout container">
+      <aside className="rt-panel" aria-label="Параметры маршрута">
+        <section className="rt-card rt-places">
+          <div className="rt-place-rail" aria-hidden="true"><i className="rt-dot-start" /><span /><i className="rt-dot-end" /></div>
+          <div className="rt-place-fields">
             <RoomSearchSelect label="Откуда" value={startId} onChange={setStartId} manualOption={manualPoint ? { value: 'manual', label: `Ваша отметка, ${manualPoint.floor} этаж` } : null} />
-            {viaOpen && <div className="nv-via"><RoomSearchSelect label="Через" value={viaId} onChange={setViaId} /><button type="button" className="nv-via-remove" onClick={() => { setViaId(''); setViaOpen(false) }} aria-label="Убрать остановку"><X size={15} /></button></div>}
+            {viaOpen && <div className="rt-via"><RoomSearchSelect label="Через" value={viaId} onChange={setViaId} /><button type="button" className="rt-via-remove" onClick={() => { setViaId(''); setViaOpen(false) }} aria-label="Убрать остановку"><X size={15} /></button></div>}
             <RoomSearchSelect label="Куда" value={targetId} onChange={setTargetId} />
           </div>
-          <button type="button" className="nv-swap" onClick={swapPoints} disabled={!canSwap} aria-label="Поменять старт и цель местами" title="Поменять местами"><ArrowUpDown size={16} /></button>
-          {here && startId === here.roomId && !params.get('from') && <p className="nv-here"><MapPin size={14} /> Старт — там, где закончился прошлый маршрут. <button type="button" onClick={() => { setHere(null); setStartId('entrance-1') }}>От входа</button></p>}
-          <div className="nv-place-tools">
-            {!viaOpen && <button type="button" className="nv-add-via" onClick={() => setViaOpen(true)}><Plus size={14} /> Остановка по пути</button>}
-            <Link className="nv-manual" to={`/map?floor=${start.floor}&manual=1`}><MapPin size={14} /> {manualPoint ? 'Изменить свою отметку на плане' : 'Начать от своей точки на плане'}</Link>
+          <button type="button" className="rt-swap" onClick={swapPoints} disabled={!canSwap} aria-label="Поменять старт и цель местами" title="Поменять местами"><ArrowUpDown size={16} /></button>
+          {here && startId === here.roomId && !params.get('from') && <p className="rt-here"><MapPin size={14} /> Старт — там, где закончился прошлый маршрут. <button type="button" onClick={() => { setHere(null); setStartId('entrance-1') }}>От входа</button></p>}
+          <div className="rt-place-tools">
+            {!viaOpen && <button type="button" className="rt-add-via" onClick={() => setViaOpen(true)}><Plus size={14} /> Остановка по пути</button>}
+            <Link className="rt-manual" to={`/map?floor=${start.floor}&manual=1`}><MapPin size={14} /> {manualPoint ? 'Изменить свою отметку на плане' : 'Начать от своей точки на плане'}</Link>
           </div>
-          <div className="nv-nearby" role="group" aria-label="Ближайшее место">
+          <div className="rt-nearby" role="group" aria-label="Ближайшее место">
             <span>Ближайший:</span>
             {nearbyKinds.map((kind) => <button type="button" key={kind.id} onClick={() => goNearest(kind.id)}>{kind.label}</button>)}
           </div>
-          <button type="button" className={`nv-switch nv-lift-switch ${needLift ? 'nv-switch-on' : ''}`} onClick={toggleNeedLift} aria-pressed={needLift}><i aria-hidden="true"><b /></i> <Accessibility size={15} aria-hidden="true" /> Мне нужен лифт <small>запомнить для всех маршрутов</small></button>
+          <button type="button" className={`rt-switch rt-lift-switch ${needLift ? 'rt-switch-on' : ''}`} onClick={toggleNeedLift} aria-pressed={needLift}><i aria-hidden="true"><b /></i> <Accessibility size={15} aria-hidden="true" /> Мне нужен лифт <small>запомнить для всех маршрутов</small></button>
         </section>
 
-        {meet && <section className="nv-card nv-meet" role="status"><Handshake size={18} aria-hidden="true" /><span><strong>Вас ждут: {roomName(target)}</strong>{meet.at && <em>Встреча в {meet.at}</em>}<small>Путь построен от: {startLabel}. Если вы в другом месте, поменяйте «Откуда».</small></span></section>}
+        {meet && <section className="rt-card rt-meet" role="status"><Handshake size={18} aria-hidden="true" /><span><strong>Вас ждут: {roomName(target)}</strong>{meet.at && <em>Встреча в {meet.at}</em>}<small>Путь построен от: {startLabel}. Если вы в другом месте, поменяйте «Откуда».</small></span></section>}
 
-        {targetNotices.length > 0 && <section className="nv-card nv-notices" aria-live="polite">
-          {targetNotices.map((notice, index) => <div key={index} className={`nv-notice-item nv-notice-${NOTICE_TYPES[notice.type].tone}`}>
+        {targetNotices.length > 0 && <section className="rt-card rt-notices" aria-live="polite">
+          {targetNotices.map((notice, index) => <div key={index} className={`rt-notice-item rt-notice-${NOTICE_TYPES[notice.type].tone}`}>
             <TriangleAlert size={16} aria-hidden="true" />
             <span><strong>{notice.title}</strong>{notice.text && <small>{notice.text}</small>}</span>
           </div>)}
         </section>}
 
-        <section className="nv-card nv-summary" aria-live="polite">
-          {sameRoom ? <div className="nv-same"><Check size={20} /> Вы уже на месте</div> : <>
-            <div className="nv-eta">
+        <section className="rt-card rt-summary" aria-live="polite">
+          {sameRoom ? <div className="rt-same"><Check size={20} /> Вы уже на месте</div> : <>
+            <div className="rt-eta">
               <strong>{route.seconds < 60 ? '<1' : minutes(route.seconds)}</strong>
               <span>{plural(minutes(route.seconds), 'минута', 'минуты', 'минут')}<small>пешком</small></span>
             </div>
-            <dl className="nv-facts">
+            <dl className="rt-facts">
               <div><dt>Расстояние</dt><dd>≈ {Math.round(route.meters)} м</dd></div>
               <div><dt>Шагов пешком</dt><dd>~{route.footsteps}</dd></div>
               <div><dt>Путь</dt><dd>{viaLabel}</dd></div>
             </dl>
-            {route.crowdSeconds > 0 && <p className="nv-crowd"><Users size={14} aria-hidden="true" /> {crowd?.kind === 'lunch' ? 'Сейчас обед' : crowd?.kind === 'before' ? 'Скоро первая пара' : 'Сейчас перемена'}: у лестниц и лифта людно, время посчитано с запасом.</p>}
+            {route.crowdSeconds > 0 && <p className="rt-crowd"><Users size={14} aria-hidden="true" /> {crowd?.kind === 'lunch' ? 'Сейчас обед' : crowd?.kind === 'before' ? 'Скоро первая пара' : 'Сейчас перемена'}: у лестниц и лифта людно, время посчитано с запасом.</p>}
           </>}
-          {!sameRoom && <div className="nv-arrive">
-            <span className="nv-arrive-label"><AlarmClock size={15} /> {lessonAhead && deadline === null ? `${lessonAhead.lesson.subject} ${formatCountdown(lessonAhead.minutes)}` : 'Пара через'}</span>
-            <div className="nv-arrive-chips" role="group" aria-label="Сколько минут до пары">
+          {!sameRoom && <div className="rt-arrive">
+            <span className="rt-arrive-label"><AlarmClock size={15} /> {lessonAhead && deadline === null ? `${lessonAhead.lesson.subject} ${formatCountdown(lessonAhead.minutes)}` : 'Пара через'}</span>
+            <div className="rt-arrive-chips" role="group" aria-label="Сколько минут до пары">
               {[5, 10, 15, 20].map((value) => <button type="button" key={value} aria-pressed={deadline === value} onClick={() => setDeadline(deadline === value ? null : value)}>{value} мин</button>)}
             </div>
-            {arrival && <div className={`nv-arrive-status nv-arrive-${arrival.kind}`} role="status">
+            {arrival && <div className={`rt-arrive-status rt-arrive-${arrival.kind}`} role="status">
               <strong>{arrival.text}</strong>
               <small>Путь ≈ {arrival.walk} мин{arrival.kind === 'late' && fastest && fastest !== route ? `, быстрее: ${fastest.label.toLowerCase()}` : ''}</small>
               {arrival.kind === 'late' && fastest && fastest !== route && <button type="button" onClick={() => setRoutePreference(fastest.kind)}>Выбрать</button>}
             </div>}
           </div>}
-          <div className="nv-actions">
-            <button type="button" className="nv-go" onClick={() => { startNavigation(); setWalking(true) }}><Navigation size={16} /> Идти</button>
-            <button type="button" className={`nv-ghost nv-icon-btn ${favorite ? 'is-on' : ''}`} onClick={toggleFavorite} aria-pressed={favorite} title={favorite ? 'Убрать из избранного' : 'В избранное'} aria-label={favorite ? 'Убрать из избранного' : 'Добавить в избранное'}><Star size={16} fill={favorite ? 'currentColor' : 'none'} /></button>
-            <button type="button" className="nv-ghost nv-icon-btn" onClick={() => setSharing(true)} title="Поделиться маршрутом" aria-label="Поделиться маршрутом"><Share2 size={16} /></button>
-            <button type="button" className="nv-ghost nv-icon-btn" onClick={resetRoute} title="Вернуть маршрут по умолчанию" aria-label="Сбросить маршрут"><RotateCcw size={15} /></button>
+          <div className="rt-actions">
+            <button type="button" className="rt-go" onClick={() => { startNavigation(); setWalking(true) }}><Navigation size={16} /> Идти</button>
+            <button type="button" className={`rt-ghost rt-icon-btn ${favorite ? 'is-on' : ''}`} onClick={toggleFavorite} aria-pressed={favorite} title={favorite ? 'Убрать из избранного' : 'В избранное'} aria-label={favorite ? 'Убрать из избранного' : 'Добавить в избранное'}><Star size={16} fill={favorite ? 'currentColor' : 'none'} /></button>
+            <button type="button" className="rt-ghost rt-icon-btn" onClick={() => setSharing(true)} title="Поделиться маршрутом" aria-label="Поделиться маршрутом"><Share2 size={16} /></button>
+            <button type="button" className="rt-ghost rt-icon-btn" onClick={resetRoute} title="Вернуть маршрут по умолчанию" aria-label="Сбросить маршрут"><RotateCcw size={15} /></button>
           </div>
         </section>
 
-        {routeOptions.length > 1 && <section className="nv-card" aria-labelledby="nv-options-title">
-          <h2 className="nv-title" id="nv-options-title">Как подняться{target.floor < start.floor ? ' и спуститься' : ''}</h2>
-          <div className="nv-options" role="radiogroup" aria-label="Варианты маршрута">
-            {routeOptions.map((option, index) => <button type="button" role="radio" key={option.kind} aria-checked={route === option} className={`nv-option ${route === option ? 'nv-option-on' : ''}`} onClick={() => setRoutePreference(option.kind)}>
-              <span className="nv-option-icon" aria-hidden="true">{option.kind === 'lift' ? <MoveUp size={15} /> : <ArrowUpDown size={15} />}</span>
-              <span className="nv-option-body"><strong>{option.label}</strong><span>≈ {Math.round(option.meters)} м, {option.seconds < 60 ? 'меньше минуты' : `${minutes(option.seconds)} мин`}</span></span>
+        {routeOptions.length > 1 && <section className="rt-card" aria-labelledby="rt-options-title">
+          <h2 className="rt-title" id="rt-options-title">Как подняться{target.floor < start.floor ? ' и спуститься' : ''}</h2>
+          <div className="rt-options" role="radiogroup" aria-label="Варианты маршрута">
+            {routeOptions.map((option, index) => <button type="button" role="radio" key={option.kind} aria-checked={route === option} className={`rt-option ${route === option ? 'rt-option-on' : ''}`} onClick={() => setRoutePreference(option.kind)}>
+              <span className="rt-option-icon" aria-hidden="true">{option.kind === 'lift' ? <MoveUp size={15} /> : <ArrowUpDown size={15} />}</span>
+              <span className="rt-option-body"><strong>{option.label}</strong><span>≈ {Math.round(option.meters)} м, {option.seconds < 60 ? 'меньше минуты' : `${minutes(option.seconds)} мин`}</span></span>
               {index === 0 && <em>Быстрее</em>}
-              {option.crowdSeconds > 0 && <small className="nv-option-crowd">+{option.crowdSeconds} с на перемене</small>}
+              {option.crowdSeconds > 0 && <small className="rt-option-crowd">+{option.crowdSeconds} с на перемене</small>}
             </button>)}
           </div>
         </section>}
 
-        <section className="nv-card" aria-labelledby="nv-timeline-title">
-          <h2 className="nv-title" id="nv-timeline-title">По шагам <span>{stepLabel(steps.length)}</span></h2>
-          <ol className="nv-timeline">
+        <section className="rt-card" aria-labelledby="rt-timeline-title">
+          <h2 className="rt-title" id="rt-timeline-title">По шагам <span>{stepLabel(steps.length)}</span></h2>
+          <ol className="rt-timeline">
             {steps.map((step, index) => {
               const Icon = stepIcon(step)
-              const state = index < stepIndex ? 'nv-done' : index === stepIndex ? 'nv-now' : ''
+              const state = index < stepIndex ? 'rt-done' : index === stepIndex ? 'rt-now' : ''
               return <li key={`${step.title}-${index}`} className={state}>
                 <button type="button" onClick={() => goToStep(index)} aria-current={index === stepIndex ? 'step' : undefined}>
-                  <span className="nv-pin" aria-hidden="true">{index < stepIndex ? <Check size={13} /> : <Icon size={13} />}</span>
-                  <span className="nv-item-text"><strong>{step.title}</strong><span>{step.detail}</span></span>
+                  <span className="rt-pin" aria-hidden="true">{index < stepIndex ? <Check size={13} /> : <Icon size={13} />}</span>
+                  <span className="rt-item-text"><strong>{step.title}</strong><span>{step.detail}</span></span>
                 </button>
               </li>
             })}
           </ol>
         </section>
 
-        <details className="nv-card nv-sound">
+        <details className="rt-card rt-sound">
           <summary>
-            <span className="nv-sound-icon" aria-hidden="true">{voiceOn ? <Volume2 size={16} /> : <VolumeX size={16} />}</span>
-            <span className="nv-sound-text"><strong>Озвучка</strong><span>{voiceOn ? VOICE_PRESETS.find((preset) => preset.id === voicePreset)?.label : 'выключена'}</span></span>
-            <ChevronDown className="nv-chevron" size={16} aria-hidden="true" />
+            <span className="rt-sound-icon" aria-hidden="true">{voiceOn ? <Volume2 size={16} /> : <VolumeX size={16} />}</span>
+            <span className="rt-sound-text"><strong>Озвучка</strong><span>{voiceOn ? VOICE_PRESETS.find((preset) => preset.id === voicePreset)?.label : 'выключена'}</span></span>
+            <ChevronDown className="rt-chevron" size={16} aria-hidden="true" />
           </summary>
-          <div className="nv-sound-body">
-            <button type="button" className={`nv-switch ${voiceOn ? 'nv-switch-on' : ''}`} onClick={toggleVoice} aria-pressed={voiceOn}><i aria-hidden="true"><b /></i> Подсказки голосом</button>
-            <div className="nv-voices" role="radiogroup" aria-label="Голос озвучки">
-              {VOICE_PRESETS.map((preset) => <button type="button" role="radio" key={preset.id} aria-checked={voicePreset === preset.id} className={voicePreset === preset.id ? 'nv-voice-on' : ''} onClick={() => changePreset(preset.id)}>{preset.label}</button>)}
+          <div className="rt-sound-body">
+            <button type="button" className={`rt-switch ${voiceOn ? 'rt-switch-on' : ''}`} onClick={toggleVoice} aria-pressed={voiceOn}><i aria-hidden="true"><b /></i> Подсказки голосом</button>
+            <div className="rt-voices" role="radiogroup" aria-label="Голос озвучки">
+              {VOICE_PRESETS.map((preset) => <button type="button" role="radio" key={preset.id} aria-checked={voicePreset === preset.id} className={voicePreset === preset.id ? 'rt-voice-on' : ''} onClick={() => changePreset(preset.id)}>{preset.label}</button>)}
             </div>
-            <button type="button" className="nv-ghost" onClick={testVoice}><Play size={13} fill="currentColor" /> Прослушать</button>
+            <button type="button" className="rt-ghost" onClick={testVoice}><Play size={13} fill="currentColor" /> Прослушать</button>
             <p>На iPhone сначала нажмите «Прослушать»: так браузер разрешит звук. Если тихо, проверьте громкость и беззвучный режим.</p>
           </div>
         </details>
-        {voiceNotice && <p className="nv-notice" role="status"><Info size={14} /> {voiceNotice}</p>}
+        {voiceNotice && <p className="rt-notice" role="status"><Info size={14} /> {voiceNotice}</p>}
+        <p className="rt-footnote"><Link to={mapUrl}>Открыть на карте <ArrowUpRight size={13} /></Link> Маршрут построен по плану. Если проход закрыт, следуйте указателям в здании.<span className="rt-keys"> Стрелки ← → на клавиатуре листают шаги.</span></p>
       </aside>
 
-      <section className="nv-stage" ref={stageRef} aria-label="Карта маршрута">
-        <div className="nv-now-card" aria-live="polite">
-          <span className="nv-now-icon" aria-hidden="true"><CurrentIcon size={22} /></span>
-          <div className="nv-now-text">
-            <span>{`Шаг ${stepIndex + 1} из ${steps.length}`}, {`${current.floor} этаж`}</span>
-            <strong>{current.title}</strong>
-            <em>{current.detail}</em>
+      <section className="rt-stage" ref={stageRef} aria-label="Карта маршрута">
+        <div className="rt-map">
+          <div className="rt-now-card" aria-live="polite">
+            <span className="rt-now-icon" aria-hidden="true"><CurrentIcon size={22} /></span>
+            <div className="rt-now-text">
+              <span>{`Шаг ${stepIndex + 1} из ${steps.length}`}, {`${current.floor} этаж`}</span>
+              <strong>{current.title}</strong>
+              <em>{current.detail}</em>
+            </div>
           </div>
-        </div>
-
-        <div className="nv-map">
           <RouteScene
             floor={shownFloor}
             points={leg?.points || []}
@@ -423,39 +421,38 @@ export default function RoutePage() {
             onFollowChange={setFollowing}
             notices={notices}
           />
-          {picked && <div className="nv-pick" role="dialog" aria-label={`${picked.name}`}>
-            <div className="nv-pick-head">
-              <span className="nv-pick-icon" aria-hidden="true"><MapPin size={16} /></span>
-              <span className="nv-pick-text"><strong>{roomName(picked)}</strong><small>{picked.category}, {picked.floor} этаж</small></span>
-              <button type="button" className="nv-pick-close" onClick={() => setPicked(null)} aria-label="Закрыть"><X size={16} /></button>
+          {picked && <div className="rt-pick" role="dialog" aria-label={`${picked.name}`}>
+            <div className="rt-pick-head">
+              <span className="rt-pick-icon" aria-hidden="true"><MapPin size={16} /></span>
+              <span className="rt-pick-text"><strong>{roomName(picked)}</strong><small>{picked.category}, {picked.floor} этаж</small></span>
+              <button type="button" className="rt-pick-close" onClick={() => setPicked(null)} aria-label="Закрыть"><X size={16} /></button>
             </div>
-            <div className="nv-pick-actions">
-              <button type="button" className="nv-pick-go" onClick={() => pickAs('to')} disabled={picked.id === target.id}><Flag size={14} /> Сюда</button>
+            <div className="rt-pick-actions">
+              <button type="button" className="rt-pick-go" onClick={() => pickAs('to')} disabled={picked.id === target.id}><Flag size={14} /> Сюда</button>
               <button type="button" onClick={() => pickAs('from')} disabled={picked.id === startId}><Navigation size={14} /> Отсюда</button>
               <Link to={`/ai?about=${encodeURIComponent(picked.id)}`} title="Спросить ЛОГОС AI про это место"><MessageCircle size={14} /> Спросить</Link>
             </div>
           </div>}
-          <div className="nv-map-tools">
-            {legCross && <div className="nv-floors" role="group" aria-label="Этаж на карте">
+          <div className="rt-map-tools">
+            {legCross && <div className="rt-floors" role="group" aria-label="Этаж на карте">
               {[shownLeg.fromRoom.floor, shownLeg.toRoom.floor].map((floor) => <button type="button" key={floor} aria-pressed={shownFloor === floor} onClick={() => setPeek({ key: peekKey, floor })}>{`${floor} этаж`}</button>)}
             </div>}
-            <div className="nv-view" role="group" aria-label="Вид карты">
+            <div className="rt-view" role="group" aria-label="Вид карты">
               <button type="button" aria-pressed={mode3d} onClick={() => setMode3d(true)}>3D</button>
               <button type="button" aria-pressed={!mode3d} onClick={() => setMode3d(false)}>Сверху</button>
             </div>
           </div>
-          {!followsStep && <button type="button" className="nv-back-to-step" onClick={() => setPeek({ key: '', floor: null })}>Вернуться к шагу {stepIndex + 1}</button>}
+          {!followsStep && <button type="button" className="rt-back-to-step" onClick={() => setPeek({ key: '', floor: null })}>Вернуться к шагу {stepIndex + 1}</button>}
+          <div className="rt-controls">
+            <button type="button" className="rt-ctl" onClick={() => goToStep(stepIndex - 1)} disabled={stepIndex === 0} aria-label="Предыдущий шаг"><ArrowLeft size={18} /></button>
+            <div className="rt-progress" aria-hidden="true"><span style={{ width: `${progress * 100}%` }} /></div>
+            <button type="button" className="rt-ctl" onClick={repeatStep} aria-label="Повторить подсказку голосом" title="Повторить голосом"><Volume2 size={17} /></button>
+            {stepIndex < steps.length - 1
+              ? <button type="button" className="rt-next" onClick={() => goToStep(stepIndex + 1)}>Дальше <ArrowRight size={17} /></button>
+              : <button type="button" className="rt-next rt-next-done" onClick={arrive}><Check size={17} /> Я на месте</button>}
+          </div>
         </div>
 
-        <div className="nv-controls">
-          <button type="button" className="nv-ctl" onClick={() => goToStep(stepIndex - 1)} disabled={stepIndex === 0} aria-label="Предыдущий шаг"><ArrowLeft size={18} /></button>
-          <div className="nv-progress" aria-hidden="true"><span style={{ width: `${progress * 100}%` }} /></div>
-          <button type="button" className="nv-ctl" onClick={repeatStep} aria-label="Повторить подсказку голосом" title="Повторить голосом"><Volume2 size={17} /></button>
-          {stepIndex < steps.length - 1
-            ? <button type="button" className="nv-next" onClick={() => goToStep(stepIndex + 1)}>Дальше <ArrowRight size={17} /></button>
-            : <button type="button" className="nv-next nv-next-done" onClick={arrive}><Check size={17} /> Я на месте</button>}
-        </div>
-        <p className="nv-footnote"><Link to={mapUrl}>Открыть на карте <ArrowUpRight size={13} /></Link> Маршрут построен по плану. Если проход закрыт, следуйте указателям в здании.<span className="nv-keys"> Стрелки ← → на клавиатуре листают шаги.</span></p>
       </section>
     </div>
     {walking && <WalkMode steps={steps} index={stepIndex} onStep={(index) => goToStep(index)} onRepeat={repeatStep} onClose={() => setWalking(false)} onArrive={arrive} target={target} stop={via}>

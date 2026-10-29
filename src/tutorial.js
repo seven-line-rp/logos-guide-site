@@ -83,7 +83,7 @@ export const TOUR_STEPS = [
   {
     id: 'route',
     to: '/route',
-    targets: ['.nv-places'],
+    targets: ['.rt-places'],
     tone: 'green',
     icon: 'route',
     eyebrow: 'Маршрут',

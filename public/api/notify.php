@@ -1,5 +1,5 @@
 <?php
-// Push-уведомления (пока тестовые, включаются на странице /testNotification).
+// Push-уведомления (включаются на странице /notifications).
 // Подписки, ключи VAPID и состояние рассылки лежат в папке logos-push рядом
 // с папкой сайта (вне public_html), поэтому переживают перезаливку.
 //
@@ -185,7 +185,7 @@ function broadcast(string $kind, string $json, ?array $only = null, int $ttl = 3
     return ['total' => count($targets), 'sent' => $sent, 'failed' => count($targets) - $sent - count($gone), 'removed' => count($gone)];
 }
 
-// ---------- Пробные уведомления для страницы /testNotification ----------
+// ---------- Пробные уведомления для страницы /notifications ----------
 
 function test_payload(string $kind): string
 {
@@ -347,7 +347,7 @@ if ($action === 'subscribe') {
         $list[$id] = ['endpoint' => $endpoint, 'p256dh' => $p256dh, 'auth' => $auth, 'topics' => $topics, 'platform' => $platform ?? $before['platform'] ?? 'desktop', 'created' => $before['created'] ?? date('c'), 'updated' => date('c')];
         return [$list, $topics];
     });
-    if ($topics === false) respond(507, ['error' => 'Подписок слишком много, тест переполнен.']);
+    if ($topics === false) respond(507, ['error' => 'Подписок слишком много, список подписок переполнен.']);
     respond(200, ['ok' => true, 'topics' => $topics]);
 }
 
