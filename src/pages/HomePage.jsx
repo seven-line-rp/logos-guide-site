@@ -6,6 +6,7 @@ import { HERO_ROUTES } from '../hero-scene-model.js'
 import BreakWalk from '../components/BreakWalk.jsx'
 import AiPromoBanner from '../components/AiPromoBanner.jsx'
 import HomeDashboard from '../components/HomeDashboard.jsx'
+import FestiveBanner from '../components/FestiveBanner.jsx'
 import { Reveal } from '../components/Primitives.jsx'
 import VoiceSearchButton from '../components/VoiceSearchButton.jsx'
 import { cancelMiss, reportMiss, searchRooms, searchTeachers, shortName, useTeachers } from '../search.js'
@@ -79,6 +80,8 @@ export default function HomePage() {
       </div>
       <div className="home-hero-edge container"><span>План корпуса, 1 и 2 этажи</span><a href="#quick-places" onClick={(event) => { event.preventDefault(); document.getElementById('quick-places')?.scrollIntoView({ behavior: 'smooth' }) }}>Часто ищут <ArrowDownRight size={14} /></a></div>
     </section>
+
+    <FestiveBanner />
 
     <HomeDashboard />
 

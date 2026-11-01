@@ -1,5 +1,7 @@
 // English UI catalogue; keys are the original Russian presentation strings.
 export const english = {
+  'С Днём народного единства!': 'Happy National Unity Day!', 'День народного единства': 'National Unity Day', 'Праздник': 'Holiday', 'Праздничное оформление': 'Holiday theme', 'Вкл.': 'On', 'Выкл.': 'Off',
+  'Убрать оформление': 'Hide holiday theme', 'Погулять по карте': 'Explore the map', '4 ноября занятий нет. Маршруты и карта работают как обычно.': 'No classes on 4 November. Routes and the map work as usual.', 'Занятий нет, колледж отдыхает.': 'No classes today, the college is closed.', 'Рядом:': 'Nearby:', 'Ближайшее место': 'Nearest place',
   'ЛОГОС': 'LOGOS', 'ПУТЕВОДИТЕЛЬ': 'CAMPUS GUIDE',
   'Карта': 'Map', 'Карта этажей': 'Floor maps', 'Кабинеты': 'Rooms', 'Маршрут': 'Route', 'Игры': 'Games', 'Пространства': 'Spaces', 'О проекте': 'About', 'О путеводителе': 'About the guide',
   'Основная навигация': 'Main navigation', 'Колледж, на главную': 'College, home',

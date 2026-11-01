@@ -1,5 +1,6 @@
 import { rooms } from './data.js'
 import { storageGet, storageSet } from './storage.js'
+import { holidayName } from './holidays.js'
 
 // «Моё расписание». Пары в колледже каждый день новые, поэтому пара
 // привязана к дате, а не к дню недели. Студент добавляет их сам, хранятся
@@ -57,10 +58,10 @@ export function addDays(key, days) {
 }
 
 // Звонки на дату: понедельник — свой порядок, вторник–суббота — общий,
-// в воскресенье занятий нет.
+// в воскресенье и в государственные праздники занятий нет.
 export function bellsFor(key) {
   const day = parseDateKey(key).getDay()
-  if (day === 0) return { bells: [], lunch: [] }
+  if (day === 0 || holidayName(key)) return { bells: [], lunch: [] }
   const kind = day === 1 ? 'monday' : 'weekday'
   return { bells: BELLS[kind], lunch: LUNCH[kind] }
 }
