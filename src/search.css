@@ -80,3 +80,9 @@
 :root[data-map-contrast='on'][data-theme='dark'] :is(.plan-route .plan-route-halo, .rs-route-base) { stroke: rgba(255, 212, 0, .28); }
 :root[data-map-contrast='on'] :is(.floor-plan-svg, .rs-plate, .rs-rooms) text:not(.plan-notice text) { fill: #000; font-weight: 800; paint-order: stroke; stroke: #fff; stroke-width: 2.5px; stroke-linejoin: round; }
 :root[data-map-contrast='on'][data-theme='dark'] :is(.floor-plan-svg, .rs-plate, .rs-rooms) text:not(.plan-notice text) { fill: #fff; stroke: #000; }
+
+/* Быстрые «Рядом» в окне поиска. */
+.search-nearby { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 2px 18px 8px; }
+.search-nearby span { color: var(--muted); font-size: 12px; font-weight: 600; margin-right: 2px; }
+.search-nearby a { display: inline-flex; align-items: center; min-height: 30px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--ink); background: var(--surface); font-size: 13px; text-decoration: none; }
+.search-nearby a:hover, .search-nearby a:focus-visible { border-color: var(--line-strong); background: var(--surface-soft); }
