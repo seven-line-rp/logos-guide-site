@@ -1,9 +1,11 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { ArrowUpRight, Bell, BookOpen, Building2, Bot, CalendarDays, Check, Compass, Flag, Gamepad2, GraduationCap, History, Info, LayoutGrid, ListChecks, Map as MapIcon, MapPin, Moon, Navigation, Search, Sun, Type, Users, X } from 'lucide-react'
+import { ArrowUpRight, Bell, BookOpen, Building2, Bot, CalendarDays, Check, Compass, Flag, Gamepad2, GraduationCap, History, Info, LayoutGrid, ListChecks, Map as MapIcon, MapPin, Moon, Navigation, Search, Sparkles, Sun, Type, Users, X } from 'lucide-react'
 import { navigation, quickPlaces, rooms } from '../data'
-import { clearRecentPlaces, readRecentPlaces, rememberPlace } from '../places.js'
+import { clearRecentPlaces, nearbyKinds, readRecentPlaces, rememberPlace } from '../places.js'
+import { readHere } from '../route-prefs.js'
+import { inUnityWindow, setFestive, useFestive } from '../festive.js'
 import { readTextSize, setTextSize } from '../text-size.js'
 import { lockBodyScroll, storageGet, storageSet } from '../storage'
 import { setLanguage, useLanguage } from '../i18n.js'
@@ -152,6 +154,7 @@ function SearchDialog({ open, onClose }) {
         <div className="search-dialog-top"><span className="eyebrow">Поиск по колледжу</span><button className="icon-button" onClick={onClose} aria-label="Закрыть поиск"><X size={18} /></button></div>
         <h2 id="search-title" className="visually-hidden">Найти кабинет или пространство</h2>
         <label className="search-input-wrap"><Search size={19} /><input ref={inputRef} type="search" value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={onKeyDown} placeholder="Номер кабинета, место или преподаватель…" role="combobox" aria-expanded="true" aria-controls="search-results" aria-activedescendant={items[active] ? `search-item-${active}` : undefined} /><VoiceSearchButton onText={setQuery} /><kbd>ESC</kbd></label>
+        {!query.trim() && <div className="search-nearby" role="group" aria-label="Ближайшее место"><span>Рядом:</span>{nearbyKinds.filter((kind) => ['toilet', 'exit', 'canteen', 'medical', 'lift'].includes(kind.id)).map((kind) => <Link key={kind.id} to={`/route?from=${encodeURIComponent(readHere()?.roomId || 'entrance-1')}&nearest=${kind.id}`} onClick={onClose}>{kind.label}</Link>)}</div>}
         {!query.trim() && recent.length > 0 && <div className="search-section-label"><History size={13} /> Недавние<button type="button" onClick={() => { clearRecentPlaces(); inputRef.current?.focus() }}>Очистить</button></div>}
         {!query.trim() && !recent.length && <div className="search-section-label">Часто ищут</div>}
         <div className="search-results" id="search-results" role="listbox" ref={listRef} aria-live="polite">
@@ -171,6 +174,7 @@ export function Header() {
   const menuToggleRef = useRef(null)
   const [theme, setTheme] = useState(() => storageGet('site-theme') || 'light')
   const [textSize, setTextSizeState] = useState(readTextSize)
+  const festive = useFestive()
   const location = useLocation()
   const closeSearch = useCallback(() => setSearchOpen(false), [])
   // Смена темы кругом от кнопки (View Transitions API). Круг — это снимок всей
@@ -266,6 +270,10 @@ export function Header() {
               <span>Тема</span>
               <div className="hd-seg" role="group" aria-label="Тема оформления"><button type="button" aria-pressed={theme !== 'dark'} onClick={(event) => switchTheme('light', event)}><Sun size={14} /> Светлая</button><button type="button" aria-pressed={theme === 'dark'} onClick={(event) => switchTheme('dark', event)}><Moon size={14} /> Тёмная</button></div>
             </div>
+            {(festive || inUnityWindow()) && <div className="hd-menu-row">
+              <span>Праздник</span>
+              <div className="hd-seg" role="group" aria-label="Праздничное оформление"><button type="button" aria-pressed={festive} onClick={() => setFestive(true)}><Sparkles size={14} /> Вкл.</button><button type="button" aria-pressed={!festive} onClick={() => setFestive(false)}>Выкл.</button></div>
+            </div>}
             <div className="hd-menu-row">
               <span>Текст</span>
               <div className="hd-seg" role="group" aria-label="Размер текста"><button type="button" aria-pressed={textSize !== 'large'} onClick={() => changeTextSize('normal')}>Обычный</button><button type="button" aria-pressed={textSize === 'large'} onClick={() => changeTextSize('large')}><Type size={14} /> Крупный</button></div>

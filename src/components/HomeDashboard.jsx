@@ -3,7 +3,8 @@ import { ArrowRight, ArrowUpRight, BellRing, CalendarPlus, Compass, History, Loc
 import { rooms } from '../data.js'
 import { nearbyKinds, roomTitle } from '../places.js'
 import { tours } from '../tours.js'
-import { bellState, nextLesson } from '../schedule.js'
+import { bellState, dateKey, nextLesson } from '../schedule.js'
+import { holidayName } from '../holidays.js'
 import { useFavorites, useRecentRoutes } from './FavoriteButton.jsx'
 import { NextLessonCard, useNow, useSchedule } from './NextLesson.jsx'
 import { RawText } from './ai-message.js'
@@ -11,7 +12,7 @@ import { RawText } from './ai-message.js'
 // Что сейчас по звонкам — видно и без своего расписания.
 function BellNow({ now }) {
   const state = bellState(now)
-  if (!state) return <div className="bell-now"><BellRing size={15} /><span>Сегодня выходной</span></div>
+  if (!state) return <div className="bell-now"><BellRing size={15} /><span>{holidayName(dateKey(now)) ? `Сегодня ${holidayName(dateKey(now))}, занятий нет` : 'Сегодня выходной'}</span></div>
   const next = state.next ? `${state.next.label} в ${state.next.start}` : ''
   const text = state.kind === 'lesson' ? `Идёт ${state.bell.label === 'РОВ' ? 'РОВ' : state.bell.label}, звонок через ${state.left} мин`
     : state.kind === 'lunch' ? `Обед ${state.course} курса, ещё ${state.left} мин`

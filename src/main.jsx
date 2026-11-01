@@ -41,14 +41,18 @@ import './notify.css'
 import './admin/admin.css'
 import './soft.css'
 import './route.css'
+import './festive.css'
 import './interactions.js'
 import { applyMapContrast } from './map-contrast.js'
 import { applyTextSize, readTextSize } from './text-size.js'
 import { installErrorReporting } from './error-report.js'
 import { keepScheduleForPush } from './push.js'
+import { applyFestive, applyFestiveParam } from './festive.js'
 
 applyMapContrast()
 applyTextSize(readTextSize())
+applyFestiveParam(window.location.search)
+applyFestive()
 // Сообщения о сбоях страницы для оповещений владельцу (только в рабочей сборке).
 if (import.meta.env.PROD) installErrorReporting()
 // Уведомления о парах берут предмет и кабинет из копии расписания (src/push.js).
