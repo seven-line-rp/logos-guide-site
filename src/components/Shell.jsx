@@ -5,9 +5,10 @@ import { ArrowUpRight, Bell, BookOpen, Building2, Bot, CalendarDays, Check, Comp
 import { navigation, quickPlaces, rooms } from '../data'
 import { clearRecentPlaces, nearbyKinds, readRecentPlaces, rememberPlace } from '../places.js'
 import { readHere } from '../route-prefs.js'
-import { inUnityWindow, setFestive, useFestive } from '../festive.js'
+import { nextTheme, setTheme, useTheme } from '../theme.js'
+import UnityDecor from './UnityDecor.jsx'
 import { readTextSize, setTextSize } from '../text-size.js'
-import { lockBodyScroll, storageGet, storageSet } from '../storage'
+import { lockBodyScroll } from '../storage'
 import { setLanguage, useLanguage } from '../i18n.js'
 import { cancelMiss, reportMiss, searchRooms, searchTeachers, shortName, useTeachers } from '../search.js'
 import VoiceSearchButton from './VoiceSearchButton.jsx'
@@ -72,6 +73,12 @@ const menuGroups = [
     { to: '/feedback', label: 'Сообщить о проблеме', hint: 'Баг, идея, ошибка ИИ', icon: Flag, tone: 'pink' },
   ] },
 ]
+
+const THEME_LABELS = {
+  light: { aria: 'Включить светлую тему', title: 'Светлая тема' },
+  dark: { aria: 'Включить тёмную тему', title: 'Тёмная тема' },
+  unity: { aria: 'Включить праздничную тему «Единство»', title: 'Праздничная тема' },
+}
 
 function Brand() {
   return <Link className="brand" to="/" aria-label="На главную"><img className="brand-mark" src="/logo.svg" alt="" /><span className="brand-copy"><strong>ЛОГОС</strong><small>ПУТЕВОДИТЕЛЬ</small></span></Link>
@@ -172,9 +179,8 @@ export function Header() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const menuToggleRef = useRef(null)
-  const [theme, setTheme] = useState(() => storageGet('site-theme') || 'light')
+  const theme = useTheme()
   const [textSize, setTextSizeState] = useState(readTextSize)
-  const festive = useFestive()
   const location = useLocation()
   const closeSearch = useCallback(() => setSearchOpen(false), [])
   // Смена темы кругом от кнопки (View Transitions API). Круг — это снимок всей
@@ -197,23 +203,17 @@ export function Header() {
     const done = () => { root.removeAttribute('data-theme-busy'); window.dispatchEvent(new Event('logos-theme-busy')) }
     const transition = document.startViewTransition(() => {
       flushSync(() => setTheme(next))
-      document.documentElement.dataset.theme = next
     })
     transition.finished.then(done, done)
     // Страховка: если браузер не завершил переход, сцена всё равно оживёт.
     window.setTimeout(done, 3000)
   }
-  const changeTheme = (event) => switchTheme(theme === 'dark' ? 'light' : 'dark', event)
+  const changeTheme = (event) => switchTheme(nextTheme(theme), event)
   const openSearch = () => { setMobileOpen(false); setSearchOpen(true) }
   const takeTour = () => { setMobileOpen(false); startTour() }
   const changeTextSize = (value) => setTextSizeState(setTextSize(value))
 
   useEffect(() => setMobileOpen(false), [location.pathname])
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme
-    storageSet('site-theme', theme)
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#11131b' : '#2f5fe8')
-  }, [theme])
   useEffect(() => {
     const onKeyDown = (event) => {
       if (isSearchShortcut(event)) { event.preventDefault(); setMobileOpen(false); setSearchOpen(true) }
@@ -240,7 +240,7 @@ export function Header() {
         </nav>
         <div className="header-actions">
           <button className="search-trigger" type="button" aria-keyshortcuts="K" onClick={openSearch} aria-label="Найти кабинет"><Search size={17} /><span>Найти место</span><kbd>K</kbd></button>
-          <button className="theme-toggle header-theme hd-icon" type="button" onClick={changeTheme} aria-label={theme === 'dark' ? 'Включить светлую тему' : 'Включить тёмную тему'} title={theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}>{theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}</button>
+          <button className="theme-toggle header-theme hd-icon" type="button" onClick={changeTheme} aria-label={THEME_LABELS[nextTheme(theme)].aria} title={THEME_LABELS[nextTheme(theme)].title}>{theme === 'light' ? <Moon size={17} /> : theme === 'dark' ? <Sparkles size={17} /> : <Sun size={17} />}</button>
           <NotificationBell />
           <NavLink className={({ isActive }) => `mobile-map-link ${isActive ? 'mobile-map-link-active' : ''}`} to="/map" aria-label="Открыть карту"><MapPin size={18} /><span>Карта</span></NavLink>
           <button ref={menuToggleRef} className={`mobile-menu-toggle hd-burger ${mobileOpen ? 'is-open' : ''}`} type="button" onClick={() => setMobileOpen((value) => !value)} aria-controls="site-menu" aria-label={mobileOpen ? 'Закрыть меню' : 'Открыть меню'} aria-expanded={mobileOpen}><span className="hd-burger-lines" aria-hidden="true"><i /><i /><i /></span><span className="hd-burger-label">Ещё</span></button>
@@ -268,12 +268,8 @@ export function Header() {
             </div>
             <div className="hd-menu-row">
               <span>Тема</span>
-              <div className="hd-seg" role="group" aria-label="Тема оформления"><button type="button" aria-pressed={theme !== 'dark'} onClick={(event) => switchTheme('light', event)}><Sun size={14} /> Светлая</button><button type="button" aria-pressed={theme === 'dark'} onClick={(event) => switchTheme('dark', event)}><Moon size={14} /> Тёмная</button></div>
+              <div className="hd-seg" role="group" aria-label="Тема оформления"><button type="button" aria-pressed={theme === 'light'} onClick={(event) => switchTheme('light', event)}><Sun size={14} /> Светлая</button><button type="button" aria-pressed={theme === 'dark'} onClick={(event) => switchTheme('dark', event)}><Moon size={14} /> Тёмная</button><button type="button" className="hd-seg-unity" aria-pressed={theme === 'unity'} onClick={(event) => switchTheme('unity', event)}><Sparkles size={14} /> Единство</button></div>
             </div>
-            {(festive || inUnityWindow()) && <div className="hd-menu-row">
-              <span>Праздник</span>
-              <div className="hd-seg" role="group" aria-label="Праздничное оформление"><button type="button" aria-pressed={festive} onClick={() => setFestive(true)}><Sparkles size={14} /> Вкл.</button><button type="button" aria-pressed={!festive} onClick={() => setFestive(false)}>Выкл.</button></div>
-            </div>}
             <div className="hd-menu-row">
               <span>Текст</span>
               <div className="hd-seg" role="group" aria-label="Размер текста"><button type="button" aria-pressed={textSize !== 'large'} onClick={() => changeTextSize('normal')}>Обычный</button><button type="button" aria-pressed={textSize === 'large'} onClick={() => changeTextSize('large')}><Type size={14} /> Крупный</button></div>
@@ -287,6 +283,7 @@ export function Header() {
     </header>
     {mobileOpen && <button type="button" className="menu-scrim hd-scrim" onClick={() => setMobileOpen(false)} aria-hidden="true" tabIndex={-1} />}
     <SearchDialog open={searchOpen} onClose={closeSearch} />
+    <UnityDecor />
   </>
 }
 
