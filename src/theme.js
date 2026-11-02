@@ -1,19 +1,16 @@
 import { useSyncExternalStore } from 'react'
 import { storageGet, storageSet } from './storage.js'
-import { inUnityWindow } from './festive.js'
 
-// Тема оформления: светлая, тёмная или праздничная («Единство»). Выбор лежит
-// в localStorage (ключ site-theme). Пока человек сам не выбирал, в праздничную
-// неделю сайт открывается в теме «Единство», в остальное время — в светлой.
-// Для проверки: любая страница с ?theme=unity (или light, dark) ставит тему.
+// Тема оформления: светлая или тёмная. Выбор лежит в localStorage (ключ
+// site-theme). Пока человек не выбирал, сайт светлый.
+// Для проверки: любая страница с ?theme=dark (или light) ставит тему.
 
-export const THEMES = ['light', 'dark', 'unity']
+export const THEMES = ['light', 'dark']
 export const THEME_KEY = 'site-theme'
-const META_COLORS = { light: '#2f5fe8', dark: '#11131b', unity: '#1c57a5' }
+const META_COLORS = { light: '#2f5fe8', dark: '#11131b' }
 
-export function resolveTheme(stored, now = new Date()) {
-  if (THEMES.includes(stored)) return stored
-  return inUnityWindow(now) ? 'unity' : 'light'
+export function resolveTheme(stored) {
+  return THEMES.includes(stored) ? stored : 'light'
 }
 
 let current = 'light'
@@ -27,10 +24,10 @@ export function applyTheme(theme) {
 }
 
 // Вызывается один раз до первой отрисовки (main.jsx).
-export function initTheme(search = '', now = new Date()) {
+export function initTheme(search = '') {
   const asked = new URLSearchParams(search).get('theme')
   if (THEMES.includes(asked)) storageSet(THEME_KEY, asked)
-  current = resolveTheme(THEMES.includes(asked) ? asked : storageGet(THEME_KEY), now)
+  current = resolveTheme(THEMES.includes(asked) ? asked : storageGet(THEME_KEY))
   applyTheme(current)
 }
 
@@ -45,7 +42,7 @@ export function setTheme(next) {
 }
 
 export function nextTheme(theme) {
-  return THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length]
+  return theme === 'dark' ? 'light' : 'dark'
 }
 
 export function useTheme() {

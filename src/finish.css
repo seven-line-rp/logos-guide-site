@@ -1,28 +1,95 @@
-/* Финальный слой оформления. Подключается после всех остальных (кроме темы
-   «Единство») и выравнивает то, что в разных разделах разъехалось: состояния
-   кнопок, переносы заголовков, мобильные панели, подвал, плавность.
+/* Финальный слой оформления. Подключается после всех остальных и делает
+   интерфейс спокойным и плоским: без цветных плашек под иконками, градиентов,
+   теней и «подъёма» карточек, без размытия стекла, с умеренными заголовками.
+   3D-сцена и шапка главного экрана (.home-hero) здесь не трогаются.
    Всё здесь — поправки поверх существующих стилей, а не новая вёрстка. */
 
+/* ---------- Токены: меньше скруглений, почти нет теней ---------- */
+:root {
+  --r-sm: 8px;
+  --r-md: 10px;
+  --r-lg: 12px;
+  --shadow-rest: none;
+  --shadow-hover: none;
+  --shadow-xs: none;
+  --shadow-sm: none;
+  --shadow-md: 0 8px 24px -14px rgba(15, 25, 50, .22);
+  --shadow-lg: 0 14px 36px -16px rgba(15, 25, 50, .28);
+}
+:root[data-theme='dark'] {
+  --shadow-rest: none;
+  --shadow-hover: none;
+  --shadow-xs: none;
+  --shadow-sm: none;
+  --shadow-md: 0 8px 24px -14px rgba(0, 0, 0, .6);
+  --shadow-lg: 0 14px 36px -16px rgba(0, 0, 0, .7);
+}
+
+/* ---------- Ритм: секции ближе друг к другу ---------- */
+.section-pad { padding-block: 64px; }
+@media (max-width: 680px) { .section-pad { padding-block: 44px; } }
+
 /* ---------- Типографика ---------- */
-h1, h2, h3, .section-top h2 { text-wrap: balance; }
-p, .docs-lead, .home-hero-copy > p { text-wrap: pretty; }
+h1, h2, h3 { text-wrap: balance; }
+p, .docs-lead { text-wrap: pretty; }
+.site-main h1:not(.home-hero h1) { font-size: clamp(28px, 3.4vw, 38px) !important; letter-spacing: -.015em; line-height: 1.12; }
+.site-main :is(.section-top, .ab-section-head, .directory-head, .break-walk-head, .arcade-intro, .services-help-inner, .play-teaser-copy) h2 { font-size: clamp(21px, 2.2vw, 26px) !important; letter-spacing: -.01em; line-height: 1.2; }
 input[type='checkbox'], input[type='radio'], input[type='range'], progress { accent-color: var(--action-bg, var(--blue)); }
-time, .nl-time, .rt-time, [class*='countdown'] { font-variant-numeric: tabular-nums; }
+time, [class*='countdown'] { font-variant-numeric: tabular-nums; }
+
+/* ---------- Плоские поверхности: рамка вместо тени, умеренные скругления ---------- */
+:is(.home-task, .day-card, .ab-part, .ai-promo, .service-card, .directory-card, .teacher-card, .quick-place-card, .room-card, .game-panel, .game-mode-card, .room-detail-panel, .map-plan-panel, .ab-photo) { border-radius: var(--r-lg); }
+[class*='-card']:not(.home-hero *), [class*='-panel']:not(.map-settings-panel):not(.home-hero *) { box-shadow: none !important; }
+.day-card-lesson { background: var(--surface); }
+.day-tour::before { display: none; }
+
+/* Никакого «стекла»: размытие фона убрано везде, кроме главного экрана. */
+body *:not(.home-hero):not(.home-hero *) { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+:root[data-theme] .hd.site-header, :root[data-theme] .hd.site-header.scrolled { background: var(--bg); box-shadow: none; border-bottom-color: var(--line); }
+
+/* ---------- Значки: без цветных плашек, один спокойный тон ---------- */
+[class*='hd-tone-'] { --hd-tone: var(--muted) !important; }
+:is(.hd-menu-icon, .ab-part-icon, .ai-promo-icon, .day-icon) { color: var(--muted) !important; background: var(--surface-soft) !important; box-shadow: none !important; }
+:is(.ab-part, .ai-promo, .hd-menu-card):hover :is(.ab-part-icon, .ai-promo-icon, .hd-menu-icon) { transform: none !important; }
+.ai-promo-button { color: var(--blue) !important; }
+.nav-badge { color: var(--muted) !important; background: transparent !important; box-shadow: inset 0 0 0 1px var(--line) !important; font-weight: 600; letter-spacing: .04em; }
+
+/* ---------- Обложки карточек кабинетов: без пастельных градиентов ---------- */
+.directory-card-cover { --cover-bg: var(--surface-soft) !important; --cover-ink: var(--muted-2) !important; }
+.directory-card-cover:not(:has(.directory-card-photo))::before { display: none; }
+.directory-card-cover .directory-card-icon { color: var(--muted-2) !important; background: transparent !important; box-shadow: none !important; }
+
+/* ---------- Пространства без фото: ровная подложка вместо цветного градиента ---------- */
+.service-card-art { --art-bg: var(--surface-soft) !important; --art-ink: var(--muted-2) !important; }
+.service-card-art::before { display: none; }
+.service-card-photo:hover .service-card-art svg, .directory-card-media:hover .directory-card-icon { transform: none !important; }
+.service-card-photo:hover .room-photo img, .directory-card-media:hover .directory-card-photo, .quick-place-card:hover .quick-place-photo { transform: none !important; }
+
+/* ---------- «О проекте»: команда без цветных квадратов ---------- */
+.ab-photo { background: var(--surface-soft) !important; }
+.ab-photo-initials { color: var(--muted-2) !important; font-size: 32px; font-weight: 600; }
+
+/* ---------- Преподаватели: одно главное действие, но без сплошной заливки ---------- */
+.teacher-card .teacher-action-primary { color: var(--blue) !important; background: var(--blue-soft) !important; box-shadow: none !important; }
+.teacher-card .teacher-action-primary:hover { background: color-mix(in srgb, var(--blue) 16%, var(--surface)) !important; }
+
+/* ---------- Движение: только плавное появление, без сдвигов и поворотов ---------- */
+.reveal, .reveal-up, .reveal-down, .reveal-left, .reveal-right, .reveal-scale, .reveal:not(.reveal-visible) { transform: none !important; }
+@keyframes page-enter { from { opacity: .5; } to { opacity: 1; } }
+@keyframes clean-page-in { from { opacity: .5; } to { opacity: 1; } }
+@keyframes page-enter-premium { from { opacity: .5; } to { opacity: 1; } }
+@media (hover: hover) {
+  :is(.home-task, .day-card, .ab-part, .ai-promo, .service-card, .directory-card, .teacher-card, .quick-place-card, .room-card, .floor-tab, .game-mode-card):hover { transform: none !important; }
+}
 
 /* ---------- Кнопки и интерактивные элементы: одно поведение везде ---------- */
 :is(.button, .hd-seg button, .map-filter, .directory-chip, .map-zoom-button, .map-view-switch button, .day-chip, .search-nearby a, .icon-button, .theme-toggle, .search-trigger) {
-  transition: background-color .18s ease, border-color .18s ease, color .18s ease, box-shadow .18s ease, transform .12s ease;
+  transition: background-color .15s ease, border-color .15s ease, color .15s ease;
 }
-:is(.button, .hd-seg button, .map-filter, .directory-chip, .map-zoom-button, .map-view-switch button, .day-chip, .search-nearby a, .icon-button, .theme-toggle, .search-trigger):active { transform: translateY(1px) scale(.985); }
+:is(.button, .hd-seg button, .map-filter, .directory-chip, .map-zoom-button, .map-view-switch button, .day-chip, .search-nearby a, .icon-button, .theme-toggle, .search-trigger):active { transform: translateY(1px); }
 :is(button, a, input, select, textarea, summary, [tabindex]):focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; border-radius: inherit; }
-:root[data-theme='dark'] :is(button, a, input, select, textarea, summary, [tabindex]):focus-visible { outline-color: #8fb0ff; }
+:root[data-theme='dark'] :is(button, a, input, select, textarea, summary, [tabindex]):focus-visible { outline-color: #8fb3ff; }
 :is(button, [role='button']):disabled { cursor: not-allowed; }
-
-/* ---------- Карточки: единый отклик на наведение, только на устройствах с мышью ---------- */
-@media (hover: hover) {
-  :is(.day-card, .home-task, .quick-place-card, .room-card, .service-card, .directory-card) { transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease; }
-  :is(.home-task, .quick-place-card, .room-card, .service-card):hover { transform: translateY(-2px); }
-}
 
 /* ---------- Карта: шапка панели не выталкивает кнопки за край ---------- */
 .map-panel-heading { flex-wrap: wrap; }
@@ -35,12 +102,6 @@ time, .nl-time, .rt-time, [class*='countdown'] { font-variant-numeric: tabular-n
 
 /* ---------- Поиск по справочнику ---------- */
 .directory-search-bar kbd { display: none; }
-
-/* ---------- Меню «Ещё»: строка темы на всю ширину, три равные кнопки ---------- */
-.hd-menu-row-theme { flex-direction: column; align-items: stretch; gap: 8px; }
-.hd-menu-row-theme .hd-seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; }
-.hd-menu-row-theme .hd-seg button { justify-content: center; min-width: 0; padding: 0 6px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.hd-menu-row-theme .hd-seg svg { display: none; }
 
 /* ---------- Подвал: ровная сетка и аккуратная нижняя строка ---------- */
 .footer-top { grid-template-columns: minmax(0, 1.5fr) repeat(3, minmax(0, 1fr)); gap: 32px 40px; align-items: start; }
@@ -67,6 +128,9 @@ time, .nl-time, .rt-time, [class*='countdown'] { font-variant-numeric: tabular-n
   .button { min-height: 44px; }
   .section-top { gap: 10px; }
   .home-day-grid, .home-task-grid, .quick-place-grid { gap: 12px; }
+  .quick-place-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .quick-place-card { min-height: 124px; padding: 12px; }
+  .quick-place-copy strong { font-size: 15px; }
 }
 
 /* ---------- Плавность и «Уменьшить движение» ---------- */
@@ -79,8 +143,8 @@ html { scroll-behavior: smooth; }
 
 /* ---------- Тёмная тема: кнопки действия с читаемым белым текстом ---------- */
 :root[data-theme='dark'] { --action-bg: #3f66ea; --action-hover: #4d74f2; }
-:root[data-theme='dark'] :is(.button-primary, .rt-go, .rt-next, .ex-next, .schedule-add, .teacher-action-primary, .cookie-primary, .route-submit) { color: #fff; background: var(--action-bg); }
-:root[data-theme='dark'] :is(.button-primary, .rt-go, .rt-next, .ex-next, .schedule-add, .teacher-action-primary, .cookie-primary, .route-submit):hover { background: var(--action-hover); }
+:root[data-theme='dark'] :is(.button-primary, .rt-go, .rt-next, .ex-next, .schedule-add, .cookie-primary, .route-submit) { color: #fff; background: var(--action-bg); }
+:root[data-theme='dark'] :is(.button-primary, .rt-go, .rt-next, .ex-next, .schedule-add, .cookie-primary, .route-submit):hover { background: var(--action-hover); }
 
 /* ---------- Тёмная тема: одна палитра ---------- */
 /* Старые правила тёмной темы местами остались тёпло-серыми, а основная палитра
