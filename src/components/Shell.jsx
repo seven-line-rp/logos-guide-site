@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { ArrowUpRight, Bell, BookOpen, Building2, Bot, CalendarDays, Check, Compass, Flag, Gamepad2, GraduationCap, History, Info, LayoutGrid, ListChecks, Map as MapIcon, MapPin, Moon, Navigation, Search, Sun, Type, Users, X } from 'lucide-react'
+import { ArrowUpRight, Bell, BookOpen, Building2, Bot, CalendarDays, Check, Compass, Flag, Gamepad2, GraduationCap, History, Info, LayoutGrid, ListChecks, Map as MapIcon, MapPin, Moon, Navigation, QrCode, Search, Sun, Type, Users, X } from 'lucide-react'
 import { navigation, quickPlaces, rooms } from '../data'
 import { clearRecentPlaces, nearbyKinds, readRecentPlaces, rememberPlace } from '../places.js'
 import { readHere } from '../route-prefs.js'
@@ -59,12 +59,13 @@ const menuGroups = [
     { to: '/services', label: 'Пространства', hint: 'Столовая, библиотека, залы', icon: Building2, tone: 'amber' },
   ] },
   { title: 'Учёба', items: [
-    { to: '/schedule', label: 'Моё расписание', hint: 'Пары и звонки', icon: CalendarDays, tone: 'green' },
-    { to: '/start', label: 'Первая неделя', hint: 'Чек-лист для новичков', icon: ListChecks, tone: 'blue' },
-    { to: '/notifications', label: 'Уведомления', hint: 'Пары, события, новые версии', icon: Bell, tone: 'amber' },
+    { to: '/schedule', label: 'Моё расписание', hint: 'Пары, звонки, успеете ли', icon: CalendarDays, tone: 'green' },
     { to: '/ai', label: 'ИИ-помощник', badge: 'АЛЬФА', hint: 'Спросите о чём угодно', icon: Bot, tone: 'violet' },
+    { to: '/notifications', label: 'Уведомления', hint: 'Пары, события, новые версии', icon: Bell, tone: 'amber' },
+    { to: '/start', label: 'Первая неделя', hint: 'Чек-лист для новичков', icon: ListChecks, tone: 'blue' },
   ] },
-  { title: 'Познакомиться', items: [
+  { title: 'Ещё', items: [
+    { to: '/here', label: 'Таблички «Вы здесь»', hint: 'QR-коды для дверей', icon: QrCode, tone: 'slate' },
     { to: '/tour', label: 'Экскурсия в 3D', hint: 'Прогулка по колледжу', icon: Compass, tone: 'amber' },
     { to: '/games', label: 'Игры', hint: 'Квизы по плану', icon: Gamepad2, tone: 'pink' },
     { to: '/about', label: 'О проекте', hint: 'Команда и идея', icon: Info, tone: 'slate' },
