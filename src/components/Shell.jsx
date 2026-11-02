@@ -6,7 +6,6 @@ import { navigation, quickPlaces, rooms } from '../data'
 import { clearRecentPlaces, nearbyKinds, readRecentPlaces, rememberPlace } from '../places.js'
 import { readHere } from '../route-prefs.js'
 import { nextTheme, setTheme, useTheme } from '../theme.js'
-import UnityDecor from './UnityDecor.jsx'
 import { readTextSize, setTextSize } from '../text-size.js'
 import { lockBodyScroll } from '../storage'
 import { setLanguage, useLanguage } from '../i18n.js'
@@ -266,7 +265,7 @@ export function Header() {
               <span>Язык</span>
               <div className="hd-seg" role="group" aria-label="Язык сайта">{['ru', 'en'].map((locale) => <button key={locale} type="button" lang={locale} aria-pressed={language === locale} onClick={() => setLanguage(locale)} title={locale === 'ru' ? 'Русская версия' : 'English version'}>{locale.toUpperCase()}</button>)}</div>
             </div>
-            <div className="hd-menu-row">
+            <div className="hd-menu-row hd-menu-row-theme">
               <span>Тема</span>
               <div className="hd-seg" role="group" aria-label="Тема оформления"><button type="button" aria-pressed={theme === 'light'} onClick={(event) => switchTheme('light', event)}><Sun size={14} /> Светлая</button><button type="button" aria-pressed={theme === 'dark'} onClick={(event) => switchTheme('dark', event)}><Moon size={14} /> Тёмная</button><button type="button" className="hd-seg-unity" aria-pressed={theme === 'unity'} onClick={(event) => switchTheme('unity', event)}><Sparkles size={14} /> Единство</button></div>
             </div>
@@ -283,7 +282,6 @@ export function Header() {
     </header>
     {mobileOpen && <button type="button" className="menu-scrim hd-scrim" onClick={() => setMobileOpen(false)} aria-hidden="true" tabIndex={-1} />}
     <SearchDialog open={searchOpen} onClose={closeSearch} />
-    <UnityDecor />
   </>
 }
 

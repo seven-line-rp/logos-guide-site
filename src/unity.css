@@ -51,17 +51,15 @@
   left: 0;
   right: 0;
   top: 100%;
-  height: 26px;
+  height: 18px;
   background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='26' viewBox='0 0 96 26'%3E%3Cpath d='M0 1 Q48 5 96 1' fill='none' stroke='%230a1f52' stroke-opacity='.45' stroke-width='1.2'/%3E%3Cpath d='M3 2 L29 2.8 L16 24Z' fill='%23fff' stroke='%23b9c6df'/%3E%3Cpath d='M35 2.8 L61 2.8 L48 24Z' fill='%231c57a5'/%3E%3Cpath d='M67 2.8 L93 2 L80 24Z' fill='%23d52b1e'/%3E%3C/svg%3E") repeat-x 0 0 / 96px 26px;
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='26' viewBox='0 0 96 26'%3E%3Cpath d='M0 1 Q48 5 96 1' fill='none' stroke='%230a1f52' stroke-opacity='.45' stroke-width='1.2'/%3E%3Cpath d='M3 2 L29 2.8 L16 24Z' fill='%23fff' stroke='%23b9c6df'/%3E%3Cpath d='M35 2.8 L61 2.8 L48 24Z' fill='%231c57a5'/%3E%3Cpath d='M67 2.8 L93 2 L80 24Z' fill='%23d52b1e'/%3E%3C/svg%3E") repeat-x 0 0 / 66px 18px;
   filter: drop-shadow(0 3px 3px rgba(10, 31, 82, .18));
   pointer-events: none;
 }
 /* Шапка при прокрутке остаётся белой и сплошной: сквозь неё не должен просвечивать текст страницы. */
 :root[data-theme='unity'] .hd.site-header.scrolled { background: #fff; box-shadow: none; }
-:root[data-theme='unity'] .hd-menu-row:has(.hd-seg-unity) { flex-direction: column; align-items: stretch; gap: 8px; }
-:root[data-theme='unity'] .hd-menu-row:has(.hd-seg-unity) .hd-seg { width: 100%; }
-:root[data-theme='unity'] .hd-menu-row:has(.hd-seg-unity) .hd-seg button { flex: 1; justify-content: center; }
+:root[data-theme='unity'] .site-main:not(:has(.home-hero)) { padding-top: 18px; }
 :root[data-theme='unity'] .brand-copy small { color: var(--fest-red); }
 :root[data-theme='unity'] .nav-link-active { color: var(--fest-red); }
 :root[data-theme='unity'] .nav-badge { background: var(--fest-red); color: #fff; }
@@ -167,7 +165,7 @@
 :root[data-theme='unity'] .footer-link:hover { color: var(--fest-red); }
 
 /* ---------- Конфетти ---------- */
-.unity-confetti { position: fixed; inset: 0; z-index: 70; overflow: hidden; pointer-events: none; }
+.unity-confetti { position: absolute; inset: 0; z-index: 2; overflow: hidden; pointer-events: none; }
 .unity-confetti i {
   position: absolute;
   top: -20px;
@@ -196,7 +194,8 @@
   .unity-banner-count { grid-auto-flow: column; justify-content: center; gap: 10px; min-width: 0; padding: 10px 18px; }
   .unity-banner-count b { font-size: 40px; }
   .unity-banner-count .unity-banner-today { font-size: 24px; }
-  :root[data-theme='unity'] .hd.site-header::after { height: 20px; background-size: 72px 20px; }
+  :root[data-theme='unity'] .hd.site-header::after { height: 14px; background-size: 52px 14px; }
+  :root[data-theme='unity'] .site-main:not(:has(.home-hero)) { padding-top: 14px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -204,4 +203,3 @@
 }
 :root[data-perf='lite'] .unity-flag-cloth i, :root[data-perf='lite'] .unity-flag-cloth::after { animation: none; }
 :root[data-perf='lite'] .unity-flag { filter: none; }
-:root[data-theme='unity'] .hd-menu-row:has(.hd-seg-unity) .hd-seg button { min-width: 0; padding: 0 6px; gap: 4px; }
