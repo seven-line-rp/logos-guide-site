@@ -6,7 +6,7 @@ import { HERO_ROUTES } from '../hero-scene-model.js'
 import BreakWalk from '../components/BreakWalk.jsx'
 import AiPromoBanner from '../components/AiPromoBanner.jsx'
 import HomeDashboard from '../components/HomeDashboard.jsx'
-import { UnityBanner, UnityChip, UnityFlag } from '../components/Unity.jsx'
+import { UnityBanner, UnityChip, UnityConfetti, UnityFlag } from '../components/Unity.jsx'
 import { Reveal } from '../components/Primitives.jsx'
 import VoiceSearchButton from '../components/VoiceSearchButton.jsx'
 import { cancelMiss, reportMiss, searchRooms, searchTeachers, shortName, useTeachers } from '../search.js'
@@ -64,6 +64,7 @@ export default function HomePage() {
     <section className="home-hero hero-mesh home-hero-usual home-hero-scene" id="top">
       {scene3d && <Suspense fallback={null}><HeroScene /></Suspense>}
       <UnityFlag />
+      <UnityConfetti />
       <div className="container home-hero-inner">
         <div className="home-hero-copy">
           <UnityChip />

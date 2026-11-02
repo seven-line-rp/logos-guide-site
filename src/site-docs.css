@@ -291,7 +291,7 @@ html[data-theme='dark'] .docs-inline-link { color: var(--tone-2); }
   .docs-hero { padding: 48px 0 40px; }
   .docs-hero-inner { grid-template-columns: 1fr; gap: 30px; }
   .docs-hero-steps li:nth-child(n) { margin-left: 0; }
-  .docs-layout { grid-template-columns: 1fr; gap: 24px; padding-block: 28px 64px; }
+  .docs-layout { grid-template-columns: minmax(0, 1fr); gap: 24px; padding-block: 28px 64px; }
   .docs-toc { position: static; }
   .docs-toc ol { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; border-left: 0; scrollbar-width: none; }
   .docs-toc ol::-webkit-scrollbar { display: none; }

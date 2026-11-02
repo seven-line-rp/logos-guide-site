@@ -1,0 +1,98 @@
+/* Финальный слой оформления. Подключается после всех остальных (кроме темы
+   «Единство») и выравнивает то, что в разных разделах разъехалось: состояния
+   кнопок, переносы заголовков, мобильные панели, подвал, плавность.
+   Всё здесь — поправки поверх существующих стилей, а не новая вёрстка. */
+
+/* ---------- Типографика ---------- */
+h1, h2, h3, .section-top h2 { text-wrap: balance; }
+p, .docs-lead, .home-hero-copy > p { text-wrap: pretty; }
+input[type='checkbox'], input[type='radio'], input[type='range'], progress { accent-color: var(--action-bg, var(--blue)); }
+time, .nl-time, .rt-time, [class*='countdown'] { font-variant-numeric: tabular-nums; }
+
+/* ---------- Кнопки и интерактивные элементы: одно поведение везде ---------- */
+:is(.button, .hd-seg button, .map-filter, .directory-chip, .map-zoom-button, .map-view-switch button, .day-chip, .search-nearby a, .icon-button, .theme-toggle, .search-trigger) {
+  transition: background-color .18s ease, border-color .18s ease, color .18s ease, box-shadow .18s ease, transform .12s ease;
+}
+:is(.button, .hd-seg button, .map-filter, .directory-chip, .map-zoom-button, .map-view-switch button, .day-chip, .search-nearby a, .icon-button, .theme-toggle, .search-trigger):active { transform: translateY(1px) scale(.985); }
+:is(button, a, input, select, textarea, summary, [tabindex]):focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; border-radius: inherit; }
+:root[data-theme='dark'] :is(button, a, input, select, textarea, summary, [tabindex]):focus-visible { outline-color: #8fb0ff; }
+:is(button, [role='button']):disabled { cursor: not-allowed; }
+
+/* ---------- Карточки: единый отклик на наведение, только на устройствах с мышью ---------- */
+@media (hover: hover) {
+  :is(.day-card, .home-task, .quick-place-card, .room-card, .service-card, .directory-card) { transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease; }
+  :is(.home-task, .quick-place-card, .room-card, .service-card):hover { transform: translateY(-2px); }
+}
+
+/* ---------- Карта: шапка панели не выталкивает кнопки за край ---------- */
+.map-panel-heading { flex-wrap: wrap; }
+.map-view-actions { flex-wrap: wrap; justify-content: flex-end; }
+@media (max-width: 560px) {
+  .map-panel-heading > span:first-child { flex: 1 1 100%; }
+  .map-view-actions { width: 100%; justify-content: space-between; }
+  .map-view-actions .map-zoom-button { flex: 1 1 auto; }
+}
+
+/* ---------- Поиск по справочнику ---------- */
+.directory-search-bar kbd { display: none; }
+
+/* ---------- Меню «Ещё»: строка темы на всю ширину, три равные кнопки ---------- */
+.hd-menu-row-theme { flex-direction: column; align-items: stretch; gap: 8px; }
+.hd-menu-row-theme .hd-seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; }
+.hd-menu-row-theme .hd-seg button { justify-content: center; min-width: 0; padding: 0 6px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.hd-menu-row-theme .hd-seg svg { display: none; }
+
+/* ---------- Подвал: ровная сетка и аккуратная нижняя строка ---------- */
+.footer-top { grid-template-columns: minmax(0, 1.5fr) repeat(3, minmax(0, 1fr)); gap: 32px 40px; align-items: start; }
+.footer-bottom { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 24px; }
+.footer-legal { display: flex; flex-wrap: wrap; gap: 6px 18px; }
+.footer-legal button { padding: 0; border: 0; color: inherit; background: none; font: inherit; cursor: pointer; text-decoration: underline; text-decoration-color: transparent; text-underline-offset: 3px; transition: text-decoration-color .15s; }
+.footer-legal :is(a, button):hover { text-decoration: underline; text-underline-offset: 3px; }
+.footer-link { min-height: 32px; transition: color .15s, transform .15s; }
+@media (hover: hover) { .footer-link:hover { transform: translateX(2px); } }
+@media (max-width: 900px) {
+  .footer-top { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 20px; }
+  .footer-brand-block { grid-column: 1 / -1; }
+  .footer-links-group:last-child { grid-column: 1 / -1; }
+  .footer-links-group:last-child .footer-link { display: inline-flex; margin-right: 18px; }
+}
+@media (max-width: 560px) {
+  .footer-bottom { flex-direction: column; align-items: flex-start; }
+  .footer-legal { flex-direction: column; gap: 2px; }
+  .footer-legal :is(a, button) { display: inline-flex; align-items: center; min-height: 36px; }
+}
+
+/* ---------- Телефон: пальцем должно быть удобно ---------- */
+@media (max-width: 680px) {
+  .button { min-height: 44px; }
+  .section-top { gap: 10px; }
+  .home-day-grid, .home-task-grid, .quick-place-grid { gap: 12px; }
+}
+
+/* ---------- Плавность и «Уменьшить движение» ---------- */
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+  :is(.button, .hd-seg button, .map-filter, .directory-chip):active { transform: none; }
+}
+
+/* ---------- Тёмная тема: кнопки действия с читаемым белым текстом ---------- */
+:root[data-theme='dark'] { --action-bg: #3f66ea; --action-hover: #4d74f2; }
+:root[data-theme='dark'] :is(.button-primary, .rt-go, .rt-next, .ex-next, .schedule-add, .teacher-action-primary, .cookie-primary, .route-submit) { color: #fff; background: var(--action-bg); }
+:root[data-theme='dark'] :is(.button-primary, .rt-go, .rt-next, .ex-next, .schedule-add, .teacher-action-primary, .cookie-primary, .route-submit):hover { background: var(--action-hover); }
+
+/* ---------- Тёмная тема: одна палитра ---------- */
+/* Старые правила тёмной темы местами остались тёпло-серыми, а основная палитра
+   сине-графитовая (soft.css). Здесь всё приводится к ней. */
+:root[data-theme='dark'] .button-white { color: var(--bg); background: var(--ink); }
+:root[data-theme='dark'] :is(.home-hero, .home-hero.hero-mesh) { background: radial-gradient(55% 80% at 85% 20%, rgba(91, 124, 247, .16), transparent 70%), radial-gradient(40% 60% at 5% 100%, rgba(91, 124, 247, .08), transparent 70%), var(--bg); }
+:root[data-theme='dark'] .docs-hero { background: radial-gradient(45% 80% at 90% 10%, rgba(91, 124, 247, .14), transparent 70%), var(--surface); }
+:root[data-theme='dark'] .floor-preview-band { background: linear-gradient(180deg, var(--surface-soft), var(--surface)); }
+:root[data-theme='dark'] :is(.about-team-band, .faq-band, .route-hint-band, .services-help-band, .about-values-band) { background: var(--surface); }
+:root[data-theme='dark'] :is(.site-footer, .footer-top) { background: var(--surface); }
+:root[data-theme='dark'] .site-footer { border-top: 1px solid var(--line); }
+:root[data-theme='dark'] .yandex-nav-hud { background: color-mix(in srgb, var(--surface) 94%, transparent); }
+:root[data-theme='dark'] .floor-map-art svg > :is(rect, path)[fill='#D9D9D9'] { fill: var(--map-bg); }
+:root[data-theme='dark'] .floor-map-art svg > :is(rect, path)[fill='#878DA2'] { fill: #3a4157; }
+:root[data-theme='dark'] .home-hero-scene { --shade: rgba(17, 19, 27, .96); --shade-mid: rgba(17, 19, 27, .5); --scene-label: rgba(233, 235, 244, .5); }
