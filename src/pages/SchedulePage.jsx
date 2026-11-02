@@ -6,6 +6,7 @@ import RoomSearchSelect, { roomLabel } from '../components/RoomSearchSelect.jsx'
 import { addDays, bellsFor, dateKey, dayLabel, saveSchedule, toMinutes } from '../schedule.js'
 import { functionalStorageAllowed } from '../consent.js'
 import { NextLessonCard, useNow, useSchedule } from '../components/NextLesson.jsx'
+import BreakWalk from '../components/BreakWalk.jsx'
 
 // «Моё расписание»: пары каждый день новые, поэтому их вводят на конкретную
 // дату. Звонки подставляются сами (понедельник с РОВ — отдельно).
@@ -63,7 +64,8 @@ export default function SchedulePage() {
     saveSchedule([...lessons.filter((lesson) => lesson.date !== day), ...source.map((lesson, index) => ({ ...lesson, id: `l${Date.now().toString(36)}${index}`, date: day }))])
   }
 
-  return <section className="schedule-page container">
+  return <>
+  <section className="schedule-page container">
     <header className="schedule-head">
       <h1>Расписание</h1>
       <p>Расписание в колледже каждый день новое, поэтому пары добавляются на конкретный день. На главной появится следующая пара с маршрутом, а навигатор подскажет, успеваете ли вы. Всё хранится только в этом браузере.</p>
@@ -123,4 +125,6 @@ export default function SchedulePage() {
       </aside>
     </div>
   </section>
+  <BreakWalk />
+  </>
 }

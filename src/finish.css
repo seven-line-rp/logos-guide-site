@@ -160,3 +160,25 @@ html { scroll-behavior: smooth; }
 :root[data-theme='dark'] .floor-map-art svg > :is(rect, path)[fill='#D9D9D9'] { fill: var(--map-bg); }
 :root[data-theme='dark'] .floor-map-art svg > :is(rect, path)[fill='#878DA2'] { fill: #3a4157; }
 :root[data-theme='dark'] .home-hero-scene { --shade: rgba(17, 19, 27, .96); --shade-mid: rgba(17, 19, 27, .5); --scene-label: rgba(233, 235, 244, .5); }
+
+/* ---------- Подпись маршрута на 3D-сцене главной: просто текст, без плашки ---------- */
+.home-hero .hero-scene-caption {
+  bottom: 56px;
+  display: grid;
+  gap: 3px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  text-align: right;
+  animation: none;
+}
+.home-hero .hero-scene-caption small { color: rgba(225, 234, 255, .7); font-size: 12px; font-weight: 500; }
+.home-hero .hero-scene-caption strong { display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px; color: #fff; font-size: 14px; font-weight: 600; text-decoration: underline; text-decoration-color: rgba(255, 255, 255, .3); text-underline-offset: 4px; transition: text-decoration-color .15s; }
+.home-hero .hero-scene-caption:hover, :root[data-theme='dark'] .home-hero .hero-scene-caption:hover { background: none; }
+.home-hero .hero-scene-caption:hover strong { text-decoration-color: currentColor; }
+:root[data-theme='dark'] .home-hero .hero-scene-caption { background: none; border: 0; }
+:root[data-theme='dark'] .home-hero .hero-scene-caption small { color: var(--muted); }
+.home-hero-scene .home-hero-inner { padding-bottom: 64px; }

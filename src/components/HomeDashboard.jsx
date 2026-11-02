@@ -1,8 +1,7 @@
 import { Link } from 'react-router-dom'
-import { ArrowRight, ArrowUpRight, BellRing, CalendarPlus, Compass, History, LocateFixed, Star } from 'lucide-react'
+import { ArrowRight, ArrowUpRight, BellRing, CalendarPlus, History, LocateFixed, Star } from 'lucide-react'
 import { rooms } from '../data.js'
 import { nearbyKinds, roomTitle } from '../places.js'
-import { tours } from '../tours.js'
 import { bellState, dateKey, nextLesson } from '../schedule.js'
 import { holidayName } from '../holidays.js'
 import { useFavorites, useRecentRoutes } from './FavoriteButton.jsx'
@@ -23,7 +22,7 @@ function BellNow({ now }) {
 }
 
 // «Мой день» на главной: следующая пара с маршрутом, избранные места и
-// недавние маршруты, «где ближайший…» и экскурсии. Всё личное — из браузера.
+// недавние маршруты и «где ближайший…». Всё личное — из браузера.
 export default function HomeDashboard() {
   const lessons = useSchedule()
   const now = useNow()
@@ -55,11 +54,6 @@ export default function HomeDashboard() {
         <h3><LocateFixed size={17} /> Где ближайший</h3>
         <p className="day-hint">Считаем от главного входа или от вашей точки на маршруте.</p>
         <div className="day-chips">{nearbyKinds.map((kind) => <Link key={kind.id} className="day-chip" to={`/route?from=entrance-1&nearest=${kind.id}`}>{kind.label}</Link>)}</div>
-      </article>
-
-      <article className="day-card day-card-tour">
-        <h3><Compass size={17} /> Экскурсия в 3D</h3>
-        <div className="day-tours">{tours.map((tour) => <Link key={tour.id} to={`/tour?id=${tour.id}`} className="day-tour"><strong>{tour.title}</strong><small>{tour.subtitle}, {tour.stops.length} остановок, ~{tour.minutes} мин</small><ArrowRight size={16} /></Link>)}</div>
       </article>
     </div>
   </section>

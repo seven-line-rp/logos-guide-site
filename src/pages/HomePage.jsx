@@ -1,9 +1,8 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
-import { ArrowDownRight, ArrowRight, ArrowUpRight, Search } from 'lucide-react'
+import { ArrowRight, ArrowUpRight, Search } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { photoSrcSet, photosFor, rooms, quickPlaces } from '../data.js'
 import { HERO_ROUTES } from '../hero-scene-model.js'
-import BreakWalk from '../components/BreakWalk.jsx'
 import AiPromoBanner from '../components/AiPromoBanner.jsx'
 import HomeDashboard from '../components/HomeDashboard.jsx'
 import { Reveal } from '../components/Primitives.jsx'
@@ -14,13 +13,6 @@ import { useScene3d } from '../use-scene3d.js'
 // 3D-корпус тяжёлый: грузим его отдельным файлом и только там, где он потянет
 // (компьютер с мышью, не «Лёгкий» режим). На телефонах остаётся градиентный фон.
 const HeroScene = lazy(() => import('../components/HeroScene.jsx'))
-
-// Разделы, до которых с главной иначе не добраться за один клик.
-const homeTasks = [
-  { to: '/start', title: 'Первая неделя', text: 'Чек-лист новичка: раздевалка, учебная часть, медпункт и ещё шесть мест.', action: 'Начать' },
-  { to: '/teachers', title: 'Преподаватели', text: 'Найдите человека по фамилии или предмету и узнайте, где его кабинет.', action: 'Найти' },
-  { to: '/here', title: 'Таблички «Вы здесь»', text: 'QR-коды для дверей: отсканировал — и маршрут строится от этого места.', action: 'Открыть' },
-]
 
 function HomeSearch() {
   const [query, setQuery] = useState('')
@@ -54,7 +46,7 @@ function HeroCaption() {
     return () => window.removeEventListener('hero-route', onRoute)
   }, [])
   const from = rooms.find((item) => item.id === route.from)
-  return <Link className="hero-scene-caption" to={`/route?from=${route.from}&to=${route.to}&mode=${route.via}`}><span className="hero-scene-caption-dot" aria-hidden="true" /><span><strong>{from.name} → {roomTitle(route.to)}</strong><small>Пример маршрута {VIA_LABELS[route.via]} на 2 этаж</small></span><ArrowUpRight size={15} /></Link>
+  return <Link className="hero-scene-caption" to={`/route?from=${route.from}&to=${route.to}&mode=${route.via}`}><small>Пример маршрута {VIA_LABELS[route.via]}</small><strong>{from.name} → {roomTitle(route.to)} <ArrowUpRight size={14} aria-hidden="true" /></strong></Link>
 }
 
 export default function HomePage() {
@@ -77,19 +69,12 @@ export default function HomePage() {
         </div>
         <HeroCaption />
       </div>
-      <div className="home-hero-edge container"><span>План корпуса, 1 и 2 этажи</span><a href="#quick-places" onClick={(event) => { event.preventDefault(); document.getElementById('quick-places')?.scrollIntoView({ behavior: 'smooth' }) }}>Часто ищут <ArrowDownRight size={14} /></a></div>
     </section>
 
     <HomeDashboard />
 
     <section className="quick-places container section-pad" id="quick-places"><div className="section-top"><div><h2>Часто ищут</h2></div><Link className="text-link" to="/rooms">Все помещения <span><ArrowRight size={15} /></span></Link></div><div className="quick-place-grid">{quickPlaces.map((place, index) => { const room = rooms.find((item) => item.id === place.roomId); return <Reveal key={place.roomId} delay={index * 60} variant="up"><Link className={`quick-place-card quick-place-${place.tone}${photosFor(room).length ? ' quick-place-media' : ''}`} to={`/map?floor=${room.floor}&room=${room.id}`}>{photosFor(room).length > 0 && <img className="quick-place-photo" src={photosFor(room)[0]} srcSet={photoSrcSet(photosFor(room)[0])} sizes="(max-width: 680px) 100vw, 320px" alt="" loading="lazy" decoding="async" />}<span className="quick-place-num">{room.floor} этаж</span><span className="quick-place-copy"><strong>{place.label}</strong><small>{place.meta}</small></span><span className="quick-place-arrow"><ArrowUpRight size={16} /></span></Link></Reveal> })}</div></section>
 
-    <section className="home-tasks container" aria-labelledby="home-tasks-title">
-      <div className="section-top"><div><h2 id="home-tasks-title">Ещё на сайте</h2></div></div>
-      <div className="home-task-grid">{homeTasks.map((task, index) => <Reveal key={task.to} delay={index * 60} variant="up"><Link className="home-task" to={task.to}><strong>{task.title}</strong><span>{task.text}</span><span className="home-task-go">{task.action} <ArrowRight size={14} /></span></Link></Reveal>)}</div>
-    </section>
-
     <AiPromoBanner />
-    <BreakWalk />
   </>
 }
