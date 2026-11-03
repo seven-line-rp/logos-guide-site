@@ -4,7 +4,7 @@ export const english = {
   'день до праздника': 'day to go', 'дня до праздника': 'days to go', 'дней до праздника': 'days to go', 'праздник': 'holiday', 'праздник прошёл': 'holiday is over',
   '4 ноября занятий нет. Карта и маршруты работают как обычно.': 'No classes on 4 November. The map and routes work as usual.',
   'Сегодня занятий нет. Карта и маршруты работают как обычно.': 'No classes today. The map and routes work as usual.',
-  'Мы разные, и колледж у нас один. Карта и маршруты работают как обычно.': 'We are all different, and we share one college. The map and routes work as usual.',
+  'В 1612 году народное ополчение Кузьмы Минина и князя Дмитрия Пожарского освободило Москву. В этот день мы вспоминаем, что вместе страна сильнее.': 'In 1612 the people’s militia led by Kuzma Minin and Prince Dmitry Pozharsky freed Moscow. On this day we remember that together the country is stronger.', 'с праздником': 'happy holiday',
   'Тема «Единство»': 'Unity theme', 'Включить праздничную тему «Единство»': 'Switch to the holiday Unity theme',
   'ЛОГОС:Путеводитель — карта и маршруты по колледжу': 'LOGOS Guide: college floor maps and routes', 'Страница не найдена': 'Page not found', 'Уведомления': 'Notifications', 'Панель': 'Dashboard', 'Объявления': 'Notices',
   'Рядом:': 'Nearby:', 'Ближайшее место': 'Nearest place',

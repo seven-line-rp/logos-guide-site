@@ -28,18 +28,17 @@ export function UnityBanner() {
   const theme = useTheme()
   if (theme !== 'unity') return null
   const days = daysToUnity()
-  const note = days === 0 ? 'Сегодня занятий нет. Карта и маршруты работают как обычно.'
-    : days > 0 ? '4 ноября занятий нет. Карта и маршруты работают как обычно.'
-    : 'Мы разные, и колледж у нас один. Карта и маршруты работают как обычно.'
+  const note = days === 0 ? 'Сегодня занятий нет. Карта и маршруты работают как обычно.' : '4 ноября занятий нет. Карта и маршруты работают как обычно.'
   const count = days > 0 ? <><b>{days}</b><span>{daysWord(days)} до праздника</span></>
-    : days === 0 ? <><b>Сегодня</b><span>праздник</span></>
-    : <><b>4.11</b><span>праздник прошёл</span></>
+    : days === 0 ? <><b className="unity-banner-word">Сегодня</b><span>праздник</span></>
+    : <><b className="unity-banner-word">4 ноября</b><span>с праздником</span></>
   return <section className="unity-banner container" aria-label={UNITY.title}>
     <div className="unity-banner-card">
       <div className="unity-banner-copy">
         <span className="unity-banner-kicker"><FlagMark />4 ноября</span>
         <strong>С Днём народного единства!</strong>
-        <p>{note}</p>
+        <p className="unity-banner-history">В 1612 году народное ополчение Кузьмы Минина и князя Дмитрия Пожарского освободило Москву. В этот день мы вспоминаем, что вместе страна сильнее.</p>
+        <p className="unity-banner-note">{note}</p>
         <div className="unity-banner-actions">
           <Link className="unity-banner-link" to="/map">Открыть карту <ArrowRight size={15} aria-hidden="true" /></Link>
           <button type="button" className="unity-banner-off" onClick={() => setTheme('light')}>Обычная тема</button>

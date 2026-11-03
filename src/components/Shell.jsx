@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { ArrowUpRight, Bell, BookOpen, Building2, Bot, CalendarDays, Check, Compass, Flag, Gamepad2, GraduationCap, History, Info, LayoutGrid, ListChecks, Map as MapIcon, MapPin, Moon, Navigation, QrCode, Search, Sparkles, Sun, Type, Users, X } from 'lucide-react'
+import { ArrowUpRight, Bell, BookOpen, Building2, Bot, CalendarDays, Check, Compass, Flag, Gamepad2, GraduationCap, History, Info, LayoutGrid, ListChecks, Map as MapIcon, MapPin, Moon, Navigation, QrCode, Search, Sun, Type, Users, X } from 'lucide-react'
 import { navigation, quickPlaces, rooms } from '../data'
 import { clearRecentPlaces, nearbyKinds, readRecentPlaces, rememberPlace } from '../places.js'
 import { readHere } from '../route-prefs.js'
@@ -14,7 +14,7 @@ import VoiceSearchButton from './VoiceSearchButton.jsx'
 import { isSearchShortcut } from '../shortcuts.js'
 import { startTour } from '../tour-bus.js'
 import { openCookieSettings } from '../consent.js'
-import { SITE_AUTHOR, SITE_VERSION_LABEL } from '../version.js'
+import { SITE_VERSION_LABEL } from '../version.js'
 import { isLitePerf } from '../perf.js'
 import NotificationBell from './NotificationBell.jsx'
 
@@ -240,7 +240,7 @@ export function Header() {
         </nav>
         <div className="header-actions">
           <button className="search-trigger" type="button" aria-keyshortcuts="K" onClick={openSearch} aria-label="Найти кабинет"><Search size={17} /><span>Найти место</span><kbd>K</kbd></button>
-          <button className="theme-toggle header-theme hd-icon" type="button" onClick={changeTheme} aria-label={THEME_LABELS[nextTheme(theme)].aria} title={THEME_LABELS[nextTheme(theme)].title}>{theme === 'light' ? <Moon size={17} /> : theme === 'dark' ? <Sparkles size={17} /> : <Sun size={17} />}</button>
+          <button className="theme-toggle header-theme hd-icon" type="button" onClick={changeTheme} aria-label={THEME_LABELS[nextTheme(theme)].aria} title={THEME_LABELS[nextTheme(theme)].title}>{theme === 'light' ? <Moon size={17} /> : theme === 'dark' ? <Flag size={17} /> : <Sun size={17} />}</button>
           <NotificationBell />
           <NavLink className={({ isActive }) => `mobile-map-link ${isActive ? 'mobile-map-link-active' : ''}`} to="/map" aria-label="Открыть карту"><MapPin size={18} /><span>Карта</span></NavLink>
           <button ref={menuToggleRef} className={`mobile-menu-toggle hd-burger ${mobileOpen ? 'is-open' : ''}`} type="button" onClick={() => setMobileOpen((value) => !value)} aria-controls="site-menu" aria-label={mobileOpen ? 'Закрыть меню' : 'Открыть меню'} aria-expanded={mobileOpen}><span className="hd-burger-lines" aria-hidden="true"><i /><i /><i /></span><span className="hd-burger-label">Ещё</span></button>
@@ -268,7 +268,7 @@ export function Header() {
             </div>
             <div className="hd-menu-row hd-menu-row-theme">
               <span>Тема</span>
-              <div className="hd-seg" role="group" aria-label="Тема оформления"><button type="button" aria-pressed={theme === 'light'} onClick={(event) => switchTheme('light', event)}><Sun size={14} /> Светлая</button><button type="button" aria-pressed={theme === 'dark'} onClick={(event) => switchTheme('dark', event)}><Moon size={14} /> Тёмная</button><button type="button" className="hd-seg-unity" aria-pressed={theme === 'unity'} onClick={(event) => switchTheme('unity', event)}><Sparkles size={14} /> Единство</button></div>
+              <div className="hd-seg" role="group" aria-label="Тема оформления"><button type="button" aria-pressed={theme === 'light'} onClick={(event) => switchTheme('light', event)}><Sun size={14} /> Светлая</button><button type="button" aria-pressed={theme === 'dark'} onClick={(event) => switchTheme('dark', event)}><Moon size={14} /> Тёмная</button><button type="button" className="hd-seg-unity" aria-pressed={theme === 'unity'} onClick={(event) => switchTheme('unity', event)}><Flag size={14} /> Единство</button></div>
             </div>
             <div className="hd-menu-row">
               <span>Текст</span>
@@ -287,5 +287,5 @@ export function Header() {
 }
 
 export function Footer() {
-  return <footer className="site-footer"><div className="footer-top container"><div className="footer-brand-block"><Brand /><p>Карта, маршруты и всё, что<br />нужно найти в колледже.</p><span className="footer-version">Версия {SITE_VERSION_LABEL}, by {SITE_AUTHOR}</span></div>{menuGroups.map((group) => <div key={group.title} className="footer-links-group"><span className="footer-label">{group.title}</span>{group.items.map((item) => <Link key={item.to} to={item.to} className="footer-link"><item.icon size={15} aria-hidden="true" />{item.label}</Link>)}</div>)}</div><div className="footer-bottom container"><span>Путеводитель колледжа «Логос»</span><nav className="footer-legal" aria-label="Правовая информация"><Link to="/privacy">Политика конфиденциальности</Link><Link to="/terms">Пользовательское соглашение</Link><Link to="/consent">Согласие на обработку данных</Link><Link to="/privacy#cookies">Cookie</Link><Link to="/notifications">Уведомления</Link><button type="button" onClick={openCookieSettings}>Настройки cookie</button></nav><a href="#top" onClick={(event) => { event.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>Наверх ↑</a></div></footer>
+  return <footer className="site-footer"><div className="footer-top container"><div className="footer-brand-block"><Brand /><p>Карта, маршруты и всё, что<br />нужно найти в колледже.</p><span className="footer-version">Версия {SITE_VERSION_LABEL}</span></div>{menuGroups.map((group) => <div key={group.title} className="footer-links-group"><span className="footer-label">{group.title}</span>{group.items.map((item) => <Link key={item.to} to={item.to} className="footer-link"><item.icon size={15} aria-hidden="true" />{item.label}</Link>)}</div>)}</div><div className="footer-bottom container"><span>Путеводитель колледжа «Логос»</span><nav className="footer-legal" aria-label="Правовая информация"><Link to="/privacy">Политика конфиденциальности</Link><Link to="/terms">Пользовательское соглашение</Link><Link to="/consent">Согласие на обработку данных</Link><Link to="/privacy#cookies">Cookie</Link><Link to="/notifications">Уведомления</Link><button type="button" onClick={openCookieSettings}>Настройки cookie</button></nav><a href="#top" onClick={(event) => { event.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>Наверх ↑</a></div></footer>
 }
