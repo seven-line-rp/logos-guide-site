@@ -10,10 +10,13 @@ import { Reveal } from '../components/Primitives.jsx'
 import VoiceSearchButton from '../components/VoiceSearchButton.jsx'
 import { cancelMiss, reportMiss, searchRooms, searchTeachers, shortName, useTeachers } from '../search.js'
 import { useScene3d } from '../use-scene3d.js'
+import { useTheme } from '../theme.js'
 
 // 3D-корпус тяжёлый: грузим его отдельным файлом и только там, где он потянет
 // (компьютер с мышью, не «Лёгкий» режим). На телефонах остаётся градиентный фон.
 const HeroScene = lazy(() => import('../components/HeroScene.jsx'))
+// В теме «Единство» вместо корпуса на главном экране развевается флаг России.
+const UnityFlag = lazy(() => import('../components/UnityFlag.jsx'))
 
 function HomeSearch() {
   const [query, setQuery] = useState('')
@@ -52,9 +55,10 @@ function HeroCaption() {
 
 export default function HomePage() {
   const scene3d = useScene3d()
+  const unity = useTheme() === 'unity'
   return <>
-    <section className="home-hero hero-mesh home-hero-usual home-hero-scene" id="top">
-      {scene3d && <Suspense fallback={null}><HeroScene /></Suspense>}
+    <section className={`home-hero hero-mesh home-hero-usual home-hero-scene${unity ? ' home-hero-unity' : ''}`} id="top">
+      {unity ? <Suspense fallback={null}><UnityFlag /></Suspense> : scene3d && <Suspense fallback={null}><HeroScene /></Suspense>}
       <div className="container home-hero-inner">
         <div className="home-hero-copy">
           <UnityChip />
@@ -69,7 +73,7 @@ export default function HomePage() {
             <Link className="home-plain-link" to="/route" aria-label="Построить маршрут"><span className="home-route-long">Построить маршрут</span><span className="home-route-short">Маршрут</span><ArrowUpRight size={16} /></Link>
           </div>
         </div>
-        <HeroCaption />
+        {!unity && <HeroCaption />}
       </div>
     </section>
 

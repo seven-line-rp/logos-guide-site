@@ -1,37 +1,37 @@
 /* Тема «Единство» — праздничная, ко Дню народного единства (4 ноября).
    Третья тема рядом со светлой и тёмной: <html data-theme="unity">, см. src/theme.js.
-   Основа — светлая тема. Поверх неё: глубокий синий вместо яркого, белый,
-   красный как редкий акцент и тонкая лента цветов флага в нескольких местах
-   (шапка, низ главного экрана, заголовки разделов, подвал). Без конфетти и
-   анимаций: тема праздничная, но такая же спокойная, как остальной сайт. */
+   Цвета государственного флага: белый, синий (#0039a6), красный (#d52b1e),
+   плюс глубокий синий для фона главного экрана и золото навершия древка.
+   Правило темы — чистые плоские цвета: без свечений, размытых пятен, стекла и
+   градиентов «под нейросеть». Флаг на главном экране — src/components/UnityFlag.jsx. */
 
 :root[data-theme='unity'] {
   color-scheme: light;
-  --u-white: #ffffff;
-  --u-blue: #1c4aa8;
-  --u-navy: #0b1f4f;
-  --u-red: #d0281d;
-  --u-gold: #e9c46a;
-  --u-flag: linear-gradient(90deg, #ffffff 0 33.34%, #1c4aa8 33.34% 66.67%, #d0281d 66.67% 100%);
-  --u-flag-v: linear-gradient(180deg, #ffffff 0 33.34%, #1c4aa8 33.34% 66.67%, #d0281d 66.67% 100%);
-  --bg: #f5f7fb;
+  --u-blue: #0039a6;
+  --u-navy: #0a1f52;
+  --u-night: #071640;
+  --u-red: #d52b1e;
+  --u-gold: #c9a24a;
+  --u-flag: linear-gradient(90deg, #ffffff 0 33.34%, #0039a6 33.34% 66.67%, #d52b1e 66.67% 100%);
+  --u-edge: rgba(10, 31, 82, .16);
+  --bg: #f4f6fa;
   --surface: #ffffff;
-  --surface-soft: #edf1f9;
+  --surface-soft: #ecf0f8;
   --surface-raised: #ffffff;
-  --blue: #1c4aa8;
-  --blue-bright: #1c4aa8;
-  --blue-deep: #0b1f4f;
-  --blue-night: #0b1f4f;
-  --blue-pale: #dbe4f5;
-  --blue-soft: #edf1f9;
-  --accent-tint: rgba(28, 74, 168, .1);
-  --line: #d8dfec;
-  --line-strong: #c3cde0;
-  --ink: #0f1d3d;
-  --muted: #56647f;
-  --muted-2: #7c88a0;
-  --action-bg: #1c4aa8;
-  --action-hover: #163d8e;
+  --blue: #0039a6;
+  --blue-bright: #0039a6;
+  --blue-deep: #0a1f52;
+  --blue-night: #0a1f52;
+  --blue-pale: #d8e1f3;
+  --blue-soft: #ecf0f8;
+  --accent-tint: rgba(0, 57, 166, .09);
+  --line: #d6ddeb;
+  --line-strong: #bfc9dd;
+  --ink: #0d1b3e;
+  --muted: #53617e;
+  --muted-2: #7a86a0;
+  --action-bg: #0039a6;
+  --action-hover: #002d85;
   color: var(--ink);
   background: var(--bg);
 }
@@ -39,138 +39,148 @@
 :root[data-theme='unity'] ::selection { color: #fff; background: var(--u-red); }
 :root[data-theme='unity'] :is(button, a, input, select, textarea):focus-visible { outline-color: var(--u-red); }
 
-/* ---------- Шапка: тонкая лента флага по верхнему краю ---------- */
+/* ---------- Шапка: лента флага по верхнему краю ---------- */
 :root[data-theme='unity'] .hd.site-header::before {
   content: '';
   position: absolute;
   inset: 0 0 auto 0;
-  height: 3px;
+  z-index: 1;
+  height: 4px;
   background: var(--u-flag);
-  box-shadow: inset 0 -1px 0 rgba(11, 31, 79, .08);
+  box-shadow: inset 0 -1px 0 var(--u-edge);
   pointer-events: none;
 }
+:root[data-theme='unity'] .brand-copy strong { color: var(--u-navy); }
 :root[data-theme='unity'] .brand-copy small { color: var(--u-red); }
 :root[data-theme='unity'] .hd .nav-link-active,
-:root[data-theme='unity'] .hd .nav-link-active:hover { color: var(--u-navy); box-shadow: inset 0 -2px 0 var(--u-red), inset 0 0 0 1px var(--line); }
-:root[data-theme='unity'] .hd-seg .hd-seg-unity[aria-pressed='true'] { color: #fff; background: var(--u-navy); box-shadow: inset 0 -2px 0 var(--u-red); }
+:root[data-theme='unity'] .hd .nav-link-active:hover { color: var(--u-navy); background: var(--surface); box-shadow: inset 0 -2px 0 var(--u-red), inset 0 0 0 1px var(--line); }
+:root[data-theme='unity'] .hd-seg button[aria-pressed='true'] { color: #fff; background: var(--u-navy); }
+:root[data-theme='unity'] .hd-seg .hd-seg-unity[aria-pressed='true'] { box-shadow: inset 0 -2px 0 var(--u-red); }
 
-/* ---------- Главный экран: глубокий синий, тёплое красное зарево, лента внизу ---------- */
-:root[data-theme='unity'] .home-hero.hero-mesh {
-  background:
-    radial-gradient(60% 70% at 92% 105%, rgba(208, 40, 29, .42), transparent 70%),
-    radial-gradient(45% 60% at 80% 10%, rgba(255, 255, 255, .1), transparent 70%),
-    linear-gradient(115deg, #071640 0%, #0d2a6e 55%, #1c4aa8 100%);
-}
+/* ---------- Главный экран: ночное синее небо и флаг на ветру ---------- */
+:root[data-theme='unity'] .home-hero.hero-mesh { background: linear-gradient(180deg, #061338 0%, #0a1f52 62%, #0d2a6b 100%); }
 :root[data-theme='unity'] .home-hero.hero-mesh::after {
   content: '';
   position: absolute;
   inset: auto 0 0 0;
   z-index: 3;
-  height: 5px;
+  height: 6px;
   background: var(--u-flag);
   opacity: 1;
   filter: none;
   animation: none;
   pointer-events: none;
 }
-:root[data-theme='unity'] .home-hero-scene {
-  --route: #ff7a6b;
-  --route-glow: rgba(255, 122, 107, .55);
-  --shade: rgba(7, 22, 64, .94);
-  --shade-mid: rgba(7, 22, 64, .5);
-}
-:root[data-theme='unity'] .home-plain-link svg { color: #ff9a8f; }
+:root[data-theme='unity'] .home-plain-link svg { color: #fff; }
 :root[data-theme='unity'] .home-map-cta { color: var(--u-navy); }
 
-.unity-flag-mark { display: inline-flex; flex-direction: column; width: 20px; height: 14px; flex: 0 0 auto; border-radius: 3px; overflow: hidden; box-shadow: 0 0 0 1px rgba(11, 31, 79, .18); }
+.unity-hero-flag {
+  position: absolute;
+  z-index: 1;
+  top: 96px;
+  bottom: 6px;
+  right: max(16px, calc((100vw - var(--container)) / 2));
+  width: min(600px, 46vw);
+  pointer-events: none;
+}
+.unity-hero-flag canvas { display: block; width: 100%; height: 100%; }
+
+.unity-flag-mark { display: inline-flex; flex-direction: column; width: 21px; height: 14px; flex: 0 0 auto; overflow: hidden; border-radius: 2px; box-shadow: 0 0 0 1px rgba(10, 31, 82, .16); }
 .unity-flag-mark i { flex: 1; }
 .unity-flag-mark i:nth-child(1) { background: #fff; }
-.unity-flag-mark i:nth-child(2) { background: #1c4aa8; }
-.unity-flag-mark i:nth-child(3) { background: #d0281d; }
+.unity-flag-mark i:nth-child(2) { background: #0039a6; }
+.unity-flag-mark i:nth-child(3) { background: #d52b1e; }
 
 .unity-chip {
   display: inline-flex;
   align-items: center;
-  gap: 9px;
-  margin-bottom: 14px;
-  padding: 6px 13px 6px 8px;
-  border: 1px solid rgba(255, 255, 255, .28);
-  border-radius: 999px;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 7px 14px 7px 9px;
+  border: 1px solid rgba(255, 255, 255, .32);
+  border-radius: 6px;
   color: #fff;
-  background: rgba(255, 255, 255, .1);
   font-size: 13px;
   font-weight: 650;
-  letter-spacing: .01em;
+  letter-spacing: .04em;
+  text-transform: uppercase;
 }
-.unity-chip .unity-flag-mark { box-shadow: 0 0 0 1px rgba(255, 255, 255, .5); }
+.unity-chip .unity-flag-mark { box-shadow: 0 0 0 1px rgba(255, 255, 255, .55); }
+.unity-chip-title { font-weight: 500; letter-spacing: .02em; text-transform: none; opacity: .85; }
 
 /* ---------- Поздравление на главной ---------- */
-.unity-banner { padding-top: 28px; }
+.unity-banner { padding-top: 32px; }
 .unity-banner-card {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 24px;
-  padding: 26px 28px 26px 36px;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  overflow: hidden;
   border: 1px solid var(--line);
   border-radius: var(--r-lg, 12px);
   background: var(--surface);
-  overflow: hidden;
 }
-.unity-banner-card::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 6px; background: var(--u-flag-v); box-shadow: inset -1px 0 0 var(--line); }
-.unity-banner-copy { display: grid; gap: 8px; min-width: 0; }
-.unity-banner-kicker { display: inline-flex; align-items: center; gap: 8px; color: var(--u-red); font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
-.unity-banner-copy strong { color: var(--u-navy); font-size: clamp(22px, 2.6vw, 30px); line-height: 1.15; letter-spacing: -.01em; text-wrap: balance; }
-.unity-banner-copy p { max-width: 560px; margin: 0; color: var(--muted); font-size: 15px; }
-.unity-banner-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; margin-top: 6px; }
-.unity-banner-link { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px; border-radius: 10px; color: #fff; background: var(--u-navy); font-weight: 650; text-decoration: none; transition: background .15s; }
+.unity-banner-card::before { content: ''; position: absolute; z-index: 1; inset: 0 0 auto 0; height: 6px; background: var(--u-flag); box-shadow: inset 0 -1px 0 var(--u-edge); }
+.unity-banner-copy { display: grid; align-content: center; gap: 10px; min-width: 0; padding: 36px 32px 28px; }
+.unity-banner-kicker { display: inline-flex; align-items: center; gap: 9px; color: var(--u-red); font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.unity-banner-copy strong { color: var(--u-navy); font-size: clamp(24px, 3vw, 36px); line-height: 1.1; letter-spacing: -.015em; text-wrap: balance; }
+.unity-banner-history { max-width: 640px; margin: 0; color: var(--ink); font-size: 16px; line-height: 1.55; }
+.unity-banner-note { margin: 0; color: var(--muted); font-size: 14px; }
+.unity-banner-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; margin-top: 8px; }
+.unity-banner-link { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px; border-radius: 8px; color: #fff; background: var(--u-navy); font-weight: 650; text-decoration: none; transition: background .15s; }
 .unity-banner-link:hover { background: var(--u-blue); }
 .unity-banner-off { min-height: 44px; padding: 0; border: 0; color: var(--muted); background: none; font: inherit; font-size: 14px; cursor: pointer; text-decoration: underline; text-decoration-color: var(--line-strong); text-underline-offset: 4px; }
 .unity-banner-off:hover { color: var(--ink); text-decoration-color: currentColor; }
 .unity-banner-count {
   display: grid;
-  justify-items: center;
   align-content: center;
-  gap: 4px;
-  min-width: 148px;
-  padding: 18px 20px;
-  border-radius: 10px;
+  justify-items: center;
+  gap: 8px;
+  padding: 36px 20px 28px;
   color: #fff;
-  background: radial-gradient(90% 90% at 100% 100%, rgba(208, 40, 29, .55), transparent 70%), linear-gradient(135deg, #071640, #1c4aa8);
+  background: var(--u-navy);
   text-align: center;
 }
-.unity-banner-count b { font-size: 44px; line-height: 1; font-weight: 750; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
-.unity-banner-count span { color: rgba(255, 255, 255, .8); font-size: 13px; font-weight: 600; }
+.unity-banner-count b { font-size: 64px; line-height: 1; font-weight: 750; font-variant-numeric: tabular-nums; letter-spacing: -.03em; }
+.unity-banner-count b.unity-banner-word { font-size: 30px; letter-spacing: -.01em; }
+.unity-banner-count span { padding-top: 8px; border-top: 2px solid var(--u-red); color: rgba(255, 255, 255, .86); font-size: 13px; font-weight: 600; letter-spacing: .02em; }
 
-/* ---------- Остальные страницы: лента флага в заголовках разделов и подвале ---------- */
+/* ---------- Остальные страницы: цвета флага в акцентах ---------- */
 :root[data-theme='unity'] .site-main :is(.section-top h2, .directory-head h1, .page-head h1)::after {
   content: '';
   display: block;
-  width: 42px;
+  width: 48px;
   height: 4px;
   margin-top: 10px;
-  border-radius: 2px;
   background: var(--u-flag);
-  box-shadow: inset 0 0 0 1px rgba(11, 31, 79, .14);
+  box-shadow: inset 0 0 0 1px var(--u-edge);
 }
+:root[data-theme='unity'] .day-card { position: relative; overflow: hidden; }
+:root[data-theme='unity'] .day-card::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 3px; background: var(--u-flag); box-shadow: inset 0 -1px 0 var(--u-edge); }
+:root[data-theme='unity'] .text-link:hover, :root[data-theme='unity'] .footer-link:hover { color: var(--u-red); }
 :root[data-theme='unity'] .site-footer { position: relative; border-top: 0; }
-:root[data-theme='unity'] .site-footer::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 3px; background: var(--u-flag); box-shadow: inset 0 0 0 1px rgba(11, 31, 79, .1); }
-:root[data-theme='unity'] .footer-link:hover { color: var(--u-red); }
-:root[data-theme='unity'] .text-link:hover { color: var(--u-red); }
-
-@media (max-width: 680px) {
-  .unity-chip { margin-bottom: 10px; font-size: 12px; }
-  .unity-chip-title { display: none; }
-  .unity-banner { padding-top: 20px; }
-  .unity-banner-card { grid-template-columns: minmax(0, 1fr); gap: 18px; padding: 22px 18px 20px 26px; }
-  .unity-banner-count { grid-auto-flow: column; justify-content: start; align-items: baseline; gap: 10px; min-width: 0; padding: 12px 16px; }
-  .unity-banner-count b { font-size: 30px; }
-  .unity-banner-actions { gap: 4px 16px; }
-}
+:root[data-theme='unity'] .site-footer::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 4px; background: var(--u-flag); box-shadow: inset 0 0 0 1px var(--u-edge); }
 
 /* ---------- Переключатель тем в меню: три кнопки поровну, под подписью ---------- */
 .hd-menu-row-theme { flex-direction: column; align-items: stretch; gap: 8px; }
 .hd-menu-row-theme .hd-seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; }
 .hd-menu-row-theme .hd-seg button { justify-content: center; min-width: 0; padding: 0 6px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 @media (max-width: 380px) { .hd-menu-row-theme .hd-seg svg { display: none; } }
+
+/* ---------- Телефон и планшет ---------- */
+@media (max-width: 860px) {
+  /* Флаг в правом верхнем углу, над заголовком: древко кончается выше текста. */
+  .unity-hero-flag { top: 10px; bottom: auto; right: 6px; width: min(42vw, 230px); height: 124px; }
+  :root[data-theme='unity'] .home-hero-unity .home-hero-inner { padding-top: 76px; }
+}
+@media (max-width: 680px) {
+  .unity-chip { margin-bottom: 12px; padding: 6px 10px 6px 8px; font-size: 12px; }
+  .unity-chip-title { display: none; }
+  .unity-banner { padding-top: 22px; }
+  .unity-banner-card { grid-template-columns: minmax(0, 1fr); }
+  .unity-banner-copy { padding: 30px 18px 20px; }
+  .unity-banner-history { font-size: 15px; }
+  .unity-banner-count { grid-auto-flow: column; justify-content: start; align-items: center; gap: 14px; padding: 16px 18px; }
+  .unity-banner-count b { font-size: 40px; }
+  .unity-banner-count b.unity-banner-word { font-size: 24px; }
+  .unity-banner-count span { padding: 0 0 0 12px; border-top: 0; border-left: 2px solid var(--u-red); text-align: left; }
+}
