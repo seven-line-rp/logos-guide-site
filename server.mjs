@@ -41,8 +41,10 @@ const MIME_TYPES = {
   '.mp3': 'audio/mpeg',
   '.png': 'image/png',
   '.svg': 'image/svg+xml',
+  '.txt': 'text/plain; charset=utf-8',
   '.webmanifest': 'application/manifest+json',
   '.webp': 'image/webp',
+  '.xml': 'application/xml; charset=utf-8',
 }
 const staticMissingPath = /\.(?:css|gif|html|ico|jpe?g|js|json|map|mp3|png|svg|webmanifest|webp|xml|txt)$/i
 
@@ -73,8 +75,12 @@ async function serveStatic(req, res) {
   if (file !== root && !file.startsWith(`${root}${sep}`)) return sendText(res, 400, 'Bad Request\n')
   try {
     const details = await stat(file)
-    if (details.isDirectory()) file = resolve(file, 'index.html')
-    else if (!details.isFile()) return sendText(res, 404, 'Not Found\n')
+    // Папка без своего index.html (например /rooms, где лежат фото кабинетов)
+    // совпадает с адресом раздела приложения: отдаём приложение.
+    if (details.isDirectory()) {
+      file = resolve(file, 'index.html')
+      try { await stat(file) } catch { file = resolve(root, 'index.html') }
+    } else if (!details.isFile()) return sendText(res, 404, 'Not Found\n')
   } catch {
     if (staticMissingPath.test(pathname) || pathname.startsWith('/assets/')) return sendText(res, 404, 'Not Found\n')
     file = resolve(root, 'index.html')

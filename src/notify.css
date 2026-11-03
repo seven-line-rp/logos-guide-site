@@ -8,6 +8,7 @@
   --tn-amber: #b86e00;
   --tn-slate: #52607a;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 28px;
   padding-bottom: clamp(48px, 7vw, 96px);
 }
@@ -51,10 +52,10 @@
 @keyframes tn-ring { 0%, 100% { transform: rotate(0); } 10%, 30% { transform: rotate(14deg); } 20%, 40% { transform: rotate(-12deg); } 50% { transform: rotate(0); } }
 
 /* ---------- Карточки видов ---------- */
-.tn-section { display: grid; gap: 16px; }
+.tn-section { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
 .tn-section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
 .tn-section-head p { max-width: 640px; margin: 6px 0 0; color: var(--muted); font-size: 14px; line-height: 1.5; }
-.tn-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 14px; margin: 0; padding: 0; list-style: none; }
+.tn-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(290px, 100%), 1fr)); gap: 14px; margin: 0; padding: 0; list-style: none; }
 .tn-card { display: grid; gap: 14px; align-content: start; padding: 16px; border: 1px solid var(--line); border-radius: var(--tn-radius); background: var(--surface); }
 .tn-card-label { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-size: 12.5px; font-weight: 650; }
 .tn-card-label::before { width: 8px; height: 8px; border-radius: 50%; background: var(--tone); content: ''; }
@@ -96,7 +97,7 @@
 .tn-steps li::before { position: absolute; top: 0; left: 0; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; color: var(--blue); background: color-mix(in srgb, var(--blue) 12%, transparent); font-size: 12px; font-weight: 700; content: counter(tn-step); }
 
 @media (max-width: 860px) {
-  .tn-columns { grid-template-columns: 1fr; }
+  .tn-columns { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 680px) {
   .tn { gap: 22px; }

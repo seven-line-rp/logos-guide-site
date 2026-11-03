@@ -5,19 +5,30 @@
 # Подробности и вариант для nginx — в deploy/reg-ru.md.
 
 DirectoryIndex index.html
+# /rooms — это и раздел сайта, и папка с фото кабинетов. Без этой строки Apache
+# перенаправил бы /rooms на /rooms/ и показал «403 Forbidden» вместо страницы.
+DirectorySlash Off
 
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
 
-  # 1. Существующие файлы и папки (assets/, voice/, team/, картинки) отдаём как есть.
-  RewriteCond %{REQUEST_FILENAME} -f [OR]
-  RewriteCond %{REQUEST_FILENAME} -d
+  # 0. Один адрес сайта. www.logos-guide.ru и технический адрес хостинга
+  #    навсегда (301) перенаправляются на https://logos-guide.ru — тогда в поиске
+  #    показывается только основной домен, а не копия сайта на другом адресе.
+  RewriteCond %{HTTP_HOST} !^logos-guide\.ru$ [NC]
+  RewriteCond %{HTTP_HOST} !^(localhost|127\.0\.0\.1)(:[0-9]+)?$ [NC]
+  RewriteCond %{HTTP_HOST} !^$
+  RewriteRule ^ https://logos-guide.ru%{REQUEST_URI} [R=301,L,NE]
+
+  # 1. Существующие файлы (assets/, voice/, team/, картинки) отдаём как есть.
+  #    Папки сюда не входят: адрес вида /rooms должен открыть раздел приложения.
+  RewriteCond %{REQUEST_FILENAME} -f
   RewriteRule ^ - [L]
 
   # 2. Запросы к отсутствующей статике честно отдают 404: иначе браузер получит
   #    HTML вместо js, css или mp3 и страница «сломается» без внятной причины.
-  RewriteCond %{REQUEST_URI} ^/(assets|voice|team)/ [OR]
+  RewriteCond %{REQUEST_URI} ^/(assets|voice|team|rooms)/ [OR]
   RewriteCond %{REQUEST_URI} \.(js|mjs|css|map|mp3|png|jpe?g|gif|svg|webp|ico|webmanifest|xml|txt)$ [NC]
   RewriteRule ^ - [L]
 

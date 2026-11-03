@@ -5,6 +5,7 @@ import { photoSrcSet, photosFor, rooms, quickPlaces } from '../data.js'
 import { HERO_ROUTES } from '../hero-scene-model.js'
 import AiPromoBanner from '../components/AiPromoBanner.jsx'
 import HomeDashboard from '../components/HomeDashboard.jsx'
+import { UnityBanner, UnityChip } from '../components/Unity.jsx'
 import { Reveal } from '../components/Primitives.jsx'
 import VoiceSearchButton from '../components/VoiceSearchButton.jsx'
 import { cancelMiss, reportMiss, searchRooms, searchTeachers, shortName, useTeachers } from '../search.js'
@@ -56,6 +57,7 @@ export default function HomePage() {
       {scene3d && <Suspense fallback={null}><HeroScene /></Suspense>}
       <div className="container home-hero-inner">
         <div className="home-hero-copy">
+          <UnityChip />
           <h1>Где найти кабинет</h1>
           <p>Введите номер, название или фамилию преподавателя. Кабинет откроется на карте, оттуда можно построить маршрут.</p>
           <div className="home-search-group">
@@ -70,6 +72,8 @@ export default function HomePage() {
         <HeroCaption />
       </div>
     </section>
+
+    <UnityBanner />
 
     <HomeDashboard />
 

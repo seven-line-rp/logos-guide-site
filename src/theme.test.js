@@ -2,19 +2,29 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { THEMES, nextTheme, resolveTheme } from './theme.js'
 import { holidayName } from './holidays.js'
+import { daysToUnity } from './festive.js'
 import { bellsFor } from './schedule.js'
 
-test('the site has a light and a dark theme, and falls back to light', () => {
-  assert.deepEqual(THEMES, ['light', 'dark'])
+test('the site has light, dark and unity themes, and falls back to light', () => {
+  assert.deepEqual(THEMES, ['light', 'dark', 'unity'])
   assert.equal(resolveTheme('dark'), 'dark')
   assert.equal(resolveTheme('light'), 'light')
+  assert.equal(resolveTheme('unity'), 'unity')
   assert.equal(resolveTheme(null), 'light')
-  assert.equal(resolveTheme('unity'), 'light', 'старое значение темы «Единство» уходит в светлую')
+  assert.equal(resolveTheme('sepia'), 'light')
 })
 
-test('the theme button switches between the two themes', () => {
+test('the theme button cycles through all three themes', () => {
   assert.equal(nextTheme('light'), 'dark')
-  assert.equal(nextTheme('dark'), 'light')
+  assert.equal(nextTheme('dark'), 'unity')
+  assert.equal(nextTheme('unity'), 'light')
+})
+
+test('unity countdown counts days to 4 November', () => {
+  assert.equal(daysToUnity(new Date(2026, 10, 3, 15)), 1)
+  assert.equal(daysToUnity(new Date(2026, 10, 4, 9)), 0)
+  assert.equal(daysToUnity(new Date(2026, 10, 5, 9)), -1)
+  assert.equal(daysToUnity(new Date(2026, 9, 25, 9)), 10)
 })
 
 test('public holidays have no bells, ordinary days do', () => {
