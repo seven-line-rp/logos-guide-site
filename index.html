@@ -7,11 +7,50 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="ЛОГОС" />
-    <meta name="description" content="Интерактивный путеводитель по колледжу: карта этажей, поиск кабинетов, маршруты и мини-игры." />
-    <title>ЛОГОС:Путеводитель</title>
+    <meta name="description" content="ЛОГОС:Путеводитель — интерактивный путеводитель по колледжу «Логос»: карта этажей, поиск кабинетов и преподавателей, маршруты по коридорам." />
+    <title>ЛОГОС:Путеводитель — карта и маршруты по колледжу</title>
+    <!-- Основной адрес сайта. Для поисковиков это единственная версия страницы:
+         копии на других доменах (www, технический адрес хостинга) в выдачу не попадают. -->
+    <link rel="canonical" href="https://logos-guide.ru/" />
+    <meta name="application-name" content="ЛОГОС:Путеводитель" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="ЛОГОС:Путеводитель" />
+    <meta property="og:title" content="ЛОГОС:Путеводитель — карта и маршруты по колледжу" />
+    <meta property="og:description" content="Карта этажей, поиск кабинетов и преподавателей, маршруты по коридорам." />
+    <meta property="og:url" content="https://logos-guide.ru/" />
+    <meta property="og:image" content="https://logos-guide.ru/icon-512.png" />
+    <meta property="og:locale" content="ru_RU" />
+    <!-- Значок сайта. Google в выдаче берёт квадратный значок размером кратным 48 px
+         (favicon.ico 48×48 и PNG 96/192), SVG — для современных браузеров. -->
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
     <link rel="icon" type="image/svg+xml" href="/logo.svg" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
+    <!-- Название сайта и логотип для поиска (Google показывает их над ссылкой). -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://logos-guide.ru/#website",
+            "name": "ЛОГОС:Путеводитель",
+            "alternateName": ["Логос Путеводитель", "ЛОГОС Путеводитель", "Путеводитель колледжа Логос"],
+            "url": "https://logos-guide.ru/",
+            "inLanguage": "ru"
+          },
+          {
+            "@type": "Organization",
+            "@id": "https://logos-guide.ru/#organization",
+            "name": "ЛОГОС:Путеводитель",
+            "url": "https://logos-guide.ru/",
+            "logo": "https://logos-guide.ru/icon-512.png"
+          }
+        ]
+      }
+    </script>
     <script>
       /* spa-fallback:restore */
       // Если хостинг не умеет отдавать index.html для произвольных адресов (перезагрузка

@@ -9,6 +9,7 @@ import ErrorBoundary from './components/ErrorBoundary.jsx'
 import HomePage from './pages/HomePage'
 import { translate, useLanguage } from './i18n.js'
 import { trackView } from './stats.js'
+import { SITE_NAME, SITE_URL } from './site.js'
 
 const MapPage = lazy(() => import('./pages/MapPage'))
 const RoomsPage = lazy(() => import('./pages/RoomsPage'))
@@ -34,34 +35,39 @@ const FeedbackPage = lazy(() => import('./pages/FeedbackPage'))
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'))
 const AdminPush = lazy(() => import('./admin/AdminPush'))
 
+// Название сайта стоит в каждом заголовке вкладки: по нему сайт находят в поиске
+// («Логос Путеводитель»), и Google берёт заголовок именно отсюда.
+const HOME_TITLE = 'ЛОГОС:Путеводитель — карта и маршруты по колледжу'
+
 const titles = {
-  '/': 'Путеводитель по колледжу',
-  '/map': 'Карта этажей | Путеводитель колледжа',
-  '/rooms': 'Кабинеты | Путеводитель колледжа',
-  '/route': 'Маршрут | Путеводитель колледжа',
-  '/games': 'Игры | Путеводитель колледжа',
-  '/services': 'Пространства | Путеводитель колледжа',
-  '/about': 'О путеводителе | Колледж',
-  '/docs': 'Документация | Путеводитель колледжа',
-  '/privacy': 'Политика конфиденциальности | Путеводитель колледжа',
-  '/terms': 'Пользовательское соглашение | Путеводитель колледжа',
-  '/consent': 'Согласие на обработку персональных данных | Путеводитель колледжа',
-  '/ai': 'ИИ-Агент | Путеводитель колледжа',
-  '/schedule': 'Моё расписание | Путеводитель колледжа',
-  '/tour': 'Экскурсия в 3D | Путеводитель колледжа',
-  '/teachers': 'Преподаватели | Путеводитель колледжа',
-  '/start': 'Первая неделя | Путеводитель колледжа',
-  '/here': 'Вы здесь | Путеводитель колледжа',
-  '/notifications': 'Уведомления | Путеводитель колледжа',
-  '/admin': 'Панель | Путеводитель колледжа',
-  '/admin/notices': 'Объявления | Путеводитель колледжа',
-  '/admin/cards': 'Карточки на двери | Путеводитель колледжа',
-  '/admin/push': 'Уведомления | Путеводитель колледжа',
+  '/': '',
+  '/map': 'Карта этажей',
+  '/rooms': 'Кабинеты',
+  '/route': 'Маршрут',
+  '/games': 'Игры',
+  '/services': 'Пространства',
+  '/about': 'О путеводителе',
+  '/docs': 'Документация',
+  '/privacy': 'Политика конфиденциальности',
+  '/terms': 'Пользовательское соглашение',
+  '/consent': 'Согласие на обработку персональных данных',
+  '/ai': 'ИИ-Агент',
+  '/schedule': 'Моё расписание',
+  '/tour': 'Экскурсия в 3D',
+  '/teachers': 'Преподаватели',
+  '/start': 'Первая неделя',
+  '/here': 'Вы здесь',
+  '/notifications': 'Уведомления',
+  '/feedback': 'Сообщить о проблеме',
+  '/admin': 'Панель',
+  '/admin/notices': 'Объявления',
+  '/admin/cards': 'Карточки на двери',
+  '/admin/push': 'Уведомления',
 }
 
 // Адрес вне списка выше — это страница приложения «404»: показываем это и в заголовке вкладки,
 // чтобы неверная ссылка не выглядела как ошибка сервера (см. deploy/reg-ru.md про перезагрузку).
-const notFoundTitle = 'Страница не найдена | Путеводитель колледжа'
+const notFoundTitle = 'Страница не найдена'
 
 function RouteEffects() {
   const language = useLanguage()
@@ -70,7 +76,10 @@ function RouteEffects() {
     // Новая страница открывается сверху сразу: плавная прокрутка через всю
     // длинную страницу на слабых телефонах дёргается.
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
-    document.title = translate(titles[location.pathname] || notFoundTitle, language)
+    const page = location.pathname in titles ? titles[location.pathname] : notFoundTitle
+    document.title = page ? `${translate(page, language)} | ${SITE_NAME}` : translate(HOME_TITLE, language)
+    // Канонический адрес страницы — всегда на основном домене, без параметров.
+    document.querySelector('link[rel="canonical"]')?.setAttribute('href', `${SITE_URL}${location.pathname === '/' ? '/' : location.pathname}`)
   }, [location.pathname, language])
   useEffect(() => { trackView(location.pathname) }, [location.pathname])
   return null

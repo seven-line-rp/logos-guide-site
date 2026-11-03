@@ -61,14 +61,14 @@ npm run build
 sudo nginx -t && sudo systemctl reload nginx
 ```
 
-Главная строчка там `try_files $uri $uri/ /index.html;`.
+Главная строчка там `try_files $uri /index.html;`.
 
 ## Если проще написать в поддержку
 
 > Домен logos-guide.ru — одностраничное приложение. Прошу для всех адресов, у
 > которых нет реального файла, отдавать /index.html с кодом 200. Для Apache
 > правило уже лежит в .htaccess в корне сайта, для nginx это
-> `try_files $uri $uri/ /index.html;`. И ещё прошу поставить
+> `try_files $uri /index.html;`. И ещё прошу поставить
 > `ErrorDocument 404 /404.html`.
 
 ## Проверка после выкладки

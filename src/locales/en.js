@@ -1,5 +1,12 @@
 // English UI catalogue; keys are the original Russian presentation strings.
 export const english = {
+  'С Днём народного единства!': 'Happy National Unity Day!', 'День народного единства': 'National Unity Day', 'Единство': 'Unity', 'Обычная тема': 'Regular theme', '4 ноября': '4 November',
+  'день до праздника': 'day to go', 'дня до праздника': 'days to go', 'дней до праздника': 'days to go', 'праздник': 'holiday', 'праздник прошёл': 'holiday is over',
+  '4 ноября занятий нет. Карта и маршруты работают как обычно.': 'No classes on 4 November. The map and routes work as usual.',
+  'Сегодня занятий нет. Карта и маршруты работают как обычно.': 'No classes today. The map and routes work as usual.',
+  'Мы разные, и колледж у нас один. Карта и маршруты работают как обычно.': 'We are all different, and we share one college. The map and routes work as usual.',
+  'Тема «Единство»': 'Unity theme', 'Включить праздничную тему «Единство»': 'Switch to the holiday Unity theme',
+  'ЛОГОС:Путеводитель — карта и маршруты по колледжу': 'LOGOS Guide: college floor maps and routes', 'Страница не найдена': 'Page not found', 'Уведомления': 'Notifications', 'Панель': 'Dashboard', 'Объявления': 'Notices',
   'Рядом:': 'Nearby:', 'Ближайшее место': 'Nearest place',
   'ЛОГОС': 'LOGOS', 'ПУТЕВОДИТЕЛЬ': 'CAMPUS GUIDE',
   'Карта': 'Map', 'Карта этажей': 'Floor maps', 'Кабинеты': 'Rooms', 'Маршрут': 'Route', 'Игры': 'Games', 'Пространства': 'Spaces', 'О проекте': 'About', 'О путеводителе': 'About the guide',

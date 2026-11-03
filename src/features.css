@@ -208,24 +208,25 @@
 .schedule-remove { color: var(--muted); }
 .schedule-remove:hover { color: var(--bad); border-color: var(--bad); }
 .schedule-empty { margin: 8px 0 0; padding: 26px; border: 1px dashed var(--line); border-radius: 16px; color: var(--muted); text-align: center; }
-.schedule-form { display: grid; gap: 12px; }
+.schedule-form { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
 .schedule-form h2 { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 16px; }
-.schedule-bells { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
+.schedule-bells { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 4px; }
 .schedule-bells button { padding: 6px 0; display: grid; gap: 1px; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); background: var(--surface); font: inherit; cursor: pointer; transition: all .2s var(--ease); }
 .schedule-bells strong { font-size: 14px; }
 .schedule-bells small { color: var(--muted); font-size: 10.5px; }
 .schedule-bells button[aria-pressed='true'] { border-color: transparent; color: #fff; background: var(--action-bg, var(--blue)); }
 .schedule-bells button[aria-pressed='true'] small { color: rgba(255, 255, 255, .8); }
-.schedule-times { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.schedule-times label, .schedule-field { display: grid; gap: 5px; }
+.schedule-times { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.schedule-times label, .schedule-field { display: grid; gap: 5px; min-width: 0; }
+.schedule-times input { min-width: 0; width: 100%; }
 .schedule-times span, .schedule-field span { color: var(--muted); font-size: 12px; font-weight: 650; }
 .schedule-times input, .schedule-field input { min-height: 42px; padding: 0 12px; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); background: var(--bg); font: inherit; font-size: 15px; outline: none; transition: border-color .2s; }
 .schedule-times input:focus, .schedule-field input:focus { border-color: var(--blue); }
 .schedule-add { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 12px; color: #fff; background: var(--action-bg, var(--blue)); font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
 .schedule-error { margin: 0; color: var(--bad); font-size: 13px !important; }
 @media (max-width: 900px) {
-  .schedule-layout { grid-template-columns: 1fr; }
-  .schedule-side { position: static; order: -1; }
+  .schedule-layout { grid-template-columns: minmax(0, 1fr); }
+  .schedule-side { position: static; order: -1; grid-template-columns: minmax(0, 1fr); }
 }
 
 /* ---------- Экскурсия ---------- */

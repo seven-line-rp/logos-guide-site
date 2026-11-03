@@ -111,8 +111,36 @@ test('apache fallback ships with the build and keeps real files intact', () => {
   assert.match(htaccess, /ErrorDocument 404 \/404\.html/)
 })
 
+test('a section address that is also a folder (/rooms) opens the app, not a 403', () => {
+  const htaccess = read('../public/.htaccess')
+  assert.match(htaccess, /DirectorySlash Off/)
+  assert.doesNotMatch(htaccess, /RewriteCond %\{REQUEST_FILENAME\} -d/)
+  assert.doesNotMatch(read('../deploy/nginx-spa.conf'), /\$uri\//)
+})
+
+test('other hosts (www, the hosting technical domain) redirect to the main domain', () => {
+  const htaccess = read('../public/.htaccess')
+  assert.match(htaccess, /RewriteCond %\{HTTP_HOST\} !\^logos-guide\\\.ru\$ \[NC\]/)
+  assert.match(htaccess, /RewriteRule \^ https:\/\/logos-guide\.ru%\{REQUEST_URI\} \[R=301,L,NE\]/)
+  // Перенаправление стоит раньше правил приложения, иначе index.html отдался бы и на чужом домене.
+  assert.ok(htaccess.indexOf('R=301') < htaccess.indexOf('RewriteRule ^ index.html'))
+  assert.match(read('../deploy/nginx-spa.conf'), /return 301 https:\/\/logos-guide\.ru\$request_uri;/)
+})
+
+test('search engines get one canonical address, a site name and a square icon', () => {
+  const html = read('../index.html')
+  assert.match(html, /<link rel="canonical" href="https:\/\/logos-guide\.ru\/" \/>/)
+  assert.match(html, /"name": "ЛОГОС:Путеводитель"/)
+  assert.match(html, /<link rel="icon" href="\/favicon\.ico" sizes="48x48" \/>/)
+  assert.match(read('../public/robots.txt'), /Sitemap: https:\/\/logos-guide\.ru\/sitemap\.xml/)
+  assert.match(read('../public/sitemap.xml'), /<loc>https:\/\/logos-guide\.ru\/map<\/loc>/)
+  for (const icon of ['favicon.ico', 'favicon-96x96.png', 'icon-192.png', 'icon-512.png']) {
+    assert.ok(readFileSync(new URL(`../public/${icon}`, import.meta.url)).length > 0, icon)
+  }
+})
+
 test('nginx snippet keeps deep links on index.html', () => {
   const nginx = read('../deploy/nginx-spa.conf')
-  assert.match(nginx, /try_files \$uri \$uri\/ \/index\.html;/)
+  assert.match(nginx, /try_files \$uri \/index\.html;/)
   assert.match(nginx, /error_page 404 \/404\.html;/)
 })

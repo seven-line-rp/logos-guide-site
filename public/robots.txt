@@ -1,0 +1,8 @@
+# ЛОГОС:Путеводитель — https://logos-guide.ru
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /api/
+Disallow: /*?__redirect=
+
+Sitemap: https://logos-guide.ru/sitemap.xml

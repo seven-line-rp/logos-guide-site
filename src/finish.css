@@ -119,8 +119,9 @@ body *:not(.home-hero):not(.home-hero *) { -webkit-backdrop-filter: none !import
 }
 @media (max-width: 560px) {
   .footer-bottom { flex-direction: column; align-items: flex-start; }
-  .footer-legal { flex-direction: column; gap: 2px; }
-  .footer-legal :is(a, button) { display: inline-flex; align-items: center; min-height: 36px; }
+  .footer-bottom { gap: 6px; padding: 14px 0 18px; }
+  .footer-legal { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); justify-items: start; align-items: center; gap: 0 16px; width: 100%; }
+  .footer-legal :is(a, button) { display: inline-flex; align-items: center; min-height: 40px; text-align: left; }
 }
 
 /* ---------- Телефон: пальцем должно быть удобно ---------- */
@@ -182,3 +183,11 @@ html { scroll-behavior: smooth; }
 :root[data-theme='dark'] .home-hero .hero-scene-caption { background: none; border: 0; }
 :root[data-theme='dark'] .home-hero .hero-scene-caption small { color: var(--muted); }
 .home-hero-scene .home-hero-inner { padding-bottom: 64px; }
+/* На телефоне подпись не помещается и ложилась поверх кнопок «Смотреть карту» и «Маршрут». */
+@media (max-width: 860px) {
+  .home-hero .hero-scene-caption { display: none; }
+  .home-hero-scene .home-hero-inner { padding-bottom: 36px; }
+  /* Две кнопки под поиском — одной высоты, формы и размера текста. */
+  .home-hero .home-hero-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .home-hero .home-hero-actions :is(.home-map-cta, .home-plain-link) { height: 48px; min-height: 48px; padding: 0 12px; border-radius: 14px; font-size: 14px !important; font-weight: 650; line-height: 1; box-shadow: none; }
+}
