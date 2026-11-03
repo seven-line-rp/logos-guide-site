@@ -5,7 +5,9 @@ import { photoSrcSet, photosFor, rooms, quickPlaces } from '../data.js'
 import { HERO_ROUTES } from '../hero-scene-model.js'
 import AiPromoBanner from '../components/AiPromoBanner.jsx'
 import HomeDashboard from '../components/HomeDashboard.jsx'
-import { UnityBanner, UnityChip } from '../components/Unity.jsx'
+import { UnityBanner, UnityChip, UnityExtras } from '../components/Unity.jsx'
+import UnityKremlin from '../components/UnityKremlin.jsx'
+import { fireConfetti, isUnityEasterEgg } from '../unity-fx.js'
 import { Reveal } from '../components/Primitives.jsx'
 import VoiceSearchButton from '../components/VoiceSearchButton.jsx'
 import { cancelMiss, reportMiss, searchRooms, searchTeachers, shortName, useTeachers } from '../search.js'
@@ -17,6 +19,7 @@ import { useTheme } from '../theme.js'
 const HeroScene = lazy(() => import('../components/HeroScene.jsx'))
 // В теме «Единство» вместо корпуса на главном экране развевается флаг России.
 const UnityFlag = lazy(() => import('../components/UnityFlag.jsx'))
+const UnitySky = lazy(() => import('../components/UnitySky.jsx'))
 
 function HomeSearch() {
   const [query, setQuery] = useState('')
@@ -28,8 +31,11 @@ function HomeSearch() {
   const missed = Boolean(query.trim()) && !matches.length && !teacherHits.length
   useEffect(() => { if (missed) reportMiss(query); else cancelMiss() }, [missed, query])
   const goTo = (room) => navigate(`/map?floor=${room.floor}&room=${encodeURIComponent(room.id)}`)
+  const unity = useTheme() === 'unity'
   const submit = (event) => {
     event.preventDefault()
+    // Пасхалка темы «Единство»: «1612», «Минин», «Пожарский» и т. п. запускают салют.
+    if (unity && isUnityEasterEgg(query)) { fireConfetti(); return }
     if (matches[0]) goTo(matches[0])
     else if (teacherHits[0]?.room) goTo(teacherHits[0].room)
     else navigate(`/rooms?q=${encodeURIComponent(query.trim())}`)
@@ -58,7 +64,7 @@ export default function HomePage() {
   const unity = useTheme() === 'unity'
   return <>
     <section className={`home-hero hero-mesh home-hero-usual home-hero-scene${unity ? ' home-hero-unity' : ''}`} id="top">
-      {unity ? <Suspense fallback={null}><UnityFlag /></Suspense> : scene3d && <Suspense fallback={null}><HeroScene /></Suspense>}
+      {unity ? <><Suspense fallback={null}><UnitySky /><UnityFlag /></Suspense><UnityKremlin /></> : scene3d && <Suspense fallback={null}><HeroScene /></Suspense>}
       <div className="container home-hero-inner">
         <div className="home-hero-copy">
           <UnityChip />
@@ -78,6 +84,7 @@ export default function HomePage() {
     </section>
 
     <UnityBanner />
+    <UnityExtras />
 
     <HomeDashboard />
 

@@ -1,5 +1,15 @@
 // English UI catalogue; keys are the original Russian presentation strings.
 export const english = {
+  'Праздничный салют': 'Holiday fireworks', 'До праздника': 'Until the holiday', 'часов': 'hours', 'секунд': 'seconds', 'день': 'day', 'дня': 'days', 'дней': 'days',
+  'Мини-игра': 'Mini game', 'Соберите флаг': 'Build the flag', 'Нажимайте на полосы, чтобы поменять цвет.': 'Tap the stripes to change their colour.', 'Знаете ли вы?': 'Did you know?', 'Следующий факт': 'Next fact',
+  'К празднику': 'For the holiday', 'С Днём народного единства! Вместе мы сильнее.': 'Happy National Unity Day! Together we are stronger.', 'Флаг из трёх полос': 'A flag of three stripes',
+  'Ополчение начали собирать осенью 1611 года в Нижнем Новгороде по призыву земского старосты Кузьмы Минина.': 'The militia began to gather in autumn 1611 in Nizhny Novgorod at the call of the town elder Kuzma Minin.',
+  'Военным предводителем ополчения стал князь Дмитрий Пожарский.': 'Prince Dmitry Pozharsky became the military leader of the militia.',
+  'Праздник учредили в 2004 году, впервые его отметили 4 ноября 2005 года.': 'The holiday was established in 2004 and first celebrated on 4 November 2005.',
+  'Памятник Минину и Пожарскому на Красной площади открыли в 1818 году. Его автор — скульптор Иван Мартос.': 'The Monument to Minin and Pozharsky on Red Square was unveiled in 1818. Its author is the sculptor Ivan Martos.',
+  'На памятнике надпись: «Гражданину Минину и князю Пожарскому благодарная Россия. Лета 1818».': 'The monument reads: “To Citizen Minin and Prince Pozharsky from a grateful Russia. Year 1818”.',
+  '4 ноября — день Казанской иконы Божией Матери, с которой шло ополчение.': '4 November is the feast of the Our Lady of Kazan icon, which the militia carried with it.',
+  'В память об освобождении Москвы на Красной площади построили Казанский собор. В 1936 году его снесли, в 1993-м восстановили.': 'Kazan Cathedral on Red Square was built in memory of the liberation of Moscow. It was demolished in 1936 and rebuilt in 1993.',
   'С Днём народного единства!': 'Happy National Unity Day!', 'День народного единства': 'National Unity Day', 'Единство': 'Unity', 'Обычная тема': 'Regular theme', '4 ноября': '4 November',
   'день до праздника': 'day to go', 'дня до праздника': 'days to go', 'дней до праздника': 'days to go', 'праздник': 'holiday', 'праздник прошёл': 'holiday is over',
   '4 ноября занятий нет. Карта и маршруты работают как обычно.': 'No classes on 4 November. The map and routes work as usual.',

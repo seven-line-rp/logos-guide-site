@@ -134,15 +134,22 @@
   display: grid;
   align-content: center;
   justify-items: center;
-  gap: 8px;
-  padding: 36px 20px 28px;
+  gap: 12px;
+  padding: 36px 18px 26px;
   color: #fff;
   background: var(--u-navy);
   text-align: center;
 }
-.unity-banner-count b { font-size: 64px; line-height: 1; font-weight: 750; font-variant-numeric: tabular-nums; letter-spacing: -.03em; }
-.unity-banner-count b.unity-banner-word { font-size: 30px; letter-spacing: -.01em; }
-.unity-banner-count span { padding-top: 8px; border-top: 2px solid var(--u-red); color: rgba(255, 255, 255, .86); font-size: 13px; font-weight: 600; letter-spacing: .02em; }
+.unity-banner-count > b { font-size: 34px; line-height: 1; font-weight: 750; letter-spacing: -.01em; }
+.unity-banner-count > span { padding-top: 8px; border-top: 2px solid var(--u-red); color: rgba(255, 255, 255, .86); font-size: 13px; font-weight: 600; }
+.unity-count-title { color: rgba(255, 255, 255, .78); font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.unity-count-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; width: 100%; }
+.unity-count-grid div { display: grid; gap: 3px; padding: 10px 4px 8px; border: 1px solid rgba(255, 255, 255, .16); border-radius: 8px; }
+.unity-count-grid div:first-child { border-color: rgba(255, 255, 255, .3); box-shadow: inset 0 -2px 0 var(--u-red); }
+.unity-count-grid b { font-size: 30px; line-height: 1; font-weight: 750; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.unity-count-grid small { color: rgba(255, 255, 255, .72); font-size: 11.5px; font-weight: 600; }
+.unity-banner-salute { min-height: 44px; padding: 0 16px; border: 1px solid var(--line-strong); border-radius: 8px; color: var(--u-red); background: var(--surface); font: inherit; font-size: 14px; font-weight: 650; cursor: pointer; transition: border-color .15s, background .15s; }
+.unity-banner-salute:hover { border-color: var(--u-red); background: #fff6f5; }
 
 /* ---------- Остальные страницы: цвета флага в акцентах ---------- */
 :root[data-theme='unity'] .site-main :is(.section-top h2, .directory-head h1, .page-head h1)::after {
@@ -179,8 +186,111 @@
   .unity-banner-card { grid-template-columns: minmax(0, 1fr); }
   .unity-banner-copy { padding: 30px 18px 20px; }
   .unity-banner-history { font-size: 15px; }
-  .unity-banner-count { grid-auto-flow: column; justify-content: start; align-items: center; gap: 14px; padding: 16px 18px; }
-  .unity-banner-count b { font-size: 40px; }
-  .unity-banner-count b.unity-banner-word { font-size: 24px; }
-  .unity-banner-count span { padding: 0 0 0 12px; border-top: 0; border-left: 2px solid var(--u-red); text-align: left; }
+  .unity-banner-count { padding: 18px 16px; }
+  .unity-count-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+  .unity-count-grid b { font-size: 24px; }
+  .unity-count-grid small { font-size: 10.5px; }
 }
+
+/* =====================================================================
+   Праздничные элементы темы «Единство»
+   ===================================================================== */
+
+/* 1–3. Небо главного экрана: звёзды и салют (src/components/UnitySky.jsx). */
+.unity-sky { position: absolute; z-index: 0; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+
+/* 4. Силуэт Кремля по низу главного экрана (src/components/UnityKremlin.jsx). */
+.unity-kremlin { position: absolute; z-index: 0; inset: auto 0 6px 0; width: 100%; height: 118px; pointer-events: none; }
+.unity-kremlin path { fill: #050e2c; }
+.unity-kremlin-clock { fill: #0a1f52; stroke: #e0b54a; stroke-width: 2.5; }
+.unity-kremlin-gold { fill: #e0b54a; }
+:root[data-theme='unity'] .home-hero-unity .home-hero-inner { padding-bottom: 104px; }
+
+/* 5. Гирлянда флажков под шапкой. */
+:root[data-theme='unity'] .hd.site-header::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  height: 20px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='22' viewBox='0 0 90 22'%3E%3Cpath d='M0 1.5 Q45 6 90 1.5' fill='none' stroke='%230a1f52' stroke-opacity='.5' stroke-width='1.2'/%3E%3Cpath d='M4 2.6 L26 3.9 L15 20Z' fill='%23fff' stroke='%23c3cde0' stroke-width='.8'/%3E%3Cpath d='M34 4.3 L56 4.3 L45 21Z' fill='%230039a6'/%3E%3Cpath d='M64 3.9 L86 2.6 L75 20Z' fill='%23d52b1e'/%3E%3C/svg%3E") repeat-x 0 0 / 90px 22px;
+  pointer-events: none;
+  transform-origin: top center;
+  animation: unity-bunting 6s ease-in-out infinite;
+}
+@keyframes unity-bunting { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(1.5px); } }
+:root[data-theme='unity'] .site-main:not(:has(.home-hero)) { padding-top: 16px; }
+
+/* 6. Флажок у названия в шапке. */
+:root[data-theme='unity'] .hd .brand-copy strong { display: inline-flex; align-items: center; gap: 7px; }
+:root[data-theme='unity'] .hd .brand-copy strong::after { content: ''; width: 15px; height: 10px; border-radius: 1.5px; background: linear-gradient(180deg, #fff 0 33.34%, #0039a6 33.34% 66.67%, #d52b1e 66.67%); box-shadow: 0 0 0 1px var(--u-edge); }
+
+/* 7. Основные кнопки — тёмно-синие с красной чертой снизу. */
+:root[data-theme='unity'] .button-primary { background-color: var(--u-navy); box-shadow: inset 0 -3px 0 var(--u-red) !important; }
+:root[data-theme='unity'] .button-primary:hover { background-color: var(--u-blue); }
+
+/* 8. Ленты под заголовками разделов вытягиваются при появлении. */
+:root[data-theme='unity'] .site-main :is(.section-top h2, .directory-head h1, .page-head h1)::after { transform-origin: left; animation: unity-draw .9s cubic-bezier(.2, .8, .2, 1) both; }
+@keyframes unity-draw { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* 9. Точки загрузки разделов — цвета флага. */
+:root[data-theme='unity'] .page-loading-dots i:nth-child(1) { background: #fff; box-shadow: 0 0 0 1px var(--line-strong); }
+:root[data-theme='unity'] .page-loading-dots i:nth-child(2) { background: var(--u-blue); }
+:root[data-theme='unity'] .page-loading-dots i:nth-child(3) { background: var(--u-red); }
+
+/* 10. Карточки «Часто ищут»: лента триколора снизу при наведении. */
+:root[data-theme='unity'] .quick-place-card { position: relative; }
+:root[data-theme='unity'] .quick-place-card::after { content: ''; position: absolute; z-index: 3; inset: auto 0 0 0; height: 4px; background: var(--u-flag); transform: scaleX(0); transform-origin: left; transition: transform .3s ease; pointer-events: none; }
+:root[data-theme='unity'] .quick-place-card:is(:hover, :focus-visible)::after { transform: scaleX(1); }
+
+/* 11–12. «К празднику»: факты и мини-игра «Соберите флаг». */
+.unity-extras { padding-top: 40px; }
+.unity-extras-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 16px; }
+.unity-card { position: relative; display: grid; align-content: start; gap: 12px; padding: 26px 24px 22px; overflow: hidden; border: 1px solid var(--line); border-radius: var(--r-lg, 12px); background: var(--surface); }
+.unity-card::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 3px; background: var(--u-flag); box-shadow: inset 0 -1px 0 var(--u-edge); }
+.unity-card-kicker { color: var(--u-red); font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.unity-card h3 { margin: 0; color: var(--u-navy); font-size: 20px; }
+.unity-card p { margin: 0; color: var(--muted); font-size: 15px; line-height: 1.5; }
+.unity-card-button { display: inline-flex; align-items: center; justify-self: start; gap: 7px; min-height: 42px; padding: 0 14px; border: 1px solid var(--line-strong); border-radius: 8px; color: var(--u-navy); background: var(--surface); font: inherit; font-size: 14px; font-weight: 650; cursor: pointer; transition: border-color .15s; }
+.unity-card-button:hover { border-color: var(--u-navy); }
+.unity-fact { align-self: center; min-height: 4.6em; color: var(--ink) !important; font-size: clamp(18px, 1.8vw, 22px) !important; line-height: 1.5 !important; text-wrap: pretty; animation: unity-fade .35s ease both; }
+@keyframes unity-fade { from { opacity: 0; } to { opacity: 1; } }
+.unity-facts { grid-template-rows: auto 1fr auto; }
+.unity-facts-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.unity-facts-dots { display: inline-flex; gap: 6px; }
+.unity-facts-dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--line-strong); transition: background .2s, transform .2s; }
+.unity-facts-dots i.is-active { background: var(--u-red); transform: scale(1.25); }
+.unity-game-flag { display: grid; grid-template-rows: repeat(3, minmax(0, 1fr)); width: min(100%, 240px); aspect-ratio: 3 / 2; overflow: hidden; border-radius: 6px; box-shadow: 0 0 0 1px var(--line-strong); }
+.unity-stripe { border: 0; cursor: pointer; transition: background-color .2s, filter .15s; }
+.unity-stripe:hover:not(:disabled) { filter: brightness(.94); }
+.unity-stripe:disabled { cursor: default; }
+.unity-stripe-white { background: #fff; }
+.unity-stripe-blue { background: #0039a6; }
+.unity-stripe-red { background: #d52b1e; }
+.unity-game-flag.is-done { box-shadow: 0 0 0 2px var(--u-navy); animation: unity-wave-done 1.2s ease-in-out 2; transform-origin: left center; }
+@keyframes unity-wave-done { 0%, 100% { transform: skewY(0); } 25% { transform: skewY(-2deg); } 75% { transform: skewY(2deg); } }
+
+/* 13. Поздравление в подвале. */
+.unity-footer-note { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 8px; padding-block: 16px; border-top: 1px solid var(--line); color: var(--u-navy); font-size: 14px; font-weight: 650; }
+
+/* 14. Конфетти на весь экран (src/components/UnityConfetti.jsx). */
+.unity-confetti { position: fixed; z-index: 2000; inset: 0; width: 100vw; height: 100vh; pointer-events: none; }
+
+@media (max-width: 860px) {
+  .unity-kremlin { height: 74px; }
+  :root[data-theme='unity'] .home-hero-unity .home-hero-inner { padding-bottom: 72px; }
+  .unity-extras-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 680px) {
+  :root[data-theme='unity'] .hd.site-header::after { height: 15px; background-size: 66px 16px; }
+  .unity-extras { padding-top: 28px; }
+  .unity-card { padding: 22px 18px 18px; }
+  .unity-fact { font-size: 16px !important; min-height: 6em; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root[data-theme='unity'] .hd.site-header::after,
+  :root[data-theme='unity'] .site-main :is(.section-top h2, .directory-head h1, .page-head h1)::after,
+  .unity-game-flag.is-done, .unity-fact { animation: none; }
+}
+:root[data-perf='lite'] .hd.site-header::after { animation: none; }
