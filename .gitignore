@@ -9,3 +9,8 @@ coverage/
 public/api/ai-config.php
 logos-ai-config.php
 __pycache__/
+
+# Голос для промо-ролика (docs/promo.md)
+.venv-tts/
+*.onnx
+*.onnx.json

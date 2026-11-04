@@ -1,0 +1,51 @@
+{
+  "voice": "ru_RU-dmitri-medium",
+  "duration": 36.999,
+  "lines": [
+    {
+      "id": "hook",
+      "start": 0.7,
+      "end": 3.602
+    },
+    {
+      "id": "brand",
+      "start": 4.052,
+      "end": 7.187
+    },
+    {
+      "id": "search",
+      "start": 7.637,
+      "end": 11.271
+    },
+    {
+      "id": "map",
+      "start": 11.721,
+      "end": 13.939
+    },
+    {
+      "id": "route",
+      "start": 14.388,
+      "end": 17.001
+    },
+    {
+      "id": "floors",
+      "start": 17.451,
+      "end": 21.561
+    },
+    {
+      "id": "schedule",
+      "start": 22.011,
+      "end": 25.668
+    },
+    {
+      "id": "here",
+      "start": 26.118,
+      "end": 30.971
+    },
+    {
+      "id": "outro",
+      "start": 31.421,
+      "end": 34.799
+    }
+  ]
+}

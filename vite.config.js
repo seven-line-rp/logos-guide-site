@@ -13,7 +13,7 @@ import { join, relative, sep } from 'node:path'
 // Офлайн-режим: после сборки пишем dist/sw.js со списком всех файлов сайта
 // (шаблон — scripts/sw-template.js). Серверные скрипты, звук и служебные
 // файлы хостинга в кэш не кладём.
-const OFFLINE_SKIP = /^(api\/|voice\/|team\/|_pages\/|assets\/KaTeX_|\.htaccess$|404\.html$|sw\.js$)|\.map$/
+const OFFLINE_SKIP = /^(api\/|voice\/|team\/|_pages\/|promo\/|assets\/KaTeX_|\.htaccess$|404\.html$|sw\.js$)|\.map$/
 function offlineServiceWorker() {
   let outDir = 'dist'
   return {
