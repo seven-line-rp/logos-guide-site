@@ -4,6 +4,7 @@ import { Check, Download, Mic, Pause, Play, RotateCcw, Square, Trash2 } from 'lu
 import PromoStage, { PROMO_DURATION, captionAt } from './PromoStage.jsx'
 import { PROMO_LINES } from './promo-script.js'
 import timeline from './promo-timeline.json'
+import { fresh } from './fresh-url.js'
 import { assembleTakes, deleteTake, duckCurve, extensionFor, loadBuffer, loadTakes, playMix, recordVideo, renderMix, saveTake, wavBlob } from './promo-audio.js'
 
 // Вкладка «Промо-ролик» в /admin.
@@ -12,10 +13,12 @@ import { assembleTakes, deleteTake, duckCurve, extensionFor, loadBuffer, loadTak
 // и музыка, которая приседает под голос. Готовый ролик можно скачать.
 // ?render=1 — только сцена 1280×720 для scripts/render-promo.mjs.
 
-const VIDEO_URL = '/promo/logos-promo-video.mp4'
-const FULL_URL = '/promo/logos-promo.mp4'
-const VOICE_URL = '/promo/voice.mp3'
-const MUSIC_URL = '/promo/music.mp3'
+// Адреса с версией сайта (fresh-url.js), чтобы после обновления не играла старая копия.
+const VIDEO_URL = fresh('/promo/logos-promo-video.mp4')
+const FULL_URL = fresh('/promo/logos-promo.mp4')
+const VOICE_URL = fresh('/promo/voice.mp3')
+const MUSIC_URL = fresh('/promo/music.mp3')
+const POSTER_URL = fresh('/promo/poster.jpg')
 const SLOTS = timeline.lines.map((line, index) => ({ ...line, ...PROMO_LINES[index], slotEnd: timeline.lines[index + 1]?.start ?? timeline.duration }))
 const clock = (seconds) => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`
 const download = (blob, name) => {
@@ -210,7 +213,7 @@ function Studio() {
 
   return <section className="adm-promo-player" aria-label="Промо-ролик">
     <div className="adm-promo-screen" onClick={() => (busy ? null : playing ? pause() : play())}>
-      <video ref={videoRef} src={VIDEO_URL} poster="/promo/poster.jpg" muted playsInline preload="auto" onEnded={() => { stopSound(); setPlaying(false); setT(PROMO_DURATION) }} />
+      <video ref={videoRef} src={VIDEO_URL} poster={POSTER_URL} muted playsInline preload="auto" onEnded={() => { stopSound(); setPlaying(false); setT(PROMO_DURATION) }} />
       {!playing && !busy && <span className="adm-promo-big-play" aria-hidden="true"><Play size={34} fill="currentColor" /></span>}
       {recordingSlot && <div className={`adm-promo-prompter ${recording.phase === 'speak' ? 'is-speak' : ''}`} role="status"><span>{recording.phase === 'speak' ? 'Говорите' : 'Приготовьтесь'}</span><strong>{recordingSlot.caption}</strong></div>}
       {exporting !== null && <div className="adm-promo-prompter is-export" role="status"><span>Собираем ролик, не закрывайте вкладку</span><strong>{Math.round(exporting * 100)}%</strong></div>}

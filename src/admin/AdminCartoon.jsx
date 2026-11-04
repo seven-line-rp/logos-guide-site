@@ -5,6 +5,7 @@ import CartoonStage, { cartoonDuration } from './CartoonStage.jsx'
 import Cartoon2Stage, { cartoon2Duration } from './Cartoon2Stage.jsx'
 import { CARTOON_VERSIONS } from './cartoon-script.js'
 import { CARTOON2_VERSIONS } from './cartoon2-script.js'
+import { fresh } from './fresh-url.js'
 
 // Вкладка «Мультик» в /admin: шуточный мультик про Mr.Брекина и ЛОГОС, отдельно
 // от промо-ролика. Две серии, у каждой две версии: «С матом» (18+) и «Без мата» —
@@ -95,8 +96,8 @@ function Player({ Stage, duration: durationOf, version: { id: film, title, note,
       <div className="adm-promo-screen" onClick={() => (playing ? stop() : play())} role="presentation">
         <Stage t={t} version={film} controls />
         {!playing && <div className="adm-promo-big-play" aria-hidden="true"><Play size={34} fill="currentColor" /></div>}
-        <audio ref={voiceRef} src={voice} preload="none" />
-        <audio ref={musicRef} src={music} preload="none" />
+        <audio ref={voiceRef} src={fresh(voice)} preload="none" />
+        <audio ref={musicRef} src={fresh(music)} preload="none" />
       </div>
       <div className="adm-promo-controls">
         <button type="button" className="adm-promo-play" onClick={() => (playing ? stop() : play())}>
@@ -134,7 +135,7 @@ export default function AdminCartoon() {
       <h2 className="adm-cartoon-title">{item.title}{item.age && <span className="adm-cartoon-age">18+</span>}</h2>
       <Player Stage={episode.Stage} duration={episode.duration} version={item} />
       <div className="adm-promo-export">
-        <a className="adm-button adm-button-primary" href={item.video} download={item.download}><Download size={16} /> Скачать MP4</a>
+        <a className="adm-button adm-button-primary" href={fresh(item.video)} download={item.download}><Download size={16} /> Скачать MP4</a>
       </div>
     </section>)}
     <p className="adm-fine">Mr.Брекин VPN не существует, это шутка. Персонажи вымышлены, совпадения случайны. Музыка сочинена скриптом (scripts/build-cartoon-music.py), голоса — Piper «Дмитрий» и «Денис» (CC0). Как пересобрать — docs/promo.md.</p>
