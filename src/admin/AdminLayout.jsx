@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
-import { ArrowUpRight, Bell, BellRing, Check, Clapperboard, KeyRound, LayoutDashboard, LogOut, Moon, QrCode, Sun, TriangleAlert } from 'lucide-react'
+import { ArrowUpRight, Bell, BellRing, Check, Clapperboard, Film, KeyRound, LayoutDashboard, LogOut, Moon, QrCode, Sun, TriangleAlert } from 'lucide-react'
 import { storageGet, storageSet } from '../storage.js'
 import { postNotices, readKey, saveKey } from './admin-api.js'
 
@@ -14,6 +14,7 @@ const NAV = [
   { to: '/admin/push', label: 'Уведомления', icon: BellRing },
   { to: '/admin/cards', label: 'Карточки', icon: QrCode },
   { to: '/admin/promo', label: 'Промо-ролик', icon: Clapperboard },
+  { to: '/admin/cartoon', label: 'Мультик', icon: Film },
 ]
 
 function useAdminTheme() {
@@ -56,8 +57,8 @@ export default function AdminLayout() {
   const [key, setKey] = useState(readKey)
   const [notice, setNotice] = useState('')
   const [theme, toggleTheme] = useAdminTheme()
-  // Карточки и промо-ролик не секретные: открываются без ключа.
-  const open = location.pathname.startsWith('/admin/cards') || location.pathname.startsWith('/admin/promo')
+  // Карточки, промо-ролик и мультик не секретные: открываются без ключа.
+  const open = ['/admin/cards', '/admin/promo', '/admin/cartoon'].some((path) => location.pathname.startsWith(path))
 
   const login = (value, warning) => { saveKey(value); setKey(value); setNotice(warning) }
   const logout = () => { saveKey(''); setKey(''); setNotice('') }

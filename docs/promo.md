@@ -89,3 +89,30 @@ curl -L -o ru_RU-dmitri-medium.onnx.json https://huggingface.co/rhasspy/piper-vo
 ```
 
 Голос `denis` скачивается так же, как `dmitri` (замените `dmitri` на `denis` в адресах).
+
+## Мультик «Mr.Брекин спешит на помощь»
+
+Вкладка «Мультик» в панели (`/admin/cartoon`, без ключа) — отдельный шуточный
+ролик на 37 секунд, 18+: герои ругаются матом. Студенту через минуту на физику,
+ЛОГОС не открывается («Путеводитель недоступен»), и тут с «ПУФ!» появляется
+Mr.Брекин VPN: жмёт кнопку, ЛОГОС открывается, студент бежит по стрелкам и
+успевает к звонку. В конце — «Если ЛОГОС недоступен — зовите Mr.Брекина*» и
+честная сноска: ЛОГОС работает и без интернета. Реплики видны в облачках.
+
+| Файл | Что это | Чем собирается |
+| --- | --- | --- |
+| `src/admin/cartoon-script.js` | реплики, кто говорит, сцены | правится руками |
+| `src/admin/CartoonStage.jsx` | анимация: кадр мультика в момент `t` | правится руками |
+| `src/admin/cartoon-timeline.json`, `public/promo/cartoon/voice.mp3` | голоса и тайминги | `build-promo-voice.py --film cartoon` |
+| `public/promo/cartoon/music.mp3` | музыка и звуки (скрежет, «ПУФ!», щелчок, звонок) | `build-cartoon-music.py` |
+| `public/promo/cartoon/logos-cartoon.mp4`, `poster.jpg` | готовый мультик и обложка | `render-promo.mjs --film=cartoon` |
+
+Голоса: студент — `dmitri` на 2,5 полутона выше, Mr.Брекин — `denis` медленнее
+и на 2,5 полутона ниже, рассказчик в конце — `dmitri` как есть.
+
+```bash
+.venv-tts/bin/python scripts/build-promo-voice.py --film cartoon --voice ru_RU-dmitri-medium.onnx --alt-voice ru_RU-denis-medium.onnx
+python3 scripts/build-cartoon-music.py
+npm run dev
+node scripts/render-promo.mjs --film=cartoon
+```
