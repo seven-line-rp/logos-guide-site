@@ -63,3 +63,105 @@ html[data-theme='dark'] .directory-chip.directory-chip-active { border-color: #5
 /* ---------- Справочник: поиск ближе к заголовку ----------
    Между описанием и полем поиска было почти 80 px пустоты, а поиск — главное на странице. */
 .page-heading + .directory-section { padding-top: 6px; }
+
+/* ---------- Указатель на главной ----------
+   Табло, как над дверями в коридоре: тёмная панель, на каждой строке табличка с номером
+   (сколько помещений, сколько путей между этажами) и куда это ведёт. Строки — ссылки,
+   поэтому реагируют на наведение, но сами по себе не двигаются. */
+.guide-board {
+  --gb-bg: #0f2557;
+  --gb-line: rgba(255, 255, 255, .13);
+  --gb-text: #ffffff;
+  --gb-muted: rgba(226, 235, 255, .76);
+  --gb-plate-bg: #ffffff;
+  --gb-plate-ink: #0f2557;
+  --gb-hover: rgba(255, 255, 255, .07);
+  --gb-arrow: #ffd267;
+  display: grid;
+  grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
+  gap: clamp(24px, 4vw, 56px);
+  align-items: start;
+}
+html[data-theme='dark'] .guide-board {
+  --gb-bg: #151b2b;
+  --gb-line: rgba(173, 198, 238, .12);
+  --gb-muted: #a8b6cf;
+  --gb-plate-bg: #e5edfb;
+  --gb-plate-ink: #101a33;
+  --gb-hover: rgba(173, 198, 238, .06);
+  --gb-arrow: #8fb3ff;
+}
+html[data-theme='unity'] .guide-board {
+  --gb-bg: #0a1f52;
+  --gb-plate-ink: #0a1f52;
+  --gb-arrow: #ff6a5c;
+}
+.guide-board-intro { position: sticky; top: 96px; }
+.guide-board-intro h2 { margin: 0; color: var(--ink); font-size: clamp(24px, 2.6vw, 32px); font-weight: 760; line-height: 1.15; letter-spacing: -.02em; }
+.guide-board-intro p { max-width: 34ch; margin: 14px 0 0; color: var(--muted); font-size: 15.5px; line-height: 1.6; }
+
+.guide-board-sign {
+  display: grid;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--gb-bg);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .04), 0 18px 40px -24px rgba(9, 24, 54, .55);
+}
+html[data-theme='dark'] .guide-board-sign { box-shadow: inset 0 0 0 1px var(--gb-line); }
+/* В теме «Единство» у табло полоса флага сверху, как у остальных блоков темы. */
+html[data-theme='unity'] .guide-board-sign { border-top: 4px solid transparent; border-image: linear-gradient(90deg, #ffffff 0 33.34%, #0039a6 33.34% 66.67%, #d52b1e 66.67% 100%) 1; }
+
+.guide-board-row {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) 20px;
+  gap: 18px;
+  align-items: center;
+  padding: 16px 22px;
+  color: var(--gb-text);
+  text-decoration: none;
+  transition: background-color .18s ease;
+}
+.guide-board-row + .guide-board-row { border-top: 1px solid var(--gb-line); }
+.guide-board-row:hover { background: var(--gb-hover); }
+.guide-board-row:focus-visible { outline: 3px solid var(--gb-arrow); outline-offset: -3px; }
+
+/* Табличка как на двери кабинета: светлая, с крупным номером. */
+.guide-board-plate {
+  display: grid;
+  place-items: center;
+  height: 48px;
+  border-radius: 6px;
+  color: var(--gb-plate-ink);
+  background: var(--gb-plate-bg);
+  font-size: 24px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.02em;
+  line-height: 1;
+}
+.guide-board-plate.is-wide { font-size: 20px; }
+.guide-board-copy { display: grid; gap: 3px; min-width: 0; }
+.guide-board-copy strong { font-size: 16.5px; font-weight: 700; line-height: 1.3; }
+.guide-board-text { color: var(--gb-muted); font-size: 14px; line-height: 1.5; }
+.guide-board-arrow { color: var(--gb-arrow); transition: transform .18s ease; }
+.guide-board-row:hover .guide-board-arrow { transform: translate(2px, -2px); }
+
+@media (max-width: 860px) {
+  .guide-board { grid-template-columns: 1fr; gap: 18px; }
+  .guide-board-intro { position: static; }
+}
+@media (max-width: 560px) {
+  .guide-board-row { grid-template-columns: 48px minmax(0, 1fr) 18px; gap: 14px; padding: 14px 16px; }
+  .guide-board-plate { height: 40px; font-size: 20px; }
+  .guide-board-plate.is-wide { font-size: 17px; }
+  .guide-board-copy strong { font-size: 15.5px; }
+  .guide-board-text { font-size: 13px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .guide-board-row, .guide-board-arrow { transition: none; }
+}
+
+/* ---------- Черновик обращения ---------- */
+.feedback-draft { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 0; padding: 10px 14px; border-radius: 10px; color: var(--ink); background: var(--surface-soft); font-size: 14px; }
+.feedback-draft button { padding: 0; border: 0; color: var(--blue); background: none; font: inherit; font-weight: 650; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+html[data-theme='dark'] .feedback-draft button { color: #8fb3ff; }

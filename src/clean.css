@@ -176,8 +176,6 @@
 .home-task-blue { --task: var(--tone-blue); --tone: var(--tone-blue); }
 .home-task-green { --task: var(--tone-green); --tone: var(--tone-green); }
 .home-task-amber { --task: var(--tone-amber); --tone: var(--tone-amber); }
-.ai-promo { --tone: var(--tone-violet); border-radius: var(--r-lg); }
-.ai-promo-button { color: var(--tone-violet); }
 .ab-part:nth-child(5n + 1) { --tone: var(--tone-blue); }
 .ab-part:nth-child(5n + 2) { --tone: var(--tone-violet); }
 .ab-part:nth-child(5n + 3) { --tone: var(--tone-green); }
