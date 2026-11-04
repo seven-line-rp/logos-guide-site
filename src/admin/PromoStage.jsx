@@ -27,7 +27,7 @@ const CAPTIONS = PROMO_LINES.map((line) => ({ ...line, ...LINE[line.id] }))
 // Сцена начинается чуть раньше своей первой фразы, кончается с началом следующей.
 const SCENES = (() => {
   const starts = []
-  for (const line of CAPTIONS) if (!starts.some((scene) => scene.id === line.scene)) starts.push({ id: line.scene, start: Math.max(0, line.start - .35) })
+  for (const line of CAPTIONS) if (!starts.some((scene) => scene.id === line.scene)) starts.push({ id: line.scene, start: Math.max(0, line.start - .35 - (line.lead || 0)) })
   starts[0].start = 0
   return starts.map((scene, index) => ({ ...scene, end: starts[index + 1]?.start ?? timeline.duration }))
 })()
@@ -208,6 +208,89 @@ function Side({ local, title, text }) {
   </div>
 }
 
+// ---------- Рекламная пауза: Mr.Брекин VPN ----------
+// Шутка посреди ролика: «реклама» несуществующего VPN, который «обходит пары
+// стороной» — карточки пар буквально облетают его щит. Сразу после неё ролик
+// показывает расписание, то есть как на пары всё-таки дойти.
+const AD_PINK = '#ff3d8b'
+const AD_DEEP = '#2a0f4f'
+const AD_LIME = '#c6ff3d'
+const LESSONS = [
+  { at: 1.7, y: 270, side: -1, title: '1 пара · Физика', room: 'каб. 211' },
+  { at: 2.35, y: 285, side: 1, title: '2 пара · Матанализ', room: 'каб. 305' },
+  { at: 3.0, y: 270, side: -1, title: '3 пара · История', room: 'каб. 118' },
+  { at: 3.6, y: 295, side: 1, title: '4 пара · Английский', room: 'каб. 402' },
+]
+const SHIELD = { x: 640, y: 270 }
+
+// Щит-«мистер»: цилиндр, монокль и усы, на груди — замок VPN.
+function MrShield({ wobble }) {
+  return <svg width="230" height="270" viewBox="-115 -150 230 270" aria-hidden="true" style={{ transform: `rotate(${wobble}deg)`, filter: 'drop-shadow(0 26px 30px rgba(10,0,30,.45))' }}>
+    <path d="M-62 -128 H62 V-78 H-62 Z" fill="#14081f" />
+    <path d="M-92 -78 H92 a8 8 0 0 1 0 14 H-92 a8 8 0 0 1 0 -14Z" fill="#14081f" />
+    <path d="M-62 -92 H62 V-82 H-62 Z" fill={AD_PINK} />
+    <path d="M0 -60 L86 -30 V22 C86 72 46 102 0 118 C-46 102 -86 72 -86 22 V-30 Z" fill="#fff" stroke="#14081f" strokeWidth="6" strokeLinejoin="round" />
+    <circle cx="-28" cy="-14" r="8" fill="#14081f" />
+    <circle cx="28" cy="-14" r="15" fill="none" stroke="#e7b400" strokeWidth="4" /><circle cx="28" cy="-14" r="7" fill="#14081f" />
+    <path d="M43 -2 Q52 30 46 52" fill="none" stroke="#e7b400" strokeWidth="2.5" />
+    <path d="M-48 22 C-36 6 -14 6 0 18 C14 6 36 6 48 22 C36 18 22 26 0 28 C-22 26 -36 18 -48 22Z" fill="#14081f" />
+    <rect x="-20" y="62" width="40" height="30" rx="7" fill={AD_PINK} />
+    <path d="M-11 62 V53 a11 11 0 0 1 22 0 V62" fill="none" stroke={AD_PINK} strokeWidth="6" />
+    <circle cy="74" r="4.5" fill="#fff" /><rect x="-2" y="74" width="4" height="9" fill="#fff" />
+  </svg>
+}
+
+function AdScene({ local }) {
+  const ad = LINE.ad
+  const talk = local - (ad.start - SCENES.find((scene) => scene.id === 'ad').start)
+  // Заставка «Реклама» как на ТВ: полосы помех, потом плашка уезжает в угол.
+  const bumper = 1 - seg(local, .95, 1.3)
+  const noise = local < .35 ? 1 : 0
+  const product = appear(local, 1.05, .45)
+  const wobble = Math.sin(local * 7) * 4 * product
+  return <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', background: `radial-gradient(circle at 50% 42%, #6a1fb5 0%, ${AD_DEEP} 70%)` }}>
+    {/* Лучи за щитом, медленно крутятся. */}
+    <svg width={STAGE_W} height={STAGE_H} style={{ position: 'absolute', inset: 0, opacity: .35 * product }} aria-hidden="true">
+      <g transform={`translate(${SHIELD.x} ${SHIELD.y}) rotate(${local * 18})`}>
+        {Array.from({ length: 12 }, (_, i) => <path key={i} d="M0 0 L-90 -900 L90 -900Z" fill={i % 2 ? AD_PINK : '#8b3dff'} transform={`rotate(${i * 30})`} />)}
+      </g>
+    </svg>
+    {/* Карточки пар летят на щит и облетают его сверху или снизу. */}
+    {LESSONS.map((lesson) => {
+      const p = seg(local, lesson.at, lesson.at + 1.5)
+      if (p <= 0 || p >= 1) return null
+      const x = 1420 - p * 1900
+      const near = Math.exp(-(((x + 130 - SHIELD.x) / 230) ** 2))
+      // Вниз облёт меньше: под щитом — название.
+      const y = lesson.y + lesson.side * near * (lesson.side < 0 ? 200 : 140)
+      return <div key={lesson.title} style={{ position: 'absolute', left: x, top: y - 36, width: 260, padding: '12px 16px', borderRadius: 14, background: '#fff', boxShadow: '0 16px 30px -18px rgba(0,0,0,.6)', transform: `rotate(${lesson.side * near * -14}deg)`, opacity: product }}>
+        <div style={{ color: INK, fontSize: 20, fontWeight: 800 }}>{lesson.title}</div>
+        <div style={{ color: MUTED, fontSize: 15 }}>{lesson.room}</div>
+      </div>
+    })}
+    <div style={{ position: 'absolute', left: SHIELD.x - 115, top: SHIELD.y - 150, opacity: product, transform: `scale(${.55 + .35 * ease(product)})` }}><MrShield wobble={wobble} /></div>
+    <div style={{ position: 'absolute', left: 0, right: 0, top: 478, textAlign: 'center', opacity: appear(talk, -.1, .35), transform: `scale(${.85 + .15 * appear(talk, -.1, .35)})` }}>
+      <div style={{ color: '#fff', fontSize: 84, fontWeight: 900, letterSpacing: '-.03em', fontStyle: 'italic', textShadow: `5px 5px 0 ${AD_PINK}` }}>Mr.Брекин <span style={{ color: AD_LIME }}>VPN</span></div>
+    </div>
+    <div style={{ position: 'absolute', left: 0, right: 0, top: 592, textAlign: 'center', color: '#fff', fontSize: 38, fontWeight: 700, opacity: appear(talk, 1.25, .35) }}>обходит ваши пары стороной</div>
+    {/* Переключатель как в настоящих VPN. */}
+    <div style={{ position: 'absolute', right: 44, top: 36, display: 'flex', alignItems: 'center', gap: 14, padding: '10px 18px', borderRadius: 40, background: 'rgba(255,255,255,.12)', color: '#fff', fontSize: 18, opacity: appear(local, 1.4, .4) }}>
+      <span style={{ width: 54, height: 30, borderRadius: 15, background: local > 1.9 ? AD_LIME : 'rgba(255,255,255,.35)', position: 'relative' }}><i style={{ position: 'absolute', top: 3, left: 3 + appear(local, 1.9, .2) * 24, width: 24, height: 24, borderRadius: '50%', background: '#fff' }} /></span>
+      <span>{local > 1.9 ? 'Подключено · сервер «Диван»' : 'Не подключено'}</span>
+    </div>
+    <div style={{ position: 'absolute', left: 0, right: 0, bottom: 18, textAlign: 'center', color: 'rgba(255,255,255,.6)', fontSize: 15, opacity: appear(talk, .8, .4) }}>*Шутка. Такого VPN нет, а прогулы не помогают. Дойти до пары поможет ЛОГОС Путеводитель.</div>
+    {/* Плашка «Реклама»: сначала на весь кадр, потом — в углу. */}
+    <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', background: `rgba(20,8,31,${bumper * .9})`, opacity: bumper > 0 ? 1 : 0 }}>
+      <div style={{ padding: '16px 46px', borderRadius: 18, background: GOLD, color: '#14081f', fontSize: 92, fontWeight: 900, letterSpacing: '.04em', transform: `rotate(-3deg) scale(${.7 + .3 * ease(seg(local, .05, .35))})`, opacity: bumper }}>РЕКЛАМА</div>
+    </div>
+    <div style={{ position: 'absolute', left: 40, top: 40, padding: '6px 14px', borderRadius: 8, background: GOLD, color: '#14081f', fontSize: 18, fontWeight: 900, letterSpacing: '.08em', opacity: 1 - bumper }}>РЕКЛАМА</div>
+    {/* Помехи при переключении «канала». */}
+    {noise > 0 && <svg width={STAGE_W} height={STAGE_H} style={{ position: 'absolute', inset: 0 }} aria-hidden="true">
+      {Array.from({ length: 26 }, (_, i) => { const r = Math.sin(i * 91.7 + Math.floor(local * 30) * 13.1) * 43758.5453; const v = r - Math.floor(r); return <rect key={i} x="0" y={i * 28} width={STAGE_W} height={6 + v * 22} fill={v > .5 ? '#fff' : '#000'} opacity={.25 + v * .5} transform={`translate(${(v - .5) * 80} 0)`} /> })}
+    </svg>}
+  </div>
+}
+
 // ---------- Сцена 5: расписание на главной ----------
 function ScheduleScene({ local }) {
   const shot = shots['phone-day']
@@ -249,13 +332,17 @@ function Outro({ local }) {
   </div>
 }
 
-const SCENE_VIEWS = { hook: Hook, brand: Brand, search: SearchScene, route: RouteScene, schedule: ScheduleScene, here: HereScene, outro: Outro }
+const SCENE_VIEWS = { hook: Hook, brand: Brand, search: SearchScene, route: RouteScene, ad: AdScene, schedule: ScheduleScene, here: HereScene, outro: Outro }
 
 // Фраза сценария, которая звучит в момент t. Субтитров в самом ролике нет (их убрали
 // по просьбе команды), но в панели фраза видна как суфлёр, когда записываете свой голос.
 export function captionAt(t) {
   return CAPTIONS.find((line) => t >= line.start - .15 && t <= line.end + .35) || null
 }
+
+// Во время рекламной паузы значок-компас в углу прячем: там плашка «Реклама».
+const AD_SCENE = SCENES.find((scene) => scene.id === 'ad')
+const inAd = (t) => AD_SCENE && t >= AD_SCENE.start && t < AD_SCENE.end
 
 export default function PromoStage({ t }) {
   const fade = .4
@@ -267,6 +354,6 @@ export default function PromoStage({ t }) {
       const opacity = scene.start === 0 ? 1 : seg(t, scene.start, scene.start + fade)
       return <div key={scene.id} style={{ position: 'absolute', inset: 0, opacity }}><View t={t} local={t - scene.start} /></div>
     })}
-    <div aria-hidden="true" style={{ position: 'absolute', left: 36, top: 30, opacity: t > 1 && t < SCENES.at(-1).start ? .9 : 0 }}><Compass size={40} /></div>
+    <div aria-hidden="true" style={{ position: 'absolute', left: 36, top: 30, opacity: t > 1 && t < SCENES.at(-1).start && !inAd(t) ? .9 : 0 }}><Compass size={40} /></div>
   </div>
 }

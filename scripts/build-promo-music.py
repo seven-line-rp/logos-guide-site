@@ -5,6 +5,8 @@
 на неё не нужно. Длина берётся из src/admin/promo-timeline.json.
 Темп 104, аккорды C – G – Am – F: мягкий пэд, перебор, бас, лёгкий бит.
 Первые два такта — только пэд (под вопрос «Куда идти?»), к концу музыка затихает.
+На рекламную паузу (фраза ad) основная музыка уходит, вместо неё — бодрый
+«рекламный» джингл: позывной из трёх нот, быстрый бит и квадратная мелодия.
 
 Запуск: python3 scripts/build-promo-music.py  (нужны numpy и ffmpeg)
 """
@@ -89,6 +91,35 @@ def hat():
     return noise * np.exp(-np.arange(n) / RATE * 70)
 
 
+def square(note, seconds, duty=.5):
+    n = int(seconds * RATE)
+    t = np.arange(n) / RATE
+    phase = (hz(note) * t) % 1
+    return np.where(phase < duty, 1.0, -1.0) * np.exp(-t * 3) * env(n, .003, .04)
+
+
+def jingle(seconds):
+    """Джингл рекламной паузы: позывной «дин-дон-дин», потом бодрый мотив в ре мажоре."""
+    n = int(seconds * RATE)
+    track = np.zeros(n)
+    beat = 60 / 150
+    for i, note in enumerate([74, 78, 81, 86]):  # позывной под плашку «Реклама»
+        place(track, pluck(note - 24, .9) * 1.4, .05 + i * .16, .5)
+    start = 1.0
+    melody = [74, 78, 81, 78, 83, 81, 78, 76, 74, 78, 81, 86, 85, 81, 78, 81]
+    roots = [50, 50, 55, 55, 47, 47, 45, 45]
+    steps = int((seconds - start) / (beat / 2))
+    for step in range(steps):
+        at = start + step * beat / 2
+        place(track, square(melody[step % len(melody)], beat * .45, .25), at, .09)
+        if step % 2 == 0:
+            place(track, bass(roots[(step // 4) % len(roots)] + 12, beat * .9), at, .3)
+            place(track, kick(), at, .5 if step % 4 == 0 else .3)
+        else:
+            place(track, hat(), at, .16)
+    return lowpass(track, 7000) * env(n, .01, .35)
+
+
 def place(track, clip, at, gain):
     start = int(at * RATE)
     end = min(len(track), start + len(clip))
@@ -128,6 +159,20 @@ def main():
             end = min(n, start + length)
             duck[start:end] = np.minimum(duck[start:end], 1 - .35 * np.linspace(1, 0, end - start))
     mix = lowpass(pads, 2200) * duck + lowpass(plucks, 5200) + lowpass(low, 900) + drums
+    # Рекламная пауза: от конца фразы перед ней до начала следующей сцены.
+    lines = json.loads((ROOT / 'src' / 'admin' / 'promo-timeline.json').read_text(encoding='utf-8'))['lines']
+    ids = [line['id'] for line in lines]
+    if 'ad' in ids:
+        index = ids.index('ad')
+        a = lines[index - 1]['end'] + .1
+        b = lines[index + 1]['start'] - .35
+        gate = np.ones(n)
+        i0, i1, f = int(a * RATE), int(b * RATE), int(.12 * RATE)
+        gate[i0:i1] = 0
+        gate[i0 - f:i0] = np.linspace(1, 0, f)
+        gate[i1:i1 + f] = np.linspace(0, 1, f)
+        mix = mix * gate
+        place(mix, jingle(b - a + .2), a, 1.5)
     # Плавное начало и затухание к концу ролика.
     fade = env(n, .8, 3.0)
     mix = mix * fade
