@@ -35,12 +35,22 @@ DirectorySlash Off
   # 2. Запросы к отсутствующей статике честно отдают 404: иначе браузер получит
   #    HTML вместо js, css или mp3 и страница «сломается» без внятной причины.
   RewriteCond %{REQUEST_URI} ^/(assets|voice|team|rooms)/ [OR]
-  RewriteCond %{REQUEST_URI} \.(js|mjs|css|map|mp3|png|jpe?g|gif|svg|webp|ico|webmanifest|xml|txt)$ [NC]
+  RewriteCond %{REQUEST_URI} ^/promo/ [OR]
+  RewriteCond %{REQUEST_URI} \.(js|mjs|css|map|mp3|mp4|webm|png|jpe?g|gif|svg|webp|ico|webmanifest|xml|txt)$ [NC]
   RewriteRule ^ - [L]
 
   # 3. Всё остальное — адреса разделов приложения: отдаём index.html,
   #    а нужный маршрут определит React Router.
   RewriteRule ^ index.html [L]
+</IfModule>
+
+# Ролики и звук (public/promo, public/voice) пересобираются под теми же именами.
+# no-cache — браузер может хранить копию, но перед показом спрашивает сервер,
+# не изменился ли файл (по ETag). Иначе после обновления играл бы старый ролик.
+<IfModule mod_headers.c>
+  <FilesMatch "\.(mp4|webm|mp3)$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
 </IfModule>
 
 # Страховка, если mod_rewrite отключён или панель хостинга переопределяет правила:

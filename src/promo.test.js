@@ -108,3 +108,13 @@ test('the adult cartoon voice actually swears', async () => {
   const { CARTOON_LINES } = await import('./admin/cartoon-script.js')
   assert.ok(CARTOON_LINES.filter((line) => VULGAR.test(line.say)).length >= 3)
 })
+
+// Ролики пересобираются под теми же именами. Чтобы после обновления не показывалась
+// старая копия (так на сайте был промо-ролик без рекламной паузы), сервис-воркер
+// не кэширует /promo/, а панель грузит ролики с версией сайта в адресе.
+test('promo videos are never served stale', () => {
+  const sw = readFileSync(new URL('../scripts/sw-template.js', import.meta.url), 'utf8')
+  assert.match(sw, /pathname\.startsWith\('\/promo\/'\)\) return/, 'сервис-воркер пропускает /promo/ в сеть')
+  for (const page of ['AdminPromo.jsx', 'AdminCartoon.jsx']) assert.match(readFileSync(new URL(`./admin/${page}`, import.meta.url), 'utf8'), /fresh\(/, `${page}: адреса с версией`)
+  assert.match(readFileSync(new URL('../public/.htaccess', import.meta.url), 'utf8'), /mp4\|webm\|mp3\)\$">\s*Header set Cache-Control "no-cache"/, '.htaccess: видео перепроверяется')
+})

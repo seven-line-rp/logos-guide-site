@@ -39,6 +39,8 @@ const MIME_TYPES = {
   '.js': 'text/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
   '.mp3': 'audio/mpeg',
+  '.mp4': 'video/mp4',
+  '.webm': 'video/webm',
   '.png': 'image/png',
   '.svg': 'image/svg+xml',
   '.txt': 'text/plain; charset=utf-8',
@@ -46,7 +48,7 @@ const MIME_TYPES = {
   '.webp': 'image/webp',
   '.xml': 'application/xml; charset=utf-8',
 }
-const staticMissingPath = /\.(?:css|gif|html|ico|jpe?g|js|json|map|mp3|png|svg|webmanifest|webp|xml|txt)$/i
+const staticMissingPath = /\.(?:css|gif|html|ico|jpe?g|js|json|map|mp3|mp4|webm|png|svg|webmanifest|webp|xml|txt)$/i
 
 try {
   await stat(root)
@@ -107,12 +109,34 @@ async function serveStatic(req, res) {
 
   const type = MIME_TYPES[extname(file).toLowerCase()] || 'application/octet-stream'
   const isHashedAsset = file.includes(`${sep}assets${sep}`)
-  res.writeHead(200, {
+  // Ролики и их звук (public/promo) пересобираются под теми же именами: браузер
+  // перед показом сверяет копию с сервером, иначе играл бы старый ролик.
+  const isPromo = file.includes(`${sep}promo${sep}`)
+  const headers = {
     'Content-Type': type,
-    'Content-Length': details.size,
-    'Cache-Control': extname(file) === '.html' ? 'no-cache' : isHashedAsset ? 'public, max-age=2592000, immutable' : 'public, max-age=3600',
+    'Cache-Control': extname(file) === '.html' || isPromo ? 'no-cache' : isHashedAsset ? 'public, max-age=2592000, immutable' : 'public, max-age=3600',
+    'Last-Modified': details.mtime.toUTCString(),
+    'Accept-Ranges': 'bytes',
     'X-Content-Type-Options': 'nosniff',
-  })
+  }
+  if (req.headers['if-modified-since'] && new Date(req.headers['if-modified-since']) >= new Date(details.mtime.toUTCString())) {
+    res.writeHead(304, headers)
+    return res.end()
+  }
+  // Видео браузеры грузят кусками (Range). Safari без этого ролик не играет вовсе.
+  const range = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range || '')
+  if (range && (range[1] || range[2])) {
+    const start = range[1] ? Number(range[1]) : Math.max(0, details.size - Number(range[2]))
+    const end = range[1] && range[2] ? Math.min(Number(range[2]), details.size - 1) : details.size - 1
+    if (start >= details.size || start > end) {
+      res.writeHead(416, { 'Content-Range': `bytes */${details.size}` })
+      return res.end()
+    }
+    res.writeHead(206, { ...headers, 'Content-Range': `bytes ${start}-${end}/${details.size}`, 'Content-Length': end - start + 1 })
+    if (req.method === 'HEAD') return res.end()
+    return createReadStream(file, { start, end }).pipe(res)
+  }
+  res.writeHead(200, { ...headers, 'Content-Length': details.size })
   if (req.method === 'HEAD') return res.end()
   return createReadStream(file).pipe(res)
 }
