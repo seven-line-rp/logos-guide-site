@@ -23,8 +23,20 @@ test('every line points to a scene the stage can draw', () => {
   assert.deepEqual([...new Set(PROMO_LINES.map((line) => line.scene))], PROMO_SCENES, 'сцены идут по порядку')
 })
 
-test('the voice track and the video are in the repository', () => {
-  for (const file of ['../public/promo/voice.mp3', '../public/promo/logos-promo.mp4']) assert.ok(existsSync(new URL(file, import.meta.url)), file)
+test('the voice, music, videos and poster are in the repository', () => {
+  for (const file of ['voice.mp3', 'music.mp3', 'logos-promo.mp4', 'logos-promo-video.mp4', 'poster.jpg']) assert.ok(existsSync(new URL(`../public/promo/${file}`, import.meta.url)), file)
+})
+
+test('every screen the video shows was captured', () => {
+  const shots = JSON.parse(readFileSync(new URL('./admin/promo-shots.json', import.meta.url), 'utf8'))
+  for (const [name, shot] of Object.entries(shots)) assert.ok(existsSync(new URL(`../public${shot.src}`, import.meta.url)), name)
+  const stage = readFileSync(new URL('./admin/PromoStage.jsx', import.meta.url), 'utf8')
+  for (const name of new Set([...stage.matchAll(/(?<![\w-])shots(?:\.([a-z]+)|\['([a-z0-9-]+)'\])/g)].map((match) => match[1] || match[2]))) assert.ok(shots[name], `снимок ${name} есть в promo-shots.json`)
+})
+
+test('the voice-over guide lists every phrase file', () => {
+  const guide = readFileSync(new URL('../promo-voice/README.md', import.meta.url), 'utf8')
+  PROMO_LINES.forEach((line, index) => assert.ok(guide.includes(`${String(index + 1).padStart(2, '0')}-${line.id}.`), line.id))
 })
 
 test('promo files are not cached for offline use', () => {

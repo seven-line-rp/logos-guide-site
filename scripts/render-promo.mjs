@@ -3,7 +3,11 @@
 // кадром (window.__promoSeek), делает снимок и склеивает кадры с озвучкой в ffmpeg.
 // Нужны: запущенный сайт (npm run dev), Playwright с Chromium и ffmpeg.
 //   node scripts/render-promo.mjs [адрес сайта] [кадров в секунду]
-// По умолчанию http://127.0.0.1:5173 и 30 кадров/с. Результат — public/promo/logos-promo.mp4.
+// По умолчанию http://127.0.0.1:5173 и 30 кадров/с. Результат:
+//   public/promo/logos-promo-video.mp4 — только картинка, без звука. На неё в панели
+//     накладывается любой голос (свой, записанный в браузере) и музыка;
+//   public/promo/logos-promo.mp4 — готовый ролик: картинка, голос и музыка,
+//     которая приседает, когда звучит голос.
 import { spawn } from 'node:child_process'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -16,6 +20,7 @@ const { chromium } = createRequire(import.meta.url)('playwright')
 
 const base = process.argv[2] || 'http://127.0.0.1:5173'
 const fps = Number(process.argv[3] || 30)
+const silent = 'public/promo/logos-promo-video.mp4'
 const out = 'public/promo/logos-promo.mp4'
 const frames = mkdtempSync(join(tmpdir(), 'promo-frames-'))
 
@@ -38,10 +43,15 @@ try {
     if (i % fps === 0) process.stdout.write(`\r${Math.round((i / total) * 100)}%`)
   }
   process.stdout.write('\r100%\n')
-  await run('ffmpeg', ['-y', '-loglevel', 'error', '-framerate', String(fps), '-i', join(frames, '%05d.png'), '-i', 'public/promo/voice.mp3',
-    '-c:v', 'libx264', '-preset', 'slow', '-crf', '24', '-pix_fmt', 'yuv420p', '-tune', 'animation',
-    '-c:a', 'aac', '-b:a', '128k', '-shortest', '-movflags', '+faststart', out])
-  console.log(`Готово: ${out}`)
+  await run('ffmpeg', ['-y', '-loglevel', 'error', '-framerate', String(fps), '-i', join(frames, '%05d.png'),
+    '-c:v', 'libx264', '-preset', 'slow', '-crf', '23', '-pix_fmt', 'yuv420p', '-tune', 'animation', '-an', '-movflags', '+faststart', silent])
+  // Обложка плеера: кадр, где уже видно «Первая пара. Новый корпус. Куда идти?».
+  await run('ffmpeg', ['-y', '-loglevel', 'error', '-ss', '2.6', '-i', silent, '-frames:v', '1', '-q:v', '4', 'public/promo/poster.jpg'])
+  // Голос по центру, музыка под ним приглушается (sidechain) и возвращается в паузах.
+  await run('ffmpeg', ['-y', '-loglevel', 'error', '-i', silent, '-i', 'public/promo/voice.mp3', '-i', 'public/promo/music.mp3',
+    '-filter_complex', '[1:a]aformat=channel_layouts=stereo,asplit=2[v][key];[2:a][key]sidechaincompress=threshold=0.02:ratio=5:attack=30:release=450[m];[v][m]amix=inputs=2:duration=first:normalize=0,alimiter=limit=0.95[a]',
+    '-map', '0:v', '-map', '[a]', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '160k', '-shortest', '-movflags', '+faststart', out])
+  console.log(`Готово: ${silent}, ${out}`)
 } finally {
   await browser.close()
   rmSync(frames, { recursive: true, force: true })

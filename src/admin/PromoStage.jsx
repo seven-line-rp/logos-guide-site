@@ -3,11 +3,14 @@ import QRCode from 'qrcode'
 import wordmark from '../assets/logo-wordmark.js'
 import { PROMO_LINES } from './promo-script.js'
 import timeline from './promo-timeline.json'
+import shots from './promo-shots.json'
 
 // Кадр промо-ролика в момент t (секунды). Всё считается от времени, без таймеров
 // и CSS-анимаций: так ролик идёт ровно в такт озвучке, его можно перематывать,
 // а scripts/render-promo.mjs снимает те же кадры в MP4.
 // Сцена — 1280×720, снаружи её масштабируют под ширину плеера.
+// В середине ролика — настоящие экраны сайта (public/promo/shots, снимает
+// scripts/capture-promo-shots.mjs) с курсором и наездами камеры.
 
 export const STAGE_W = 1280
 export const STAGE_H = 720
@@ -36,7 +39,6 @@ const NAVY = '#0f2557'
 const INK = '#13213a'
 const MUTED = '#5d6d86'
 const PALE = '#f4f7fc'
-const LINEC = '#d4dcea'
 const GOLD = '#ffd267'
 
 // Знак-компас из logo.svg: круг с вырезанной стрелкой.
@@ -69,126 +71,169 @@ function Hook({ t }) {
   </div>
 }
 
-// ---------- Сцена 2: логотип ----------
-function Brand({ t }) {
-  const p = appear(t, .1, .9)
-  return <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', background: PALE }}>
-    <div style={{ display: 'grid', justifyItems: 'center', gap: 34, transform: `scale(${.94 + p * .06})` }}>
-      {/* Слоган уже есть в самом логотипе («Твой личный компас…»), второй не добавляем. */}
-      <Wordmark width={820} reveal={easeInOut(seg(t, .15, 1.1))} />
+// ---------- Окно браузера и телефон с настоящими экранами ----------
+const WIN = { x: 120, y: 26, w: 1040, h: 585, bar: 38 }
+
+// Камера: увеличение zoom, в центре кадра — точка (fx, fy) снимка.
+function cameraFor(shot, focus, zoom, viewW, viewH) {
+  const k = (viewW / shot.w) * zoom
+  const cx = focus ? focus.x + focus.w / 2 : shot.w / 2
+  const cy = focus ? focus.y + focus.h / 2 : shot.h / 2
+  let tx = viewW / 2 - cx * k
+  let ty = viewH / 2 - cy * k
+  tx = Math.min(0, Math.max(viewW - shot.w * k, tx))
+  ty = Math.min(0, Math.max(viewH - shot.h * k, ty))
+  return { k, tx, ty }
+}
+const mixCam = (a, b, p) => ({ k: a.k + (b.k - a.k) * p, tx: a.tx + (b.tx - a.tx) * p, ty: a.ty + (b.ty - a.ty) * p })
+
+// Несколько снимков подряд с плавной сменой: layers = [{ shot, opacity }].
+function Screen({ layers, cam, viewW, viewH }) {
+  return <div style={{ position: 'relative', width: viewW, height: viewH, overflow: 'hidden', background: '#fff' }}>
+    {layers.map(({ shot, opacity }) => <img key={shot.src} src={shot.src} alt="" draggable="false" style={{ position: 'absolute', left: 0, top: 0, width: shot.w * cam.k, height: shot.h * cam.k, transform: `translate(${cam.tx}px, ${cam.ty}px)`, opacity }} />)}
+  </div>
+}
+
+function Browser({ url, children, enter = 1 }) {
+  return <div style={{ position: 'absolute', left: WIN.x, top: WIN.y + (1 - enter) * 50, width: WIN.w, opacity: enter, borderRadius: 14, overflow: 'hidden', background: '#fff', boxShadow: '0 40px 90px -40px rgba(9,24,54,.55), 0 0 0 1px rgba(15,37,87,.08)' }}>
+    <div style={{ height: WIN.bar, display: 'flex', alignItems: 'center', gap: 8, padding: '0 14px', background: '#eef2f8', borderBottom: '1px solid #dfe5ef' }}>
+      {['#ff6058', '#ffbd2e', '#28c941'].map((color) => <i key={color} style={{ width: 11, height: 11, borderRadius: '50%', background: color }} />)}
+      <div style={{ marginLeft: 14, flex: 1, maxWidth: 460, height: 24, display: 'flex', alignItems: 'center', gap: 6, padding: '0 12px', borderRadius: 7, background: '#fff', color: MUTED, fontSize: 13 }}>🔒 <span style={{ color: INK }}>{url}</span></div>
     </div>
+    {children}
   </div>
 }
 
-// Телефон с экраном сайта.
-function Phone({ children, x, y, scale = 1, opacity = 1 }) {
-  return <div style={{ position: 'absolute', left: x, top: y, width: 330, height: 640, borderRadius: 46, padding: 12, background: '#0d1830', boxShadow: '0 40px 80px -30px rgba(9,24,54,.55)', transform: `scale(${scale})`, transformOrigin: 'top center', opacity }}>
-    <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', borderRadius: 36, background: PALE }}>{children}</div>
-  </div>
+// Курсор: путь из точек [время, x, y] в координатах сцены, клики — времена.
+function Cursor({ t, path, clicks = [] }) {
+  if (!path.length || t < path[0][0] - .3) return null
+  let x = path[0][1]
+  let y = path[0][2]
+  for (let i = 1; i < path.length; i += 1) {
+    const [t0, x0, y0] = path[i - 1]
+    const [t1, x1, y1] = path[i]
+    if (t >= t0) { const p = easeInOut(seg(t, t0, t1)); x = x0 + (x1 - x0) * p; y = y0 + (y1 - y0) * p }
+  }
+  const click = clicks.map((at) => t - at).find((d) => d >= 0 && d < .45)
+  const fadeIn = appear(t, path[0][0] - .3, .3)
+  return <>
+    {click !== undefined && <span style={{ position: 'absolute', left: x - 26, top: y - 26, width: 52, height: 52, borderRadius: '50%', border: `3px solid ${UI}`, opacity: 1 - click / .45, transform: `scale(${.4 + click * 1.6})` }} />}
+    <svg width="30" height="34" viewBox="0 0 30 34" style={{ position: 'absolute', left: x - 4, top: y - 2, opacity: fadeIn, transform: click !== undefined && click < .12 ? 'scale(.9)' : 'none', filter: 'drop-shadow(0 3px 5px rgba(9,24,54,.35))' }} aria-hidden="true"><path d="M4 2 L4 26 L10.5 20 L15 30 L19.5 28 L15 18.5 L24 18.5 Z" fill="#fff" stroke={INK} strokeWidth="2" strokeLinejoin="round" /></svg>
+  </>
 }
 
-// ---------- Сцена 3: поиск ----------
-function SearchScene({ t, local }) {
-  const typed = '211'.slice(0, Math.floor(clamp((t - (LINE.search.start + .9)) / .32, 0, 3)))
-  const listOn = appear(t, LINE.search.start + 2, .35)
-  const mapOn = appear(t, LINE.map.start + .1, .5)
-  const pulse = .5 + .5 * Math.sin(t * 6)
+// Точка снимка → координаты сцены внутри окна браузера при данной камере.
+const onStage = (rect, cam, fx = .5, fy = .5) => [WIN.x + cam.tx + (rect.x + rect.w * fx) * cam.k, WIN.y + WIN.bar + cam.ty + (rect.y + rect.h * fy) * cam.k]
+
+// ---------- Сцена 2: логотип → главная сайта ----------
+function Brand({ local }) {
+  const logo = 1 - seg(local, 1.5, 2.0)
+  const enter = appear(local, 1.7, .7)
+  const home = shots.home
+  const cam = mixCam(cameraFor(home, home.rects.hero, 1.35, WIN.w, WIN.h), cameraFor(home, null, 1, WIN.w, WIN.h), easeInOut(seg(local, 1.9, 3.4)))
   return <div style={{ position: 'absolute', inset: 0, background: PALE }}>
-    <div style={{ position: 'absolute', left: 110, top: 220, width: 560, opacity: appear(local, .1, .5) }}>
-      <div style={{ color: INK, fontSize: 64, fontWeight: 800, lineHeight: 1.08, letterSpacing: '-.03em' }}>{mapOn > .5 ? 'И сразу на карте' : 'Найдите кабинет'}</div>
-      <div style={{ marginTop: 22, color: MUTED, fontSize: 28, lineHeight: 1.4 }}>По номеру, названию или фамилии преподавателя</div>
+    <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', opacity: logo, transform: `scale(${.95 + appear(local, .1, .9) * .05})` }}>
+      {/* Слоган уже есть в самом логотипе («Твой личный компас…»), второй не добавляем. */}
+      <Wordmark width={820} reveal={easeInOut(seg(local, .15, 1.1))} />
     </div>
-    {/* Телефон кончается выше полосы субтитров. */}
-    <Phone x={800} y={34 + (1 - appear(local, 0, .6)) * 60} scale={.86} opacity={appear(local, 0, .5)}>
-      <div style={{ height: 120, padding: '54px 18px 0', background: '#1d43c8', color: '#fff', fontSize: 26, fontWeight: 800 }}>Где найти кабинет</div>
-      <div style={{ margin: '-18px 14px 0', height: 52, display: 'flex', alignItems: 'center', gap: 10, padding: '0 14px', borderRadius: 14, background: '#fff', boxShadow: `0 0 0 3px ${GOLD}`, color: INK, fontSize: 20, fontWeight: 600 }}>
-        <span style={{ color: UI, fontSize: 20 }}>⌕</span>{typed}<span style={{ width: 2, height: 24, background: INK, opacity: Math.floor(t * 2.4) % 2 ? 0 : 1 }} />
+    {enter > 0 && <Browser url="logos-guide.ru" enter={enter}><Screen layers={[{ shot: home, opacity: 1 }]} cam={cam} viewW={WIN.w} viewH={WIN.h} /></Browser>}
+  </div>
+}
+
+// ---------- Сцена 3: поиск на главной ----------
+function SearchScene({ t }) {
+  const s0 = LINE.search.start
+  const m0 = LINE.map.start
+  const typing = [shots.home, shots['type-1'], shots['type-2'], shots['type-3']]
+  const typeAt = [0, s0 + 1.2, s0 + 1.55, s0 + 1.9]
+  // Буквы появляются сразу, без перехода: иначе подсказки двух снимков двоятся.
+  const layers = typing.map((shot, i) => ({ shot, opacity: i === 0 || t >= typeAt[i] ? 1 : 0 }))
+  const zoomIn = easeInOut(seg(t, s0 + .1, s0 + 1.1))
+  const full = cameraFor(shots.home, null, 1, WIN.w, WIN.h)
+  const close = cameraFor(shots['type-3'], { x: 44, y: 470, w: 530, h: 180 }, 1.55, WIN.w, WIN.h)
+  const cam = mixCam(full, close, zoomIn)
+  // К концу сцены — переход на карту: снимок карты проявляется поверх.
+  const toMap = seg(t, m0 - .1, m0 + .35)
+  const mapCam = mixCam(cameraFor(shots.map, null, 1, WIN.w, WIN.h), cameraFor(shots.map, { x: 560, y: 380, w: 680, h: 340 }, 1.3, WIN.w, WIN.h), easeInOut(seg(t, m0 + .5, m0 + 2.2)))
+  const field = onStage(shots.home.rects.search, close, .35, .5)
+  const pick = onStage(shots['type-3'].rects.first, close, .3, .5)
+  return <div style={{ position: 'absolute', inset: 0, background: PALE }}>
+    <Browser url={toMap > .5 ? 'logos-guide.ru/map?floor=2&room=physics-211' : 'logos-guide.ru'}>
+      <div style={{ position: 'relative' }}>
+        <Screen layers={layers} cam={cam} viewW={WIN.w} viewH={WIN.h} />
+        <div style={{ position: 'absolute', inset: 0, opacity: toMap }}><Screen layers={[{ shot: shots.map, opacity: 1 }]} cam={mapCam} viewW={WIN.w} viewH={WIN.h} /></div>
       </div>
-      <div style={{ margin: '10px 14px 0', padding: 6, borderRadius: 14, background: '#fff', boxShadow: '0 16px 30px -18px rgba(9,24,54,.4)', opacity: listOn * (1 - mapOn), transform: `translateY(${(1 - listOn) * 10}px)` }}>
-        {[['Кабинет физики №211', '2 этаж, учебные кабинеты', true], ['Кабинет №217', '2 этаж, учебные кабинеты', false]].map(([title, meta, active]) => <div key={title} style={{ padding: '10px 12px', borderRadius: 10, background: active ? '#e9effc' : 'transparent', boxShadow: active ? `inset 3px 0 0 ${UI}` : 'none' }}><div style={{ color: INK, fontSize: 16, fontWeight: 700 }}>{title}</div><div style={{ color: MUTED, fontSize: 13 }}>{meta}</div></div>)}
-      </div>
-      <div style={{ position: 'absolute', left: 0, right: 0, top: 200, bottom: 0, padding: 14, opacity: mapOn }}>
-        <div style={{ color: INK, fontSize: 18, fontWeight: 800, marginBottom: 10 }}>Второй этаж</div>
-        <svg viewBox="0 0 280 300" width="100%" aria-hidden="true">
-          {[[0, 0, 70, 110, '202'], [70, 0, 60, 110, '207'], [130, 0, 70, 110, '211'], [200, 0, 80, 110, '214'], [0, 170, 90, 130, '217'], [90, 170, 90, 130, '222'], [180, 170, 100, 130, '224']].map(([x, y, w, h, n]) => <g key={n}><rect x={x} y={y} width={w} height={h} fill={n === '211' ? `rgba(36,92,229,${.35 + pulse * .35})` : '#fff'} stroke={n === '211' ? UI : LINEC} strokeWidth="2" /><text x={x + w / 2} y={y + h / 2 + 6} textAnchor="middle" fontSize="17" fontWeight="700" fill={n === '211' ? '#fff' : '#8d9ab0'}>{n}</text></g>)}
-          <circle cx="165" cy="140" r={8 + pulse * 5} fill={GOLD} opacity=".9" />
-        </svg>
-      </div>
-    </Phone>
+    </Browser>
+    {toMap < 1 && <Cursor t={t} path={[[s0, 900, 560], [s0 + .9, field[0], field[1]], [s0 + 2.4, field[0], field[1]], [m0 - .45, pick[0], pick[1]]]} clicks={[s0 + .95, m0 - .3]} />}
   </div>
 }
 
 // ---------- Сцена 4: маршрут ----------
 function RouteScene({ t, local }) {
-  const draw1 = easeInOut(seg(t, LINE.route.start + .3, LINE.route.start + 2.2))
-  const toSecond = easeInOut(seg(t, LINE.floors.start, LINE.floors.start + .8))
-  const draw2 = easeInOut(seg(t, LINE.floors.start + .8, LINE.floors.start + 2.6))
-  const bubble = appear(t, LINE.floors.start + 2.4, .35)
-  const plan = (rooms, route, len, progress, label) => <svg viewBox="0 0 760 330" width="760" aria-hidden="true">
-    <text x="0" y="24" fontSize="24" fontWeight="800" fill={INK}>{label}</text>
-    {rooms.map(([x, y, w, h, n]) => <g key={n}><rect x={x} y={y} width={w} height={h} rx="4" fill={n === '211' && progress > .98 ? UI : '#fff'} stroke={LINEC} strokeWidth="2" /><text x={x + w / 2} y={y + h / 2 + 7} textAnchor="middle" fontSize="20" fontWeight="700" fill={n === '211' && progress > .98 ? '#fff' : '#8d9ab0'}>{n}</text></g>)}
-    <path d={route} fill="none" stroke={GOLD} strokeWidth="10" strokeLinecap="round" strokeLinejoin="round" strokeDasharray={`${len} ${len}`} strokeDashoffset={len * (1 - progress)} />
-  </svg>
-  const first = [[0, 50, 150, 110, 'Вход'], [150, 50, 110, 110, '104'], [260, 50, 90, 110, '118'], [350, 50, 90, 110, '119'], [440, 50, 90, 110, '120'], [600, 50, 160, 110, 'Лестница'], [0, 220, 180, 110, '148'], [180, 220, 420, 110, 'Столовая']]
-  const second = [[0, 50, 120, 110, '202'], [120, 50, 120, 110, '207'], [240, 50, 120, 110, '209'], [360, 50, 120, 110, '211'], [480, 50, 120, 110, '214'], [600, 50, 160, 110, 'Лестница'], [0, 220, 300, 110, '217'], [300, 220, 300, 110, '222']]
+  const r0 = LINE.route.start
+  const f0 = LINE.floors.start
+  const steps = [shots['route-1'], shots['route-2'], shots['route-3']]
+  const stepAt = [0, f0 + .9, f0 + 2.5]
+  const layers = steps.map((shot, i) => ({ shot, opacity: i === 0 ? 1 : seg(t, stepAt[i], stepAt[i] + .25) }))
+  const r = shots['route-1'].rects
+  const onForm = cameraFor(steps[0], { x: 60, y: 150, w: 420, h: 220 }, 1.5, WIN.w, WIN.h)
+  const full = cameraFor(steps[0], null, 1, WIN.w, WIN.h)
+  const onScene = cameraFor(steps[0], r.scene, 1.25, WIN.w, WIN.h)
+  const cam = t < f0 - .2 ? mixCam(onForm, full, easeInOut(seg(t, r0 + 1.2, r0 + 2.2))) : mixCam(full, onScene, easeInOut(seg(t, f0 - .2, f0 + .7)))
+  const next = onStage(r.next, onScene)
   return <div style={{ position: 'absolute', inset: 0, background: PALE }}>
-    <div style={{ position: 'absolute', left: 110, top: 70, color: INK, fontSize: 52, fontWeight: 800, letterSpacing: '-.03em', opacity: appear(local, .1, .4) }}>Маршрут до двери</div>
-    <div style={{ position: 'absolute', left: 110, top: 150, display: 'flex', gap: 12, opacity: appear(t, LINE.floors.start, .4) }}>
-      {/* Без выдуманных минут: сколько идти, считает сам маршрут. */}
-      {[['По лестнице', true], ['На лифте', false]].map(([name, best]) => <div key={name} style={{ padding: '10px 16px', borderRadius: 12, border: `2px solid ${best ? UI : LINEC}`, background: best ? '#e9effc' : '#fff', color: INK, fontSize: 20, fontWeight: 700 }}>{name}{best && <span style={{ marginLeft: 10, color: UI }}>быстрее</span>}</div>)}
-    </div>
-    <div style={{ position: 'absolute', left: 260, top: 230, opacity: 1 - toSecond, transform: `translateY(${-toSecond * 40}px)` }}>{plan(first, 'M75 190 H680 V160', 760, draw1, 'Первый этаж')}</div>
-    <div style={{ position: 'absolute', left: 260, top: 230, opacity: toSecond, transform: `translateY(${(1 - toSecond) * 40}px)` }}>{plan(second, 'M680 160 V190 H420 V160', 600, draw2, 'Второй этаж')}</div>
-    <div style={{ position: 'absolute', left: 820, top: 150, padding: '14px 20px', borderRadius: '18px 18px 18px 4px', background: NAVY, color: '#fff', fontSize: 24, fontWeight: 700, opacity: bubble, transform: `translateY(${(1 - bubble) * 12}px)` }}>🔊 Кабинет 211 справа</div>
+    <Browser url="logos-guide.ru/route?from=entrance-1&to=physics-211" enter={appear(local, 0, .35)}><Screen layers={layers} cam={cam} viewW={WIN.w} viewH={WIN.h} /></Browser>
+    <Cursor t={t} path={[[f0 + .2, 700, 420], [f0 + .75, next[0], next[1]], [f0 + 2.3, next[0], next[1]]]} clicks={[f0 + .85, f0 + 2.4]} />
   </div>
 }
 
-// ---------- Сцена 5: расписание ----------
-function ScheduleScene({ t, local }) {
-  const card = appear(local, .2, .6)
-  const left = Math.max(0, 12 * 60 - Math.floor(local * 3))
+// Телефон с настоящим экраном сайта. highlight — рамка вокруг элемента снимка.
+function PhoneShot({ shot, highlight, glow = 0, x, y, enter = 1 }) {
+  const viewW = 256
+  const viewH = Math.round(viewW * shot.h / shot.w)
+  const cam = cameraFor(shot, null, 1, viewW, viewH)
+  return <div style={{ position: 'absolute', left: x, top: y + (1 - enter) * 60, width: viewW + 18, padding: 9, borderRadius: 40, background: '#0d1830', boxShadow: '0 40px 80px -34px rgba(9,24,54,.6)', opacity: enter }}>
+    <div style={{ position: 'relative', borderRadius: 31, overflow: 'hidden' }}>
+      <Screen layers={[{ shot, opacity: 1 }]} cam={cam} viewW={viewW} viewH={viewH} />
+      {highlight && <span style={{ position: 'absolute', left: highlight.x * cam.k - 4, top: highlight.y * cam.k - 4, width: highlight.w * cam.k + 8, height: highlight.h * cam.k + 8, borderRadius: 16, boxShadow: `0 0 0 3px ${GOLD}, 0 0 24px 4px rgba(255,210,103,.55)`, opacity: glow }} />}
+    </div>
+  </div>
+}
+
+// Заголовок слева от телефона.
+function Side({ local, title, text }) {
+  return <div style={{ position: 'absolute', left: 110, top: 200, width: 560, opacity: appear(local, .1, .5), transform: `translateY(${(1 - appear(local, .1, .5)) * 16}px)` }}>
+    <div style={{ color: INK, fontSize: 62, fontWeight: 800, lineHeight: 1.08, letterSpacing: '-.03em' }}>{title}</div>
+    <div style={{ marginTop: 22, color: MUTED, fontSize: 28, lineHeight: 1.4 }}>{text}</div>
+  </div>
+}
+
+// ---------- Сцена 5: расписание на главной ----------
+function ScheduleScene({ local }) {
+  const shot = shots['phone-day']
   return <div style={{ position: 'absolute', inset: 0, background: PALE }}>
-    <div style={{ position: 'absolute', left: 110, top: 220, width: 520, opacity: appear(local, .1, .5) }}>
-      <div style={{ color: INK, fontSize: 64, fontWeight: 800, lineHeight: 1.08, letterSpacing: '-.03em' }}>Ваш день на главной</div>
-      <div style={{ marginTop: 22, color: MUTED, fontSize: 28, lineHeight: 1.4 }}>Следующая пара, кабинет и сколько до звонка</div>
-    </div>
-    <div style={{ position: 'absolute', left: 700, top: 110, width: 470, padding: 34, borderRadius: 22, background: '#fff', boxShadow: '0 30px 60px -34px rgba(9,24,54,.45)', opacity: card, transform: `translateY(${(1 - card) * 30}px)` }}>
-      <div style={{ color: MUTED, fontSize: 20, fontWeight: 700 }}>Следующая пара</div>
-      <div style={{ marginTop: 10, color: INK, fontSize: 46, fontWeight: 800, letterSpacing: '-.02em' }}>Физика</div>
-      <div style={{ marginTop: 6, color: INK, fontSize: 24 }}>Кабинет 211, 2 этаж</div>
-      <div style={{ marginTop: 26, display: 'flex', alignItems: 'baseline', gap: 10 }}><span style={{ color: UI, fontSize: 56, fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{Math.floor(left / 60)}:{String(left % 60).padStart(2, '0')}</span><span style={{ color: MUTED, fontSize: 22 }}>до звонка</span></div>
-      <div style={{ marginTop: 14, height: 10, borderRadius: 5, background: '#e6ecf6' }}><div style={{ width: `${30 + seg(local, 0, 4) * 20}%`, height: '100%', borderRadius: 5, background: UI }} /></div>
-      <div style={{ marginTop: 26, display: 'inline-block', padding: '14px 22px', borderRadius: 12, background: UI, color: '#fff', fontSize: 22, fontWeight: 700, opacity: appear(t, LINE.schedule.start + 2, .4) }}>Как дойти</div>
-    </div>
+    <Side local={local} title="Ваш день на главной" text="Следующая пара, кабинет и сколько осталось до звонка" />
+    <PhoneShot shot={shot} highlight={shot.rects.lesson} glow={appear(local, 1, .5)} x={860} y={34} enter={appear(local, 0, .6)} />
   </div>
 }
 
 // ---------- Сцена 6: табличка «Вы здесь» ----------
 function HereScene({ local }) {
   const qr = useMemo(() => QRCode.create('https://logos-guide.ru/here?room=physics-211', { errorCorrectionLevel: 'M' }).modules, [])
-  const scan = seg(local, 1.4, 3)
-  const found = appear(local, 3.1, .4)
-  const cell = 170 / qr.size
+  const cell = 150 / qr.size
+  const scanned = appear(local, 2.4, .5)
+  const shot = shots['phone-here']
   return <div style={{ position: 'absolute', inset: 0, background: PALE }}>
-    <div style={{ position: 'absolute', left: 110, top: 220, width: 520, opacity: appear(local, .1, .5) }}>
-      <div style={{ color: INK, fontSize: 64, fontWeight: 800, lineHeight: 1.08, letterSpacing: '-.03em' }}>Табличка «Вы здесь»</div>
-      <div style={{ marginTop: 22, color: MUTED, fontSize: 28, lineHeight: 1.4 }}>Наведите камеру на код, и маршрут начнётся от этой двери</div>
+    <Side local={local} title="Табличка «Вы здесь»" text="Наведите камеру на код у двери, и маршрут начнётся оттуда" />
+    {/* Табличка, как её печатает раздел /here, потом — экран, который откроется. */}
+    <div style={{ position: 'absolute', left: 700, top: 150, width: 200, padding: 14, borderRadius: 14, background: '#fff', boxShadow: '0 20px 40px -24px rgba(9,24,54,.5)', textAlign: 'center', opacity: appear(local, .2, .5) * (1 - scanned * .35), transform: `rotate(-4deg) translateX(${-scanned * 30}px)` }}>
+      <div style={{ color: INK, fontSize: 30, fontWeight: 800 }}>211</div>
+      <div style={{ color: MUTED, fontSize: 13, marginBottom: 8 }}>Кабинет физики</div>
+      <svg width="150" height="150" viewBox="0 0 150 150" aria-hidden="true">{Array.from(qr.data).map((on, i) => on ? <rect key={i} x={(i % qr.size) * cell} y={Math.floor(i / qr.size) * cell} width={cell + .3} height={cell + .3} fill={NAVY} /> : null)}</svg>
+      <div style={{ marginTop: 6, color: UI, fontSize: 14, fontWeight: 700 }}>Вы здесь</div>
+      <div style={{ position: 'absolute', left: 10, right: 10, top: 70 + seg(local, 1, 2.3) * 160, height: 3, borderRadius: 2, background: GOLD, boxShadow: `0 0 14px ${GOLD}`, opacity: local > 1 && local < 2.3 ? 1 : 0 }} />
     </div>
-    {/* Дверь кабинета с табличкой */}
-    <div style={{ position: 'absolute', left: 760, top: 60, width: 330, height: 520, borderRadius: '10px 10px 0 0', background: '#dfe6f3', border: '10px solid #c9d5ea', borderBottom: 0, opacity: appear(local, 0, .5) }}>
-      <div style={{ position: 'absolute', left: 60, top: 70, width: 190, padding: 10, borderRadius: 10, background: '#fff', boxShadow: '0 10px 24px -14px rgba(9,24,54,.5)', textAlign: 'center' }}>
-        <div style={{ color: INK, fontSize: 30, fontWeight: 800 }}>211</div>
-        <div style={{ color: MUTED, fontSize: 14, marginBottom: 8 }}>Кабинет физики</div>
-        <svg width="170" height="170" viewBox="0 0 170 170" aria-hidden="true">{Array.from(qr.data).map((on, i) => on ? <rect key={i} x={(i % qr.size) * cell} y={Math.floor(i / qr.size) * cell} width={cell + .3} height={cell + .3} fill={NAVY} /> : null)}</svg>
-        <div style={{ marginTop: 6, color: UI, fontSize: 14, fontWeight: 700 }}>Вы здесь</div>
-      </div>
-      <div style={{ position: 'absolute', right: 26, top: 300, width: 16, height: 60, borderRadius: 8, background: '#9fb0cc' }} />
-    </div>
-    {/* Рамка камеры и полоса сканирования */}
-    <div style={{ position: 'absolute', left: 800, top: 140, width: 250, height: 300, border: '4px solid rgba(36,92,229,.9)', borderRadius: 18, opacity: appear(local, 1.1, .3) * (1 - found * .6) }}>
-      <div style={{ position: 'absolute', left: 8, right: 8, top: 8 + scan * 270, height: 4, borderRadius: 2, background: GOLD, boxShadow: `0 0 18px ${GOLD}`, opacity: scan < 1 ? 1 : 0 }} />
-    </div>
-    <div style={{ position: 'absolute', left: 700, top: 440, padding: '16px 22px', borderRadius: 16, background: NAVY, color: '#fff', fontSize: 24, fontWeight: 700, opacity: found, transform: `translateY(${(1 - found) * 14}px)` }}>Начало маршрута: кабинет 211</div>
+    <PhoneShot shot={shot} highlight={shot.rects.nearest} glow={appear(local, 3.2, .5)} x={900} y={34} enter={scanned} />
   </div>
 }
 
@@ -206,6 +251,8 @@ function Outro({ local }) {
 
 const SCENE_VIEWS = { hook: Hook, brand: Brand, search: SearchScene, route: RouteScene, schedule: ScheduleScene, here: HereScene, outro: Outro }
 
+// Фраза сценария, которая звучит в момент t. Субтитров в самом ролике нет (их убрали
+// по просьбе команды), но в панели фраза видна как суфлёр, когда записываете свой голос.
 export function captionAt(t) {
   return CAPTIONS.find((line) => t >= line.start - .15 && t <= line.end + .35) || null
 }
@@ -213,8 +260,6 @@ export function captionAt(t) {
 export default function PromoStage({ t }) {
   const fade = .4
   const visible = SCENES.filter((scene) => t >= scene.start - fade && t < scene.end + fade)
-  const caption = captionAt(t)
-  const captionIn = caption ? Math.min(seg(t, caption.start - .15, caption.start + .1), 1 - seg(t, caption.end + .1, caption.end + .35)) : 0
   return <div className="promo-stage" style={{ position: 'relative', width: STAGE_W, height: STAGE_H, overflow: 'hidden', background: PALE, fontFamily: "'Onest Variable', Onest, system-ui, sans-serif" }}>
     {visible.map((scene) => {
       const View = SCENE_VIEWS[scene.id]
@@ -222,7 +267,6 @@ export default function PromoStage({ t }) {
       const opacity = scene.start === 0 ? 1 : seg(t, scene.start, scene.start + fade)
       return <div key={scene.id} style={{ position: 'absolute', inset: 0, opacity }}><View t={t} local={t - scene.start} /></div>
     })}
-    <div aria-hidden="true" style={{ position: 'absolute', left: '50%', bottom: 34, maxWidth: 1040, padding: '12px 22px', borderRadius: 12, background: 'rgba(9,18,40,.78)', color: '#fff', fontSize: 27, fontWeight: 600, lineHeight: 1.3, textAlign: 'center', transform: 'translateX(-50%)', opacity: captionIn }}>{caption?.caption}</div>
     <div aria-hidden="true" style={{ position: 'absolute', left: 36, top: 30, opacity: t > 1 && t < SCENES.at(-1).start ? .9 : 0 }}><Compass size={40} /></div>
   </div>
 }
