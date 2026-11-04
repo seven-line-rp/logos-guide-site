@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
-import { ArrowUpRight, Bell, BellRing, Check, KeyRound, LayoutDashboard, LogOut, Moon, QrCode, Sun, TriangleAlert } from 'lucide-react'
+import { ArrowUpRight, Bell, BellRing, Check, Clapperboard, KeyRound, LayoutDashboard, LogOut, Moon, QrCode, Sun, TriangleAlert } from 'lucide-react'
 import { storageGet, storageSet } from '../storage.js'
 import { postNotices, readKey, saveKey } from './admin-api.js'
 
@@ -13,6 +13,7 @@ const NAV = [
   { to: '/admin/notices', label: 'Объявления', icon: Bell },
   { to: '/admin/push', label: 'Уведомления', icon: BellRing },
   { to: '/admin/cards', label: 'Карточки', icon: QrCode },
+  { to: '/admin/promo', label: 'Промо-ролик', icon: Clapperboard },
 ]
 
 function useAdminTheme() {
@@ -55,7 +56,8 @@ export default function AdminLayout() {
   const [key, setKey] = useState(readKey)
   const [notice, setNotice] = useState('')
   const [theme, toggleTheme] = useAdminTheme()
-  const open = location.pathname.startsWith('/admin/cards')
+  // Карточки и промо-ролик не секретные: открываются без ключа.
+  const open = location.pathname.startsWith('/admin/cards') || location.pathname.startsWith('/admin/promo')
 
   const login = (value, warning) => { saveKey(value); setKey(value); setNotice(warning) }
   const logout = () => { saveKey(''); setKey(''); setNotice('') }
@@ -77,7 +79,7 @@ export default function AdminLayout() {
     <div className="adm-main">
       {notice && <p className="adm-alert adm-alert-warn" role="status"><TriangleAlert size={16} /> {notice}</p>}
       {key || open ? <Outlet context={{ adminKey: key, logout }} /> : <LoginCard onLogin={login} />}
-      {!key && open && <p className="adm-hint"><Check size={14} /> Карточки открыты без ключа. Статистика и объявления — после <NavLink to="/admin">входа</NavLink>.</p>}
+      {!key && open && <p className="adm-hint"><Check size={14} /> Карточки и промо-ролик открыты без ключа. Статистика и объявления — после <NavLink to="/admin">входа</NavLink>.</p>}
     </div>
   </div>
 }
