@@ -47,7 +47,7 @@ export default function HomeDashboard() {
         {favorites.length || recent.length ? <>
           {favorites.length > 0 && <div className="day-chips">{favorites.slice(0, 6).map((id) => { const room = rooms.find((item) => item.id === id); return <Link key={id} className="day-chip" to={`/map?floor=${room.floor}&room=${encodeURIComponent(id)}`}><Star size={13} fill="currentColor" /><RawText text={roomTitle(id)} /></Link> })}</div>}
           {recent.length > 0 && <ul className="day-recent">{recent.slice(0, 3).map((item) => <li key={`${item.from}-${item.to}`}><Link to={`/route?from=${encodeURIComponent(item.from)}&to=${encodeURIComponent(item.to)}`}><History size={14} /><span><RawText text={roomTitle(item.from)} /> → <RawText text={roomTitle(item.to)} /></span><ArrowUpRight size={14} /></Link></li>)}</ul>}
-        </> : <p className="day-hint">Нажмите ★ у кабинета на карте или в маршруте, и он появится здесь. Недавние маршруты сохраняются сами.</p>}
+        </> : <><p className="day-hint">Нажмите ★ у кабинета на карте или в маршруте, и он появится здесь. Недавние маршруты сохраняются сами.</p><Link className="day-link" to="/map">Выбрать на карте <ArrowRight size={15} /></Link></>}
       </article>
 
       <article className="day-card">

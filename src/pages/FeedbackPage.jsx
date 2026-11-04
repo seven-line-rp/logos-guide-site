@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Bot, Bug, Check, Lightbulb, MessageCircleQuestion, Send } from 'lucide-react'
 import { PageHeading } from '../components/Primitives.jsx'
+import { storageGet, storageRemove, storageSet } from '../storage.js'
 
 // «Сообщить о проблеме»: общая форма сайта. Сообщение уходит на /api/report.php
 // (файл logos-reports/reports.jsonl на хостинге, см. deploy/reports.md) вместе с
@@ -18,14 +19,38 @@ export const FEEDBACK_KINDS = [
 
 const MAX_TEXT = 1200
 
+// Черновик: тип и текст сообщения сохраняются в браузере, пока человек пишет, чтобы
+// случайный переход или перезагрузка не стёрли написанное. Контакт не сохраняем:
+// это личные данные. Черновик удаляется после отправки или по кнопке «Стереть».
+const DRAFT_KEY = 'feedback-draft'
+function readDraft() {
+  try {
+    const draft = JSON.parse(storageGet(DRAFT_KEY) || 'null')
+    if (!draft || typeof draft.text !== 'string' || !draft.text.trim()) return null
+    return { kind: FEEDBACK_KINDS.some((item) => item.id === draft.kind) ? draft.kind : 'bug', text: draft.text.slice(0, MAX_TEXT) }
+  } catch { return null }
+}
+
 export default function FeedbackPage() {
   const from = typeof document !== 'undefined' && document.referrer && new URL(document.referrer, location.href).origin === location.origin ? new URL(document.referrer).pathname : ''
-  const [kind, setKind] = useState('bug')
-  const [text, setText] = useState('')
+  const [draft] = useState(readDraft)
+  const [kind, setKind] = useState(draft?.kind || 'bug')
+  const [text, setText] = useState(draft?.text || '')
+  const [restored, setRestored] = useState(Boolean(draft))
   const [contact, setContact] = useState('')
   const [agreed, setAgreed] = useState(false)
   const hasContact = contact.trim() !== ''
   const [state, setState] = useState({ status: 'idle', error: '' })
+
+  useEffect(() => {
+    if (state.status === 'sent') return undefined
+    const timer = window.setTimeout(() => {
+      if (text.trim()) storageSet(DRAFT_KEY, JSON.stringify({ kind, text }))
+      else storageRemove(DRAFT_KEY)
+    }, 600)
+    return () => window.clearTimeout(timer)
+  }, [kind, text, state.status])
+  const discardDraft = () => { storageRemove(DRAFT_KEY); setText(''); setKind('bug'); setRestored(false) }
 
   const send = async (event) => {
     event.preventDefault()
@@ -41,6 +66,7 @@ export default function FeedbackPage() {
       })
       const data = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(data.error || 'Не получилось отправить. Попробуйте позже.')
+      storageRemove(DRAFT_KEY)
       setState({ status: 'sent', error: '' })
     } catch (error) {
       setState({ status: 'idle', error: error.message || 'Не получилось отправить. Попробуйте позже.' })
@@ -53,6 +79,7 @@ export default function FeedbackPage() {
       {state.status === 'sent'
         ? <div className="feedback-done" role="status"><Check size={22} /><div><strong>Спасибо, сообщение отправлено.</strong><p>Команда прочитает его и поправит сайт. Если оставили контакт, мы можем написать в ответ.</p><Link className="button button-primary" to="/">На главную</Link></div></div>
         : <form className="feedback-form" onSubmit={send}>
+          {restored && <p className="feedback-draft" role="status">Вернули черновик, который вы не отправили. <button type="button" onClick={discardDraft}>Стереть</button></p>}
           <div className="feedback-kinds" role="radiogroup" aria-label="Тип обращения">
             {FEEDBACK_KINDS.map(({ id, icon: Icon, title, hint }) => <label key={id} className={kind === id ? 'feedback-kind is-active' : 'feedback-kind'}>
               <input type="radio" name="kind" value={id} checked={kind === id} onChange={() => setKind(id)} />

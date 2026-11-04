@@ -3,7 +3,9 @@ import { ArrowRight, ArrowUpRight, Search } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { photoSrcSet, photosFor, rooms, quickPlaces } from '../data.js'
 import { HERO_ROUTES } from '../hero-scene-model.js'
-import AiPromoBanner from '../components/AiPromoBanner.jsx'
+import GuideBoard from '../components/GuideBoard.jsx'
+import { useFavorites, useRecentRoutes } from '../components/FavoriteButton.jsx'
+import { useSchedule } from '../components/NextLesson.jsx'
 import HomeDashboard from '../components/HomeDashboard.jsx'
 import { UnityBanner, UnityChip, UnityExtras } from '../components/Unity.jsx'
 import UnityKremlin from '../components/UnityKremlin.jsx'
@@ -62,6 +64,12 @@ function HeroCaption() {
 export default function HomePage() {
   const scene3d = useScene3d()
   const unity = useTheme() === 'unity'
+  // Кто зашёл впервые, сначала видит, что умеет путеводитель: «Мой день» у него пока пустой.
+  // Кто уже добавил пары или места, сначала видит свой день, указатель — ниже.
+  const lessons = useSchedule()
+  const favorites = useFavorites()
+  const recent = useRecentRoutes()
+  const newcomer = !lessons.length && !favorites.length && !recent.length
   return <>
     <section className={`home-hero hero-mesh home-hero-usual home-hero-scene${unity ? ' home-hero-unity' : ''}`} id="top">
       {unity ? <><Suspense fallback={null}><UnitySky /><UnityFlag /></Suspense><UnityKremlin /></> : scene3d && <Suspense fallback={null}><HeroScene /></Suspense>}
@@ -86,10 +94,12 @@ export default function HomePage() {
     <UnityBanner />
     <UnityExtras />
 
+    {newcomer && <GuideBoard />}
+
     <HomeDashboard />
 
     <section className="quick-places container section-pad" id="quick-places"><div className="section-top"><div><h2>Часто ищут</h2></div><Link className="text-link" to="/rooms">Все помещения <span><ArrowRight size={15} /></span></Link></div><div className="quick-place-grid">{quickPlaces.map((place, index) => { const room = rooms.find((item) => item.id === place.roomId); return <Reveal key={place.roomId} delay={index * 60} variant="up"><Link className={`quick-place-card quick-place-${place.tone}${photosFor(room).length ? ' quick-place-media' : ''}`} to={`/map?floor=${room.floor}&room=${room.id}`}>{photosFor(room).length > 0 && <img className="quick-place-photo" src={photosFor(room)[0]} srcSet={photoSrcSet(photosFor(room)[0])} sizes="(max-width: 680px) 100vw, 320px" alt="" loading="lazy" decoding="async" />}<span className="quick-place-num">{room.floor} этаж</span><span className="quick-place-copy"><strong>{place.label}</strong><small>{place.meta}</small></span><span className="quick-place-arrow"><ArrowUpRight size={16} /></span></Link></Reveal> })}</div></section>
 
-    <AiPromoBanner />
+    {!newcomer && <GuideBoard />}
   </>
 }

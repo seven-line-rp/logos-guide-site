@@ -175,20 +175,6 @@
   .ai-disclaimer { padding-bottom: max(10px, env(safe-area-inset-bottom)); }
 }
 
-/* ---------- Баннер на главной ---------- */
-.ai-promo-section { padding-top: 0; padding-bottom: clamp(40px, 5vw, 72px); }
-.ai-promo { padding: 20px 24px; display: flex; align-items: center; gap: 18px; border: 1px solid var(--line); border-radius: 14px; color: var(--ink); background: var(--surface, #fff); text-decoration: none; }
-.ai-promo:hover { border-color: var(--blue); }
-.ai-promo-icon { flex: none; width: 44px; height: 44px; display: grid; place-items: center; border-radius: 10px; color: var(--blue); background: var(--blue-soft, #eef2ff); }
-.ai-promo-copy { flex: 1; min-width: 0; }
-.ai-promo-copy h2 { margin: 0 0 4px; font-size: 18px; font-weight: 700; }
-.ai-promo-copy p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.45; }
-.ai-promo-button { flex: none; display: inline-flex; align-items: center; gap: 6px; color: var(--blue); font-weight: 600; font-size: 15px; }
-:root[data-theme='dark'] .ai-promo { background: var(--surface, #23262d); }
-@media (max-width: 600px) {
-  .ai-promo { flex-wrap: wrap; }
-  .ai-promo-button { width: 100%; }
-}
 
 /* Блоки кода в ответах: прокрутка по горизонтали и кнопка «Копировать». */
 .ai-code { width: 100%; overflow: hidden; border-radius: 14px; background: #0f172a; box-shadow: inset 0 0 0 1px rgba(148, 163, 184, .18); }

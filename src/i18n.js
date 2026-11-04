@@ -15,7 +15,11 @@ export function setLanguage(next) {
 }
 if (typeof document !== 'undefined') document.documentElement.lang = language
 
-const phrases = Object.entries(english).sort((a, b) => b[0].length - a[0].length).map(([ru, en]) => {
+// Больше тысячи регулярных выражений для составных строк. Собираем их при первом
+// переводе на английский, а не при загрузке сайта: русскоязычным посетителям
+// (почти всем) они на старте не нужны, а на слабом телефоне это заметная пауза.
+let phrases = null
+const buildPhrases = () => Object.entries(english).sort((a, b) => b[0].length - a[0].length).map(([ru, en]) => {
   const escaped = [...ru].map((char) => '.*+?^${}()|[]\\'.includes(char) ? `\\${char}` : char).join('')
   const pattern = `${/^[А-Яа-яЁё]/.test(ru) ? '(?<![А-Яа-яЁё])' : ''}${escaped}${/[А-Яа-яЁё]$/.test(ru) ? '(?![А-Яа-яЁё])' : ''}`
   return [new RegExp(pattern, 'g'), en]
@@ -29,6 +33,7 @@ export function translate(value, locale = language) {
   if (cache.has(value)) return cache.get(value)
   // Composed labels (room numbers, floor counters and route descriptions).
   let result = value
+  phrases ||= buildPhrases()
   for (const [pattern, en] of phrases) result = result.replace(pattern, () => en)
   if (cache.size > 2000) cache.clear()
   cache.set(value, result)

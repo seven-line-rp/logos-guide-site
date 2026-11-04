@@ -51,7 +51,6 @@ body *:not(.home-hero):not(.home-hero *) { -webkit-backdrop-filter: none !import
 [class*='hd-tone-'] { --hd-tone: var(--muted) !important; }
 :is(.hd-menu-icon, .ab-part-icon, .ai-promo-icon, .day-icon) { color: var(--muted) !important; background: var(--surface-soft) !important; box-shadow: none !important; }
 :is(.ab-part, .ai-promo, .hd-menu-card):hover :is(.ab-part-icon, .ai-promo-icon, .hd-menu-icon) { transform: none !important; }
-.ai-promo-button { color: var(--blue) !important; }
 .nav-badge { color: var(--muted) !important; background: transparent !important; box-shadow: inset 0 0 0 1px var(--line) !important; font-weight: 600; letter-spacing: .04em; }
 
 /* ---------- Обложки карточек кабинетов: без пастельных градиентов ---------- */
