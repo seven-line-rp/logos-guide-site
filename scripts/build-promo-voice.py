@@ -69,15 +69,19 @@ def recorded(folder, lines, tmp):
     return [to_pcm(files[line['id']], Path(tmp) / f'{index}.wav', CLEAN) for index, line in enumerate(lines)]
 
 
-def synthesized(model, speed, lines, tmp):
+def synthesized(model, speed, lines, tmp, ad_model=None):
     from piper import PiperVoice, SynthesisConfig  # нужен только для синтеза
     voice = PiperVoice.load(model)
     config = SynthesisConfig(length_scale=speed, noise_scale=0.6, noise_w_scale=0.75)
+    # Рекламную паузу читает другой голос, бодрее и быстрее, как диктор в рекламе.
+    ad_voice = PiperVoice.load(ad_model) if ad_model else voice
+    ad_config = SynthesisConfig(length_scale=speed * .9, noise_scale=0.75, noise_w_scale=0.9)
     clips = []
     for index, line in enumerate(lines):
         raw = Path(tmp) / f'{index}-raw.wav'
+        is_ad = line.get('voice') == 'ad'
         with wave.open(str(raw), 'wb') as out:
-            voice.synthesize_wav(line['say'], out, syn_config=config)
+            (ad_voice if is_ad else voice).synthesize_wav(line['say'], out, syn_config=ad_config if is_ad else config)
         clips.append(to_pcm(raw, Path(tmp) / f'{index}.wav'))
     return clips
 
@@ -87,19 +91,22 @@ def main():
     source = parser.add_mutually_exclusive_group(required=True)
     source.add_argument('--from-dir', help='папка со своими записями фраз (promo-voice)')
     source.add_argument('--voice', help='файл .onnx голоса Piper (рядом должен лежать .onnx.json)')
+    parser.add_argument('--ad-voice', help='Piper: голос для рекламной паузы (фраза с voice: ad), по умолчанию тот же')
     parser.add_argument('--speed', type=float, default=1.06, help='Piper: length_scale, больше — медленнее')
     args = parser.parse_args()
     lines = read_lines()
 
     with tempfile.TemporaryDirectory() as tmp:
-        clips = recorded(args.from_dir, lines, tmp) if args.from_dir else synthesized(args.voice, args.speed, lines, tmp)
+        clips = recorded(args.from_dir, lines, tmp) if args.from_dir else synthesized(args.voice, args.speed, lines, tmp, args.ad_voice)
         silence = lambda seconds: b'\x00\x00' * int(RATE * seconds)
         frames = bytearray(silence(LEAD_IN))
         timeline = []
         for index, (line, data) in enumerate(zip(lines, clips)):
+            frames += silence(line.get('lead', 0))
             start = len(frames) / 2 / RATE
             frames += data
             timeline.append({'id': line['id'], 'start': round(start, 3), 'end': round(len(frames) / 2 / RATE, 3)})
+            frames += silence(line.get('tail', 0))
             frames += silence(GAP if index < len(lines) - 1 else TAIL)
         joined = Path(tmp) / 'voice.wav'
         with wave.open(str(joined), 'wb') as out:

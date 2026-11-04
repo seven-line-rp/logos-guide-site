@@ -1,8 +1,15 @@
 # Промо-ролик
 
 Вкладка «Промо-ролик» в панели (`/admin/promo`, открывается без ключа). Ролик на
-37 секунд показан на настоящих экранах сайта: поиск кабинета, карта, маршрут,
+43 секунды показан на настоящих экранах сайта: поиск кабинета, карта, маршрут,
 расписание и таблички «Вы здесь». Субтитров в ролике нет.
+
+Посреди ролика — шуточная рекламная пауза (около 5 секунд): плашка «Реклама»
+с помехами, как при переключении канала, и «реклама» несуществующего
+Mr.Брекин VPN, который «обходит ваши пары стороной» — карточки пар облетают его
+щит. Внизу кадра подписано, что это шутка. Читает её другой голос Piper
+(`ru_RU-denis-medium`, CC0), под неё вместо фоновой музыки играет свой джингл.
+Сразу после паузы ролик показывает расписание — как на пары всё-таки дойти.
 
 ## Озвучить своим голосом
 
@@ -78,5 +85,7 @@ CC0. Голоса `irina` (лицензия не указана) и `ruslan` (CC
 python3 -m venv .venv-tts && .venv-tts/bin/pip install piper-tts numpy
 curl -L -o ru_RU-dmitri-medium.onnx https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/dmitri/medium/ru_RU-dmitri-medium.onnx
 curl -L -o ru_RU-dmitri-medium.onnx.json https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/dmitri/medium/ru_RU-dmitri-medium.onnx.json
-.venv-tts/bin/python scripts/build-promo-voice.py --voice ru_RU-dmitri-medium.onnx
+.venv-tts/bin/python scripts/build-promo-voice.py --voice ru_RU-dmitri-medium.onnx --ad-voice ru_RU-denis-medium.onnx
 ```
+
+Голос `denis` скачивается так же, как `dmitri` (замените `dmitri` на `denis` в адресах).
