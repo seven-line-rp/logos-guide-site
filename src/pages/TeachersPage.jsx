@@ -5,6 +5,7 @@ import { PageHeading, Reveal } from '../components/Primitives.jsx'
 import VoiceSearchButton from '../components/VoiceSearchButton.jsx'
 import { RawText } from '../components/ai-message.js'
 import { loadTeachers, normalize, roomForTeacher } from '../search.js'
+import { focusInputOnPress } from '../search-field.js'
 
 // «Преподаватели»: весь педагогический состав (public/teachers.json) с
 // кабинетами. Кабинет берётся из roomId, а если его нет — угадывается по
@@ -63,7 +64,7 @@ export default function TeachersPage() {
   return <>
     <PageHeading className="page-heading-compact" title="Преподаватели" description="Найдите человека по фамилии или предмету — покажем кабинет и проложим маршрут." />
     <section className="teachers-section container">
-      <Reveal className="directory-search-bar"><Search size={19} /><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Фамилия, предмет или должность…" aria-label="Поиск преподавателя" /><VoiceSearchButton onText={setQuery} />{query && <button onClick={() => setQuery('')} aria-label="Очистить поиск"><X size={17} /></button>}</Reveal>
+      <label className="search-field-name" htmlFor="teachers-search">Найти преподавателя или сотрудника</label><Reveal className="directory-search-bar" onPointerDown={focusInputOnPress}><Search size={19} aria-hidden="true" /><input id="teachers-search" type="search" enterKeyHint="search" autoComplete="off" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Фамилия или предмет, например химия" />{query && <button type="button" className="search-clear" onClick={(event) => { setQuery(''); event.currentTarget.parentElement.querySelector('input')?.focus() }} aria-label="Очистить поиск"><X size={17} aria-hidden="true" /><span className="field-tip" aria-hidden="true">Очистить</span></button>}<VoiceSearchButton onText={setQuery} /></Reveal>
       <div className="directory-category-filters teachers-filters" role="group" aria-label="Кого показать">{groups.map((item) => <button key={item.id} type="button" onClick={() => setGroup(item.id)} className={group === item.id ? 'directory-chip directory-chip-active' : 'directory-chip'} aria-pressed={group === item.id}>{item.label}</button>)}</div>
       <div className="directory-results-head"><span><strong>{visible.length}</strong> человек{query && <> по запросу «{query}»</>}</span></div>
       {teachers === null ? <div className="teachers-grid" aria-busy="true">{[0, 1, 2, 3, 4, 5].map((index) => <div key={index} className="teacher-card teacher-card-skeleton"><span className="shimmer" /><span className="shimmer" /><span className="shimmer" /></div>)}</div>

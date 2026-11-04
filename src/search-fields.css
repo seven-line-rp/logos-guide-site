@@ -1,0 +1,210 @@
+/* =====================================================================
+   Строки поиска и подсказки — одни правила для всего сайта.
+   Главная (.home-search), «Кабинеты» и «Преподаватели» (.directory-search-bar),
+   выбор кабинета в «Маршруте» и на других страницах (.route-room-search-field),
+   окно поиска в шапке (.search-input-wrap).
+
+   Что было не так:
+   - поле ввода занимало только середину строки: нажатие на лупу, края
+     или промежуток у кнопок ничего не делало;
+   - вокруг самого поля рисовалась вторая рамка фокуса (общее правило для всех
+     input на сайте), поэтому внутри строки была видна «коробка поменьше»;
+   - у браузера в поле type="search" был свой крестик рядом с нашим;
+   - кнопки микрофона и очистки были 26–34 px, тяжело попасть пальцем;
+   - подсказки на главной на телефоне обрезались по краю первого экрана,
+     текст в них был 11 px.
+   Поведение (нажатие в любом месте строки ставит курсор в поле) — в
+   src/search-field.js. Файл подключён последним в main.jsx.
+   ===================================================================== */
+
+.home-search,
+.directory-search-bar,
+.route-room-search-field,
+.search-input-wrap {
+  --sf-ring: rgba(36, 92, 229, .2);
+  --sf-tip-bg: #13213a;
+  --sf-tip-ink: #ffffff;
+  cursor: text;
+}
+html[data-theme='dark'] :is(.home-search, .directory-search-bar, .route-room-search-field, .search-input-wrap) {
+  --sf-ring: rgba(143, 179, 255, .28);
+  --sf-tip-bg: #e5edfb;
+  --sf-tip-ink: #101a33;
+}
+
+/* Поле внутри строки: без своей рамки, фона и обводки, на всю высоту строки.
+   Рамку фокуса рисует сама строка. */
+:is(.home-search, .directory-search-bar, .route-room-search-field, .search-input-wrap) input {
+  align-self: stretch;
+  height: auto !important;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0 !important;
+  border-radius: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  appearance: none;
+  -webkit-appearance: none;
+  text-overflow: ellipsis;
+}
+:is(.home-search, .directory-search-bar, .route-room-search-field, .search-input-wrap) input::-webkit-search-cancel-button,
+:is(.home-search, .directory-search-bar, .route-room-search-field, .search-input-wrap) input::-webkit-search-decoration { display: none; -webkit-appearance: none; }
+:is(.home-search, .directory-search-bar, .route-room-search-field, .search-input-wrap) > svg { flex: none; pointer-events: none; }
+
+/* Одна рамка фокуса — у всей строки. */
+.directory-search-bar:focus-within,
+.route-room-search-field:focus-within,
+.route-room-search-open .route-room-search-field {
+  border-color: var(--blue) !important;
+  outline: none;
+  box-shadow: 0 0 0 3px var(--sf-ring) !important;
+}
+html[data-theme='dark'] :is(.directory-search-bar:focus-within, .route-room-search-field:focus-within, .route-room-search-open .route-room-search-field) { border-color: #8fb3ff !important; }
+/* На синем первом экране главной рамка жёлтая, как и раньше, но вплотную к строке:
+   отступ в 3 px на скруглённых углах выглядел кривым. */
+.home-search:focus-within { outline: none !important; box-shadow: 0 0 0 3px #ffd66d, 0 10px 30px rgba(1, 12, 35, .22) !important; }
+
+/* ---------- Высоты и отступы ---------- */
+.directory-search-bar { height: 56px; padding: 0 6px 0 16px; gap: 10px; border-radius: 14px; }
+.directory-search-bar > svg { color: var(--blue); }
+.route-room-search-field { gap: 8px; padding-inline: 12px 6px !important; border-radius: 14px !important; }
+
+/* ---------- Кнопки внутри строки: квадратные, не меньше 40 px (44 px на сенсорных) ---------- */
+:is(.home-search, .directory-search-bar) :is(.voice-search, .search-clear),
+.home-search > button[type='submit'] {
+  position: relative;
+  width: 40px !important;
+  height: 40px !important;
+  flex: none;
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+/* «.directory-search-bar > button» из styles.css красил кнопку в светло-серый круг (и в тёмной теме тоже). */
+.directory-search-bar > .search-clear { border: 0; border-radius: 10px; color: var(--muted); background: transparent; cursor: pointer; }
+.directory-search-bar > .search-clear:hover { color: var(--ink); background: var(--surface-soft); }
+.directory-search-bar .voice-search { border-color: transparent; background: transparent; }
+.directory-search-bar .voice-search:hover { border-color: var(--line); background: var(--surface-soft); }
+.home-search > button[type='submit'] { border-radius: 11px !important; }
+.route-room-voice { position: relative; width: 36px !important; height: 36px !important; }
+.route-room-search-chevron { width: 32px; height: 32px; justify-content: center; border-radius: 9px !important; }
+.route-room-search-chevron:hover { color: var(--ink); background: var(--surface-soft); }
+@media (pointer: coarse) {
+  :is(.home-search, .directory-search-bar) :is(.voice-search, .search-clear),
+  .home-search > button[type='submit'] { width: 44px !important; height: 44px !important; }
+  .route-room-voice { width: 40px !important; height: 40px !important; }
+}
+
+/* ---------- Подсказки к кнопкам-значкам ----------
+   Появляются при наведении (с задержкой) и при переходе с клавиатуры. Текст
+   совпадает с aria-label кнопки, поэтому для экранного диктора скрыт. */
+.field-tip {
+  position: absolute;
+  z-index: 6;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  padding: 5px 9px;
+  border-radius: 7px;
+  color: var(--sf-tip-ink, #fff);
+  background: var(--sf-tip-bg, #13213a);
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, 3px);
+  transition: opacity .12s ease, transform .12s ease;
+}
+button:focus-visible > .field-tip { opacity: 1; transform: translate(-50%, 0); }
+@media (hover: hover) {
+  button:hover > .field-tip { opacity: 1; transform: translate(-50%, 0); transition-delay: .35s; }
+}
+
+/* ---------- Список подсказок на главной ----------
+   Рисуется поверх страницы (portal), координаты ставит HomeSearch. */
+.home-search-suggestions.search-popover {
+  position: fixed;
+  right: auto;
+  /* Выше плашки cookie (110): пока человек ищет, подсказки важнее. */
+  z-index: 115;
+  max-height: min(60vh, 440px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 16px !important;
+  background: var(--surface);
+  box-shadow: 0 22px 50px rgba(9, 24, 54, .22);
+}
+html[data-theme='dark'] .home-search-suggestions.search-popover { box-shadow: 0 22px 50px rgba(0, 0, 0, .5); }
+
+/* Строки подсказок: одна высота, вся строка нажимается, выбранная видна и с клавиатуры. */
+.search-popover > button {
+  width: 100%;
+  min-height: 52px;
+  display: grid;
+  align-content: center;
+  gap: 2px;
+  padding: 9px 12px;
+  border: 0 !important;
+  border-radius: 10px;
+  color: var(--ink);
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.search-popover > button span { overflow: hidden; color: var(--ink); font-size: 15px; font-weight: 650; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap; }
+.search-popover > button small { overflow: hidden; color: var(--muted); font-size: 13px; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
+.search-popover > button:is(:hover, .is-active),
+.route-room-option:hover { background: var(--surface-soft); }
+.search-popover > button.is-active { box-shadow: inset 3px 0 0 var(--blue); }
+.search-popover > .home-search-no-results span { color: var(--blue); }
+
+/* Список кабинетов в «Маршруте»: строки выше, текст крупнее, этажи без переноса. */
+.route-room-option { min-height: 46px; padding: 9px 12px; border-radius: 10px; }
+.route-room-option-highlight { background: var(--surface-soft) !important; box-shadow: inset 3px 0 0 var(--blue); }
+html[data-theme='dark'] .route-room-option-highlight { background: var(--accent-tint) !important; }
+.route-room-option-main strong { font-size: 14.5px; }
+.route-room-option-floor { font-size: 12.5px; }
+.route-room-search-list { border-radius: 14px; padding: 6px; }
+.route-room-search-group-label {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 9px 10px 6px;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+}
+.route-room-search-group-label small { min-width: 0; font-size: 12px; font-weight: 500; }
+.route-room-search-empty { padding: 14px 12px; color: var(--muted); font-size: 14px; line-height: 1.5; }
+
+/* Окно поиска в шапке: строки результатов той же высоты. */
+.search-results .search-result { min-height: 52px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .field-tip { transition: none; }
+}
+
+/* Липкий заголовок этажа закрывал строку, к которой список прокручивается
+   стрелками или при открытии: оставляем над ней место под заголовок. */
+.route-room-option { scroll-margin-top: 44px; scroll-margin-bottom: 6px; }
+/* На телефоне список шире поля: справа от поля кнопка «поменять местами»,
+   и без этого названия обрезались до «Кабинет аэро…». Этаж и так написан
+   в заголовке группы, поэтому в строке его не повторяем. */
+@media (max-width: 767.98px) {
+  .route-room-search-list { right: auto; width: max(100%, min(340px, calc(100vw - 80px))); }
+  .route-room-search-group .route-room-option-floor { display: none; }
+}
+
+/* Подпись над строкой поиска в «Кабинетах» и «Преподавателях» (класс без «-label»:
+   глобальное правило уменьшает такие подписи до 0,82em). Подсказка в поле
+   исчезает, как только начинаешь печатать, а подпись остаётся. */
+.search-field-name { display: block; margin: 0 0 8px; color: var(--ink); font-size: 14.5px; font-weight: 650; }

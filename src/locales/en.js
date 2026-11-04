@@ -473,4 +473,12 @@ Object.assign(english, {
   'Вернули черновик, который вы не отправили.': 'We restored the draft you had not sent.',
   'Стереть': 'Clear',
   'Возможно, ссылка устарела или в адресе опечатка. Нужный кабинет проще найти на карте.': 'The link may be outdated or the address has a typo. The room you need is easier to find on the map.',
+  'Номер, место или фамилия': 'Number, place or surname',
+  'Номер, название или фамилия': 'Number, name or surname',
+  'Фамилия, предмет или должность': 'Surname, subject or position',
+  'Подсказки': 'Suggestions',
+  'Найти преподавателя или сотрудника': 'Find a teacher or staff member',
+  'Например, 217 или физика': 'For example, 217 or physics',
+  'Фамилия или предмет, например химия': 'Surname or subject, e.g. chemistry',
+  'Например, 217 или столовая': 'For example, 217 or canteen',
 })

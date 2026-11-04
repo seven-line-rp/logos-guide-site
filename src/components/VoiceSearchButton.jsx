@@ -35,8 +35,9 @@ export default function VoiceSearchButton({ onText, className = '' }) {
   }
 
   return <>
-    <button type="button" className={`voice-search ${listening ? 'is-listening' : ''} ${className}`} onClick={toggle} aria-pressed={listening} aria-label={listening ? 'Остановить голосовой ввод' : 'Сказать, что найти'} title={listening ? 'Слушаю…' : 'Голосовой поиск'}>
-      {listening ? <MicOff size={17} /> : <Mic size={17} />}
+    <button type="button" className={`voice-search ${listening ? 'is-listening' : ''} ${className}`} onClick={toggle} aria-pressed={listening} aria-label={listening ? 'Остановить голосовой ввод' : 'Сказать, что найти'}>
+      {listening ? <MicOff size={17} aria-hidden="true" /> : <Mic size={17} aria-hidden="true" />}
+      <span className="field-tip" aria-hidden="true">{listening ? 'Остановить' : 'Сказать голосом'}</span>
     </button>
     {error && <span className="voice-search-error" role="status">{error}</span>}
   </>
