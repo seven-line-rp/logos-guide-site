@@ -1,7 +1,8 @@
 import { useMemo } from 'react'
 import wordmark from '../assets/logo-wordmark.js'
-import { CARTOON_LINES } from './cartoon-script.js'
-import timeline from './cartoon-timeline.json'
+import { CARTOON_LINES, CARTOON_VERSIONS } from './cartoon-script.js'
+import adultTimeline from './cartoon-timeline.json'
+import cleanTimeline from './cartoon-timeline-clean.json'
 import shots from './promo-shots.json'
 import { AD_PINK, MrShield, STAGE_H, STAGE_W } from './PromoStage.jsx'
 
@@ -10,7 +11,10 @@ import { AD_PINK, MrShield, STAGE_H, STAGE_W } from './PromoStage.jsx'
 // в такт озвучке, её можно перематывать, а scripts/render-promo.mjs --film=cartoon
 // снимает те же кадры в MP4. Сцена — 1280×720.
 // Герои: студент (голос student) и Mr.Брекин — щит в цилиндре из рекламной паузы
-// промо-ролика (голос brekin). В облачках — их реплики, мат в том числе.
+// промо-ролика (голос brekin).
+// У ролика две версии — с матом и без (CARTOON_VERSIONS). Фразы и сцены у них
+// одни и те же, отличаются только текст и тайминги озвучки, поэтому сцены
+// собираются для нужной версии, а субтитров в кадре нет: реплики звучат.
 
 const clamp = (value, min = 0, max = 1) => Math.min(max, Math.max(min, value))
 const seg = (t, a, b) => clamp((t - a) / (b - a))
@@ -19,15 +23,21 @@ const appear = (t, a, d = .4) => ease(seg(t, a, a + d))
 // Упругое появление: чуть больше нужного размера и обратно.
 const pop = (t, a, d = .45) => { const x = seg(t, a, a + d); return x === 0 ? 0 : 1 + 2.7 * (x - 1) ** 3 + 1.7 * (x - 1) ** 2 }
 
-const LINE = Object.fromEntries(timeline.lines.map((line) => [line.id, line]))
-const LINES = CARTOON_LINES.map((line, index) => ({ ...line, ...LINE[line.id], next: timeline.lines[index + 1]?.start ?? timeline.duration }))
-const SCENES = (() => {
+// Тайминги озвучки и сцены одной версии ролика (adult — с матом, clean — без).
+const TIMELINES = { adult: adultTimeline, clean: cleanTimeline }
+function buildTimeline(version) {
+  const timeline = TIMELINES[version] || adultTimeline
+  const line = Object.fromEntries(timeline.lines.map((item) => [item.id, item]))
+  const lines = CARTOON_LINES.map((item, index) => ({ ...item, ...line[item.id], next: timeline.lines[index + 1]?.start ?? timeline.duration }))
   const starts = []
-  for (const line of LINES) if (!starts.some((scene) => scene.id === line.scene)) starts.push({ id: line.scene, start: Math.max(0, line.start - .3 - (line.lead || 0)) })
+  for (const item of lines) if (!starts.some((scene) => scene.id === item.scene)) starts.push({ id: item.scene, start: Math.max(0, item.start - .3 - (item.lead || 0)) })
   starts[0].start = 0
-  return starts.map((scene, index) => ({ ...scene, end: starts[index + 1]?.start ?? timeline.duration }))
-})()
-export const CARTOON_DURATION = timeline.duration
+  const scenes = starts.map((scene, index) => ({ ...scene, end: starts[index + 1]?.start ?? timeline.duration }))
+  return { duration: timeline.duration, lines, line, scenes }
+}
+const STAGES = Object.fromEntries(Object.keys(TIMELINES).map((version) => [version, buildTimeline(version)]))
+export const cartoonDuration = (version = 'adult') => (TIMELINES[version] || adultTimeline).duration
+export const CARTOON_DURATION = adultTimeline.duration
 
 const INK = '#14081f'
 const SKIN = '#ffd9b8'
@@ -38,8 +48,11 @@ const WALL = '#eef2fb'
 const FLOOR = '#cdd6ea'
 
 // Кто говорит в момент t и насколько открыт рот (быстро хлопает, пока звучит фраза).
-const speaking = (t) => LINES.find((line) => t >= line.start - .03 && t <= line.end + .03)
-const mouthOf = (who, t) => (speaking(t)?.voice === who ? .35 + .65 * Math.abs(Math.sin(t * 21)) : 0)
+// lines — фразы той версии ролика, которую сейчас показываем.
+const mouthOf = (lines, who, t) => {
+  const speaking = lines.find((line) => t >= line.start - .03 && t <= line.end + .03)
+  return speaking?.voice === who ? .35 + .65 * Math.abs(Math.sin(t * 21)) : 0
+}
 
 // ---------- Студент ----------
 // Точка (x, y) — между ступнями. mood: calm | shock | angry | happy.
@@ -108,27 +121,10 @@ function Hall({ offset = 0, rooms = ['207', '209', '211', '213', '215', '217'], 
   </div>
 }
 
-// ---------- Облачко реплики ----------
-// tail — в какую сторону смотрит хвостик: к говорящему внизу слева или справа.
-function Bubble({ x, y, width = 440, text, p, tail = 'left', loud = false }) {
-  if (p <= 0) return null
-  return <div style={{ position: 'absolute', left: x, top: y, width, padding: '18px 24px', borderRadius: 28, background: '#fff', border: `5px solid ${INK}`, color: INK, font: `${loud ? 800 : 700} ${loud ? 34 : 30}px/1.25 'Onest Variable', Onest, system-ui, sans-serif`, transform: `scale(${p})`, transformOrigin: tail === 'left' ? '15% 110%' : '85% 110%', boxShadow: '8px 8px 0 rgba(20,8,31,.18)' }}>
-    {text}
-    <svg width="54" height="44" viewBox="0 0 54 44" style={{ position: 'absolute', top: '100%', marginTop: -5, [tail === 'left' ? 'left' : 'right']: 46 }} aria-hidden="true"><path d={tail === 'left' ? 'M2 0 L20 42 L50 0' : 'M4 0 L34 42 L52 0'} fill="#fff" stroke={INK} strokeWidth="5" strokeLinejoin="round" /><path d="M0 0 H54" stroke="#fff" strokeWidth="7" /></svg>
-  </div>
-}
-
-// Облачка всех фраз сцены: каждое видно со своей фразы до чуть после неё,
-// но не дольше, чем начнётся следующая фраза того же героя.
-function Bubbles({ t, scene, places }) {
-  return LINES.filter((line) => line.scene === scene && places[line.voice]).map((line) => {
-    const until = Math.min(line.end + 1.1, LINES.find((other) => other.start > line.start && other.voice === line.voice)?.start ?? 99)
-    const p = t < line.start - .12 || t > until ? 0 : Math.min(pop(t, line.start - .12, .3), 1 - seg(t, until - .15, until))
-    const [x, y, tail, width] = places[line.voice]
-    return <Bubble key={line.id} x={x} y={y} width={width} tail={tail} text={line.caption} p={p} loud={line.id === 'fail'} />
-  })
-}
-
+// ---------- Подписи в кадре ----------
+// Субтитров и облачков с репликами в кадре нет: фразы звучат голосом, а герои
+// просто шевелят губами. Надписи остаются только по делу — время на стене,
+// «ПУФ!», «ЩЁЛК!», финальная плашка (Boom ниже).
 // ---------- Телефон крупным планом ----------
 // screen: loading | error | vpn-off | vpn-on | logos
 function BigPhone({ x, y, screen, t, shake = 0 }) {
@@ -171,44 +167,41 @@ function Boom({ x, y, text, t, at, color = GOLD, size = 70, rotate = -8 }) {
 }
 
 // ---------- Сцены ----------
-function HallScene({ t, local }) {
+function HallScene({ t, local, lines }) {
   const walk = seg(local, 0, 1.4)
   return <>
     <Hall offset={walk * 120} />
-    <Student x={-140 + ease(walk) * 520} y={640} mood="calm" step={local * 9} stride={walk < 1 ? .9 : 0} mouth={mouthOf('student', t)} />
-    <Bubbles t={t} scene="hall" places={{ student: [420, 110, 'left', 460] }} />
+    <Student x={-140 + ease(walk) * 520} y={640} mood="calm" step={local * 9} stride={walk < 1 ? .9 : 0} mouth={mouthOf(lines, 'student', t)} />
     <div style={{ position: 'absolute', left: 0, right: 0, top: 30, textAlign: 'center', color: NAVY, font: "900 30px/1 'Onest Variable', system-ui", opacity: 1 - seg(local, 1.4, 1.8) }}>8:29 · до пары одна минута</div>
   </>
 }
 
-function PhoneScene({ t, local }) {
+function PhoneScene({ t, local, lines, line: LINE }) {
   const errorAt = LINE.fail.start - .35
   const broken = t >= errorAt
   return <>
     <div style={{ position: 'absolute', inset: 0, background: broken ? '#ffe1dc' : '#e6ecfa' }} />
     {broken && <div style={{ position: 'absolute', inset: 0, background: '#ff3b30', opacity: .5 * (1 - seg(t, errorAt, errorAt + .35)) }} />}
     <BigPhone x={150} y={46} screen={broken ? 'error' : 'loading'} t={t} shake={broken ? 1 - seg(t, errorAt, errorAt + .8) : 0} />
-    <Student x={960} y={980} scale={1.55} mood={broken ? 'angry' : 'calm'} phone={false} shake={broken ? local : 0} mouth={mouthOf('student', t)} />
-    <Bubbles t={t} scene="phone" places={{ student: [560, 50, 'right', 560] }} />
+    <Student x={960} y={980} scale={1.55} mood={broken ? 'angry' : 'calm'} phone={false} shake={broken ? local : 0} mouth={mouthOf(lines, 'student', t)} />
   </>
 }
 
-function PoofScene({ t, local }) {
+function PoofScene({ t, local, lines }) {
   const at = .15
   const puff = seg(local, at, at + 1.1)
   return <>
     <Hall offset={120} />
-    <Student x={330} y={640} mood={local < .4 ? 'angry' : 'shock'} mouth={mouthOf('student', t)} />
+    <Student x={286} y={640} mood={local < .4 ? 'angry' : 'shock'} mouth={mouthOf(lines, 'student', t)} />
     {puff > 0 && puff < 1 && <svg width={STAGE_W} height={STAGE_H} style={{ position: 'absolute', inset: 0 }} aria-hidden="true">
-      {Array.from({ length: 9 }, (_, i) => { const a = (i / 9) * Math.PI * 2; const r = 40 + ease(puff) * 170; return <circle key={i} cx={900 + Math.cos(a) * r} cy={360 + Math.sin(a) * r * .7} r={70 * (1 - puff) + 20} fill="#fff" stroke="#c9d3e8" strokeWidth="4" opacity={1 - puff} /> })}
+      {Array.from({ length: 9 }, (_, i) => { const a = (i / 9) * Math.PI * 2; const r = 40 + ease(puff) * 170; return <circle key={i} cx={860 + Math.cos(a) * r} cy={360 + Math.sin(a) * r * .7} r={70 * (1 - puff) + 20} fill="#fff" stroke="#c9d3e8" strokeWidth="4" opacity={1 - puff} /> })}
     </svg>}
-    <Brekin x={900} y={380} t={local} appearAt={at + .2} mouth={mouthOf('brekin', t)} size={260} />
-    <Boom x={980} y={120} text="ПУФ!" t={local} at={at} />
-    <Bubbles t={t} scene="poof" places={{ brekin: [640, 40, 'right', 520], student: [40, 70, 'left', 420] }} />
+    <Brekin x={860} y={390} t={local} appearAt={at + .2} mouth={mouthOf(lines, 'brekin', t)} size={250} />
+    <Boom x={1010} y={96} text="ПУФ!" t={local} at={at} />
   </>
 }
 
-function VpnScene({ t }) {
+function VpnScene({ t, lines, line: LINE }) {
   const pressAt = LINE.button.start + 1.35
   const logosAt = LINE.button.end + .15
   const screen = t >= logosAt ? 'logos' : t >= pressAt ? 'vpn-on' : 'vpn-off'
@@ -220,14 +213,13 @@ function VpnScene({ t }) {
     </svg>
     <BigPhone x={478} y={50} screen={screen} t={t} />
     {press && <svg width="90" height="110" viewBox="0 0 90 110" style={{ position: 'absolute', left: 620, top: 330 + (t < pressAt ? 0 : 14) }} aria-hidden="true"><path d="M30 104 V40 a12 12 0 0 1 24 0 V64 h14 a12 12 0 0 1 12 12 V104Z" fill={SKIN} stroke={INK} strokeWidth="4" strokeLinejoin="round" /></svg>}
-    <Boom x={790} y={540} text="ЩЁЛК!" t={t} at={pressAt} size={58} color="#c6ff3d" />
-    <Student x={210} y={760} scale={1.1} mood={t >= logosAt ? 'happy' : 'shock'} phone={false} mouth={mouthOf('student', t)} />
-    <Brekin x={1060} y={420} t={t} mouth={mouthOf('brekin', t)} />
-    <Bubbles t={t} scene="vpn" places={{ brekin: [830, 40, 'right', 420], student: [24, 120, 'left', 420] }} />
+    <Boom x={286} y={196} text="ЩЁЛК!" t={t} at={pressAt} size={56} color="#c6ff3d" />
+    <Student x={210} y={760} scale={1.1} mood={t >= logosAt ? 'happy' : 'shock'} phone={false} mouth={mouthOf(lines, 'student', t)} />
+    <Brekin x={1060} y={420} t={t} mouth={mouthOf(lines, 'brekin', t)} />
   </>
 }
 
-function RunScene({ t, local }) {
+function RunScene({ t, local, lines }) {
   const offset = local * 1100
   return <>
     <Hall offset={offset} blur={1.2} />
@@ -236,28 +228,26 @@ function RunScene({ t, local }) {
       {Array.from({ length: 10 }, (_, i) => { const x = ((i * 160 - offset) % 1600 + 1600) % 1600 - 160; return <path key={i} d={`M${x} 610 l40 20 l-40 20`} fill="none" stroke="#245ce5" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round" opacity=".75" /> })}
       {Array.from({ length: 7 }, (_, i) => <path key={`s${i}`} d={`M${120 + ((i * 97) % 300)} ${300 + i * 34} h${-90 - (i % 3) * 40}`} stroke={INK} strokeWidth="5" strokeLinecap="round" opacity={.35} />)}
     </svg>
-    <Student x={640} y={650} mood="happy" step={local * 17} stride={1.15} mouth={mouthOf('student', t)} />
-    <Brekin x={300} y={300} t={local * 1.6} mouth={mouthOf('brekin', t)} size={200} />
-    <Bubbles t={t} scene="run" places={{ brekin: [60, 20, 'left', 470] }} />
+    <Student x={640} y={650} mood="happy" step={local * 17} stride={1.15} mouth={mouthOf(lines, 'student', t)} />
+    <Brekin x={300} y={300} t={local * 1.6} mouth={mouthOf(lines, 'brekin', t)} size={200} />
   </>
 }
 
-function DoorScene({ t, local }) {
+function DoorScene({ t, local, lines, line: LINE }) {
   const fin = LINE.fin.start
   return <>
     {/* Третья дверь коридора — 211, она ровно в кадре. */}
     <Hall offset={120 + DOOR_GAP * 2 - 520} />
     <div style={{ position: 'absolute', left: 520 - 6, top: 180, width: 172, padding: '6px 0', borderRadius: 10, background: GOLD, border: `4px solid ${INK}`, color: INK, font: "800 20px/1.2 'Onest Variable', system-ui", textAlign: 'center' }}>Кабинет физики</div>
-    <Student x={330} y={650} mood={t >= fin ? 'calm' : 'happy'} step={local * 8} stride={local < .35 ? 1 : 0} mouth={mouthOf('student', t)} />
-    <Brekin x={960} y={360} t={local} mouth={mouthOf('brekin', t)} />
+    <Student x={330} y={650} mood={t >= fin ? 'calm' : 'happy'} step={local * 8} stride={local < .35 ? 1 : 0} mouth={mouthOf(lines, 'student', t)} />
+    <Brekin x={1030} y={372} t={local} size={210} mouth={mouthOf(lines, 'brekin', t)} />
     <Boom x={520} y={575} text="ДЗЫ-Ы-ЫНЬ!" t={local} at={.05} size={64} rotate={-4} />
-    <Bubbles t={t} scene="door" places={{ student: [40, 90, 'left', 440], brekin: [700, 40, 'right', 520] }} />
   </>
 }
 
-function EndScene({ t, local }) {
+function EndScene({ t, local, line: LINE, version }) {
   const svg = useMemo(() => wordmark.replaceAll('#0000FF', '#8fa6ff').replaceAll('#13213A', '#e5edfb'), [])
-  const serious = LINE.outro.start + 2.6
+  const serious = LINE.outro.end + 1.2
   return <>
     <div style={{ position: 'absolute', inset: 0, background: NAVY }} />
     <Brekin x={210} y={330} t={local} size={210} appearAt={.05} />
@@ -272,22 +262,29 @@ function EndScene({ t, local }) {
       <div dangerouslySetInnerHTML={{ __html: svg.replace('<svg ', '<svg style="width:100%;height:auto;display:block" ') }} />
     </div>
     <div style={{ position: 'absolute', left: 850, top: 505, color: '#fff', font: "800 44px/1 'Onest Variable', system-ui", opacity: appear(t, serious + 1.2) }}>logos-guide.ru</div>
-    <div style={{ position: 'absolute', left: 0, right: 0, bottom: 22, textAlign: 'center', color: 'rgba(255,255,255,.55)', font: "500 16px/1 'Onest Variable', system-ui", opacity: appear(local, .5) }}>Mr.Брекин VPN не существует. Мультик — шутка, 18+: герои ругаются матом.</div>
+    <div style={{ position: 'absolute', left: 0, right: 0, bottom: 22, textAlign: 'center', color: 'rgba(255,255,255,.55)', font: "500 16px/1 'Onest Variable', system-ui", opacity: appear(local, .5) }}>
+      Mr.Брекин VPN не существует. Мультик — шутка{version === 'clean' ? '.' : ', 18+: герои ругаются матом.'}
+    </div>
   </>
 }
 
 const VIEWS = { hall: HallScene, phone: PhoneScene, poof: PoofScene, vpn: VpnScene, run: RunScene, door: DoorScene, end: EndScene }
 
-export default function CartoonStage({ t }) {
+// Сцена мультика в момент t. version — adult (с матом) или clean (без мата):
+// от неё зависят тайминги (у версий свой темп речи) и плашка возраста.
+export default function CartoonStage({ t, version = 'adult', controls = false }) {
+  const { lines, line, scenes, duration } = STAGES[version] || STAGES.adult
   const fade = .25
-  const visible = SCENES.filter((scene) => t >= scene.start - fade && t < scene.end + fade)
+  const visible = scenes.filter((scene) => t >= scene.start - fade && t < scene.end + fade)
+  const share = Math.min(1, Math.max(0, t / duration))
+  const stamp = CARTOON_VERSIONS.find((item) => item.id === version) || CARTOON_VERSIONS[0]
   return <div style={{ position: 'relative', width: STAGE_W, height: STAGE_H, overflow: 'hidden', background: WALL, fontFamily: "'Onest Variable', Onest, system-ui, sans-serif" }}>
     {visible.map((scene) => {
       const View = VIEWS[scene.id]
       const opacity = scene.start === 0 ? 1 : seg(t, scene.start, scene.start + fade)
-      return <div key={scene.id} style={{ position: 'absolute', inset: 0, opacity }}><View t={t} local={t - scene.start} /></div>
+      return <div key={scene.id} style={{ position: 'absolute', inset: 0, opacity }}><View t={t} local={t - scene.start} lines={lines} line={line} version={version} /></div>
     })}
-    <div aria-hidden="true" style={{ position: 'absolute', right: 26, top: 22, padding: '4px 10px', borderRadius: 8, background: 'rgba(20,8,31,.75)', color: '#fff', font: "800 16px/1.2 'Onest Variable', system-ui" }}>18+</div>
+    {stamp.age && <div aria-hidden="true" style={{ position: 'absolute', right: 26, top: 22, padding: '4px 10px', borderRadius: 8, background: 'rgba(20,8,31,.75)', color: '#fff', font: "800 16px/1.2 'Onest Variable', system-ui" }}>{stamp.age}</div>}
+    {controls && <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 6, background: 'rgba(255,255,255,.22)' }}><div style={{ width: `${share * 100}%`, height: '100%', background: AD_PINK }} /></div>}
   </div>
 }
-

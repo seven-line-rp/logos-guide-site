@@ -1,7 +1,11 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
 import { existsSync, readFileSync } from 'node:fs'
 import { PROMO_LINES, PROMO_SCENES } from './admin/promo-script.js'
+
+// Мат в сценарии мультика: версия без мата их не содержит.
+const VULGAR = /ёб|еб твою|хрен|охуе|сука|блять|нахуй|пизд|хуй/i
 
 // Промо-ролик (/admin/promo): сценарий, тайминги озвучки и файлы должны совпадать.
 // Если тест упал после правки текста — пересоберите озвучку (docs/promo.md).
@@ -44,16 +48,38 @@ test('promo files are not cached for offline use', () => {
 })
 
 // Мультик «Mr.Брекин спешит на помощь» (/admin/cartoon) — отдельный ролик со своим сценарием.
+// У него две версии ролика: с матом (adult) и без (clean).
 test('the cartoon script, voice timings and files match', async () => {
-  const { CARTOON_LINES, CARTOON_SCENES } = await import('./admin/cartoon-script.js')
-  const cartoon = JSON.parse(readFileSync(new URL('./admin/cartoon-timeline.json', import.meta.url), 'utf8'))
-  assert.deepEqual(cartoon.lines.map((line) => line.id), CARTOON_LINES.map((line) => line.id), 'фразы и тайминги из одной сборки')
-  let previous = 0
-  for (const line of cartoon.lines) {
-    assert.ok(line.start >= previous && line.end > line.start, `${line.id}: ${line.start}–${line.end}`)
-    previous = line.end
-  }
+  const { CARTOON_LINES, CARTOON_SCENES, CARTOON_VERSIONS, cartoonLine } = await import('./admin/cartoon-script.js')
   assert.deepEqual([...new Set(CARTOON_LINES.map((line) => line.scene))], CARTOON_SCENES, 'сцены идут по порядку')
-  for (const line of CARTOON_LINES) assert.ok(['student', 'brekin', 'narrator'].includes(line.voice), `${line.id}: голос ${line.voice}`)
-  for (const file of ['voice.mp3', 'music.mp3', 'logos-cartoon.mp4', 'poster.jpg']) assert.ok(existsSync(new URL(`../public/promo/cartoon/${file}`, import.meta.url)), file)
+  for (const line of CARTOON_LINES) {
+    assert.ok(['student', 'brekin', 'narrator'].includes(line.voice), `${line.id}: голос ${line.voice}`)
+    assert.ok(line.say && line.caption, `${line.id}: есть что сказать и что написать`)
+    assert.ok(line.clean?.say && line.clean?.caption, `${line.id}: есть версия без мата`)
+  }
+  for (const version of CARTOON_VERSIONS) {
+    const timeline = JSON.parse(readFileSync(new URL(`./admin/cartoon-timeline${version.id === 'clean' ? '-clean' : ''}.json`, import.meta.url), 'utf8'))
+    assert.deepEqual(timeline.lines.map((line) => line.id), CARTOON_LINES.map((line) => line.id), `${version.id}: фразы и тайминги из одной сборки`)
+    let previous = 0
+    for (const line of timeline.lines) {
+      assert.ok(line.start >= previous && line.end > line.start, `${version.id} ${line.id}: ${line.start}–${line.end}`)
+      previous = line.end
+    }
+    for (const file of [version.video, version.poster]) assert.ok(existsSync(new URL(`../public${file}`, import.meta.url)), `${version.id}: ${file}`)
+  }
+  const clean = CARTOON_LINES.map((line) => cartoonLine(line, 'clean'))
+  assert.ok(clean.every((line) => !VULGAR.test(`${line.say} ${line.caption}`)), 'в версии без мата нет мата')
+  assert.ok(CARTOON_LINES.some((line) => VULGAR.test(`${line.say} ${line.caption}`)), 'в версии с матом он есть')
+})
+
+// Файлы голоса и музыки у версий свои, иначе одна версия звучала бы голосом другой.
+test('each cartoon version has its own voice and music', async () => {
+  const { CARTOON_VERSIONS } = await import('./admin/cartoon-script.js')
+  const files = CARTOON_VERSIONS.map((version) => [version.id, readFileSync(new URL(`../public/promo/cartoon/voice${version.id === 'clean' ? '-clean' : ''}.mp3`, import.meta.url))])
+  assert.notEqual(createHash('sha1').update(files[0][1]).digest('hex'), createHash('sha1').update(files[1][1]).digest('hex'), 'голоса версий не один и тот же файл')
+  for (const version of CARTOON_VERSIONS) {
+    const name = version.id === 'clean' ? '-clean' : ''
+    assert.ok(existsSync(new URL(`../public/promo/cartoon/music${name}.mp3`, import.meta.url)), `музыка ${version.id}`)
+    assert.ok(existsSync(new URL(`../public/promo/cartoon/voice${name}.mp3`, import.meta.url)), `голос ${version.id}`)
+  }
 })

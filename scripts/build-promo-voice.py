@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 """Озвучка промо-ролика -> public/promo/voice.mp3 и тайминги фраз в
 src/admin/promo-timeline.json (по ним идёт анимация, поэтому ролик сам
-подстраивается под темп голоса). С --film cartoon — то же для мультика:
-public/promo/cartoon/voice.mp3 и src/admin/cartoon-timeline.json.
+подстраивается под темп голоса).
+
+Мультик озвучивается двумя версиями:
+    --film cartoon        public/promo/cartoon/voice.mp3,        src/admin/cartoon-timeline.json
+    --film cartoon-clean  public/promo/cartoon/voice-clean.mp3,  src/admin/cartoon-timeline-clean.json
+Разница только в тексте фраз (поле clean в cartoon-script.js), поэтому фразы,
+сцены и паузы совпадают, а темп речи и тайминги у версий свои.
 
 Два варианта:
 
@@ -20,6 +25,7 @@ public/promo/cartoon/voice.mp3 и src/admin/cartoon-timeline.json.
 После сборки озвучки пересоберите музыку и видео (docs/promo.md):
     python3 scripts/build-promo-music.py
     node scripts/render-promo.mjs
+    node scripts/render-promo.mjs --film=cartoon-clean
 """
 import argparse
 import json
@@ -47,26 +53,42 @@ CLEAN = ['afftdn=nf=-28', 'silenceremove=start_periods=1:start_threshold=-42dB:s
 
 # Ролики: сценарий (файл и имя списка фраз), куда класть голос и тайминги.
 FILMS = {
-    'promo': ('./src/admin/promo-script.js', 'PROMO_LINES', 'public/promo/voice.mp3', 'src/admin/promo-timeline.json', GAP),
-    'cartoon': ('./src/admin/cartoon-script.js', 'CARTOON_LINES', 'public/promo/cartoon/voice.mp3', 'src/admin/cartoon-timeline.json', .5),
+    'promo': ('./src/admin/promo-script.js', 'PROMO_LINES', None, 'public/promo/voice.mp3', 'src/admin/promo-timeline.json', GAP),
+    'cartoon': ('./src/admin/cartoon-script.js', 'CARTOON_LINES', 'adult', 'public/promo/cartoon/voice.mp3', 'src/admin/cartoon-timeline.json', .5),
+    'cartoon-clean': ('./src/admin/cartoon-script.js', 'CARTOON_LINES', 'clean', 'public/promo/cartoon/voice-clean.mp3', 'src/admin/cartoon-timeline-clean.json', .5),
 }
 # Голоса по полю voice у фразы: какая модель (main — --voice, alt — --alt-voice),
 # темп (length_scale, больше — медленнее) и высота в полутонах.
 # ad — диктор рекламной паузы, student и brekin — герои мультика.
+# Высоту без нужды не трогаем: сдвиг через asetrate тянет за собой форманты,
+# и голос звучит как из бочки. У «Дмитрия» и «Дениса» и так разные голоса:
+# студент — Дмитрий как есть, Mr.Брекин — Денис, он ниже и говорит солиднее.
 STYLES = {
     'ad': ('alt', .9, 0),
-    'student': ('main', 1, 2.5),
-    'brekin': ('alt', 1.12, -2.5),
+    'student': ('main', 1, 0),
+    'brekin': ('alt', 1.06, 0),
     'narrator': ('main', 1, 0),
 }
 
 
-def pitch(semitones):
-    """Фильтр ffmpeg: сдвиг высоты голоса без изменения темпа."""
+def pitch(semitones, source_rate):
+    """Фильтр ffmpeg: сдвиг высоты голоса без изменения темпа.
+
+    asetrate меняет частоту дискретизации, а вместе с ней и высоту: чтобы
+    поднять голос на N полутонов, надо взять её в 2**(N/12) раз больше
+    исходной. Исходная у Piper своя (обычно 22 050 Гц), поэтому считать от
+    RATE нельзя — иначе голос уезжает вверх и ускоряется вдвое.
+    """
     if not semitones:
         return []
     factor = 2 ** (semitones / 12)
-    return [f'asetrate={RATE * factor:.0f}', f'aresample={RATE}', f'atempo={1 / factor:.5f}']
+    return [f'asetrate={source_rate * factor:.0f}', f'aresample={RATE}', f'atempo={1 / factor:.5f}']
+
+
+def sample_rate(path):
+    """Частота дискретизации записи — из заголовка wav (Piper отдаёт wav)."""
+    with wave.open(str(path), 'rb') as clip:
+        return clip.getframerate()
 
 
 def read_lines(script, name):
@@ -106,8 +128,16 @@ def synthesized(model, speed, lines, tmp, alt_model=None):
         config = SynthesisConfig(length_scale=speed * tempo, noise_scale=0.75 if lively else 0.6, noise_w_scale=0.9 if lively else 0.75)
         with wave.open(str(raw), 'wb') as out:
             voices[which].synthesize_wav(line['say'], out, syn_config=config)
-        clips.append(to_pcm(raw, Path(tmp) / f'{index}.wav', pitch(semitones)))
+        clips.append(to_pcm(raw, Path(tmp) / f'{index}.wav', pitch(semitones, sample_rate(raw))))
     return clips
+
+
+def version_lines(script, name, version):
+    """Фразы одной версии ролика: у clean вместо say и caption — поля из clean."""
+    lines = read_lines(script, name)
+    if not version:
+        return lines
+    return [{**line, **line.get(version, {})} for line in lines]
 
 
 def main():
@@ -116,11 +146,11 @@ def main():
     source.add_argument('--from-dir', help='папка со своими записями фраз (promo-voice)')
     source.add_argument('--voice', help='файл .onnx голоса Piper (рядом должен лежать .onnx.json)')
     parser.add_argument('--alt-voice', '--ad-voice', dest='alt_voice', help='Piper: второй голос (диктор рекламы, Mr.Брекин), по умолчанию тот же')
-    parser.add_argument('--film', choices=FILMS, default='promo', help='какой ролик озвучить: promo или cartoon (мультик)')
+    parser.add_argument('--film', choices=FILMS, default='promo', help='какой ролик озвучить: promo, cartoon (мультик с матом) или cartoon-clean (без мата)')
     parser.add_argument('--speed', type=float, default=1.06, help='Piper: length_scale, больше — медленнее')
     args = parser.parse_args()
-    script, name, voice_out, timeline_out, gap = FILMS[args.film]
-    lines = read_lines(script, name)
+    script, name, version, voice_out, timeline_out, gap = FILMS[args.film]
+    lines = version_lines(script, name, version)
 
     with tempfile.TemporaryDirectory() as tmp:
         clips = recorded(args.from_dir, lines, tmp) if args.from_dir else synthesized(args.voice, args.speed, lines, tmp, args.alt_voice)
