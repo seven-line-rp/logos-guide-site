@@ -1,51 +1,51 @@
 {
   "voice": "ru_RU-dmitri-medium",
-  "duration": 36.999,
+  "duration": 36.709,
   "lines": [
     {
       "id": "hook",
       "start": 0.7,
-      "end": 3.602
+      "end": 3.591
     },
     {
       "id": "brand",
-      "start": 4.052,
+      "start": 4.041,
       "end": 7.187
     },
     {
       "id": "search",
       "start": 7.637,
-      "end": 11.271
+      "end": 11.132
     },
     {
       "id": "map",
-      "start": 11.721,
-      "end": 13.939
+      "start": 11.582,
+      "end": 13.822
     },
     {
       "id": "route",
-      "start": 14.388,
-      "end": 17.001
+      "start": 14.272,
+      "end": 16.827
     },
     {
       "id": "floors",
-      "start": 17.451,
-      "end": 21.561
+      "start": 17.277,
+      "end": 21.352
     },
     {
       "id": "schedule",
-      "start": 22.011,
-      "end": 25.668
+      "start": 21.802,
+      "end": 25.505
     },
     {
       "id": "here",
-      "start": 26.118,
-      "end": 30.971
+      "start": 25.955,
+      "end": 30.622
     },
     {
       "id": "outro",
-      "start": 31.421,
-      "end": 34.799
+      "start": 31.072,
+      "end": 34.509
     }
   ]
 }

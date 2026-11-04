@@ -1,63 +1,82 @@
 # Промо-ролик
 
-Вкладка «Промо-ролик» в панели (`/admin/promo`, открывается без ключа). Там
-плеер, сценарий с таймингами и кнопки «Скачать MP4» и «Озвучка MP3».
+Вкладка «Промо-ролик» в панели (`/admin/promo`, открывается без ключа). Ролик на
+37 секунд показан на настоящих экранах сайта: поиск кабинета, карта, маршрут,
+расписание и таблички «Вы здесь». Субтитров в ролике нет.
 
-| Файл | Что это |
-| --- | --- |
-| `src/admin/promo-script.js` | текст: субтитры (`caption`), что читает голос (`say`), сцена |
-| `src/admin/promo-timeline.json` | когда начинается и кончается каждая фраза (собирается) |
-| `src/admin/PromoStage.jsx` | анимация: кадр ролика в момент `t` |
-| `public/promo/voice.mp3` | озвучка (собирается) |
-| `public/promo/logos-promo.mp4` | готовый ролик 1280×720 (собирается) |
+## Озвучить своим голосом
 
-Анимация считается от времени озвучки, поэтому в плеере она всегда идёт в такт
-голосу, а MP4 снимается из тех же кадров. Файлы из `public/promo/` не попадают в
-офлайн-кэш сайта (`OFFLINE_SKIP` в `vite.config.js`).
+Текст фраз и названия файлов лежат в [`promo-voice/README.md`](../promo-voice/README.md).
+Есть два способа.
 
-## Поменять текст
+**Прямо в панели, без программ.** В разделе «Свой голос» у каждой фразы есть
+кнопка «Записать». Ролик начинает играть за секунду до фразы, на экране
+появляется суфлёр. Когда он станет зелёным, читайте. Записи хранятся только в
+этом браузере (IndexedDB) и не пропадают после перезагрузки. Дальше:
 
-1. Поправьте фразы в `src/admin/promo-script.js`. Пишем только то, что сайт
-   действительно умеет (`docs/marketing.md`).
-2. Пересоберите озвучку и тайминги:
+- «Голос: Свой» — смотреть ролик с вашим голосом. Музыка сама приглушается, когда
+  звучит голос. Громкость голоса и музыки настраивается ползунками.
+- «Скачать ролик с этим звуком» — ролик собирается в браузере за время его показа
+  (около 40 секунд, вкладку не сворачивать). Chrome и Edge сохраняют MP4, другие
+  браузеры — WebM.
+- «Скачать звук (WAV)» — только звук: голос с музыкой, для монтажа в другой программе.
 
-   ```bash
-   python3 -m venv .venv-tts
-   .venv-tts/bin/pip install piper-tts
-   curl -L -o ru_RU-dmitri-medium.onnx https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/dmitri/medium/ru_RU-dmitri-medium.onnx
-   curl -L -o ru_RU-dmitri-medium.onnx.json https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/dmitri/medium/ru_RU-dmitri-medium.onnx.json
-   .venv-tts/bin/python scripts/build-promo-voice.py --voice ru_RU-dmitri-medium.onnx
-   ```
+Ролик в этом случае не меняется под ваш темп. Если фраза длиннее своего места,
+панель предупредит, на сколько секунд.
 
-   `--speed 1.1` читает медленнее, `--speed 1.0` — быстрее.
-3. Если новая фраза длиннее старой, проверьте сцену в плеере: тексты на экране
-   и моменты появления заданы в `PromoStage.jsx`.
-4. Снимите MP4 (нужны `npm run dev`, Playwright с Chromium и ffmpeg):
+**Записи на телефон и сборка по своему темпу.** Запишите фразы на диктофон,
+положите файлы в `promo-voice/` и выполните:
 
-   ```bash
-   node scripts/render-promo.mjs http://127.0.0.1:5173 30
-   ```
+```bash
+python3 scripts/build-promo-voice.py --from-dir promo-voice
+python3 scripts/build-promo-music.py
+npm run dev
+node scripts/render-promo.mjs
+```
 
-5. `npm test` проверит, что сценарий, тайминги и файлы совпадают.
+Скрипт обрежет тишину, уберёт лёгкий шум, выровняет громкость и пересчитает
+тайминги. Анимация подстроится под ваш темп. Потом закоммитьте `public/promo/`,
+`src/admin/promo-timeline.json` и `promo-voice/`.
 
-## Голос
+## Из чего собран ролик
 
-Сейчас — **Piper**, голос `ru_RU-dmitri-medium`. Бесплатно, без регистрации,
-работает без интернета, набор записей голоса под лицензией CC0 (можно для
-чего угодно). Голос `denis` тоже CC0. Голоса `irina` (лицензия не указана) и
-`ruslan` (CC BY-NC-SA, только некоммерческое) не используем.
+| Файл | Что это | Чем собирается |
+| --- | --- | --- |
+| `src/admin/promo-script.js` | текст фраз и сцена каждой фразы | правится руками |
+| `src/admin/promo-timeline.json` | когда начинается и кончается фраза | `build-promo-voice.py` |
+| `public/promo/voice.mp3` | голос по умолчанию (синтез Piper) | `build-promo-voice.py` |
+| `public/promo/music.mp3` | фоновая музыка | `build-promo-music.py` |
+| `public/promo/shots/*.webp`, `src/admin/promo-shots.json` | снимки экранов сайта и координаты кнопок на них | `capture-promo-shots.mjs` |
+| `src/admin/PromoStage.jsx` | анимация: кадр ролика в момент `t` | правится руками |
+| `public/promo/logos-promo-video.mp4` | ролик без звука, на него в панели накладывается голос | `render-promo.mjs` |
+| `public/promo/logos-promo.mp4` | готовый ролик с синтезированным голосом и музыкой | `render-promo.mjs` |
+| `public/promo/poster.jpg` | обложка плеера | `render-promo.mjs` |
 
-Если нужен более живой голос, его можно поставить вместо Piper: в
-`build-promo-voice.py` меняется только функция синтеза фразы, тайминги и ролик
-собираются так же.
+Анимация считается от времени, поэтому её можно перематывать, а MP4 снимается
+кадр за кадром из тех же сцен. Файлы `public/promo/` не попадают в офлайн-кэш
+сайта (`OFFLINE_SKIP` в `vite.config.js`).
 
-- **ElevenLabs** — самый естественный русский голос из доступных. Бесплатный тариф
-  около 10 000 символов в месяц (весь ролик — около 600 символов), но только для
-  некоммерческого использования и с подписью вроде «Voice generated by ElevenLabs».
-  Платный Starter (около $5–6 в месяц) снимает эти ограничения. Условия меняются,
-  проверяйте на elevenlabs.io/pricing.
-- **Yandex SpeechKit** — хорошие русские голоса и ударения, оплата по объёму
-  текста. Цены — в разделе «Правила тарификации» на yandex.cloud.
+Если поменялся интерфейс сайта, переснимите экраны (`node scripts/capture-promo-shots.mjs`)
+и ролик (`node scripts/render-promo.mjs`). Снимки делаются в четверг 5 ноября
+в 10:31 по Москве с одной парой в расписании, чтобы на главной была видна
+«Следующая пара».
 
-Ключи API в репозиторий не кладём: только в переменные окружения на машине, где
-собирается озвучка.
+## Музыка
+
+Музыка сочинена скриптом `scripts/build-promo-music.py` (синтез на numpy): темп
+104, аккорды C – G – Am – F, пэд, перебор, бас и лёгкий бит. Прав на неё не
+нужно. Длина подстраивается под озвучку, громкость −21 LUFS, на 5 дБ тише голоса.
+
+## Синтезированный голос
+
+Голос по умолчанию — **Piper**, `ru_RU-dmitri-medium`: бесплатно, без
+регистрации и без интернета, записи голоса под лицензией CC0. Голос `denis` тоже
+CC0. Голоса `irina` (лицензия не указана) и `ruslan` (CC BY-NC-SA, только
+некоммерческое) не используем.
+
+```bash
+python3 -m venv .venv-tts && .venv-tts/bin/pip install piper-tts numpy
+curl -L -o ru_RU-dmitri-medium.onnx https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/dmitri/medium/ru_RU-dmitri-medium.onnx
+curl -L -o ru_RU-dmitri-medium.onnx.json https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/dmitri/medium/ru_RU-dmitri-medium.onnx.json
+.venv-tts/bin/python scripts/build-promo-voice.py --voice ru_RU-dmitri-medium.onnx
+```
