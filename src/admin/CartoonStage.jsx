@@ -16,40 +16,43 @@ import { AD_PINK, MrShield, STAGE_H, STAGE_W } from './PromoStage.jsx'
 // одни и те же, отличаются только текст и тайминги озвучки, поэтому сцены
 // собираются для нужной версии, а субтитров в кадре нет: реплики звучат.
 
-const clamp = (value, min = 0, max = 1) => Math.min(max, Math.max(min, value))
-const seg = (t, a, b) => clamp((t - a) / (b - a))
-const ease = (x) => 1 - (1 - x) ** 3
-const appear = (t, a, d = .4) => ease(seg(t, a, a + d))
+export const clamp = (value, min = 0, max = 1) => Math.min(max, Math.max(min, value))
+export const seg = (t, a, b) => clamp((t - a) / (b - a))
+export const ease = (x) => 1 - (1 - x) ** 3
+export const appear = (t, a, d = .4) => ease(seg(t, a, a + d))
 // Упругое появление: чуть больше нужного размера и обратно.
-const pop = (t, a, d = .45) => { const x = seg(t, a, a + d); return x === 0 ? 0 : 1 + 2.7 * (x - 1) ** 3 + 1.7 * (x - 1) ** 2 }
+export const pop = (t, a, d = .45) => { const x = seg(t, a, a + d); return x === 0 ? 0 : 1 + 2.7 * (x - 1) ** 3 + 1.7 * (x - 1) ** 2 }
 
-// Тайминги озвучки и сцены одной версии ролика (adult — с матом, clean — без).
-const TIMELINES = { adult: adultTimeline, clean: cleanTimeline }
-function buildTimeline(version) {
-  const timeline = TIMELINES[version] || adultTimeline
+// Фразы сценария с таймингами озвучки и сцены (начало и конец каждой).
+// Сцена начинается чуть раньше первой своей фразы — на её lead и ещё 0,3 с.
+// Нужна обеим сериям: эта и Cartoon2Stage.jsx.
+export function stageTimeline(scriptLines, timeline) {
   const line = Object.fromEntries(timeline.lines.map((item) => [item.id, item]))
-  const lines = CARTOON_LINES.map((item, index) => ({ ...item, ...line[item.id], next: timeline.lines[index + 1]?.start ?? timeline.duration }))
+  const lines = scriptLines.map((item, index) => ({ ...item, ...line[item.id], next: timeline.lines[index + 1]?.start ?? timeline.duration }))
   const starts = []
   for (const item of lines) if (!starts.some((scene) => scene.id === item.scene)) starts.push({ id: item.scene, start: Math.max(0, item.start - .3 - (item.lead || 0)) })
   starts[0].start = 0
   const scenes = starts.map((scene, index) => ({ ...scene, end: starts[index + 1]?.start ?? timeline.duration }))
   return { duration: timeline.duration, lines, line, scenes }
 }
-const STAGES = Object.fromEntries(Object.keys(TIMELINES).map((version) => [version, buildTimeline(version)]))
+
+// Тайминги озвучки и сцены одной версии ролика (adult — с матом, clean — без).
+const TIMELINES = { adult: adultTimeline, clean: cleanTimeline }
+const STAGES = Object.fromEntries(Object.entries(TIMELINES).map(([version, timeline]) => [version, stageTimeline(CARTOON_LINES, timeline)]))
 export const cartoonDuration = (version = 'adult') => (TIMELINES[version] || adultTimeline).duration
 export const CARTOON_DURATION = adultTimeline.duration
 
-const INK = '#14081f'
-const SKIN = '#ffd9b8'
-const HOODIE = '#2f6bff'
-const NAVY = '#0f2557'
-const GOLD = '#ffd267'
-const WALL = '#eef2fb'
-const FLOOR = '#cdd6ea'
+export const INK = '#14081f'
+export const SKIN = '#ffd9b8'
+export const HOODIE = '#2f6bff'
+export const NAVY = '#0f2557'
+export const GOLD = '#ffd267'
+export const WALL = '#eef2fb'
+export const FLOOR = '#cdd6ea'
 
 // Кто говорит в момент t и насколько открыт рот (быстро хлопает, пока звучит фраза).
 // lines — фразы той версии ролика, которую сейчас показываем.
-const mouthOf = (lines, who, t) => {
+export const mouthOf = (lines, who, t) => {
   const speaking = lines.find((line) => t >= line.start - .03 && t <= line.end + .03)
   return speaking?.voice === who ? .35 + .65 * Math.abs(Math.sin(t * 21)) : 0
 }
@@ -57,7 +60,7 @@ const mouthOf = (lines, who, t) => {
 // ---------- Студент ----------
 // Точка (x, y) — между ступнями. mood: calm | shock | angry | happy.
 // step — фаза шага (идёт или бежит), 0 — стоит.
-function Student({ x, y, scale = 1, mood = 'calm', mouth = 0, step = 0, stride = 0, phone = true, flip = false, shake = 0 }) {
+export function Student({ x, y, scale = 1, mood = 'calm', mouth = 0, step = 0, stride = 0, phone = true, flip = false, shake = 0 }) {
   const legs = [0, Math.PI].map((phase) => Math.sin(step + phase) * stride)
   const bob = stride ? Math.abs(Math.sin(step)) * -10 * stride : 0
   const sx = Math.sin(shake * 60) * 6 * (shake > 0 ? 1 : 0)
@@ -94,7 +97,7 @@ function Student({ x, y, scale = 1, mood = 'calm', mouth = 0, step = 0, stride =
 }
 
 // Mr.Брекин парит и покачивается. size — ширина щита.
-function Brekin({ x, y, t, size = 230, mouth = 0, appearAt = 0 }) {
+export function Brekin({ x, y, t, size = 230, mouth = 0, appearAt = 0 }) {
   const p = pop(t, appearAt)
   if (p <= 0) return null
   return <div style={{ position: 'absolute', left: x - 115, top: y - 150 + Math.sin(t * 3) * 10, transform: `scale(${p * size / 230})`, transformOrigin: '50% 60%' }}>
@@ -159,7 +162,7 @@ function BigPhone({ x, y, screen, t, shake = 0 }) {
 }
 
 // Звук, нарисованный буквами: «ПУФ!», «ДЗЫНЬ!».
-function Boom({ x, y, text, t, at, color = GOLD, size = 70, rotate = -8 }) {
+export function Boom({ x, y, text, t, at, color = GOLD, size = 70, rotate = -8 }) {
   const p = pop(t, at, .3)
   const out = 1 - seg(t, at + .9, at + 1.2)
   if (p <= 0 || out <= 0) return null

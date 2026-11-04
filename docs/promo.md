@@ -90,7 +90,12 @@ curl -L -o ru_RU-dmitri-medium.onnx.json https://huggingface.co/rhasspy/piper-vo
 
 Голос `denis` скачивается так же, как `dmitri` (замените `dmitri` на `denis` в адресах).
 
-## Мультик «Mr.Брекин спешит на помощь»
+## Мультик про Mr.Брекина
+
+Две серии, у каждой — версия с матом и без. В панели серии переключаются
+кнопками вверху вкладки (`/admin/cartoon`, `/admin/cartoon?episode=2`).
+
+### Серия 1. «Mr.Брекин спешит на помощь»
 
 Вкладка «Мультик» в панели (`/admin/cartoon`, без ключа) — отдельный шуточный
 ролик на 52 секунды. Студенту через минуту на физику, ЛОГОС не открывается
@@ -128,8 +133,36 @@ curl -L -o ru_RU-dmitri-medium.onnx.json https://huggingface.co/rhasspy/piper-vo
 ```bash
 .venv-tts/bin/python scripts/build-promo-voice.py --film cartoon --voice ru_RU-dmitri-medium.onnx --alt-voice ru_RU-denis-medium.onnx
 .venv-tts/bin/python scripts/build-promo-voice.py --film cartoon-clean --voice ru_RU-dmitri-medium.onnx --alt-voice ru_RU-denis-medium.onnx
-python3 scripts/build-cartoon-music.py            # обе версии, или --version clean
+python3 scripts/build-cartoon-music.py            # все ролики, или --film cartoon-clean
 npm run dev
 node scripts/render-promo.mjs --film=cartoon
 node scripts/render-promo.mjs --film=cartoon-clean
+```
+
+### Серия 2. «Вайб-кодинг»
+
+Информатик Дмитрий Александрович просит студента показать сайт, видит в мониторе
+чат с ИИ-помощником и устраивает разнос: «Вайб-кодер! Это не ты сделал, это ИИ
+сделал! Два!» Тут с «ПУФ!» прилетает Mr.Брекин. В версии с матом он говорит
+«Да иди ты нахуй», в версии без мата — «Извиняюсь, ты совершил глубочайшую
+ошибку: не сделано ИИ, а сделано с ПОМОЩЬЮ ИИ». Финал: «Mr.Брекин VPN. Обходит
+пары стороной и заступается за своих». Персонажи вымышлены — это подписано в кадре.
+
+| Файл | Что это | Чем собирается |
+| --- | --- | --- |
+| `src/admin/cartoon2-script.js` | реплики, сцены, версии второй серии | правится руками |
+| `src/admin/Cartoon2Stage.jsx` | анимация второй серии (студент и Mr.Брекин — из `CartoonStage.jsx`) | правится руками |
+| `src/admin/cartoon2-timeline.json`, `cartoon2-timeline-clean.json`, `public/promo/cartoon/voice-2.mp3`, `voice-2-clean.mp3` | голоса и тайминги | `build-promo-voice.py --film cartoon2` и `--film cartoon2-clean` |
+| `public/promo/cartoon/music-2.mp3`, `music-2-clean.mp3` | музыка и звуки (скрежет, гул, удар «Два!», «ПУФ!») | `build-cartoon-music.py` |
+| `public/promo/cartoon/logos-cartoon-2.mp4`, `logos-cartoon-2-clean.mp4`, `poster-2.jpg`, `poster-2-clean.jpg` | готовые ролики | `render-promo.mjs --film=cartoon2[-clean]` |
+
+Информатика озвучивает `denis` медленнее и на два полутона ниже, чем Mr.Брекина.
+
+```bash
+.venv-tts/bin/python scripts/build-promo-voice.py --film cartoon2 --voice ru_RU-dmitri-medium.onnx --alt-voice ru_RU-denis-medium.onnx
+.venv-tts/bin/python scripts/build-promo-voice.py --film cartoon2-clean --voice ru_RU-dmitri-medium.onnx --alt-voice ru_RU-denis-medium.onnx
+python3 scripts/build-cartoon-music.py
+npm run dev
+node scripts/render-promo.mjs --film=cartoon2
+node scripts/render-promo.mjs --film=cartoon2-clean
 ```

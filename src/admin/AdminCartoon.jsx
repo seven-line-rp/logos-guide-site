@@ -2,37 +2,60 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Download, Pause, Play, RotateCcw } from 'lucide-react'
 import CartoonStage, { cartoonDuration } from './CartoonStage.jsx'
+import Cartoon2Stage, { cartoon2Duration } from './Cartoon2Stage.jsx'
 import { CARTOON_VERSIONS } from './cartoon-script.js'
+import { CARTOON2_VERSIONS } from './cartoon2-script.js'
 
-// Вкладка «Мультик» в /admin: «Mr.Брекин спешит на помощь» — шуточный мультик
-// про ЛОГОС, отдельно от промо-ролика. Две версии одного и того же ролика:
-// «С матом» (18+) и «Без мата» — их можно смотреть и скачивать отдельно.
-// Готовые видео собирает scripts/render-promo.mjs --film=cartoon
-// и --film=cartoon-clean (docs/promo.md).
-// ?render=1&version=clean — только сцена 1280×720 для съёмки кадров.
+// Вкладка «Мультик» в /admin: шуточный мультик про Mr.Брекина и ЛОГОС, отдельно
+// от промо-ролика. Две серии, у каждой две версии: «С матом» (18+) и «Без мата» —
+// их можно смотреть и скачивать отдельно. Готовые видео собирает
+// scripts/render-promo.mjs --film=cartoon, cartoon-clean, cartoon2 и cartoon2-clean
+// (docs/promo.md). ?episode=2 — вторая серия.
+// ?render=1&episode=2&version=clean — только сцена 1280×720 для съёмки кадров.
+
+const EPISODES = [
+  {
+    id: '1',
+    title: 'Серия 1. Mr.Брекин спешит на помощь',
+    about: 'У студента не открывается ЛОГОС, а до пары минута. Тут появляется Mr.Брекин VPN.',
+    Stage: CartoonStage,
+    duration: cartoonDuration,
+    versions: CARTOON_VERSIONS,
+  },
+  {
+    id: '2',
+    title: 'Серия 2. Вайб-кодинг',
+    about: 'Информатик Дмитрий Александрович разносит студента за сайт, сделанный с нейросетью. Mr.Брекин прилетает заступиться.',
+    Stage: Cartoon2Stage,
+    duration: cartoon2Duration,
+    versions: CARTOON2_VERSIONS,
+  },
+]
+const episodeOf = (id) => EPISODES.find((item) => item.id === id) || EPISODES[0]
 
 const clock = (seconds) => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`
 
-function RenderOnly({ version }) {
+function RenderOnly({ episode, version }) {
   const [t, setT] = useState(0)
+  const { Stage, duration } = episode
   useEffect(() => {
     window.__promoSeek = (value) => new Promise((resolve) => { setT(value); requestAnimationFrame(() => requestAnimationFrame(resolve)) })
-    window.__promoDuration = cartoonDuration(version)
+    window.__promoDuration = duration(version)
     return () => { delete window.__promoSeek; delete window.__promoDuration }
-  }, [version])
-  return <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: '#000' }}><CartoonStage t={t} version={version} /></div>
+  }, [duration, version])
+  return <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: '#000' }}><Stage t={t} version={version} /></div>
 }
 
 // Проигрыватель одной версии: картинку рисует CartoonStage, голос и музыку берёт
 // из своих файлов версии. Так версии можно смотреть, не скачивая MP4.
-function Player({ film, title, note, age }) {
+function Player({ Stage, duration: durationOf, version: { id: film, title, note, age, voice, music } }) {
   const [t, setT] = useState(0)
   const [playing, setPlaying] = useState(false)
   const voiceRef = useRef(null)
   const musicRef = useRef(null)
   const frameRef = useRef(0)
   const startedAt = useRef(0)
-  const duration = cartoonDuration(film)
+  const duration = durationOf(film)
 
   const media = () => [voiceRef.current, musicRef.current].filter(Boolean)
 
@@ -70,10 +93,10 @@ function Player({ film, title, note, age }) {
   return <>
     <section className="adm-promo-player" aria-label={`Мультик: ${title}`}>
       <div className="adm-promo-screen" onClick={() => (playing ? stop() : play())} role="presentation">
-        <CartoonStage t={t} version={film} controls />
+        <Stage t={t} version={film} controls />
         {!playing && <div className="adm-promo-big-play" aria-hidden="true"><Play size={34} fill="currentColor" /></div>}
-        <audio ref={voiceRef} src={`/promo/cartoon/voice${film === 'clean' ? '-clean' : ''}.mp3`} preload="none" />
-        <audio ref={musicRef} src={`/promo/cartoon/music${film === 'clean' ? '-clean' : ''}.mp3`} preload="none" />
+        <audio ref={voiceRef} src={voice} preload="none" />
+        <audio ref={musicRef} src={music} preload="none" />
       </div>
       <div className="adm-promo-controls">
         <button type="button" className="adm-promo-play" onClick={() => (playing ? stop() : play())}>
@@ -91,24 +114,29 @@ function Player({ film, title, note, age }) {
 }
 
 export default function AdminCartoon() {
-  const [params] = useSearchParams()
+  const [params, setParams] = useSearchParams()
   const version = params.get('version') === 'clean' ? 'clean' : 'adult'
-  if (params.get('render') === '1') return <RenderOnly version={version} />
+  const episode = episodeOf(params.get('episode'))
+  if (params.get('render') === '1') return <RenderOnly episode={episode} version={version} />
 
   return <>
     <div className="adm-head">
       <div>
         <h1>Мультик</h1>
-        <p>«Mr.Брекин спешит на помощь» — шуточный мультик: у студента не открывается ЛОГОС, а до пары минута. Две версии одного ролика — с матом и без мата. Сцен и реплик в них одинаково, отличается только текст, поэтому и длина чуть разная.</p>
+        <p>Шуточный мультик про Mr.Брекина и ЛОГОС. У каждой серии две версии — с матом и без мата: сцены и реплики одни и те же, отличается только текст, поэтому и длина чуть разная.</p>
       </div>
     </div>
-    {CARTOON_VERSIONS.map((item) => <section key={item.id} className="adm-cartoon-version">
+    <div className="adm-cartoon-episodes" role="tablist" aria-label="Серии">
+      {EPISODES.map((item) => <button key={item.id} type="button" role="tab" aria-selected={item.id === episode.id} className={`adm-cartoon-episode ${item.id === episode.id ? 'is-on' : ''}`} onClick={() => setParams(item.id === '1' ? {} : { episode: item.id })}>{item.title}</button>)}
+    </div>
+    <p className="adm-cartoon-about">{episode.about}</p>
+    {episode.versions.map((item) => <section key={`${episode.id}-${item.id}`} className="adm-cartoon-version">
       <h2 className="adm-cartoon-title">{item.title}{item.age && <span className="adm-cartoon-age">18+</span>}</h2>
-      <Player film={item.id} title={item.title} note={item.note} age={item.age} />
+      <Player Stage={episode.Stage} duration={episode.duration} version={item} />
       <div className="adm-promo-export">
         <a className="adm-button adm-button-primary" href={item.video} download={item.download}><Download size={16} /> Скачать MP4</a>
       </div>
     </section>)}
-    <p className="adm-fine">Mr.Брекин VPN не существует, это шутка. Музыка сочинена скриптом (scripts/build-cartoon-music.py), голоса — Piper «Дмитрий» и «Денис» (CC0). Как пересобрать — docs/promo.md.</p>
+    <p className="adm-fine">Mr.Брекин VPN не существует, это шутка. Персонажи вымышлены, совпадения случайны. Музыка сочинена скриптом (scripts/build-cartoon-music.py), голоса — Piper «Дмитрий» и «Денис» (CC0). Как пересобрать — docs/promo.md.</p>
   </>
 }

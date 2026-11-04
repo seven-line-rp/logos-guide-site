@@ -27,6 +27,9 @@ const FILMS = {
   promo: { page: '/admin/promo', silent: 'public/promo/logos-promo-video.mp4', out: 'public/promo/logos-promo.mp4', dir: 'public/promo', poster: '2.6' },
   cartoon: { page: '/admin/cartoon', silent: null, out: 'public/promo/cartoon/logos-cartoon.mp4', dir: 'public/promo/cartoon', poster: '9.4', voice: 'voice.mp3', music: 'music.mp3' },
   'cartoon-clean': { page: '/admin/cartoon?version=clean', silent: null, out: 'public/promo/cartoon/logos-cartoon-clean.mp4', dir: 'public/promo/cartoon', poster: '9.4', posterName: 'poster-clean.jpg', voice: 'voice-clean.mp3', music: 'music-clean.mp3' },
+  // Вторая серия, «Вайб-кодинг». Обложка — Mr.Брекин между студентом и информатиком.
+  cartoon2: { page: '/admin/cartoon?episode=2', silent: null, out: 'public/promo/cartoon/logos-cartoon-2.mp4', dir: 'public/promo/cartoon', poster: '30', posterName: 'poster-2.jpg', voice: 'voice-2.mp3', music: 'music-2.mp3' },
+  'cartoon2-clean': { page: '/admin/cartoon?episode=2&version=clean', silent: null, out: 'public/promo/cartoon/logos-cartoon-2-clean.mp4', dir: 'public/promo/cartoon', poster: '30', posterName: 'poster-2-clean.jpg', voice: 'voice-2-clean.mp3', music: 'music-2-clean.mp3' },
 }
 if (!FILMS[film]) throw new Error(`Нет ролика ${film}: есть ${Object.keys(FILMS).join(', ')}`)
 const { page: path, out, dir, poster, posterName } = FILMS[film]
@@ -47,7 +50,8 @@ const run = (cmd, args) => new Promise((resolve, reject) => {
 const browser = await chromium.launch()
 try {
   const page = await browser.newPage({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 })
-  await page.goto(`${base}${path}?render=1&splash=0`, { waitUntil: 'networkidle' })
+  // У адреса уже может быть ?version=…, тогда параметры съёмки идут через &.
+  await page.goto(`${base}${path}${path.includes('?') ? '&' : '?'}render=1&splash=0`, { waitUntil: 'networkidle' })
   await page.waitForFunction(() => typeof window.__promoSeek === 'function')
   await page.evaluate(() => document.fonts.ready)
   const duration = await page.evaluate(() => window.__promoDuration)
