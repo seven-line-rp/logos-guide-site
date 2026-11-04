@@ -21,6 +21,12 @@ DirectorySlash Off
   RewriteCond %{HTTP_HOST} !^$
   RewriteRule ^ https://logos-guide.ru%{REQUEST_URI} [R=301,L,NE]
 
+  # 0.5. Разделы сайта с собственными заголовком и описанием для поисковиков и превью
+  #      ссылок: /map отдаёт _pages/map.html (их пишет сборка, см. vite.config.js).
+  #      Внутри тот же index.html, только с другими title, description и og-тегами.
+  RewriteCond %{DOCUMENT_ROOT}/_pages/$1.html -f
+  RewriteRule ^([a-z-]+)$ _pages/$1.html [L]
+
   # 1. Существующие файлы (assets/, voice/, team/, картинки) отдаём как есть.
   #    Папки сюда не входят: адрес вида /rooms должен открыть раздел приложения.
   RewriteCond %{REQUEST_FILENAME} -f

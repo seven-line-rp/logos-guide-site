@@ -472,4 +472,5 @@ Object.assign(english, {
   'Выбрать на карте': 'Pick on the map',
   'Вернули черновик, который вы не отправили.': 'We restored the draft you had not sent.',
   'Стереть': 'Clear',
+  'Возможно, ссылка устарела или в адресе опечатка. Нужный кабинет проще найти на карте.': 'The link may be outdated or the address has a typo. The room you need is easier to find on the map.',
 })

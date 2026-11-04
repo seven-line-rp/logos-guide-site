@@ -3,6 +3,8 @@ User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /api/
+# Копии страниц для поисковиков: их отдают по обычным адресам (/map, /rooms…).
+Disallow: /_pages/
 Disallow: /*?__redirect=
 
 Sitemap: https://logos-guide.ru/sitemap.xml

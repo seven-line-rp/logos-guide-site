@@ -141,6 +141,7 @@ test('search engines get one canonical address, a site name and a square icon', 
 
 test('nginx snippet keeps deep links on index.html', () => {
   const nginx = read('../deploy/nginx-spa.conf')
-  assert.match(nginx, /try_files \$uri \/index\.html;/)
+  // Перед index.html nginx пробует копию страницы для поисковиков (_pages, см. src/seo.js).
+  assert.match(nginx, /try_files \$uri \/_pages\$uri\.html \/index\.html;/)
   assert.match(nginx, /error_page 404 \/404\.html;/)
 })
