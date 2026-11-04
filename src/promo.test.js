@@ -42,3 +42,18 @@ test('the voice-over guide lists every phrase file', () => {
 test('promo files are not cached for offline use', () => {
   assert.match(readFileSync(new URL('../vite.config.js', import.meta.url), 'utf8'), /OFFLINE_SKIP = \/\^\([^)]*promo\\\//)
 })
+
+// Мультик «Mr.Брекин спешит на помощь» (/admin/cartoon) — отдельный ролик со своим сценарием.
+test('the cartoon script, voice timings and files match', async () => {
+  const { CARTOON_LINES, CARTOON_SCENES } = await import('./admin/cartoon-script.js')
+  const cartoon = JSON.parse(readFileSync(new URL('./admin/cartoon-timeline.json', import.meta.url), 'utf8'))
+  assert.deepEqual(cartoon.lines.map((line) => line.id), CARTOON_LINES.map((line) => line.id), 'фразы и тайминги из одной сборки')
+  let previous = 0
+  for (const line of cartoon.lines) {
+    assert.ok(line.start >= previous && line.end > line.start, `${line.id}: ${line.start}–${line.end}`)
+    previous = line.end
+  }
+  assert.deepEqual([...new Set(CARTOON_LINES.map((line) => line.scene))], CARTOON_SCENES, 'сцены идут по порядку')
+  for (const line of CARTOON_LINES) assert.ok(['student', 'brekin', 'narrator'].includes(line.voice), `${line.id}: голос ${line.voice}`)
+  for (const file of ['voice.mp3', 'music.mp3', 'logos-cartoon.mp4', 'poster.jpg']) assert.ok(existsSync(new URL(`../public/promo/cartoon/${file}`, import.meta.url)), file)
+})

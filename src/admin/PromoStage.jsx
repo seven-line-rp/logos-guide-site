@@ -212,7 +212,7 @@ function Side({ local, title, text }) {
 // Шутка посреди ролика: «реклама» несуществующего VPN, который «обходит пары
 // стороной» — карточки пар буквально облетают его щит. Сразу после неё ролик
 // показывает расписание, то есть как на пары всё-таки дойти.
-const AD_PINK = '#ff3d8b'
+export const AD_PINK = '#ff3d8b'
 const AD_DEEP = '#2a0f4f'
 const AD_LIME = '#c6ff3d'
 const LESSONS = [
@@ -224,7 +224,8 @@ const LESSONS = [
 const SHIELD = { x: 640, y: 270 }
 
 // Щит-«мистер»: цилиндр, монокль и усы, на груди — замок VPN.
-function MrShield({ wobble }) {
+// mouth (0…1) — насколько открыт рот: в мультике (CartoonStage) он говорит.
+export function MrShield({ wobble = 0, mouth = 0 }) {
   return <svg width="230" height="270" viewBox="-115 -150 230 270" aria-hidden="true" style={{ transform: `rotate(${wobble}deg)`, filter: 'drop-shadow(0 26px 30px rgba(10,0,30,.45))' }}>
     <path d="M-62 -128 H62 V-78 H-62 Z" fill="#14081f" />
     <path d="M-92 -78 H92 a8 8 0 0 1 0 14 H-92 a8 8 0 0 1 0 -14Z" fill="#14081f" />
@@ -233,7 +234,8 @@ function MrShield({ wobble }) {
     <circle cx="-28" cy="-14" r="8" fill="#14081f" />
     <circle cx="28" cy="-14" r="15" fill="none" stroke="#e7b400" strokeWidth="4" /><circle cx="28" cy="-14" r="7" fill="#14081f" />
     <path d="M43 -2 Q52 30 46 52" fill="none" stroke="#e7b400" strokeWidth="2.5" />
-    <path d="M-48 22 C-36 6 -14 6 0 18 C14 6 36 6 48 22 C36 18 22 26 0 28 C-22 26 -36 18 -48 22Z" fill="#14081f" />
+    {mouth > 0 && <ellipse cx="0" cy="32" rx="16" ry={4 + mouth * 12} fill="#7a1033" />}
+    <path d="M-48 22 C-36 6 -14 6 0 18 C14 6 36 6 48 22 C36 18 22 26 0 28 C-22 26 -36 18 -48 22Z" fill="#14081f" transform={`translate(0 ${-mouth * 5})`} />
     <rect x="-20" y="62" width="40" height="30" rx="7" fill={AD_PINK} />
     <path d="M-11 62 V53 a11 11 0 0 1 22 0 V62" fill="none" stroke={AD_PINK} strokeWidth="6" />
     <circle cy="74" r="4.5" fill="#fff" /><rect x="-2" y="74" width="4" height="9" fill="#fff" />

@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Озвучка промо-ролика -> public/promo/voice.mp3 и тайминги фраз в
 src/admin/promo-timeline.json (по ним идёт анимация, поэтому ролик сам
-подстраивается под темп голоса).
+подстраивается под темп голоса). С --film cartoon — то же для мультика:
+public/promo/cartoon/voice.mp3 и src/admin/cartoon-timeline.json.
 
 Два варианта:
 
@@ -44,8 +45,32 @@ CLEAN = ['afftdn=nf=-28', 'silenceremove=start_periods=1:start_threshold=-42dB:s
          'areverse', 'silenceremove=start_periods=1:start_threshold=-42dB:start_silence=0.15', 'areverse']
 
 
-def read_lines():
-    code = "import('./src/admin/promo-script.js').then((m) => console.log(JSON.stringify(m.PROMO_LINES)))"
+# Ролики: сценарий (файл и имя списка фраз), куда класть голос и тайминги.
+FILMS = {
+    'promo': ('./src/admin/promo-script.js', 'PROMO_LINES', 'public/promo/voice.mp3', 'src/admin/promo-timeline.json', GAP),
+    'cartoon': ('./src/admin/cartoon-script.js', 'CARTOON_LINES', 'public/promo/cartoon/voice.mp3', 'src/admin/cartoon-timeline.json', .5),
+}
+# Голоса по полю voice у фразы: какая модель (main — --voice, alt — --alt-voice),
+# темп (length_scale, больше — медленнее) и высота в полутонах.
+# ad — диктор рекламной паузы, student и brekin — герои мультика.
+STYLES = {
+    'ad': ('alt', .9, 0),
+    'student': ('main', 1, 2.5),
+    'brekin': ('alt', 1.12, -2.5),
+    'narrator': ('main', 1, 0),
+}
+
+
+def pitch(semitones):
+    """Фильтр ffmpeg: сдвиг высоты голоса без изменения темпа."""
+    if not semitones:
+        return []
+    factor = 2 ** (semitones / 12)
+    return [f'asetrate={RATE * factor:.0f}', f'aresample={RATE}', f'atempo={1 / factor:.5f}']
+
+
+def read_lines(script, name):
+    code = f"import('{script}').then((m) => console.log(JSON.stringify(m.{name})))"
     out = subprocess.run(['node', '-e', code], cwd=ROOT, check=True, capture_output=True, text=True).stdout
     return json.loads(out)
 
@@ -69,20 +94,19 @@ def recorded(folder, lines, tmp):
     return [to_pcm(files[line['id']], Path(tmp) / f'{index}.wav', CLEAN) for index, line in enumerate(lines)]
 
 
-def synthesized(model, speed, lines, tmp, ad_model=None):
+def synthesized(model, speed, lines, tmp, alt_model=None):
     from piper import PiperVoice, SynthesisConfig  # нужен только для синтеза
-    voice = PiperVoice.load(model)
-    config = SynthesisConfig(length_scale=speed, noise_scale=0.6, noise_w_scale=0.75)
-    # Рекламную паузу читает другой голос, бодрее и быстрее, как диктор в рекламе.
-    ad_voice = PiperVoice.load(ad_model) if ad_model else voice
-    ad_config = SynthesisConfig(length_scale=speed * .9, noise_scale=0.75, noise_w_scale=0.9)
+    voices = {'main': PiperVoice.load(model)}
+    voices['alt'] = PiperVoice.load(alt_model) if alt_model else voices['main']
     clips = []
     for index, line in enumerate(lines):
         raw = Path(tmp) / f'{index}-raw.wav'
-        is_ad = line.get('voice') == 'ad'
+        which, tempo, semitones = STYLES.get(line.get('voice'), ('main', 1, 0))
+        lively = line.get('voice') in STYLES
+        config = SynthesisConfig(length_scale=speed * tempo, noise_scale=0.75 if lively else 0.6, noise_w_scale=0.9 if lively else 0.75)
         with wave.open(str(raw), 'wb') as out:
-            (ad_voice if is_ad else voice).synthesize_wav(line['say'], out, syn_config=ad_config if is_ad else config)
-        clips.append(to_pcm(raw, Path(tmp) / f'{index}.wav'))
+            voices[which].synthesize_wav(line['say'], out, syn_config=config)
+        clips.append(to_pcm(raw, Path(tmp) / f'{index}.wav', pitch(semitones)))
     return clips
 
 
@@ -91,13 +115,15 @@ def main():
     source = parser.add_mutually_exclusive_group(required=True)
     source.add_argument('--from-dir', help='папка со своими записями фраз (promo-voice)')
     source.add_argument('--voice', help='файл .onnx голоса Piper (рядом должен лежать .onnx.json)')
-    parser.add_argument('--ad-voice', help='Piper: голос для рекламной паузы (фраза с voice: ad), по умолчанию тот же')
+    parser.add_argument('--alt-voice', '--ad-voice', dest='alt_voice', help='Piper: второй голос (диктор рекламы, Mr.Брекин), по умолчанию тот же')
+    parser.add_argument('--film', choices=FILMS, default='promo', help='какой ролик озвучить: promo или cartoon (мультик)')
     parser.add_argument('--speed', type=float, default=1.06, help='Piper: length_scale, больше — медленнее')
     args = parser.parse_args()
-    lines = read_lines()
+    script, name, voice_out, timeline_out, gap = FILMS[args.film]
+    lines = read_lines(script, name)
 
     with tempfile.TemporaryDirectory() as tmp:
-        clips = recorded(args.from_dir, lines, tmp) if args.from_dir else synthesized(args.voice, args.speed, lines, tmp, args.ad_voice)
+        clips = recorded(args.from_dir, lines, tmp) if args.from_dir else synthesized(args.voice, args.speed, lines, tmp, args.alt_voice)
         silence = lambda seconds: b'\x00\x00' * int(RATE * seconds)
         frames = bytearray(silence(LEAD_IN))
         timeline = []
@@ -107,7 +133,7 @@ def main():
             frames += data
             timeline.append({'id': line['id'], 'start': round(start, 3), 'end': round(len(frames) / 2 / RATE, 3)})
             frames += silence(line.get('tail', 0))
-            frames += silence(GAP if index < len(lines) - 1 else TAIL)
+            frames += silence(gap if index < len(lines) - 1 else TAIL)
         joined = Path(tmp) / 'voice.wav'
         with wave.open(str(joined), 'wb') as out:
             out.setnchannels(1)
@@ -115,15 +141,15 @@ def main():
             out.setframerate(RATE)
             out.writeframes(bytes(frames))
         duration = round(len(frames) / 2 / RATE, 3)
-        target = ROOT / 'public' / 'promo' / 'voice.mp3'
+        target = ROOT / voice_out
         target.parent.mkdir(parents=True, exist_ok=True)
         subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', str(joined), '-af', ','.join(POLISH + ['loudnorm=I=-16:TP=-1.5:LRA=9']),
                         '-ar', str(RATE), '-ac', '1', '-b:a', '112k', str(target)], check=True)
 
     voice_name = f'запись: {Path(args.from_dir).name}' if args.from_dir else Path(args.voice).stem
-    (ROOT / 'src' / 'admin' / 'promo-timeline.json').write_text(
+    (ROOT / timeline_out).write_text(
         json.dumps({'voice': voice_name, 'duration': duration, 'lines': timeline}, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-    print(f'voice.mp3: {duration} с, фраз: {len(timeline)}')
+    print(f'{voice_out}: {duration} с, фраз: {len(timeline)}')
 
 
 if __name__ == '__main__':

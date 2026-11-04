@@ -42,6 +42,7 @@ export const PRIVATE_TITLES = {
   '/admin/cards': 'Карточки на двери',
   '/admin/push': 'Уведомления',
   '/admin/promo': 'Промо-ролик',
+  '/admin/cartoon': 'Мультик',
 }
 
 export function pageTitle(title) {
