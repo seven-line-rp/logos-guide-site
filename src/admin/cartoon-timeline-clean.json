@@ -1,0 +1,61 @@
+{
+  "voice": "ru_RU-dmitri-medium",
+  "duration": 51.181,
+  "lines": [
+    {
+      "id": "intro",
+      "start": 1.6,
+      "end": 4.932
+    },
+    {
+      "id": "fail",
+      "start": 6.732,
+      "end": 9.193
+    },
+    {
+      "id": "hello",
+      "start": 10.593,
+      "end": 15.191
+    },
+    {
+      "id": "who",
+      "start": 15.691,
+      "end": 17.212
+    },
+    {
+      "id": "button",
+      "start": 17.712,
+      "end": 22.298
+    },
+    {
+      "id": "works",
+      "start": 23.098,
+      "end": 26.163
+    },
+    {
+      "id": "run",
+      "start": 27.163,
+      "end": 30.832
+    },
+    {
+      "id": "made",
+      "start": 32.532,
+      "end": 34.424
+    },
+    {
+      "id": "twist",
+      "start": 34.924,
+      "end": 39.034
+    },
+    {
+      "id": "fin",
+      "start": 39.534,
+      "end": 40.834
+    },
+    {
+      "id": "outro",
+      "start": 41.934,
+      "end": 48.981
+    }
+  ]
+}

@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
-"""Музыка и звуки мультика «Mr.Брекин спешит на помощь»: public/promo/cartoon/music.mp3.
+"""Музыка и звуки мультика «Mr.Брекин спешит на помощь»: public/promo/cartoon/music.mp3
+(с матом) и music-clean.mp3 (без мата).
 
 Сочинено этим скриптом (синтез на numpy), прав не нужно. Инструменты берутся из
-build-promo-music.py. Тайминги — из src/admin/cartoon-timeline.json и сценария,
-поэтому звуки попадают в те же моменты, что и анимация (CartoonStage.jsx):
-весёлый «ум-па» в фа мажоре, на ошибке — скрежет пластинки и грустная туба,
-«ПУФ!» с волшебным перезвоном, «ЩЁЛК!» кнопки, погоня, школьный звонок и финал.
+build-promo-music.py. Тайминги — из таймингов озвучки (cartoon-timeline.json и
+cartoon-timeline-clean.json) и сценария, поэтому звуки попадают в те же моменты,
+что и анимация (CartoonStage.jsx): весёлый «ум-па» в фа мажоре, на ошибке —
+скрежет пластинки и грустная туба, «ПУФ!» с волшебным перезвоном, «ЩЁЛК!» кнопки,
+погоня, школьный звонок и финал.
 
-Запуск: python3 scripts/build-cartoon-music.py  (нужны numpy, ffmpeg и node)
+Запуск: python3 scripts/build-cartoon-music.py [--version adult|clean|all]
+       (нужны numpy, ffmpeg и node)
 """
+import argparse
 import importlib.util
 import json
 import subprocess
@@ -32,11 +36,18 @@ CHORDS = [[41, 57, 60, 65], [36, 55, 60, 64], [38, 57, 62, 65], [34, 58, 62, 65]
 MELODY = [77, None, 79, 81, None, 79, 77, 76, 72, None, 74, 76, 77, None, 74, None]
 
 
-def scenes():
+# Версии мультика: тайминги озвучки и куда класть музыку (см. build-promo-voice.py).
+VERSIONS = {
+    'adult': ('src/admin/cartoon-timeline.json', 'public/promo/cartoon/music.mp3'),
+    'clean': ('src/admin/cartoon-timeline-clean.json', 'public/promo/cartoon/music-clean.mp3'),
+}
+
+
+def scenes(version):
     """Начало каждой сцены — как в CartoonStage.jsx: первая фраза сцены минус lead и 0,3 с."""
     code = "import('./src/admin/cartoon-script.js').then((s) => console.log(JSON.stringify(s.CARTOON_LINES)))"
     script = json.loads(subprocess.run(['node', '-e', code], cwd=ROOT, check=True, capture_output=True, text=True).stdout)
-    timeline = json.loads((ROOT / 'src' / 'admin' / 'cartoon-timeline.json').read_text(encoding='utf-8'))
+    timeline = json.loads((ROOT / VERSIONS[version][0]).read_text(encoding='utf-8'))
     lines = {line['id']: {**line, **next(item for item in script if item['id'] == line['id'])} for line in timeline['lines']}
     starts = {}
     for line in lines.values():
@@ -87,8 +98,8 @@ def bell(seconds=1.2):
     return tone * (.55 + .45 * np.sign(np.sin(2 * np.pi * 22 * t))) * m.env(n, .005, .25)
 
 
-def main():
-    duration, lines, start = scenes()
+def build(version):
+    duration, lines, start = scenes(version)
     n = int((duration + .2) * RATE)
     music, fx = np.zeros(n), np.zeros(n)
     error_at = lines['fail']['start'] - .35
@@ -141,7 +152,7 @@ def main():
     mix *= m.env(n, .05, 2.0)
     mix = np.tanh(mix * 1.1) / np.max(np.abs(np.tanh(mix * 1.1))) * .9
     stereo = np.stack([mix, np.roll(mix, int(.01 * RATE)) * .96], axis=1)
-    target = ROOT / 'public' / 'promo' / 'cartoon' / 'music.mp3'
+    target = ROOT / VERSIONS[version][1]
     target.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory() as tmp:
         raw = Path(tmp) / 'music.wav'
@@ -152,7 +163,15 @@ def main():
             out.writeframes((stereo * 32767).astype('<i2').tobytes())
         subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', str(raw), '-af', 'loudnorm=I=-20:TP=-2:LRA=11',
                         '-ar', '44100', '-b:a', '128k', str(target)], check=True)
-    print(f'cartoon/music.mp3: {duration} с')
+    print(f'{VERSIONS[version][1]}: {duration} с')
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--version', choices=[*VERSIONS, 'all'], default='all', help='какую версию озвучить музыкой')
+    args = parser.parse_args()
+    for version in VERSIONS if args.version == 'all' else [args.version]:
+        build(version)
 
 
 if __name__ == '__main__':

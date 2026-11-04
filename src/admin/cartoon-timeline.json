@@ -1,61 +1,61 @@
 {
   "voice": "ru_RU-dmitri-medium",
-  "duration": 36.969,
+  "duration": 51.936,
   "lines": [
     {
       "id": "intro",
       "start": 1.6,
-      "end": 3.248
+      "end": 4.804
     },
     {
       "id": "fail",
-      "start": 5.048,
-      "end": 6.756
+      "start": 6.604,
+      "end": 10.018
     },
     {
       "id": "hello",
-      "start": 8.156,
-      "end": 10.512
+      "start": 11.418,
+      "end": 16.027
     },
     {
       "id": "who",
-      "start": 11.012,
-      "end": 11.77
+      "start": 16.527,
+      "end": 18.117
     },
     {
       "id": "button",
-      "start": 12.27,
-      "end": 14.727
+      "start": 18.617,
+      "end": 23.169
     },
     {
       "id": "works",
-      "start": 15.527,
-      "end": 17.093
+      "start": 23.969,
+      "end": 26.975
     },
     {
       "id": "run",
-      "start": 18.093,
-      "end": 19.982
+      "start": 27.975,
+      "end": 31.563
     },
     {
       "id": "made",
-      "start": 21.682,
-      "end": 22.715
+      "start": 33.263,
+      "end": 35.074
     },
     {
       "id": "twist",
-      "start": 23.215,
-      "end": 25.397
+      "start": 35.574,
+      "end": 39.812
     },
     {
       "id": "fin",
-      "start": 25.897,
-      "end": 26.552
+      "start": 40.312,
+      "end": 41.612
     },
     {
       "id": "outro",
-      "start": 27.652,
-      "end": 34.769
+      "start": 42.712,
+      "end": 49.736
     }
   ]
 }

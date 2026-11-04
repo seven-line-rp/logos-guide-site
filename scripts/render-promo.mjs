@@ -3,6 +3,7 @@
 // кадром (window.__promoSeek), делает снимок и склеивает кадры с озвучкой в ffmpeg.
 // Нужны: запущенный сайт (npm run dev), Playwright с Chromium и ffmpeg.
 //   node scripts/render-promo.mjs [адрес сайта] [кадров в секунду] [--film=cartoon]
+// У мультика две версии: --film=cartoon (с матом) и --film=cartoon-clean (без мата).
 // По умолчанию http://127.0.0.1:5173 и 30 кадров/с. С --film=cartoon снимается
 // мультик (/admin/cartoon) в public/promo/cartoon/. Результат для промо-ролика:
 //   public/promo/logos-promo-video.mp4 — только картинка, без звука. На неё в панели
@@ -24,14 +25,18 @@ const film = (process.argv.find((arg) => arg.startsWith('--film=')) || '--film=p
 // Что снимать: страница со сценой, видео без звука, готовый ролик, звук и кадр обложки.
 const FILMS = {
   promo: { page: '/admin/promo', silent: 'public/promo/logos-promo-video.mp4', out: 'public/promo/logos-promo.mp4', dir: 'public/promo', poster: '2.6' },
-  cartoon: { page: '/admin/cartoon', silent: null, out: 'public/promo/cartoon/logos-cartoon.mp4', dir: 'public/promo/cartoon', poster: '9.4' },
+  cartoon: { page: '/admin/cartoon', silent: null, out: 'public/promo/cartoon/logos-cartoon.mp4', dir: 'public/promo/cartoon', poster: '9.4', voice: 'voice.mp3', music: 'music.mp3' },
+  'cartoon-clean': { page: '/admin/cartoon?version=clean', silent: null, out: 'public/promo/cartoon/logos-cartoon-clean.mp4', dir: 'public/promo/cartoon', poster: '9.4', posterName: 'poster-clean.jpg', voice: 'voice-clean.mp3', music: 'music-clean.mp3' },
 }
 if (!FILMS[film]) throw new Error(`Нет ролика ${film}: есть ${Object.keys(FILMS).join(', ')}`)
-const { page: path, out, dir, poster } = FILMS[film]
+const { page: path, out, dir, poster, posterName } = FILMS[film]
+const voice = FILMS[film].voice || 'voice.mp3'
+const music = FILMS[film].music || 'music.mp3'
 const base = args[0] || 'http://127.0.0.1:5173'
 const fps = Number(args[1] || 30)
 const frames = mkdtempSync(join(tmpdir(), 'promo-frames-'))
-// Мультику видео без звука не нужно в репозитории (в панели нет своей озвучки).
+// Промо-ролику нужен и файл без звука (на него в панели накладывается голос),
+// мультику — нет: он собирается целиком здесь.
 const silent = FILMS[film].silent || join(frames, 'video.mp4')
 
 const run = (cmd, args) => new Promise((resolve, reject) => {
@@ -57,9 +62,9 @@ try {
     '-c:v', 'libx264', '-preset', 'slow', '-crf', '23', '-pix_fmt', 'yuv420p', '-tune', 'animation', '-an', '-movflags', '+faststart', silent])
   // Обложка плеера: у промо-ролика — кадр «Первая пара. Новый корпус. Куда идти?»,
   // у мультика — Mr.Брекин рядом со студентом.
-  await run('ffmpeg', ['-y', '-loglevel', 'error', '-ss', poster, '-i', silent, '-frames:v', '1', '-q:v', '4', `${dir}/poster.jpg`])
+  await run('ffmpeg', ['-y', '-loglevel', 'error', '-ss', poster, '-i', silent, '-frames:v', '1', '-q:v', '4', `${dir}/${posterName || 'poster.jpg'}`])
   // Голос по центру, музыка под ним приглушается (sidechain) и возвращается в паузах.
-  await run('ffmpeg', ['-y', '-loglevel', 'error', '-i', silent, '-i', `${dir}/voice.mp3`, '-i', `${dir}/music.mp3`,
+  await run('ffmpeg', ['-y', '-loglevel', 'error', '-i', silent, '-i', `${dir}/${voice}`, '-i', `${dir}/${music}`,
     '-filter_complex', '[1:a]aformat=channel_layouts=stereo,asplit=2[v][key];[2:a][key]sidechaincompress=threshold=0.02:ratio=5:attack=30:release=450[m];[v][m]amix=inputs=2:duration=first:normalize=0,alimiter=limit=0.95[a]',
     '-map', '0:v', '-map', '[a]', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '160k', '-shortest', '-movflags', '+faststart', out])
   console.log(`Готово: ${silent}, ${out}`)

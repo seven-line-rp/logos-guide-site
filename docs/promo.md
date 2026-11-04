@@ -93,26 +93,43 @@ curl -L -o ru_RU-dmitri-medium.onnx.json https://huggingface.co/rhasspy/piper-vo
 ## Мультик «Mr.Брекин спешит на помощь»
 
 Вкладка «Мультик» в панели (`/admin/cartoon`, без ключа) — отдельный шуточный
-ролик на 37 секунд, 18+: герои ругаются матом. Студенту через минуту на физику,
-ЛОГОС не открывается («Путеводитель недоступен»), и тут с «ПУФ!» появляется
-Mr.Брекин VPN: жмёт кнопку, ЛОГОС открывается, студент бежит по стрелкам и
-успевает к звонку. В конце — «Если ЛОГОС недоступен — зовите Mr.Брекина*» и
-честная сноска: ЛОГОС работает и без интернета. Реплики видны в облачках.
+ролик на 52 секунды. Студенту через минуту на физику, ЛОГОС не открывается
+(«Путеводитель недоступен»), и тут с «ПУФ!» появляется Mr.Брекин VPN: жмёт
+кнопку, ЛОГОС открывается, студент бежит по стрелкам и успевает к звонку.
+В конце — «Если ЛОГОС недоступен — зовите Mr.Брекина*» и честная сноска:
+ЛОГОС работает и без интернета.
+
+Ролик выпускается в двух версиях, сцены и реплики в них одни и те же:
+
+| Версия | Что отличается | Файлы |
+| --- | --- | --- |
+| с матом (`adult`, 18+) | тексты реплик, плашка 18+ в кадре | `voice.mp3`, `music.mp3`, `logos-cartoon.mp4`, `poster.jpg`, `src/admin/cartoon-timeline.json` |
+| без мата (`clean`) | те же реплики без ругательств | `voice-clean.mp3`, `music-clean.mp3`, `logos-cartoon-clean.mp4`, `poster-clean.jpg`, `src/admin/cartoon-timeline-clean.json` |
+
+У версий разная длина (реплики звучат по-разному), поэтому у каждой свой
+таймлайн: `CartoonStage` берёт его по `version`. Смотреть обе версии можно
+прямо в панели, там же и скачивание MP4. Облачков с репликами в кадре нет:
+текст звучит голосом, герои только шевелят губами.
 
 | Файл | Что это | Чем собирается |
 | --- | --- | --- |
-| `src/admin/cartoon-script.js` | реплики, кто говорит, сцены | правится руками |
-| `src/admin/CartoonStage.jsx` | анимация: кадр мультика в момент `t` | правится руками |
-| `src/admin/cartoon-timeline.json`, `public/promo/cartoon/voice.mp3` | голоса и тайминги | `build-promo-voice.py --film cartoon` |
-| `public/promo/cartoon/music.mp3` | музыка и звуки (скрежет, «ПУФ!», щелчок, звонок) | `build-cartoon-music.py` |
-| `public/promo/cartoon/logos-cartoon.mp4`, `poster.jpg` | готовый мультик и обложка | `render-promo.mjs --film=cartoon` |
+| `src/admin/cartoon-script.js` | реплики (`say`/`caption` + `clean`), кто говорит, сцены, версии | правится руками |
+| `src/admin/CartoonStage.jsx` | анимация: кадр мультика в момент `t` для версии `version` | правится руками |
+| `src/admin/cartoon-timeline.json`, `public/promo/cartoon/voice.mp3` | голос и тайминги версии с матом | `build-promo-voice.py --film cartoon` |
+| `src/admin/cartoon-timeline-clean.json`, `public/promo/cartoon/voice-clean.mp3` | то же для версии без мата | `build-promo-voice.py --film cartoon-clean` |
+| `public/promo/cartoon/music.mp3`, `music-clean.mp3` | музыка и звуки (скрежет, «ПУФ!», щелчок, звонок) | `build-cartoon-music.py` |
+| `public/promo/cartoon/logos-cartoon.mp4`, `logos-cartoon-clean.mp4` и обложки | готовые ролики | `render-promo.mjs --film=cartoon[-clean]` |
 
-Голоса: студент — `dmitri` на 2,5 полутона выше, Mr.Брекин — `denis` медленнее
-и на 2,5 полутона ниже, рассказчик в конце — `dmitri` как есть.
+Голоса: студент — `dmitri` как есть (~185 Гц), Mr.Брекин — `denis` чуть
+медленнее (~140 Гц), рассказчик в конце — `dmitri`. Высоту голоса не крутим:
+`pitch()` в `build-promo-voice.py` считает `asetrate` от реальной частоты файла
+(Piper отдаёт 22050 Гц), иначе голос ускоряется и звучит на октаву выше.
 
 ```bash
 .venv-tts/bin/python scripts/build-promo-voice.py --film cartoon --voice ru_RU-dmitri-medium.onnx --alt-voice ru_RU-denis-medium.onnx
-python3 scripts/build-cartoon-music.py
+.venv-tts/bin/python scripts/build-promo-voice.py --film cartoon-clean --voice ru_RU-dmitri-medium.onnx --alt-voice ru_RU-denis-medium.onnx
+python3 scripts/build-cartoon-music.py            # обе версии, или --version clean
 npm run dev
 node scripts/render-promo.mjs --film=cartoon
+node scripts/render-promo.mjs --film=cartoon-clean
 ```
