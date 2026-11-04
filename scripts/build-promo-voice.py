@@ -22,6 +22,14 @@ src/admin/promo-timeline.json (по ним идёт анимация, поэто
        python3 -m venv .venv-tts && .venv-tts/bin/pip install piper-tts
        .venv-tts/bin/python scripts/build-promo-voice.py --voice ru_RU-dmitri-medium.onnx
 
+3. Переозвучка отдельных реплик в уже собранном ролике (--patch-dir). Нужна,
+   когда меняется голос одного-двух героев, а остальное пересобирать не надо:
+   файлы в папке называются по id фразы из сценария (call.mp3, show.mp3…).
+       python3 scripts/build-promo-voice.py --film cartoon2 --patch-dir promo-voice/cartoon2
+   Остальные фразы, паузы и тайминги берутся из готовой озвучки как есть,
+   поэтому анимация и снятый MP4 остаются валидными: звук в ролик
+   перекладывается без пересъёмки — node scripts/render-promo.mjs --film=… --audio-only
+
 После сборки озвучки пересоберите музыку и видео (docs/promo.md):
     python3 scripts/build-promo-music.py
     node scripts/render-promo.mjs
@@ -33,6 +41,11 @@ import subprocess
 import tempfile
 import wave
 from pathlib import Path
+
+try:  # нужен только для --patch-dir (подгонка записей под таймлайн)
+    import numpy as np
+except ImportError:  # остальным режимам сборки numpy не требуется
+    np = None
 
 ROOT = Path(__file__).resolve().parent.parent
 RATE = 44100
@@ -138,6 +151,107 @@ def synthesized(model, speed, lines, tmp, alt_model=None):
     return clips
 
 
+def clips_in(folder):
+    """Записи из папки: {id фразы: путь}. Номер в начале названия не важен."""
+    files = {}
+    for path in Path(folder).iterdir():
+        if path.suffix.lower() in AUDIO:
+            stem = path.stem.split('-', 1)[-1] if path.stem[:2].isdigit() else path.stem
+            files[stem] = path
+    return files
+
+
+def trim_edges(x):
+    """Срезать тишину по краям: от первого до последнего громкого отсчёта."""
+    loud = np.flatnonzero(np.abs(x) > max(60, np.abs(x).max() * .02))
+    if not len(loud):
+        return x
+    return x[max(0, loud[0] - int(.02 * RATE)):loud[-1] + int(.05 * RATE)]
+
+
+def active_rms(x):
+    """Громкость только по звучащим отсчётам — тишина её не размывает."""
+    peak = np.abs(x).max() if len(x) else 0
+    if not peak:
+        return 0.0
+    voiced = x[np.abs(x) > peak * .05].astype(np.float64)
+    return float(np.sqrt(np.mean(voiced ** 2))) if len(voiced) else 0.0
+
+
+def fit_to_slot(clip, slot, tmp, name):
+    """Запись -> ровно slot отсчётов: тишина по краям срезана, темп подогнан.
+
+    Место каждой фразы в ролике фиксировано таймлайном (по нему нарисована
+    анимация), поэтому новая запись подгоняется под ту же длину: медленнее —
+    чуть ускоряем (atempo, высота голоса не меняется), короче — добиваем тишиной.
+    """
+    samples = np.frombuffer(clip, dtype='<i2').astype(np.float32)
+    samples = trim_edges(samples)
+    if not len(samples):
+        return np.zeros(slot, dtype=np.float32)
+    tempo = len(samples) / slot
+    if tempo > 1.005:
+        raw = Path(tmp) / f'{name}-raw.wav'
+        sped = Path(tmp) / f'{name}-tempo.wav'
+        with wave.open(str(raw), 'wb') as out:
+            out.setnchannels(1)
+            out.setsampwidth(2)
+            out.setframerate(RATE)
+            out.writeframes(np.clip(samples, -32768, 32767).astype('<i2').tobytes())
+        subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', str(raw), '-af', f'atempo={tempo:.5f}',
+                        '-ac', '1', '-ar', str(RATE), '-sample_fmt', 's16', str(sped)], check=True)
+        with wave.open(str(sped), 'rb') as clip_file:
+            samples = np.frombuffer(clip_file.readframes(clip_file.getnframes()), dtype='<i2').astype(np.float32)
+    return samples[:slot] if len(samples) > slot else np.pad(samples, (0, slot - len(samples)))
+
+
+def patched(folder, lines, voice_out, timeline_out):
+    """Заменить отдельные фразы в готовой озвучке, не трогая остальное.
+
+    Тайминги, паузы и прочие голоса остаются прежними: правим только те
+    отрезки дорожки, для которых в папке есть запись. Новая реплика
+    подгоняется по длине под свой отрезок и по громкости — под старую,
+    чтобы персонажи звучали ровно.
+    """
+    clips = clips_in(folder)
+    known = {line['id'] for line in lines}
+    if not clips:
+        raise SystemExit(f'В {folder} нет записей: нужны файлы вида call.mp3, show.mp3…')
+    if unknown := sorted(set(clips) - known):
+        raise SystemExit(f'Нет таких фраз: {", ".join(unknown)}. Есть: {", ".join(sorted(known))}')
+    timeline = json.loads((ROOT / timeline_out).read_text(encoding='utf-8'))
+    replaced = []
+    with tempfile.TemporaryDirectory() as tmp:
+        old = np.frombuffer(to_pcm(ROOT / voice_out, Path(tmp) / 'old.wav'), dtype='<i2').astype(np.float32)
+        track = old.copy()
+        for item in timeline['lines']:
+            path = clips.get(item['id'])
+            if not path:
+                continue
+            first, last = int(round(item['start'] * RATE)), int(round(item['end'] * RATE))
+            slot = last - first
+            fresh = fit_to_slot(to_pcm(path, Path(tmp) / f"{item['id']}.wav", CLEAN), slot, tmp, item['id'])
+            was, now = active_rms(old[first:last]), active_rms(fresh)
+            if was and now:
+                gain = min(3.0, max(.5, was / now))
+                fresh = fresh * gain
+            peak = np.abs(fresh).max()
+            if peak > 32767 * .98:
+                fresh *= 32767 * .98 / peak
+            track[first:last] = fresh
+            replaced.append(item['id'])
+        joined = Path(tmp) / 'voice.wav'
+        with wave.open(str(joined), 'wb') as out:
+            out.setnchannels(1)
+            out.setsampwidth(2)
+            out.setframerate(RATE)
+            out.writeframes(np.clip(track, -32768, 32767).astype('<i2').tobytes())
+        target = ROOT / voice_out
+        subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', str(joined), '-ar', str(RATE), '-ac', '1',
+                        '-b:a', '112k', str(target)], check=True)
+    print(f'{voice_out}: заменено фраз — {len(replaced)} ({", ".join(replaced)}), тайминги без изменений')
+
+
 def version_lines(script, name, version):
     """Фразы одной версии ролика: у clean вместо say и caption — поля из clean."""
     lines = read_lines(script, name)
@@ -151,12 +265,19 @@ def main():
     source = parser.add_mutually_exclusive_group(required=True)
     source.add_argument('--from-dir', help='папка со своими записями фраз (promo-voice)')
     source.add_argument('--voice', help='файл .onnx голоса Piper (рядом должен лежать .onnx.json)')
+    source.add_argument('--patch-dir', help='папка с новыми записями отдельных фраз: заменить их в уже собранной озвучке (файлы — по id: call.mp3, show.mp3…)')
     parser.add_argument('--alt-voice', '--ad-voice', dest='alt_voice', help='Piper: второй голос (диктор рекламы, Mr.Брекин), по умолчанию тот же')
     parser.add_argument('--film', choices=FILMS, default='promo', help='какой ролик озвучить: promo, cartoon и cartoon2 (серии мультика с матом), cartoon-clean и cartoon2-clean (без мата)')
     parser.add_argument('--speed', type=float, default=1.06, help='Piper: length_scale, больше — медленнее')
     args = parser.parse_args()
     script, name, version, voice_out, timeline_out, gap = FILMS[args.film]
     lines = version_lines(script, name, version)
+
+    if args.patch_dir:
+        if np is None:
+            raise SystemExit('Для --patch-dir нужен numpy: pip install numpy')
+        patched(args.patch_dir, lines, voice_out, timeline_out)
+        return
 
     with tempfile.TemporaryDirectory() as tmp:
         clips = recorded(args.from_dir, lines, tmp) if args.from_dir else synthesized(args.voice, args.speed, lines, tmp, args.alt_voice)

@@ -12,7 +12,7 @@
 const same = (say, caption = say) => ({ say, caption, clean: { say, caption } })
 
 export const CARTOON2_LINES = [
-  { id: 'call', scene: 'lab', voice: 'teacher', lead: 1.2, ...same('Так, Соколов. Ну-ка покажи, что ты там накодил.') },
+  { id: 'call', scene: 'lab', voice: 'teacher', lead: 1.2, ...same('Так, Орлов. Ну-ка покажи, что ты там накодил.') },
   { id: 'show', scene: 'screen', voice: 'student', lead: .6, ...same('Вот, Дмитрий Александрович. Путеводитель по колледжу: карта, маршруты, расписание.') },
   {
     id: 'rant', scene: 'rant', voice: 'teacher', lead: .5,
