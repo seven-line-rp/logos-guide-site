@@ -2,7 +2,9 @@
 // Снимает промо-ролик в MP4: открывает /admin/promo?render=1, ставит время кадр за
 // кадром (window.__promoSeek), делает снимок и склеивает кадры с озвучкой в ffmpeg.
 // Нужны: запущенный сайт (npm run dev), Playwright с Chromium и ffmpeg.
-//   node scripts/render-promo.mjs [адрес сайта] [кадров в секунду] [--film=cartoon]
+//   node scripts/render-promo.mjs [адрес сайта] [кадров в секунду] [--film=cartoon] [--audio-only]
+// С --audio-only кадры не снимаются: картинка берётся из готового ролика, а звук
+// собирается заново из voice/music. Нужно после переозвучки отдельных реплик.
 // У мультика две версии: --film=cartoon (с матом) и --film=cartoon-clean (без мата).
 // По умолчанию http://127.0.0.1:5173 и 30 кадров/с. С --film=cartoon снимается
 // мультик (/admin/cartoon) в public/promo/cartoon/. Результат для промо-ролика:
@@ -11,14 +13,19 @@
 //   public/promo/logos-promo.mp4 — готовый ролик: картинка, голос и музыка,
 //     которая приседает, когда звучит голос.
 import { spawn } from 'node:child_process'
-import { mkdtempSync, rmSync } from 'node:fs'
+import { mkdtempSync, renameSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { createRequire } from 'node:module'
 import { join } from 'node:path'
 
+// С --audio-only кадры не снимаются (и Playwright не нужен): звук заново
+// подкладывается в уже готовый ролик, картинка копируется как есть. Так обновляют
+// озвучку после build-promo-voice.py --patch-dir, когда переозвучены отдельные
+// реплики, а тайминги остались прежними.
+const audioOnly = process.argv.includes('--audio-only')
 // Playwright не входит в зависимости сайта: берём установленный в системе
 // (require видит глобальные пакеты, import — нет). Поставить: npm i -g playwright.
-const { chromium } = createRequire(import.meta.url)('playwright')
+const { chromium } = audioOnly ? {} : createRequire(import.meta.url)('playwright')
 
 const args = process.argv.slice(2).filter((arg) => !arg.startsWith('--'))
 const film = (process.argv.find((arg) => arg.startsWith('--film=')) || '--film=promo').slice(7)
@@ -47,6 +54,21 @@ const run = (cmd, args) => new Promise((resolve, reject) => {
   child.on('exit', (code) => (code === 0 ? resolve() : reject(new Error(`${cmd} завершился с кодом ${code}`))))
 })
 
+// Голос по центру, музыка под ним приглушается (sidechain) и возвращается в паузах.
+const MIX = '[1:a]aformat=channel_layouts=stereo,asplit=2[v][key];[2:a][key]sidechaincompress=threshold=0.02:ratio=5:attack=30:release=450[m];[v][m]amix=inputs=2:duration=first:normalize=0,alimiter=limit=0.95[a]'
+
+if (audioOnly) {
+  // ffmpeg не умеет писать в тот же файл, который читает: собираем рядом и подменяем.
+  const remux = join(frames, 'remux.mp4')
+  await run('ffmpeg', ['-y', '-loglevel', 'error', '-i', out, '-i', `${dir}/${voice}`, '-i', `${dir}/${music}`,
+    '-filter_complex', MIX, '-map', '0:v', '-map', '[a]', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '160k',
+    '-shortest', '-movflags', '+faststart', remux])
+  renameSync(remux, out)
+  rmSync(frames, { recursive: true, force: true })
+  console.log(`Готово (только звук): ${out}`)
+  process.exit(0)
+}
+
 const browser = await chromium.launch()
 try {
   const page = await browser.newPage({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 })
@@ -67,9 +89,8 @@ try {
   // Обложка плеера: у промо-ролика — кадр «Первая пара. Новый корпус. Куда идти?»,
   // у мультика — Mr.Брекин рядом со студентом.
   await run('ffmpeg', ['-y', '-loglevel', 'error', '-ss', poster, '-i', silent, '-frames:v', '1', '-q:v', '4', `${dir}/${posterName || 'poster.jpg'}`])
-  // Голос по центру, музыка под ним приглушается (sidechain) и возвращается в паузах.
   await run('ffmpeg', ['-y', '-loglevel', 'error', '-i', silent, '-i', `${dir}/${voice}`, '-i', `${dir}/${music}`,
-    '-filter_complex', '[1:a]aformat=channel_layouts=stereo,asplit=2[v][key];[2:a][key]sidechaincompress=threshold=0.02:ratio=5:attack=30:release=450[m];[v][m]amix=inputs=2:duration=first:normalize=0,alimiter=limit=0.95[a]',
+    '-filter_complex', MIX,
     '-map', '0:v', '-map', '[a]', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '160k', '-shortest', '-movflags', '+faststart', out])
   console.log(`Готово: ${silent}, ${out}`)
 } finally {

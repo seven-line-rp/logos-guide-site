@@ -156,7 +156,35 @@ node scripts/render-promo.mjs --film=cartoon-clean
 | `public/promo/cartoon/music-2.mp3`, `music-2-clean.mp3` | музыка и звуки (скрежет, гул, удар «Два!», «ПУФ!») | `build-cartoon-music.py` |
 | `public/promo/cartoon/logos-cartoon-2.mp4`, `logos-cartoon-2-clean.mp4`, `poster-2.jpg`, `poster-2-clean.jpg` | готовые ролики | `render-promo.mjs --film=cartoon2[-clean]` |
 
-Информатика озвучивает `denis` медленнее и на два полутона ниже, чем Mr.Брекина.
+Студента (Орлов) и информатика озвучивают живые синтезированные голоса: у каждого
+героя свой, и он один и тот же в обеих версиях серии. Mr.Брекин и рассказчик в конце
+остались за Piper (`denis` и `dmitri`).
+
+Записи героев лежат в репозитории, по файлу на реплику:
+
+| Папка | Что внутри | Для чего |
+| --- | --- | --- |
+| `promo-voice/cartoon2/` | реплики версии с матом (`call.mp3`, `show.mp3`, `rant.mp3`, `grade.mp3`, `sad.mp3`, `stun.mp3`, `proud.mp3`) | `build-promo-voice.py --film cartoon2 --patch-dir promo-voice/cartoon2` |
+| `promo-voice/cartoon2-clean/` | те же id без мата (файлы, где текст совпадает, — копии) | `build-promo-voice.py --film cartoon2-clean --patch-dir promo-voice/cartoon2-clean` |
+
+Так голос можно поменять одному герою, не пересобирая серию целиком: скрипт берёт
+уже собранную озвучку, вставляет новые записи в те же отрезки таймлайна (тишину по
+краям срезает, темп и громкость подгоняет под старые) и оставляет тайминги как есть.
+Поэтому анимацию и MP4 переснимать не нужно — картинка копируется, звук собирается
+заново:
+
+```bash
+# 1. Голоса героев (обе версии серии)
+python3 scripts/build-promo-voice.py --film cartoon2 --patch-dir promo-voice/cartoon2
+python3 scripts/build-promo-voice.py --film cartoon2-clean --patch-dir promo-voice/cartoon2-clean
+
+# 2. Звук в готовые ролики: картинка из MP4, голос + музыка заново
+node scripts/render-promo.mjs --film=cartoon2 --audio-only
+node scripts/render-promo.mjs --film=cartoon2-clean --audio-only
+```
+
+Если меняются тексты реплик или их длина, серию собирают с нуля, как раньше (нужны
+Piper и `*.onnx`-голоса, см. раздел про синтез):
 
 ```bash
 .venv-tts/bin/python scripts/build-promo-voice.py --film cartoon2 --voice ru_RU-dmitri-medium.onnx --alt-voice ru_RU-denis-medium.onnx
