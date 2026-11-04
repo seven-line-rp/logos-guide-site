@@ -234,11 +234,6 @@
 :root[data-theme='unity'] .site-main :is(.section-top h2, .directory-head h1, .page-head h1)::after { transform-origin: left; animation: unity-draw .9s cubic-bezier(.2, .8, .2, 1) both; }
 @keyframes unity-draw { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 
-/* 9. Точки загрузки разделов — цвета флага. */
-:root[data-theme='unity'] .page-loading-dots i:nth-child(1) { background: #fff; box-shadow: 0 0 0 1px var(--line-strong); }
-:root[data-theme='unity'] .page-loading-dots i:nth-child(2) { background: var(--u-blue); }
-:root[data-theme='unity'] .page-loading-dots i:nth-child(3) { background: var(--u-red); }
-
 /* 10. Карточки «Часто ищут»: лента триколора снизу при наведении. */
 :root[data-theme='unity'] .quick-place-card { position: relative; }
 :root[data-theme='unity'] .quick-place-card::after { content: ''; position: absolute; z-index: 3; inset: auto 0 0 0; height: 4px; background: var(--u-flag); transform: scaleX(0); transform-origin: left; transition: transform .3s ease; pointer-events: none; }

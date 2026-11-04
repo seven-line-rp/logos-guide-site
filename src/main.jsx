@@ -43,6 +43,7 @@ import './soft.css'
 import './route.css'
 import './finish.css'
 import './unity.css'
+import './arrival.css'
 import './interactions.js'
 import { applyMapContrast } from './map-contrast.js'
 import { applyTextSize, readTextSize } from './text-size.js'
@@ -63,6 +64,9 @@ createRoot(document.getElementById('root')).render(
     <App />
   </React.StrictMode>,
 )
+
+// Заставка из index.html ждёт этого события: два кадра — и первая страница уже на экране.
+requestAnimationFrame(() => requestAnimationFrame(() => window.dispatchEvent(new Event('logos-app-ready'))))
 
 // Офлайн-режим: sw.js собирается вместе с сайтом (см. vite.config.js), поэтому только в сборке.
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
