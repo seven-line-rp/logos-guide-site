@@ -83,3 +83,28 @@ test('each cartoon version has its own voice and music', async () => {
     assert.ok(existsSync(new URL(`../public/promo/cartoon/voice${name}.mp3`, import.meta.url)), `голос ${version.id}`)
   }
 })
+
+// Вторая серия мультика, «Вайб-кодинг» (cartoon2-script.js): те же правила, что у первой.
+test('the second cartoon episode has both versions with their own timings and files', async () => {
+  const { CARTOON2_LINES, CARTOON2_SCENES, CARTOON2_VERSIONS } = await import('./admin/cartoon2-script.js')
+  assert.deepEqual([...new Set(CARTOON2_LINES.map((line) => line.scene))], CARTOON2_SCENES, 'сцены идут по порядку')
+  for (const line of CARTOON2_LINES) {
+    assert.ok(['student', 'teacher', 'brekin', 'narrator'].includes(line.voice), `${line.id}: голос ${line.voice}`)
+    assert.ok(line.say && line.clean?.say, `${line.id}: есть обе версии`)
+  }
+  for (const version of CARTOON2_VERSIONS) {
+    const timeline = JSON.parse(readFileSync(new URL(`./admin/cartoon2-timeline${version.id === 'clean' ? '-clean' : ''}.json`, import.meta.url), 'utf8'))
+    assert.deepEqual(timeline.lines.map((line) => line.id), CARTOON2_LINES.map((line) => line.id), `${version.id}: фразы и тайминги из одной сборки`)
+    for (const file of [version.video, version.poster, version.voice, version.music]) assert.ok(existsSync(new URL(`../public${file}`, import.meta.url)), `${version.id}: ${file}`)
+  }
+  assert.ok(CARTOON2_LINES.every((line) => !VULGAR.test(`${line.clean.say} ${line.clean.caption}`)), 'в версии без мата нет мата')
+  assert.ok(CARTOON2_LINES.some((line) => VULGAR.test(line.say)), 'в версии с матом он есть')
+  const burst = CARTOON2_LINES.find((line) => line.id === 'burst')
+  assert.match(burst.clean.caption, /с ПОМОЩЬЮ ИИ/)
+})
+
+// В версии «с матом» мат звучит, а не только написан: облачков в кадре нет.
+test('the adult cartoon voice actually swears', async () => {
+  const { CARTOON_LINES } = await import('./admin/cartoon-script.js')
+  assert.ok(CARTOON_LINES.filter((line) => VULGAR.test(line.say)).length >= 3)
+})

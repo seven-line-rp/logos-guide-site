@@ -56,6 +56,9 @@ FILMS = {
     'promo': ('./src/admin/promo-script.js', 'PROMO_LINES', None, 'public/promo/voice.mp3', 'src/admin/promo-timeline.json', GAP),
     'cartoon': ('./src/admin/cartoon-script.js', 'CARTOON_LINES', 'adult', 'public/promo/cartoon/voice.mp3', 'src/admin/cartoon-timeline.json', .5),
     'cartoon-clean': ('./src/admin/cartoon-script.js', 'CARTOON_LINES', 'clean', 'public/promo/cartoon/voice-clean.mp3', 'src/admin/cartoon-timeline-clean.json', .5),
+    # Вторая серия мультика, «Вайб-кодинг» (cartoon2-script.js).
+    'cartoon2': ('./src/admin/cartoon2-script.js', 'CARTOON2_LINES', 'adult', 'public/promo/cartoon/voice-2.mp3', 'src/admin/cartoon2-timeline.json', .5),
+    'cartoon2-clean': ('./src/admin/cartoon2-script.js', 'CARTOON2_LINES', 'clean', 'public/promo/cartoon/voice-2-clean.mp3', 'src/admin/cartoon2-timeline-clean.json', .5),
 }
 # Голоса по полю voice у фразы: какая модель (main — --voice, alt — --alt-voice),
 # темп (length_scale, больше — медленнее) и высота в полутонах.
@@ -68,6 +71,9 @@ STYLES = {
     'student': ('main', 1, 0),
     'brekin': ('alt', 1.06, 0),
     'narrator': ('main', 1, 0),
+    # Информатик Дмитрий Александрович (вторая серия): тот же Денис, но медленнее
+    # и на два полутона ниже — старше и строже, чем Mr.Брекин.
+    'teacher': ('alt', 1.14, -2),
 }
 
 
@@ -135,9 +141,9 @@ def synthesized(model, speed, lines, tmp, alt_model=None):
 def version_lines(script, name, version):
     """Фразы одной версии ролика: у clean вместо say и caption — поля из clean."""
     lines = read_lines(script, name)
-    if not version:
+    if version != 'clean':
         return lines
-    return [{**line, **line.get(version, {})} for line in lines]
+    return [{**line, **line.get('clean', {})} for line in lines]
 
 
 def main():
@@ -146,7 +152,7 @@ def main():
     source.add_argument('--from-dir', help='папка со своими записями фраз (promo-voice)')
     source.add_argument('--voice', help='файл .onnx голоса Piper (рядом должен лежать .onnx.json)')
     parser.add_argument('--alt-voice', '--ad-voice', dest='alt_voice', help='Piper: второй голос (диктор рекламы, Mr.Брекин), по умолчанию тот же')
-    parser.add_argument('--film', choices=FILMS, default='promo', help='какой ролик озвучить: promo, cartoon (мультик с матом) или cartoon-clean (без мата)')
+    parser.add_argument('--film', choices=FILMS, default='promo', help='какой ролик озвучить: promo, cartoon и cartoon2 (серии мультика с матом), cartoon-clean и cartoon2-clean (без мата)')
     parser.add_argument('--speed', type=float, default=1.06, help='Piper: length_scale, больше — медленнее')
     args = parser.parse_args()
     script, name, version, voice_out, timeline_out, gap = FILMS[args.film]

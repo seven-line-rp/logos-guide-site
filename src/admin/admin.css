@@ -279,6 +279,11 @@ body:has(.adm) { background: var(--bg); }
 
 /* ---------- Мультик: версии с матом и без (AdminCartoon.jsx) ---------- */
 .adm-cartoon-version { margin-bottom: 28px; }
+.adm-cartoon-episodes { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.adm-cartoon-episode { min-height: 44px; padding: 0 16px; border: 1px solid var(--line); border-radius: 11px; color: var(--ink); background: var(--adm-card); font: inherit; font-size: 15px; font-weight: 650; cursor: pointer; }
+.adm-cartoon-episode:hover { border-color: var(--adm-accent); }
+.adm-cartoon-episode.is-on { border-color: var(--adm-accent); color: var(--adm-accent); background: var(--adm-accent-soft); }
+.adm-cartoon-about { max-width: 640px; margin: 0 0 20px; color: var(--muted); font-size: 15px; line-height: 1.5; }
 .adm-cartoon-title { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; font-size: 18px; font-weight: 680; letter-spacing: -.01em; }
 .adm-cartoon-age { padding: 2px 9px; border-radius: 8px; color: #fff; background: #c2185b; font-size: 12px; font-weight: 700; letter-spacing: .02em; }
 .adm-cartoon-version .adm-muted { margin: 0; }

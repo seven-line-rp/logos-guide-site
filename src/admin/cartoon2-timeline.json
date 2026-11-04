@@ -1,0 +1,51 @@
+{
+  "voice": "ru_RU-dmitri-medium",
+  "duration": 44.338,
+  "lines": [
+    {
+      "id": "call",
+      "start": 1.9,
+      "end": 5.671
+    },
+    {
+      "id": "show",
+      "start": 6.771,
+      "end": 11.45
+    },
+    {
+      "id": "rant",
+      "start": 12.45,
+      "end": 19.102
+    },
+    {
+      "id": "grade",
+      "start": 19.602,
+      "end": 24.258
+    },
+    {
+      "id": "sad",
+      "start": 25.058,
+      "end": 26.521
+    },
+    {
+      "id": "burst",
+      "start": 28.221,
+      "end": 29.696
+    },
+    {
+      "id": "stun",
+      "start": 30.596,
+      "end": 32.911
+    },
+    {
+      "id": "proud",
+      "start": 33.411,
+      "end": 35.593
+    },
+    {
+      "id": "outro",
+      "start": 36.693,
+      "end": 42.138
+    }
+  ]
+}

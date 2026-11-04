@@ -37,7 +37,7 @@ export const CARTOON_LINES = [
   },
   {
     id: 'who', scene: 'poof', voice: 'student',
-    say: 'Ты ещё что за тип в шляпе?',
+    say: 'Ты ещё что за хрен в шляпе?',
     caption: 'Ты ещё что за хрен в шляпе?',
     clean: { say: 'Ты ещё что за тип в шляпе?', caption: 'Ты ещё что за тип в шляпе?' },
   },
@@ -49,7 +49,7 @@ export const CARTOON_LINES = [
   },
   {
     id: 'works', scene: 'vpn', voice: 'student', lead: .3,
-    say: 'Ого, работает! Второй этаж, налево. Погнали!',
+    say: 'Охуеть, работает! Второй этаж, налево. Погнали!',
     caption: 'Охуеть, работает! Второй этаж, налево. Погнали!',
     clean: { say: 'Ого, работает! Второй этаж, налево. Погнали!', caption: 'Ого, работает! Второй этаж, налево. Погнали!' },
   },
@@ -61,7 +61,7 @@ export const CARTOON_LINES = [
   },
   {
     id: 'made', scene: 'door', voice: 'student', lead: .3,
-    say: 'Успел! Бре́кин, ты легенда.',
+    say: 'Успел! Бре́кин, ты, сука, легенда.',
     caption: 'Успел! Брекин, ты, сука, легенда.',
     clean: { say: 'Успел! Бре́кин, ты легенда.', caption: 'Успел! Брекин, ты легенда.' },
   },
@@ -73,7 +73,7 @@ export const CARTOON_LINES = [
   },
   {
     id: 'fin', scene: 'door', voice: 'student',
-    say: 'Да ты, вообще, философ.',
+    say: 'Да ты, блять, философ.',
     caption: 'Да ты, блять, философ.',
     clean: { say: 'Да ты, вообще, философ.', caption: 'Да ты, вообще, философ.' },
   },
@@ -102,6 +102,8 @@ export const CARTOON_VERSIONS = [
     video: '/promo/cartoon/logos-cartoon.mp4',
     poster: '/promo/cartoon/poster.jpg',
     download: 'logos-cartoon.mp4',
+    voice: '/promo/cartoon/voice.mp3',
+    music: '/promo/cartoon/music.mp3',
   },
   {
     id: 'clean',
@@ -112,6 +114,8 @@ export const CARTOON_VERSIONS = [
     video: '/promo/cartoon/logos-cartoon-clean.mp4',
     poster: '/promo/cartoon/poster-clean.jpg',
     download: 'logos-cartoon-clean.mp4',
+    voice: '/promo/cartoon/voice-clean.mp3',
+    music: '/promo/cartoon/music-clean.mp3',
   },
 ]
 
