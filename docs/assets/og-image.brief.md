@@ -1,4 +1,4 @@
-# Картинка для превью ссылок (`public/og-image.png`)
+# Картинка для превью ссылок (`public/og-image.jpg`)
 
 Показывается, когда ссылку на сайт присылают во ВКонтакте, Telegram, WhatsApp и т. п.
 
@@ -16,7 +16,7 @@
 как HTML + SVG (`og-image.html` рядом) и снята в Chromium на 1200×630:
 
 ```bash
-npx playwright screenshot --viewport-size=1200,630 docs/assets/og-image.html public/og-image.png
+npx playwright screenshot --viewport-size=1200,630 docs/assets/og-image.html public/og-image.jpg
 ```
 
 Перед съёмкой дождитесь загрузки шрифта Onest (он берётся из `node_modules`).

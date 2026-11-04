@@ -63,7 +63,12 @@ createServer(async (req, res) => {
   if (await isFile(file)) return send(file, 200)
 
   const isStatic = STATIC_PATH.test(safe) || STATIC_EXT.test(safe)
-  if (MODE === 'spa') return isStatic ? notFound() : send(join(ROOT, 'index.html'), 200)
+  if (MODE === 'spa') {
+    if (isStatic) return notFound()
+    // Как правило 0.5 в .htaccess: у раздела может быть своя копия index.html.
+    const page = /^\/[a-z-]+$/.test(safe) ? join(ROOT, '_pages', `${safe.slice(1)}.html`) : ''
+    return send(page && await isFile(page) ? page : join(ROOT, 'index.html'), 200)
+  }
   if (MODE === 'error404') return isStatic ? notFound() : send(join(ROOT, '404.html'), 404)
   return notFound()
 }).listen(PORT, '0.0.0.0', () => {

@@ -24,6 +24,8 @@ export default function GuideBoard() {
     <div className="guide-board-intro">
       <h2 id="guide-board-title">Что есть в путеводителе</h2>
       <p>Всё работает в браузере, без регистрации. Карта открывается и без интернета, если сайт уже был открыт на этом телефоне.</p>
+      {/* Иллюстрация сделана в Recraft, описание — docs/assets/corridor.brief.md. */}
+      <img className="guide-board-art" src="/art/corridor-560.webp" srcSet="/art/corridor-560.webp 560w, /art/corridor.webp 980w" sizes="(max-width: 860px) 90vw, 400px" width="560" height="423" alt="" loading="lazy" decoding="async" />
     </div>
     <nav className="guide-board-sign" aria-label="Разделы путеводителя">
       {rows.map(({ to, plate, icon: Icon, title, text }) => <Link key={to} className="guide-board-row" to={to}>

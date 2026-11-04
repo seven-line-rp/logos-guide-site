@@ -11,7 +11,7 @@ import { UnityThemeWatcher } from './components/Unity.jsx'
 import HomePage from './pages/HomePage'
 import { translate, useLanguage } from './i18n.js'
 import { trackView } from './stats.js'
-import { SITE_NAME, SITE_URL } from './site.js'
+import { HOME_DESCRIPTION, HOME_TITLE, PAGES, PRIVATE_TITLES, SITE_NAME, SITE_URL } from './seo.js'
 
 const MapPage = lazy(() => import('./pages/MapPage'))
 const RoomsPage = lazy(() => import('./pages/RoomsPage'))
@@ -38,34 +38,9 @@ const NotificationsPage = lazy(() => import('./pages/NotificationsPage'))
 const AdminPush = lazy(() => import('./admin/AdminPush'))
 
 // Название сайта стоит в каждом заголовке вкладки: по нему сайт находят в поиске
-// («Логос Путеводитель»), и Google берёт заголовок именно отсюда.
-const HOME_TITLE = 'ЛОГОС:Путеводитель — карта и маршруты по колледжу'
-
-const titles = {
-  '/': '',
-  '/map': 'Карта этажей',
-  '/rooms': 'Кабинеты',
-  '/route': 'Маршрут',
-  '/games': 'Игры',
-  '/services': 'Пространства',
-  '/about': 'О путеводителе',
-  '/docs': 'Документация',
-  '/privacy': 'Политика конфиденциальности',
-  '/terms': 'Пользовательское соглашение',
-  '/consent': 'Согласие на обработку персональных данных',
-  '/ai': 'ИИ-Агент',
-  '/schedule': 'Моё расписание',
-  '/tour': 'Экскурсия в 3D',
-  '/teachers': 'Преподаватели',
-  '/start': 'Первая неделя',
-  '/here': 'Вы здесь',
-  '/notifications': 'Уведомления',
-  '/feedback': 'Сообщить о проблеме',
-  '/admin': 'Панель',
-  '/admin/notices': 'Объявления',
-  '/admin/cards': 'Карточки на двери',
-  '/admin/push': 'Уведомления',
-}
+// («Логос Путеводитель»), и Google берёт заголовок именно отсюда. Заголовки и
+// описания страниц лежат в src/seo.js: оттуда же их берёт сборка для поисковиков.
+const titles = { ...Object.fromEntries(Object.entries(PAGES).map(([path, page]) => [path, page.title])), ...PRIVATE_TITLES }
 
 // Адрес вне списка выше — это страница приложения «404»: показываем это и в заголовке вкладки,
 // чтобы неверная ссылка не выглядела как ошибка сервера (см. deploy/reg-ru.md про перезагрузку).
@@ -82,6 +57,7 @@ function RouteEffects() {
     document.title = page ? `${translate(page, language)} | ${SITE_NAME}` : translate(HOME_TITLE, language)
     // Канонический адрес страницы — всегда на основном домене, без параметров.
     document.querySelector('link[rel="canonical"]')?.setAttribute('href', `${SITE_URL}${location.pathname === '/' ? '/' : location.pathname}`)
+    document.querySelector('meta[name="description"]')?.setAttribute('content', translate(PAGES[location.pathname]?.description || HOME_DESCRIPTION, language))
   }, [location.pathname, language])
   useEffect(() => { trackView(location.pathname) }, [location.pathname])
   return null
@@ -89,11 +65,11 @@ function RouteEffects() {
 
 // Значок загрузки раздела: компас из логотипа, как на заставке в index.html.
 function PageLoadingCompass() {
-  return <svg className="page-loading-compass" viewBox="-32 -32 64 64" aria-hidden="true" focusable="false"><circle className="plc-disc" r="30.6" /><g className="plc-needle"><path className="plc-cut" d="M0 -19.5L8.6 0L0 19.5L-8.6 0Z" strokeLinejoin="round" strokeWidth="3.2" /><circle className="plc-disc" r="3.8" /></g></svg>
+  return <svg className="page-loading-compass" viewBox="-32 -32 64 64" aria-hidden="true" focusable="false"><circle className="plc-disc" r="30" /><g className="plc-needle"><path className="plc-cut" d="M0 -26L7 0L0 26L-7 0Z" strokeLinejoin="round" strokeWidth="2.4" /><circle className="plc-disc" r="3.4" /></g></svg>
 }
 
 function NotFoundPage() {
-  return <section className="not-found container"><strong>404</strong><h1>Такой страницы нет</h1><p>Возможно, ссылка устарела или в адресе опечатка.</p><div><Link className="button button-primary" to="/map"><ArrowLeft size={15} /> Открыть карту</Link><Link className="button button-white" to="/">На главную <ArrowRight size={14} /></Link></div></section>
+  return <section className="not-found container"><div className="not-found-copy"><strong>404</strong><h1>Такой страницы нет</h1><p>Возможно, ссылка устарела или в адресе опечатка. Нужный кабинет проще найти на карте.</p><div><Link className="button button-primary" to="/map"><ArrowLeft size={15} /> Открыть карту</Link><Link className="button button-white" to="/">На главную <ArrowRight size={14} /></Link></div></div><img className="not-found-art" src="/art/lost.webp" width="520" height="436" alt="" decoding="async" /></section>
 }
 
 function Site() {

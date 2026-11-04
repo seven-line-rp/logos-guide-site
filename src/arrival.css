@@ -165,3 +165,29 @@ html[data-theme='unity'] .guide-board-sign { border-top: 4px solid transparent; 
 .feedback-draft { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 0; padding: 10px 14px; border-radius: 10px; color: var(--ink); background: var(--surface-soft); font-size: 14px; }
 .feedback-draft button { padding: 0; border: 0; color: var(--blue); background: none; font: inherit; font-weight: 650; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 html[data-theme='dark'] .feedback-draft button { color: #8fb3ff; }
+
+/* Иллюстрация под текстом указателя: корпус в разрезе с маршрутом. Фон у неё
+   прозрачный, поэтому она одинаково ложится на светлую, тёмную и «Единство». */
+.guide-board-art { display: block; width: 100%; max-width: 420px; height: auto; margin-top: 22px; }
+/* У Recraft вместе с фоном ушёл и светлый пол, поэтому в тёмной теме под картинку
+   кладём светлый лист, как распечатанный план, и чуть приглушаем его. */
+html[data-theme='dark'] .guide-board-art { padding: 14px; border-radius: 14px; background: #dfe6f3; filter: brightness(.9); }
+@media (max-width: 860px) { .guide-board-art { max-width: 360px; margin: 14px auto 0; } }
+
+/* ---------- Новый знак в шапке ----------
+   Новый logo.svg — круг на всю ширину, без белой подложки и завитков, поэтому
+   при прежних 38 px он выглядел бы крупнее старого. Уменьшаем до того же веса. */
+.brand-mark { width: 34px; height: 34px; border-radius: 0; }
+@media (max-width: 760px) { .brand-mark { width: 34px; height: 34px; flex: 0 0 34px; border-radius: 0; } }
+html[data-theme='dark'] .brand-mark { filter: brightness(1.18); }
+
+/* ---------- Страница 404 с иллюстрацией (Recraft, docs/assets/art.brief.md) ---------- */
+.not-found { flex-direction: row; align-items: center; justify-content: space-between; gap: clamp(24px, 5vw, 64px); }
+/* Старое правило «.not-found > div» (кнопки в ряд) теперь попадает и на обёртку текста. */
+.not-found > .not-found-copy { display: block; }
+.not-found-copy > div { display: flex; flex-wrap: wrap; gap: 10px; }
+.not-found-art { width: min(440px, 42vw); height: auto; flex: none; }
+@media (max-width: 760px) {
+  .not-found { flex-direction: column-reverse; align-items: flex-start; padding-block: 32px 48px; }
+  .not-found-art { width: min(300px, 80vw); align-self: center; }
+}

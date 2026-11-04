@@ -5,14 +5,15 @@ import { transformAsync } from '@babel/core'
 import { buildKnowledge } from './src/ai-knowledge.js'
 import { BELLS, LUNCH } from './src/schedule.js'
 import { SITE_VERSION, SITE_VERSION_LABEL } from './src/version.js'
+import { PAGES, pageHtml } from './src/seo.js'
 import { createHash } from 'node:crypto'
-import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
 
 // Офлайн-режим: после сборки пишем dist/sw.js со списком всех файлов сайта
 // (шаблон — scripts/sw-template.js). Серверные скрипты, звук и служебные
 // файлы хостинга в кэш не кладём.
-const OFFLINE_SKIP = /^(api\/|voice\/|team\/|assets\/KaTeX_|\.htaccess$|404\.html$|sw\.js$)|\.map$/
+const OFFLINE_SKIP = /^(api\/|voice\/|team\/|_pages\/|assets\/KaTeX_|\.htaccess$|404\.html$|sw\.js$)|\.map$/
 function offlineServiceWorker() {
   let outDir = 'dist'
   return {
@@ -27,6 +28,33 @@ function offlineServiceWorker() {
       const template = readFileSync('scripts/sw-template.js', 'utf8')
       const code = template.replace("'__VERSION__'", `'${hash.digest('hex').slice(0, 12)}'`).replace('= __PRECACHE__', '= ' + JSON.stringify(files.map((file) => `/${file}`)))
       writeFileSync(join(outDir, 'sw.js'), code)
+    },
+  }
+}
+
+// Страницы для поисковиков и мессенджеров. Сайт одностраничный: без этого по
+// любому адресу приходит index.html с заголовком и описанием главной, а Яндекс,
+// превью ссылок в Telegram и ВКонтакте скрипты не запускают. Поэтому для каждой
+// страницы из src/seo.js пишем dist/_pages/<адрес>.html — тот же index.html,
+// но со своими title, description, canonical и og-тегами. Хостинг отдаёт его
+// по адресу страницы (public/.htaccess, server.mjs). В карту сайта добавляем
+// дату сборки, чтобы поисковики видели, что страницы обновились.
+function prerenderPages() {
+  let outDir = 'dist'
+  return {
+    name: 'logos-prerender-pages',
+    apply: 'build',
+    configResolved(config) { outDir = config.build.outDir },
+    writeBundle() {
+      const html = readFileSync(join(outDir, 'index.html'), 'utf8')
+      mkdirSync(join(outDir, '_pages'), { recursive: true })
+      for (const path of Object.keys(PAGES)) {
+        if (path === '/') continue
+        writeFileSync(join(outDir, '_pages', `${path.slice(1)}.html`), pageHtml(html, path))
+      }
+      const today = new Date().toISOString().slice(0, 10)
+      const sitemap = readFileSync(join(outDir, 'sitemap.xml'), 'utf8').replaceAll('</loc>', `</loc><lastmod>${today}</lastmod>`)
+      writeFileSync(join(outDir, 'sitemap.xml'), sitemap)
     },
   }
 }
@@ -56,7 +84,7 @@ export default defineConfig({
     generateBundle() {
       this.emitFile({ type: 'asset', fileName: 'api/push-meta.json', source: JSON.stringify({ bells: BELLS, lunch: LUNCH, version: SITE_VERSION, versionLabel: SITE_VERSION_LABEL }) })
     },
-  }, offlineServiceWorker(), react()],
+  }, prerenderPages(), offlineServiceWorker(), react()],
   server: {
     host: '0.0.0.0',
     allowedHosts: true,

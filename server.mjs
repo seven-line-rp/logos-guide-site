@@ -60,6 +60,17 @@ function sendText(res, status, text) {
   res.end(text)
 }
 
+// Разделы приложения: своя копия index.html с заголовком и описанием страницы
+// (dist/_pages, пишет сборка), иначе обычный index.html. Так же делает .htaccess.
+async function pageFile(pathname) {
+  const match = pathname.match(/^\/([a-z-]+)$/)
+  if (match) {
+    const page = resolve(root, '_pages', `${match[1]}.html`)
+    try { if ((await stat(page)).isFile()) return page } catch { /* такой страницы нет */ }
+  }
+  return resolve(root, 'index.html')
+}
+
 async function serveStatic(req, res) {
   if (req.method !== 'GET' && req.method !== 'HEAD') return sendText(res, 405, 'Method Not Allowed\n')
 
@@ -79,11 +90,11 @@ async function serveStatic(req, res) {
     // совпадает с адресом раздела приложения: отдаём приложение.
     if (details.isDirectory()) {
       file = resolve(file, 'index.html')
-      try { await stat(file) } catch { file = resolve(root, 'index.html') }
+      try { await stat(file) } catch { file = await pageFile(pathname) }
     } else if (!details.isFile()) return sendText(res, 404, 'Not Found\n')
   } catch {
     if (staticMissingPath.test(pathname) || pathname.startsWith('/assets/')) return sendText(res, 404, 'Not Found\n')
-    file = resolve(root, 'index.html')
+    file = await pageFile(pathname)
   }
 
   let details
