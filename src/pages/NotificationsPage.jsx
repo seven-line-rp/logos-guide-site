@@ -7,7 +7,7 @@ import { NOTICE_TYPES, useNotices } from '../notices.js'
 import { useSchedule } from '../components/NextLesson.jsx'
 import { rooms } from '../data.js'
 import { nextLesson } from '../schedule.js'
-import { PUSH_KINDS, PUSH_TOPICS, currentSubscription, pushSupport, readTopics, samplePush, sendTestPush, showLocalPush, subscribePush, syncScheduleForPush, unsubscribePush } from '../push.js'
+import { PUSH_API, PUSH_KINDS, PUSH_TOPICS, currentSubscription, lessonReminders, scheduleLessonReminders, pushSupport, readTopics, samplePush, sendTestPush, showLocalPush, subscribePush, syncScheduleForPush, unsubscribePush } from '../push.js'
 
 // Уведомления сайта: здесь их включают и выбирают темы (колокольчик в шапке
 // и пункт меню ведут сюда). Каждый вид можно показать сразу на устройстве или прислать
@@ -92,6 +92,37 @@ function StatusCard({ support, subscription, busy, onEnable, onDisable }) {
   </section>
 }
 
+// Кто отправит напоминание о паре: сервер (по крону) и, пока сайт открыт,
+// сам браузер. Если сервер давно молчит, честно об этом говорим.
+function useCronStatus() {
+  const [cronAt, setCronAt] = useState(undefined)
+  useEffect(() => {
+    let alive = true
+    fetch(PUSH_API, { cache: 'no-store' }).then((response) => response.ok ? response.json() : null).then((data) => { if (alive) setCronAt(data ? data.cronAt ?? null : undefined) }).catch(() => {})
+    return () => { alive = false }
+  }, [])
+  return cronAt
+}
+
+function LessonReminders({ lessons, cronAt }) {
+  const today = lessonReminders(lessons)
+  const minutesAgo = Number.isFinite(cronAt) ? Math.round((Date.now() / 1000 - cronAt) / 60) : null
+  const serverOk = minutesAgo !== null && minutesAgo <= 90
+  return <section className="tn-section tn-reminders">
+    <div className="tn-section-head"><div><h2>Напоминания о парах</h2><p>За 5 минут до начала каждой пары.</p></div></div>
+    <ul className="tn-reminder-list">
+      <li className={serverOk ? 'is-ok' : 'is-warn'}>
+        {serverOk ? <Check size={16} /> : <TriangleAlert size={16} />}
+        <span>{cronAt === undefined ? 'Проверяем сервер рассылки…' : serverOk ? `Сервер рассылает напоминания по звонкам (последний раз ${minutesAgo < 2 ? 'только что' : `${minutesAgo} мин назад`}). Они придут, даже если сайт закрыт.` : minutesAgo === null ? 'Сервер ещё ни разу не рассылал напоминания. Пока сайт открыт, их покажет сам браузер; команда сайта настроит рассылку.' : `Сервер давно не рассылал напоминания (${minutesAgo > 1440 ? `${Math.round(minutesAgo / 1440)} дн.` : `${Math.round(minutesAgo / 60)} ч`} назад). Пока сайт открыт, их покажет сам браузер.`}</span>
+      </li>
+      <li className={today.length ? 'is-ok' : ''}>
+        <CalendarClock size={16} />
+        <span>{today.length ? `Сегодня: ${today.map((item) => `${item.push.title.replace('Через 5 минут: ', '')} в ${String(Math.floor(item.start / 60)).padStart(2, '0')}:${String(item.start % 60).padStart(2, '0')}`).join(', ')}.` : 'Сегодня своих пар впереди нет.'} {lessons.length ? '' : <Link to="/schedule">Добавьте пары в расписание</Link>}</span>
+      </li>
+    </ul>
+  </section>
+}
+
 export default function NotificationsPage() {
   const { support, subscription, refresh } = useSubscription()
   const lessons = useSchedule()
@@ -101,6 +132,7 @@ export default function NotificationsPage() {
   const [flash, setFlash] = useState({ kind: '', text: '' })
   const [guide, setGuide] = useState(support.platform)
   const subscribed = Boolean(subscription) && support.permission === 'granted'
+  const cronAt = useCronStatus()
 
   const lesson = useMemo(() => nextLesson(lessons)?.lesson, [lessons])
   const room = lesson && rooms.find((item) => item.id === lesson.roomId)
@@ -123,12 +155,13 @@ export default function NotificationsPage() {
   const enable = () => run('enable', async () => {
     await subscribePush(topics)
     await syncScheduleForPush(lessons)
+    scheduleLessonReminders()
   }, 'Готово! Теперь проверьте уведомления ниже.')
   const disable = () => run('enable', unsubscribePush, 'Уведомления отключены. Это устройство больше ничего не получит.')
   const toggleTopic = (id) => {
     const next = topics.includes(id) ? topics.filter((topic) => topic !== id) : [...topics, id]
     setTopics(next)
-    if (subscribed) run('topics', () => subscribePush(next), 'Темы сохранены.')
+    if (subscribed) run('topics', async () => { await subscribePush(next); scheduleLessonReminders() }, 'Темы сохранены.')
   }
   const showAll = () => run('all', async () => {
     for (const [index, sample] of samples.entries()) {
@@ -143,6 +176,8 @@ export default function NotificationsPage() {
     <div className="container tn">
       <StatusCard support={support} subscription={subscription} busy={busy === 'enable'} onEnable={enable} onDisable={disable} />
       {flash.text && <p className={`tn-flash tn-flash-${flash.kind}`} role="status">{flash.kind === 'ok' ? <Check size={16} /> : <TriangleAlert size={16} />} {flash.text}</p>}
+
+      {subscribed && topics.includes('lessons') && <LessonReminders lessons={lessons} cronAt={cronAt} />}
 
       {notices.length > 0 && <section className="tn-section">
         <div className="tn-section-head"><div><h2>Сейчас на карте</h2><p>Действующие объявления: закрытые проходы и события.</p></div></div>

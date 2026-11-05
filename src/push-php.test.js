@@ -10,6 +10,7 @@ import process from 'node:process'
 import { Buffer } from 'node:buffer'
 import { join } from 'node:path'
 import { BELLS, LUNCH } from './schedule.js'
+import { HOLIDAYS } from './holidays.js'
 
 // Push-уведомления (public/api/notify.php) на настоящем PHP. Вместо FCM и Apple —
 // свой HTTP-сервер: он принимает зашифрованные сообщения, а тест расшифровывает
@@ -54,7 +55,7 @@ after(() => {
 })
 
 function writeMeta(version) {
-  writeFileSync(join(root, 'public_html', 'api', 'push-meta.json'), JSON.stringify({ bells: BELLS, lunch: LUNCH, version, versionLabel: `${version} тест` }))
+  writeFileSync(join(root, 'public_html', 'api', 'push-meta.json'), JSON.stringify({ bells: BELLS, lunch: LUNCH, holidays: Object.keys(HOLIDAYS), version, versionLabel: `${version} тест` }))
 }
 
 const post = (body, headers = {}) => fetch(`${site}/api/notify.php`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers }, body: JSON.stringify(body) })
@@ -190,7 +191,7 @@ test('cron sends bells once, new events and a new site version', { skip }, async
   const lesson = first.sent.find((item) => item.kind === 'lesson-start')
   assert.equal(lesson.title, 'Через 5 минут: 2-я пара')
   assert.ok(!first.sent.some((item) => item.kind === 'update'), 'первый запуск только запоминает версию')
-  const push = decrypt(received.find((item) => item.path === '/student').body, student)
+  const push = received.filter((item) => item.path === '/student').map((item) => decrypt(item.body, student)).find((item) => item.kind === 'lesson-start')
   assert.deepEqual(push.bell, { pair: 2, label: '2-я пара', start: '10:40', end: '12:10' })
 
   assert.equal((await cron(tuesday + 60_000)).sent.length, 0, 'крон опоздал на минуту — повторно не шлём')
@@ -207,4 +208,25 @@ test('cron sends bells once, new events and a new site version', { skip }, async
   const event = decrypt(received.find((item) => item.path === '/student' && decrypt(item.body, student).kind === 'event').body, student)
   assert.equal(event.url, '/map?room=auditorium-104')
   assert.equal((await cron(Date.parse('2026-10-27T13:01:00+03:00'))).sent.length, 0)
+})
+
+test('a late or 5-minute cron still sends the lesson reminder, never on holidays', { skip }, async () => {
+  const student = browser('/late')
+  await post({ action: 'subscribe', subscription: student.subscription, topics: ['lessons'] })
+  // Среда, 28 октября: крон пришёл в 10:38 вместо 10:35.
+  const late = (await cron(Date.parse('2026-10-28T10:38:00+03:00'))).sent.find((item) => item.kind === 'lesson-start')
+  assert.equal(late.title, 'Через 2 минуты: 2-я пара')
+  assert.equal((await cron(Date.parse('2026-10-28T10:39:00+03:00'))).sent.length, 0, 'одно напоминание на пару')
+  assert.equal((await cron(Date.parse('2026-10-28T10:41:00+03:00'))).sent.filter((item) => item.kind === 'lesson-start').length, 0, 'после звонка уже поздно')
+  // 4 ноября — День народного единства, пар нет.
+  assert.equal((await cron(Date.parse('2026-11-04T10:35:00+03:00'))).sent.length, 0)
+})
+
+test('the public key response tells when the bells were last sent, ?tick runs the cron itself', { skip }, async () => {
+  const before = await (await fetch(`${site}/api/notify.php`)).json()
+  assert.ok(before.publicKey)
+  assert.ok(Number.isInteger(before.cronAt), 'время последней рассылки видно странице уведомлений')
+  const tick = await fetch(`${site}/api/notify.php?tick=1`)
+  assert.equal(tick.status, 200)
+  assert.ok((await tick.json()).publicKey)
 })

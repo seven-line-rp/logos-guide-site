@@ -70,14 +70,17 @@ function FloorRoom({ room, selected, onSelect, onFloorRequest, gameTargetId, gam
   </g>
 }
 
-function LocationMarker({ point, kind, radius }) {
+function LocationMarker({ point, kind, radius, heading = null, snapped = false }) {
   const [x, y] = point
+  const label = kind === 'manual' ? 'Ваша отметка' : kind === 'anchor' ? 'Точка привязки' : snapped ? 'Вы где-то здесь' : 'Вы здесь'
   return <g className={`plan-position plan-position-${kind}`} aria-hidden="true">
-    {kind === 'gps' && radius && <circle className="plan-position-accuracy" cx={x} cy={y} r={Math.min(radius, 130)} />}
+    {kind === 'gps' && radius > 0 && <circle className="plan-position-accuracy" cx={x} cy={y} r={Math.min(Math.max(radius, 14), 160)} />}
+    {kind === 'gps' && Number.isFinite(heading) && <g transform={`translate(${x} ${y}) rotate(${heading * 180 / Math.PI})`}><path className="plan-position-cone" d="M0 0 L46 -22 A51 51 0 0 1 46 22 Z" /></g>}
+    {kind === 'gps' && <circle className="plan-position-pulse" cx={x} cy={y} r="10" />}
     <circle className="plan-position-halo" cx={x} cy={y} r="13" />
     <circle className="plan-position-core" cx={x} cy={y} r="6.5" />
     <circle className="plan-position-center" cx={x} cy={y} r="2" />
-    <text x={x + 12} y={y - 13}>{kind === 'manual' ? 'Ваша отметка' : kind === 'anchor' ? 'Точка привязки' : 'GPS (примерно)'}</text>
+    <text x={x + 12} y={y - 13}>{label}</text>
   </g>
 }
 
@@ -138,7 +141,7 @@ function RouteLayer({ points, markerId, progress = null, is3d = false }) {
   </g>
 }
 
-export default function FloorMap({ floor = 1, selectedId = '', onSelect, onFloorRequest, onPointSelect, picking = false, gameTargetId = '', gameFeedback = '', filterCategory = 'Все места', compact = false, zoomed = false, showLabels = true, showDoorMarks = true, routeStart = '', routeTargetId = '', manualPoint = null, gpsMarker = null, transition = 'lift', routeProgress = null, navMode3d = false, onToggle3d = null, activeStepPoint = null, swoopActive = false, notices = [] }) {
+export default function FloorMap({ floor = 1, selectedId = '', onSelect, onFloorRequest, onPointSelect, picking = false, gameTargetId = '', gameFeedback = '', filterCategory = 'Все места', compact = false, zoomed = false, showLabels = true, showDoorMarks = true, routeStart = '', routeTargetId = '', manualPoint = null, gpsMarker = null, transition = 'lift', routeProgress = null, navMode3d = false, onToggle3d = null, activeStepPoint = null, swoopActive = false, notices = [], centerOn = null }) {
   const floorRooms = rooms.filter((room) => room.floor === floor)
   const language = useLanguage()
   const plan = composePlanArt(floor === 1 ? floorOnePlan : floorTwoPlan, floor, language)
@@ -226,6 +229,16 @@ export default function FloorMap({ floor = 1, selectedId = '', onSelect, onFloor
     }, delay)
     return () => window.clearTimeout(timer)
   }, [activeX, activeY, compact, floor, manualPoint?.floor, manualPoint?.x, manualPoint?.y, navMode3d, selectedId, width, zoomed])
+
+  // «Где я»: по запросу (новый centerOn.key) прокручиваем план к точке.
+  const centerKey = centerOn?.floor === floor ? centerOn.key : null
+  useEffect(() => {
+    const viewport = viewportRef.current
+    const stage = stageRef.current
+    if (!centerKey || !viewport || !stage || navMode3d) return
+    const scale = stage.offsetWidth / width
+    viewport.scrollTo({ left: Math.max(0, centerOn.point[0] * scale - viewport.clientWidth / 2), top: Math.max(0, centerOn.point[1] * scale - viewport.clientHeight / 2), behavior: 'smooth' })
+  }, [centerKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Revert to the CSS base size when switching floors, fit/large view or 3D.
   useLayoutEffect(() => {
@@ -346,7 +359,7 @@ export default function FloorMap({ floor = 1, selectedId = '', onSelect, onFloor
         {floor === 2 && onFloorRequest && <g className="plan-downstairs-link" role="button" tabIndex={0} aria-label="Актовый зал на первом этаже. Открыть первый этаж" onClick={showLowerFloor} onKeyDown={onGhostKeyDown}><rect x="610" y="94" width="156" height="150" rx="2" /></g>}
         {notices.map((notice) => { const outline = roomOutline(notice.roomId); const cx = outline.reduce((sum, p) => sum + p[0], 0) / outline.length; const cy = outline.reduce((sum, p) => sum + p[1], 0) / outline.length; return <g key={`${notice.roomId}-${notice.title}`} className={`plan-notice plan-notice-${notice.type}`} transform={`translate(${cx} ${cy})`} aria-hidden="true"><circle r="11" /><text y="4">{notice.type === 'closed' ? '!' : notice.type === 'event' ? '★' : 'i'}</text></g> })}
         {manualPoint?.floor === floor && <LocationMarker point={[manualPoint.x, manualPoint.y]} kind="manual" />}
-        {gpsMarker?.floor === floor && <LocationMarker point={gpsMarker.point} radius={gpsMarker.radius} kind={gpsMarker.mode} />}
+        {gpsMarker?.floor === floor && <LocationMarker point={gpsMarker.point} radius={gpsMarker.radius} kind={gpsMarker.mode} heading={gpsMarker.heading} snapped={gpsMarker.snapped} />}
       </svg>
     </div>
     {onToggle3d && (

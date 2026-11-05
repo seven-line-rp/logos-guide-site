@@ -112,3 +112,12 @@
   .tn-status-on .tn-status-icon svg { animation: none; }
   .tn-topic i, .tn-topic i::after { transition: none; }
 }
+
+/* Напоминания о парах: кто и когда пришлёт. */
+.tn-reminder-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.tn-reminder-list li { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); font-size: 14px; line-height: 1.5; color: var(--ink); }
+.tn-reminder-list li > svg { flex: none; margin-top: 3px; color: var(--muted); }
+.tn-reminder-list li.is-ok > svg { color: #188553; }
+.tn-reminder-list li.is-warn { border-color: color-mix(in srgb, #c98a12 45%, var(--line)); }
+.tn-reminder-list li.is-warn > svg { color: #b0760c; }
+.tn-reminder-list a { color: var(--blue); font-weight: 600; }

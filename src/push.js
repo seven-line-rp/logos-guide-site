@@ -1,6 +1,6 @@
 import { rooms } from './data.js'
-import { readSchedule, subscribeSchedule } from './schedule.js'
-import { storageGet, storageSet } from './storage.js'
+import { bellsFor, dateKey, readSchedule, subscribeSchedule, toMinutes } from './schedule.js'
+import { storageGet, storageRemove, storageSet } from './storage.js'
 import { SITE_VERSION_LABEL } from './version.js'
 
 // Push-уведомления (страница /notifications). Браузер
@@ -191,6 +191,7 @@ export async function unsubscribePush() {
   if (!subscription) return
   await api({ action: 'unsubscribe', endpoint: subscription.endpoint }).catch(() => {})
   await subscription.unsubscribe()
+  storageRemove(PUSH_TOPICS_KEY)
 }
 
 export async function sendTestPush(kind) {
@@ -229,8 +230,108 @@ export async function syncScheduleForPush(lessons) {
 // Держим копию свежей: при запуске сайта и после каждой правки расписания.
 // Пока уведомления не разрешены, ничего не пишем.
 export function keepScheduleForPush() {
-  if (typeof window === 'undefined' || !('Notification' in window) || typeof caches === 'undefined') return
-  const sync = () => { if (Notification.permission === 'granted') syncScheduleForPush(readSchedule()) }
+  if (typeof window === 'undefined' || !('Notification' in window)) return
+  const sync = () => {
+    if (Notification.permission !== 'granted') return
+    if (typeof caches !== 'undefined') syncScheduleForPush(readSchedule())
+    scheduleLessonReminders()
+  }
   sync()
   subscribeSchedule(sync)
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { sync(); resyncPush() } })
+  resyncPush()
+  startCronTicker()
+}
+
+// Уведомления включал этот человек: тема «Пары» выбрана при подписке.
+export function lessonsWanted() {
+  return storageGet(PUSH_TOPICS_KEY) !== null && readTopics().includes('lessons')
+}
+
+export const PUSH_SYNC_KEY = 'logos-push-sync'
+const SYNC_EVERY = 6 * 3600 * 1000
+
+// Сервер мог потерять подписку (папку logos-push пересоздали, браузер сменил
+// адрес подписки, подписка не дошла из-за сети), а на странице всё равно
+// написано «включены». Раз в 6 часов тихо напоминаем серверу о себе, а если
+// подписки в браузере нет, хотя человек её включал, — подписываемся заново.
+export async function resyncPush({ force = false, now = Date.now() } = {}) {
+  try {
+    if (!('PushManager' in window) || Notification.permission !== 'granted' || storageGet(PUSH_TOPICS_KEY) === null) return false
+    if (!force && now - Number(storageGet(PUSH_SYNC_KEY) || 0) < SYNC_EVERY) return false
+    const registration = await pushRegistration()
+    if (!registration?.pushManager) return false
+    const subscription = await registration.pushManager.getSubscription()
+    if (subscription) await api({ action: 'subscribe', subscription: subscription.toJSON(), topics: readTopics(), platform: detectPlatform() })
+    else await subscribePush(readTopics())
+    storageSet(PUSH_SYNC_KEY, String(now))
+    return true
+  } catch { return false }
+}
+
+// Какие напоминания о своих парах показать сегодня: за 5 минут до начала
+// каждой пары из «Моего расписания» (а не только по звонкам, как с сервера).
+export function lessonReminders(lessons, now = new Date()) {
+  const today = dateKey(now)
+  const minute = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60
+  return lessons
+    .filter((lesson) => lesson.date === today)
+    .map((lesson) => {
+      const room = rooms.find((item) => item.id === lesson.roomId)
+      const roomLabel = room ? `${room.name}${room.number ? ` №${room.number}` : ''}` : ''
+      const start = toMinutes(lesson.start)
+      return {
+        at: start - 5,
+        start,
+        push: { kind: 'lesson-start', tag: `lesson-${today}-${lesson.start}`, title: `Через 5 минут: ${lesson.subject}`, body: `${roomLabel ? `${roomLabel}, н` : 'Н'}ачало в ${lesson.start}. Маршрут уже готов.`, url: `/route?to=${encodeURIComponent(lesson.roomId)}` },
+      }
+    })
+    .filter((item) => item.start > minute)
+    .map((item) => ({ ...item, delay: Math.max(0, (item.at - minute) * 60_000) }))
+}
+
+const reminderTimers = new Set()
+const FIRED_KEY = 'logos-push-fired'
+
+// Пока сайт открыт (вкладка или приложение с экрана «Домой»), напоминание
+// показывает сам браузер — даже если сервер рассылки не работает.
+export function scheduleLessonReminders(now = new Date()) {
+  reminderTimers.forEach((timer) => clearTimeout(timer))
+  reminderTimers.clear()
+  if (typeof window === 'undefined' || Notification.permission !== 'granted' || !lessonsWanted()) return []
+  const plan = lessonReminders(readSchedule(), now)
+  for (const item of plan) {
+    reminderTimers.add(setTimeout(() => showReminderOnce(item.push), item.delay))
+  }
+  return plan
+}
+
+async function showReminderOnce(push) {
+  let fired = []
+  try { fired = JSON.parse(storageGet(FIRED_KEY) || '[]') } catch { fired = [] }
+  if (fired.includes(push.tag)) return
+  storageSet(FIRED_KEY, JSON.stringify([...fired.filter((tag) => tag.includes(dateKey(new Date()))), push.tag]))
+  const registration = await pushRegistration().catch(() => null)
+  const existing = registration?.getNotifications ? await registration.getNotifications({ tag: push.tag }).catch(() => []) : []
+  if (existing.length) return // сервер уже прислал
+  await showLocalPush(push).catch(() => {})
+}
+
+// Запасной крон: пока сайт открыт в часы занятий, раз в минуту спрашиваем
+// api/notify.php?tick — сервер сам разошлёт напоминания всем, если планировщик
+// на хостинге не настроен (deploy/push.md).
+let ticker = 0
+export function startCronTicker() {
+  if (ticker || typeof window === 'undefined' || !import.meta.env?.PROD) return
+  const tick = () => {
+    if (document.visibilityState !== 'visible') return
+    const now = new Date()
+    const { bells } = bellsFor(dateKey(now))
+    if (!bells.length) return
+    const minute = now.getHours() * 60 + now.getMinutes()
+    if (minute < toMinutes(bells[0].start) - 10 || minute > toMinutes(bells.at(-1).end) + 10) return
+    fetch(`${PUSH_API}?tick=1`, { cache: 'no-store' }).catch(() => {})
+  }
+  ticker = window.setInterval(tick, 60_000)
+  tick()
 }

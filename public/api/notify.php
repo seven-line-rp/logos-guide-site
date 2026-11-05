@@ -23,7 +23,8 @@ const PUSH_MAX_SUBSCRIPTIONS = 5000;
 // Сервисы доставки браузеров: Chrome, Яндекс, Edge, Samsung (FCM), Firefox, Safari и iPhone, Windows.
 const PUSH_HOSTS = '/^(fcm\.googleapis\.com|updates\.push\.services\.mozilla\.com|push\.services\.mozilla\.com|web\.push\.apple\.com|[a-z0-9.-]+\.push\.apple\.com|[a-z0-9.-]+\.notify\.windows\.com)$/';
 const LESSON_NOTICE_BEFORE = 5; // за сколько минут до пары напоминать
-const CRON_WINDOW = 4; // крон может опоздать: сколько минут событие ещё считается свежим
+const CRON_WINDOW = 6; // крон может опоздать: сколько минут событие ещё считается свежим
+const SELF_CRON_EVERY = 50; // запасной запуск рассылки из обычных запросов, не чаще раза в N секунд
 
 function respond(int $status, $body): void
 {
@@ -212,6 +213,8 @@ function lesson_jobs(array $meta, int $now): array
 {
     $weekday = (int) date('N', $now);
     if ($weekday === 7) return [];
+    // Государственные праздники (src/holidays.js, попадают в push-meta.json при сборке).
+    if (in_array(date('m-d', $now), $meta['holidays'] ?? [], true)) return [];
     $kind = $weekday === 1 ? 'monday' : 'weekday';
     $bells = $meta['bells'][$kind] ?? [];
     $lunch = $meta['lunch'][$kind] ?? [];
@@ -219,13 +222,29 @@ function lesson_jobs(array $meta, int $now): array
     $jobs = [];
     foreach ($bells as $index => $bell) {
         $info = ['pair' => $bell['pair'], 'label' => $bell['label'], 'start' => $bell['start'], 'end' => $bell['end']];
-        $jobs[] = ['at' => $minutes($bell['start']) - LESSON_NOTICE_BEFORE, 'kind' => 'lesson-start', 'json' => payload('lesson-start', 'Через ' . LESSON_NOTICE_BEFORE . " минут: {$bell['label']}", "Начало в {$bell['start']}. Откройте маршрут, чтобы не опоздать.", '/schedule', ['bell' => $info])];
+        // Напоминание о начале уходит в любую минуту из последних пяти до звонка:
+        // если крон запускается раз в 5 минут или опоздал, оно всё равно придёт,
+        // а в тексте будет честное «через 2 минуты».
+        $start = $minutes($bell['start']);
+        $jobs[] = ['at' => $start - LESSON_NOTICE_BEFORE, 'until' => $start, 'kind' => 'lesson-start', 'json' => function (int $minute) use ($bell, $info, $start) {
+            $left = max(1, $start - $minute);
+            return payload('lesson-start', 'Через ' . minutes_label($left) . ": {$bell['label']}", "Начало в {$bell['start']}. Откройте маршрут, чтобы не опоздать.", '/schedule', ['bell' => $info, 'left' => $left]);
+        }];
         $next = $bells[$index + 1] ?? null;
         $meals = array_values(array_filter($lunch, fn ($item) => $item['start'] === $bell['end']));
         $body = !$next ? 'Пары на сегодня закончились.' : ($meals ? "Обед {$meals[0]['course']} курса до {$meals[0]['end']}. Следующая пара в {$next['start']}." : "Перемена до {$next['start']}.");
-        $jobs[] = ['at' => $minutes($bell['end']), 'kind' => 'lesson-end', 'json' => payload('lesson-end', "{$bell['label']} закончилась", $body, '/schedule', ['bell' => $info, 'next' => $next['start'] ?? null])];
+        $end = $minutes($bell['end']);
+        $jobs[] = ['at' => $end, 'until' => $end + CRON_WINDOW, 'kind' => 'lesson-end', 'json' => payload('lesson-end', "{$bell['label']} закончилась", $body, '/schedule', ['bell' => $info, 'next' => $next['start'] ?? null])];
     }
     return $jobs;
+}
+
+function minutes_label(int $count): string
+{
+    $mod10 = $count % 10;
+    $mod100 = $count % 100;
+    $word = $mod10 === 1 && $mod100 !== 11 ? 'минуту' : ($mod10 >= 2 && $mod10 <= 4 && ($mod100 < 12 || $mod100 > 14) ? 'минуты' : 'минут');
+    return "$count $word";
 }
 
 function current_notices(): array
@@ -243,7 +262,9 @@ function run_cron(int $now): array
     $minute = (int) date('G', $now) * 60 + (int) date('i', $now);
     $jobs = [];
     foreach (lesson_jobs($meta, $now) as $job) {
-        if ($minute >= $job['at'] && $minute < $job['at'] + CRON_WINDOW) $jobs["$today {$job['kind']} {$job['at']}"] = $job;
+        if ($minute < $job['at'] || $minute >= $job['until']) continue;
+        if (is_callable($job['json'])) $job['json'] = ($job['json'])($minute);
+        $jobs["$today {$job['kind']} {$job['at']}"] = $job;
     }
     // События из объявлений: с датой начала — в момент начала, без даты — как только появились.
     $events = [];
@@ -261,6 +282,7 @@ function run_cron(int $now): array
         $first = !isset($state['day']);
         if (($state['day'] ?? '') !== $today) $state['sent'] = [];
         $state['day'] = $today;
+        $state['at'] = $now;
         $state['events'] = array_filter($state['events'] ?? [], fn ($time) => $time > $now - 30 * 86400);
         $todo = [];
         foreach ($jobs as $id => $job) {
@@ -307,7 +329,33 @@ if ($method === 'GET' && isset($_GET['cron'])) {
     }
     respond(200, ['ok' => true, 'sent' => run_cron(time())]);
 }
-if ($method === 'GET') respond(200, ['publicKey' => vapid()['public']]);
+// Запасной крон: если на хостинге не настроен планировщик (deploy/push.md),
+// рассылку запускают сами посетители — открытая вкладка сайта раз в минуту
+// спрашивает ?tick. Ответ уходит браузеру сразу, рассылка идёт после.
+function self_cron(): void
+{
+    $state = read_json(data_dir() . '/state.json');
+    if (isset($state['at']) && (int) $state['at'] > time() - SELF_CRON_EVERY) return;
+    ignore_user_abort(true);
+    run_cron(time());
+}
+
+if ($method === 'GET') {
+    $state = read_json(data_dir() . '/state.json');
+    $body = ['publicKey' => vapid()['public'], 'cronAt' => isset($state['at']) ? (int) $state['at'] : null];
+    if (!isset($_GET['tick'])) respond(200, $body);
+    $json = json_encode($body, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    header('Content-Type: application/json; charset=utf-8');
+    header('Cache-Control: no-store');
+    header('Content-Length: ' . strlen($json));
+    header('Connection: close');
+    echo $json;
+    while (ob_get_level()) ob_end_flush();
+    flush();
+    if (function_exists('fastcgi_finish_request')) fastcgi_finish_request();
+    self_cron();
+    exit;
+}
 if ($method !== 'POST') respond(405, ['error' => 'Метод не поддерживается.']);
 
 // Запросы только с самого сайта (как в notices.php).

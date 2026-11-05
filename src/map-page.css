@@ -1,0 +1,193 @@
+/* Страница /map (src/pages/MapPage.jsx). План — главное: поиск и «Где я»
+   над ним, этаж и вид поверх карты, карточка кабинета справа (на телефоне —
+   под картой). Цвета — из общих переменных, тёмная тема работает сама. */
+
+.mp {
+  --mp-radius: 22px;
+  --mp-you: #1f6bff;
+  --mp-pin: #d9822b;
+  --mp-ok: #188553;
+  --mp-warn: #a4650b;
+  --mp-bad: #c23b3b;
+  padding-top: 28px;
+  padding-bottom: 48px;
+  display: grid;
+  gap: 14px;
+}
+:root[data-theme='dark'] .mp { --mp-you: #6f9dff; --mp-pin: #f0a457; --mp-ok: #4cc58a; --mp-warn: #e3ad4f; --mp-bad: #ff8585; }
+
+/* ---------- Заголовок и этажи ---------- */
+.mp-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; }
+.mp-title h1 { margin: 0; font-size: clamp(30px, 4vw, 44px); line-height: 1.05; letter-spacing: -.025em; color: var(--ink); }
+.mp-title p { margin: 8px 0 0; max-width: 56ch; color: var(--muted); font-size: 15px; line-height: 1.5; }
+
+.mp-floors { display: inline-flex; padding: 4px; gap: 4px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); flex: none; }
+.mp-floors button { display: inline-flex; align-items: center; line-height: 1; gap: 6px; min-height: 48px; padding: 0 18px; border: 0; border-radius: 14px; background: transparent; color: var(--muted); font: inherit; cursor: pointer; transition: background .18s ease, color .18s ease; }
+.mp-floors b { font-size: 24px; font-weight: 750; letter-spacing: -.02em; line-height: 1; }
+.mp-floors span { font-size: 14px; font-weight: 600; }
+.mp-floors small { margin-left: 4px; padding: 3px 7px; border-radius: 999px; background: color-mix(in srgb, currentColor 12%, transparent); font-size: 12px; font-weight: 650; }
+.mp-floors button:hover { color: var(--ink); background: var(--surface-soft); }
+.mp-floors button.is-on { background: var(--blue); color: #fff; box-shadow: 0 6px 16px -8px color-mix(in srgb, var(--blue) 80%, transparent); }
+
+/* ---------- Поиск и действия ---------- */
+.mp-toolbar { display: flex; gap: 10px; align-items: flex-end; }
+.mp-search { flex: 1; min-width: 0; }
+.mp-search .route-room-search-label { font-size: 13px; }
+.mp-actions { display: flex; gap: 8px; flex: none; }
+.mp-action { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--ink); font: inherit; font-size: 14px; font-weight: 650; cursor: pointer; transition: border-color .18s ease, background .18s ease, color .18s ease; }
+.mp-action:hover { border-color: color-mix(in srgb, var(--blue) 45%, var(--line)); }
+.mp-action.is-on { border-color: var(--blue); background: var(--surface-soft); color: var(--blue); }
+.mp-icon { width: 48px; padding: 0; }
+.mp-locate { background: var(--blue); border-color: var(--blue); color: #fff; }
+.mp-locate:hover { background: var(--blue-bright); border-color: var(--blue-bright); }
+.mp-locate.is-on { background: var(--blue); color: #fff; }
+.mp-locate.is-wait svg { animation: mp-spin 1.4s linear infinite; }
+@keyframes mp-spin { to { transform: rotate(360deg); } }
+
+.mp-settings { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; padding: 12px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); }
+.mp-settings label, .mp-settings-gps { display: flex; gap: 10px; align-items: flex-start; padding: 10px; border-radius: 12px; cursor: pointer; }
+.mp-settings label:hover { background: var(--surface-soft); }
+.mp-settings input { margin-top: 3px; width: 18px; height: 18px; accent-color: var(--blue); }
+.mp-settings strong { display: block; font-size: 14px; color: var(--ink); }
+.mp-settings small { display: block; margin-top: 2px; font-size: 12.5px; line-height: 1.4; color: var(--muted); }
+.mp-settings-gps { flex-wrap: wrap; cursor: default; }
+.mp-settings-gps > span { flex: 1 1 100%; }
+.mp-settings-gps button { min-height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--blue); font: inherit; font-size: 13px; font-weight: 650; cursor: pointer; }
+
+/* ---------- Фильтры ---------- */
+.mp-chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin-inline: -2px; padding: 2px; }
+.mp-chips::-webkit-scrollbar { display: none; }
+.mp-chips button { flex: none; display: inline-flex; align-items: center; gap: 7px; min-height: 38px; padding: 0 8px 0 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink); font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; }
+.mp-chips button span { min-width: 24px; padding: 2px 7px; border-radius: 999px; background: var(--surface-soft); color: var(--muted); font-size: 12px; text-align: center; }
+.mp-chips button.is-on { border-color: var(--ink); background: var(--ink); color: var(--surface); }
+.mp-chips button.is-on span { background: color-mix(in srgb, var(--surface) 18%, transparent); color: var(--surface); }
+.mp-chips button:disabled { opacity: .45; cursor: default; }
+.mp-filter-results { display: flex; flex-wrap: wrap; gap: 6px; }
+.mp-filter-results button { min-height: 34px; padding: 0 12px; border: 1px dashed var(--line); border-radius: 10px; background: transparent; color: var(--ink); font: inherit; font-size: 13px; cursor: pointer; }
+.mp-filter-results button.is-on { border-style: solid; border-color: var(--blue); color: var(--blue); background: var(--surface-soft); }
+
+/* ---------- Карта и карточка ---------- */
+.mp-workspace { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 14px; align-items: start; }
+.mp-map { position: relative; min-width: 0; }
+.mp-map .floor-map-viewport { border-radius: var(--mp-radius); height: clamp(460px, 70vh, 720px); max-height: none; }
+.mp-map .map-scene { border-radius: var(--mp-radius); }
+.mp-map .floor-map-hint { display: none; }
+.mp-map.is-picking .floor-map-viewport { outline: 2px solid var(--mp-pin); outline-offset: -2px; }
+
+.mp-map-top { position: absolute; z-index: 4; inset: 12px 12px auto auto; display: flex; justify-content: flex-end; align-items: flex-start; gap: 8px; pointer-events: none; }
+.mp-map-top > * { pointer-events: auto; }
+.mp-map-floor, .mp-segment, .mp-zoom { border: 1px solid var(--line); background: color-mix(in srgb, var(--surface) 92%, transparent); box-shadow: 0 4px 14px -8px rgba(13, 28, 59, .35); }
+.mp-map-floor { display: inline-flex; align-items: baseline; gap: 8px; padding: 8px 12px; border-radius: 12px; }
+.mp-map-floor strong { font-size: 15px; color: var(--ink); }
+.mp-map-floor small { font-size: 12.5px; color: var(--muted); }
+.mp-map-views { display: inline-flex; gap: 6px; }
+.mp-segment { display: inline-flex; padding: 3px; border-radius: 12px; }
+.mp-segment button { display: inline-flex; align-items: center; gap: 5px; min-height: 32px; padding: 0 10px; border: 0; border-radius: 9px; background: transparent; color: var(--muted); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.mp-segment button[aria-pressed='true'] { background: var(--ink); color: var(--surface); }
+.mp-zoom { display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; color: var(--ink); cursor: pointer; }
+
+.mp-overlay { position: absolute; z-index: 4; left: 12px; right: 72px; bottom: 12px; display: grid; gap: 6px; justify-items: start; pointer-events: none; }
+.mp-pill { pointer-events: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; max-width: 560px; padding: 9px 8px 9px 12px; border: 1px solid var(--line); border-radius: 14px; background: color-mix(in srgb, var(--surface) 95%, transparent); color: var(--ink); font-size: 13.5px; line-height: 1.4; box-shadow: 0 10px 26px -14px rgba(13, 28, 59, .45); animation: mp-pill-in .22s ease-out; }
+.mp-pill > span:first-of-type { flex: 1 1 200px; }
+.mp-pill > svg { flex: none; }
+.mp-pill-close { margin-left: auto; display: inline-grid; place-items: center; width: 30px; height: 30px; border: 0; border-radius: 9px; background: transparent; color: var(--muted); cursor: pointer; }
+.mp-pill-close:hover { background: var(--surface-soft); color: var(--ink); }
+.mp-pill-hint { border-color: var(--mp-pin); }
+.mp-pill-hint > svg { color: var(--mp-pin); }
+.mp-tone-ok > svg { color: var(--mp-ok); }
+.mp-tone-wait > svg { color: var(--mp-you); animation: mp-spin 1.4s linear infinite; }
+.mp-tone-warn > svg { color: var(--mp-warn); }
+.mp-tone-bad { border-color: color-mix(in srgb, var(--mp-bad) 45%, var(--line)); }
+.mp-tone-bad > svg { color: var(--mp-bad); }
+.mp-pill-actions { flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: 6px; }
+.mp-pill-actions button { display: inline-flex; align-items: center; gap: 5px; min-height: 32px; padding: 0 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); color: var(--blue); font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+.mp-pill-actions button:first-child { border-color: var(--blue); background: var(--blue); color: #fff; }
+@keyframes mp-pill-in { from { opacity: 0; transform: translateY(6px); } }
+
+.mp-detail { display: grid; gap: 10px; position: sticky; top: 88px; max-height: calc(100vh - 104px); overflow-y: auto; padding: 18px; border: 1px solid var(--line); border-radius: var(--mp-radius); background: var(--surface); scrollbar-width: thin; }
+.mp-detail h2 { margin: 0; font-size: 24px; line-height: 1.15; letter-spacing: -.015em; color: var(--ink); }
+.mp-detail p { margin: 0; color: var(--muted); font-size: 14.5px; line-height: 1.55; }
+.mp-start { display: flex; align-items: center; gap: 10px; padding: 10px 8px 10px 12px; border-radius: 14px; background: color-mix(in srgb, var(--mp-pin) 12%, var(--surface)); }
+.mp-start > svg { color: var(--mp-pin); flex: none; }
+.mp-start > span { flex: 1; }
+.mp-start strong { display: block; font-size: 14px; color: var(--ink); }
+.mp-start small { font-size: 12.5px; color: var(--muted); }
+.mp-start button { min-height: 32px; padding: 0 8px; border: 0; border-radius: 9px; background: transparent; color: var(--ink); font: inherit; font-size: 13px; font-weight: 650; cursor: pointer; }
+.mp-start button:hover { background: color-mix(in srgb, var(--mp-pin) 18%, var(--surface)); }
+
+.mp-room { display: grid; gap: 12px; }
+.mp-room .room-photo, .mp-room img { border-radius: 14px; }
+.mp-room-icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 13px; background: var(--surface-soft); color: var(--blue); }
+.mp-room-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
+.mp-room-number { font-size: 15px; color: var(--muted); }
+.mp-room-number strong { color: var(--ink); font-size: 20px; letter-spacing: -.01em; }
+.mp-route { justify-content: center; min-height: 50px; border-radius: 14px; font-size: 15px; }
+.mp-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--blue); font: inherit; font-size: 14px; font-weight: 650; cursor: pointer; }
+.mp-room-extra { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.mp-room-door { display: flex; gap: 8px; align-items: center; color: var(--muted); font-size: 13px; }
+.mp-clear { justify-self: start; padding: 6px 0; border: 0; background: none; color: var(--muted); font: inherit; font-size: 13px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+
+.mp-empty { display: grid; gap: 12px; }
+.mp-popular { display: grid; gap: 6px; }
+.mp-popular > span { font-size: 13px; color: var(--muted); }
+.mp-popular button { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink); font: inherit; font-size: 14px; font-weight: 600; text-align: left; cursor: pointer; }
+.mp-popular button svg { color: var(--blue); flex: none; }
+.mp-popular button:hover { border-color: var(--blue); }
+.mp-directory { display: inline-flex; align-items: center; gap: 6px; color: var(--blue); font-size: 14px; font-weight: 650; text-decoration: none; }
+
+.mp-notices { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.mp-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; padding-top: 4px; color: var(--muted); font-size: 13px; }
+.mp-foot p { margin: 0; max-width: 70ch; line-height: 1.5; }
+.mp-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; }
+.mp-legend > span { display: inline-flex; align-items: center; gap: 7px; }
+.mp-legend-you, .mp-legend-pin { width: 11px; height: 11px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--line); }
+.mp-legend-you { background: var(--mp-you); }
+.mp-legend-pin { background: var(--mp-pin); }
+
+/* ---------- Метка «Вы здесь» на плане ---------- */
+.mp .plan-position-gps .plan-position-core { fill: var(--mp-you); }
+.mp .plan-position-gps .plan-position-halo { fill: color-mix(in srgb, var(--mp-you) 18%, transparent); }
+.mp .plan-position-accuracy { fill: color-mix(in srgb, var(--mp-you) 10%, transparent); stroke: color-mix(in srgb, var(--mp-you) 35%, transparent); stroke-width: 1; transition: r .4s ease; }
+.mp .plan-position-cone { fill: color-mix(in srgb, var(--mp-you) 32%, transparent); }
+.mp .plan-position-pulse { fill: none; stroke: var(--mp-you); stroke-width: 2; transform-box: fill-box; transform-origin: center; animation: mp-pulse 2s ease-out infinite; }
+.mp .plan-position-manual .plan-position-core { fill: var(--mp-pin); }
+.mp .plan-position-manual .plan-position-halo { fill: color-mix(in srgb, var(--mp-pin) 22%, transparent); }
+.mp .plan-position circle { transition: cx .6s ease, cy .6s ease; }
+@keyframes mp-pulse { from { opacity: .7; transform: scale(1); } to { opacity: 0; transform: scale(3.2); } }
+
+:where(.mp) button:focus-visible, :where(.mp) a:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .mp .plan-position-pulse, .mp-locate.is-wait svg, .mp-tone-wait > svg { animation: none; }
+  .mp-pill { animation: none; }
+  .mp .plan-position circle { transition: none; }
+}
+
+/* ---------- Планшет и телефон ---------- */
+@media (max-width: 980px) {
+  .mp-workspace { grid-template-columns: 1fr; }
+  .mp-detail { position: static; max-height: none; overflow: visible; }
+}
+@media (max-width: 680px) {
+  .mp { padding-top: 18px; gap: 12px; }
+  .mp-head { align-items: flex-start; flex-direction: column; gap: 14px; }
+  .mp-title p { font-size: 14px; }
+  .mp-floors { width: 100%; }
+  .mp-floors button { flex: 1; justify-content: center; min-height: 46px; }
+  .mp-toolbar { flex-direction: column; align-items: stretch; }
+  .mp-actions { display: grid; grid-template-columns: 1fr 1fr 48px; }
+  .mp-action span { white-space: nowrap; }
+  .mp-map .floor-map-viewport, .map-page-section.mp .floor-map-viewport:not(.floor-map-compact):not(.floor-map-3d) { height: min(68svh, 560px); max-height: none; border-radius: 18px; }
+  .map-page-section.mp .mp-map .floor-map-viewport:not(.floor-map-compact):not(.floor-map-3d):not(.floor-map-zoomed) { height: auto; }
+  .mp-map-top { inset: 8px 8px auto auto; }
+  /* На телефоне подсказки под картой: план и так маленький. */
+  .mp-overlay { position: static; margin-top: 8px; justify-items: stretch; }
+  .mp-pill { max-width: none; box-shadow: none; }
+  .mp-pill { font-size: 13px; }
+  .mp-detail { padding: 16px; }
+  .mp-foot { flex-direction: column; }
+}
+
+/* Тёмная тема: --blue там светлый, белый текст на нём не читается. */
+:root[data-theme='dark'] .mp-locate, :root[data-theme='dark'] .mp-floors button.is-on, :root[data-theme='dark'] .mp-pill-actions button:first-child { background: #2f66eb; border-color: #2f66eb; color: #fff; }
