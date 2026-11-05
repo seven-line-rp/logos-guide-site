@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { ArrowRight, ArrowUpRight, Box, Building2, DoorOpen, Info, LocateFixed, MapPin, Search, Settings2, Square, TriangleAlert, X, ZoomIn, ZoomOut } from 'lucide-react'
+import { ArrowRight, ArrowUpRight, Box, Building2, Compass, DoorOpen, Info, LocateFixed, LocateOff, MapPin, Navigation, Settings2, Square, TriangleAlert, X, ZoomIn, ZoomOut } from 'lucide-react'
 import { categoryLabels, floors, photosFor, rooms } from '../data.js'
 import FloorMap from '../components/FloorMap.jsx'
 import RouteScene from '../components/RouteScene.jsx'
+import RoomSearchSelect from '../components/RoomSearchSelect.jsx'
 import { calculateIndoorRoute } from '../map-routing.js'
 import FavoriteButton from '../components/FavoriteButton.jsx'
 import MeetButton from '../components/MeetButton.jsx'
@@ -11,16 +12,23 @@ import ReportProblem from '../components/ReportProblem.jsx'
 import RoomInfo from '../components/RoomInfo.jsx'
 import RoomPhoto from '../components/RoomPhoto.jsx'
 import { NOTICE_TYPES, useNotices } from '../notices.js'
-import { FloorTag, PageHeading, Reveal } from '../components/Primitives.jsx'
+import { FloorTag } from '../components/Primitives.jsx'
 import { isInsidePlan, planRoomBounds } from '../map-geometry.js'
-import { addGpsAnchor, gpsPointOnPlan, readGpsAnchors, readManualLocation } from '../map-location.js'
+import { GPS_GOOD_ACCURACY, GPS_SHOW_LIMIT, addGpsAnchor, createPositionSmoother, locateOnPlan, planAngleForBearing, readGpsAnchors, readManualLocation } from '../map-location.js'
+import { requestCompass, useCompass, useGeolocation } from '../use-location.js'
 import { storageGet, storageRemove, storageSet } from '../storage.js'
 import { readMapContrast, setMapContrast } from '../map-contrast.js'
 
+const hasTouch = typeof window !== 'undefined' && 'ontouchstart' in window
 const otherFloor = (floor) => floor === 1 ? 2 : 1
 // Вид перехода может быть общим (stairs/lift) или точным — какой именно
 // вариант маршрута выбрал пользователь на странице маршрута.
 const routeModes = ['lift', 'stairs', 'stairs-west', 'stairs-middle', 'stairs-north']
+const roomTitle = (room) => `${room.name}${room.number ? ` №${room.number}` : ''}`
+const roomCenter = (room) => {
+  const [x, y, width, height] = planRoomBounds[room.id]
+  return { floor: room.floor, x: x + width / 2, y: y + height / 2 }
+}
 
 export default function MapPage() {
   const [params, setParams] = useSearchParams()
@@ -38,19 +46,18 @@ export default function MapPage() {
   const [zoomed, setZoomed] = useState(() => window.matchMedia('(max-width: 680px)').matches)
   const [mode3d, setMode3d] = useState(false)
   const [gpsEnabled, setGpsEnabled] = useState(false)
-  const [gpsStatus, setGpsStatus] = useState('idle')
-  const [gpsCoordinates, setGpsCoordinates] = useState(null)
+  const gps = useGeolocation(gpsEnabled)
+  const compassHeading = useCompass(gpsEnabled)
   const [gpsAnchors, setGpsAnchors] = useState(() => readGpsAnchors(storageGet('map-gps-anchors')))
   const [manualPoint, setManualPoint] = useState(() => {
     const saved = readManualLocation(storageGet('map-manual-point'))
     if (saved) return saved
     const oldRoom = rooms.find((room) => room.id === storageGet('map-manual-location'))
-    if (!oldRoom) return null
-    const [x, y, width, height] = planRoomBounds[oldRoom.id]
-    return { floor: oldRoom.floor, x: x + width / 2, y: y + height / 2 }
+    return oldRoom ? roomCenter(oldRoom) : null
   })
   const [picking, setPicking] = useState(() => params.get('manual') === '1' ? 'manual' : '')
   const [pointFeedback, setPointFeedback] = useState('')
+  const [centerOn, setCenterOn] = useState(null)
   const fromParam = params.get('from') || ''
   const routeStart = fromParam === 'manual' ? manualPoint : fromParam || (selected && manualPoint ? manualPoint : '')
   const routeTargetId = params.get('to') || selected?.id || ''
@@ -58,9 +65,25 @@ export default function MapPage() {
   const floorNotices = notices.filter((notice) => rooms.find((room) => room.id === notice.roomId)?.floor === floor)
   const selectedNotices = notices.filter((notice) => notice.roomId === selected?.id)
   const scenePoints = useMemo(() => routeStart && routeTargetId ? calculateIndoorRoute(routeStart, routeTargetId, floor, routeModeParam).points || [] : [], [routeStart, routeTargetId, floor, routeModeParam])
-  const anchorsHere = gpsAnchors[floor] || []
-  const gpsMarker = gpsEnabled && gpsStatus === 'active' ? gpsPointOnPlan(floor, gpsCoordinates, gpsAnchors) : null
   const stair = selected?.id.match(/^(stairs-(?:north|middle|west))-[12]$/)
+
+  // GPS → точка на плане выбранного этажа, со сглаживанием между замерами.
+  const smoother = useRef(createPositionSmoother())
+  const [located, setLocated] = useState(null)
+  useEffect(() => {
+    if (gps.status !== 'active' || !gps.coords) { setLocated(null); smoother.current.reset(); return }
+    const result = locateOnPlan(floor, gps.coords, gpsAnchors)
+    if (!result || !result.inside || gps.coords.accuracy > GPS_SHOW_LIMIT) { setLocated(result && { ...result, hidden: true }); smoother.current.reset(); return }
+    setLocated({ ...result, point: smoother.current.update(floor, result.point, gps.coords.accuracy, gps.at) })
+  }, [gps.status, gps.coords, gps.at, floor, gpsAnchors])
+  const gpsMarker = useMemo(() => located && !located.hidden ? { ...located, heading: Number.isFinite(compassHeading) ? planAngleForBearing(floor, compassHeading) : null } : null, [located, compassHeading, floor])
+  // Первая точка — сразу показываем её на плане.
+  const centeredOnce = useRef(false)
+  useEffect(() => {
+    if (!gpsMarker || centeredOnce.current) return
+    centeredOnce.current = true
+    setCenterOn({ floor, point: gpsMarker.point, key: Date.now() })
+  }, [gpsMarker, floor])
 
   useEffect(() => {
     storageSet('map-show-labels', String(showLabels))
@@ -72,24 +95,6 @@ export default function MapPage() {
     storageRemove('map-manual-location')
   }, [manualPoint])
   useEffect(() => { storageSet('map-gps-anchors', JSON.stringify(gpsAnchors)) }, [gpsAnchors])
-  useEffect(() => {
-    if (!gpsEnabled) return undefined
-    if (!window.isSecureContext || !navigator.geolocation) {
-      setGpsStatus('unsupported')
-      setGpsEnabled(false)
-      return undefined
-    }
-    setGpsStatus('loading')
-    const watchId = navigator.geolocation.watchPosition(
-      ({ coords }) => {
-        setGpsCoordinates({ latitude: coords.latitude, longitude: coords.longitude, accuracy: coords.accuracy })
-        setGpsStatus('active')
-      },
-      (error) => { setGpsStatus(error.code === 1 ? 'denied' : 'unavailable'); setGpsEnabled(false) },
-      { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 },
-    )
-    return () => navigator.geolocation.clearWatch(watchId)
-  }, [gpsEnabled])
 
   const chooseFloor = (nextFloor, room = null, clear = false) => {
     setParams((previous) => {
@@ -103,11 +108,8 @@ export default function MapPage() {
     }, { replace: true })
   }
   const selectRoom = (room) => {
-    if (picking) {
-      const [x, y, width, height] = planRoomBounds[room.id]
-      placePoint({ floor: room.floor, x: x + width / 2, y: y + height / 2 })
-      return
-    }
+    if (!room) return
+    if (picking) { placePoint(roomCenter(room)); return }
     setParams((previous) => {
       const next = new URLSearchParams(previous)
       next.set('floor', String(room.floor))
@@ -118,21 +120,21 @@ export default function MapPage() {
   }
   const placePoint = (point) => {
     if (!isInsidePlan(point.floor, [point.x, point.y], rooms)) {
-      setPointFeedback('Эта точка вне помещений и проходов. Коснитесь плана внутри здания.')
+      setPointFeedback('Эта точка вне помещений и коридоров. Коснитесь плана внутри здания.')
       return
     }
     if (picking === 'gps') {
-      if (!gpsCoordinates) return
-      const next = addGpsAnchor(gpsAnchors, point.floor, point, gpsCoordinates)
+      if (!gps.coords) return
+      const next = addGpsAnchor(gpsAnchors, point.floor, point, gps.coords)
       if (next === gpsAnchors) {
-        setPointFeedback('Для второй точки привязки отойдите хотя бы на 3 метра и попробуйте снова.')
+        setPointFeedback('Для второй точки отойдите хотя бы на 3 метра и попробуйте снова.')
         return
       }
       setGpsAnchors(next)
-      setPointFeedback(next[point.floor].length === 1 ? 'Первая точка привязана. Отойдите к другому известному месту и повторите привязку.' : 'Две точки привязаны. Синяя метка приблизительно следует за координатами GPS.')
+      setPointFeedback(next[point.floor].length === 1 ? 'Первая точка запомнена. Перейдите к другому известному месту и отметьте его.' : 'Готово: на этом этаже GPS считается по вашим двум точкам.')
     } else {
       setManualPoint(point)
-      setPointFeedback('Метка поставлена. Теперь выберите место назначения.')
+      setPointFeedback('Метка поставлена. Теперь выберите, куда идти.')
     }
     setPicking('')
     if (params.has('manual')) setParams((previous) => {
@@ -141,56 +143,148 @@ export default function MapPage() {
       return next
     }, { replace: true })
   }
-  const toggleGps = () => {
-    if (gpsEnabled) {
-      setGpsEnabled(false)
-      setGpsCoordinates(null)
-      setGpsStatus('idle')
-      if (picking === 'gps') setPicking('')
-    } else {
-      setGpsStatus('loading')
-      setGpsEnabled(true)
-    }
+  const locate = async () => {
+    if (gpsEnabled && gpsMarker) { setCenterOn({ floor, point: gpsMarker.point, key: Date.now() }); return }
+    if (gpsEnabled) return
+    setMode3d(false)
+    centeredOnce.current = false
+    requestCompass() // iPhone спрашивает разрешение на компас только по нажатию
+    setGpsEnabled(true)
   }
-  const gpsMessage = () => {
-    if (gpsStatus === 'loading') return 'Определяем координаты… Разрешите доступ к геолокации в браузере.'
-    if (gpsStatus === 'denied') return 'Доступ к геолокации запрещён. Разрешите его в настройках браузера или поставьте метку вручную.'
-    if (gpsStatus === 'unsupported') return 'GPS доступен только через HTTPS в браузере с геолокацией. Используйте ручную отметку.'
-    if (gpsStatus === 'unavailable') return 'Координаты не получены. Попробуйте ещё раз или поставьте метку вручную.'
-    if (gpsStatus !== 'active') return ''
-    const accuracy = Math.round(gpsCoordinates?.accuracy || 0)
-    if (!anchorsHere.length) return `Координаты получены (точность около ${accuracy} м), но план не привязан к местности. Привяжите GPS к двум известным точкам на этом этаже или поставьте метку вручную.`
-    if (anchorsHere.length === 1) return `Показана первая точка привязки, а не отслеживаемое положение. Для движения метки нужна вторая точка. Точность GPS около ${accuracy} м.`
-    if (!gpsMarker) return 'Положение оказалось вне плана этажа. Метка скрыта; проверьте привязку или используйте ручную отметку.'
-    return `Положение на схеме приблизительное (GPS ±${accuracy} м). Этаж выбран вручную: спутники не определяют этаж и кабинет.${accuracy > 25 ? ' В помещении лучше поставить метку вручную.' : ''}`
+  const stopGps = () => {
+    setGpsEnabled(false)
+    if (picking === 'gps') setPicking('')
+  }
+  const useGpsAsStart = () => {
+    if (!gpsMarker) return
+    setManualPoint({ floor, x: Math.round(gpsMarker.point[0] * 10) / 10, y: Math.round(gpsMarker.point[1] * 10) / 10 })
+    setPointFeedback('Ваше место по GPS стало началом маршрута. Выберите, куда идти.')
   }
 
-  return <>
-    <PageHeading className="page-heading-compact" title="Карта этажей" description="Выберите этаж и коснитесь помещения: покажем номер, вход и путь по коридорам." />
-    <section className="map-page-section container">
-      <Reveal className="map-control-row"><div className="floor-tabs" role="group" aria-label="Выбор этажа">{floors.map((item) => <button key={item.id} type="button" aria-pressed={floor === item.id} className={`floor-tab ${floor === item.id ? 'floor-tab-active' : ''}`} onClick={() => chooseFloor(item.id)}><span className="floor-tab-index">{item.id}</span><span><strong>{item.label}</strong><small>{item.hint}</small></span><i aria-hidden="true">{floor === item.id && <ArrowUpRight size={16} />}</i></button>)}</div><Link className="map-directory-link" to="/rooms"><Search size={16} /> Не знаете номер? <strong>Открыть справочник</strong><ArrowRight size={14} /></Link></Reveal>
+  const accuracy = Math.round(gps.coords?.accuracy || 0)
+  const gpsInfo = (() => {
+    if (!gpsEnabled && gps.status === 'idle') return null
+    if (gps.status === 'loading') return { tone: 'wait', text: 'Ищем вас. Если браузер спросит, разрешите доступ к геопозиции.' }
+    if (gps.status === 'denied') return { tone: 'bad', text: 'Нет доступа к геопозиции. Разрешите его для сайта в настройках браузера или поставьте метку вручную.' }
+    if (gps.status === 'unsupported') return { tone: 'bad', text: 'Этот браузер не даёт сайту геопозицию. Откройте logos-guide.ru по https в Chrome или Safari.' }
+    if (gps.status === 'timeout' || gps.status === 'unavailable') return { tone: 'bad', text: 'Телефон не смог определить место. Включите геолокацию в шторке, подойдите к окну или поставьте метку вручную.' }
+    if (!located) return { tone: 'wait', text: 'Получили координаты, считаем место на плане.' }
+    if (!located.inside) return { tone: 'warn', text: located.distance > 1 ? `Вы примерно в ${Math.round(located.distance)} м от корпуса. Метка появится, когда зайдёте внутрь.` : 'Вы рядом с корпусом. Метка появится, когда зайдёте внутрь.' }
+    if (located.hidden) return { tone: 'warn', text: `Сигнал слабый, точность ±${accuracy} м. Подойдите к окну: метка появится, когда станет точнее ${GPS_SHOW_LIMIT} м.` }
+    return { tone: accuracy <= GPS_GOOD_ACCURACY ? 'ok' : 'warn', text: `Вы здесь, точность ±${accuracy} м. Телефон не знает этаж, поэтому показываем ${floor}-й.`, ok: true }
+  })()
 
-      <div className={`map-tools ${picking ? 'map-tools-picking' : ''}`}>
-        <div className="map-tools-top"><div className="map-tool-label"><span>План, {floor} этаж</span><span>{floorRooms.length} помещений</span></div><div className="map-navigation-actions">
-          <button className={`map-gps-button ${gpsStatus === 'active' ? 'map-gps-active' : ''}`} onClick={toggleGps} aria-pressed={gpsEnabled}><LocateFixed size={16} />{gpsEnabled ? 'Выключить GPS' : 'Включить GPS'}</button>
-          <button className={`map-manual-button ${picking === 'manual' ? 'map-manual-active' : ''}`} onClick={() => { setMode3d(false); setPicking(picking === 'manual' ? '' : 'manual'); setPointFeedback('') }} aria-pressed={picking === 'manual'}><MapPin size={15} />{picking === 'manual' ? 'Отмена' : 'Поставить метку'}</button>
-          <button className="map-settings-button" onClick={() => setSettingsOpen((value) => !value)} aria-expanded={settingsOpen} aria-label="Настройки карты"><Settings2 size={17} /></button>
-        </div></div>
-        {gpsStatus !== 'idle' && <div className={`map-gps-status map-gps-${gpsStatus}`} role="status"><LocateFixed size={16} /><span>{gpsMessage()}</span>{gpsStatus === 'active' && <button type="button" className="map-anchor-button" onClick={() => { setMode3d(false); setPicking(picking === 'gps' ? '' : 'gps'); setPointFeedback('') }}>{picking === 'gps' ? 'Отмена' : anchorsHere.length === 2 ? 'Перепривязать GPS' : 'Привязать GPS к плану'}</button>}</div>}
-        {picking && <div className="map-manual-hint" role="status">{picking === 'gps' ? 'Коснитесь известной точки на плане, где вы сейчас стоите. Для отслеживания нужны две разные точки на одном этаже.' : 'Коснитесь любого помещения или прохода внутри здания. Ваша точка будет отмечена точно там, где вы нажмёте.'}</div>}
-        {pointFeedback && <div className="map-point-feedback" role="status">{pointFeedback}</div>}
-        {manualPoint && <div className="map-manual-summary"><MapPin size={16} /><span>Ваша отметка, {manualPoint.floor} этаж. Её можно использовать как начало маршрута.</span>{manualPoint.floor !== floor && <button type="button" className="map-pin-show" onClick={() => chooseFloor(manualPoint.floor)}>Показать</button>}<button type="button" onClick={() => { setManualPoint(null); setPointFeedback('') }} aria-label="Удалить ручную отметку"><X size={16} /></button></div>}
-        {settingsOpen && <div className="map-settings-panel" aria-label="Настройки карты"><label><input type="checkbox" checked={showLabels} onChange={(event) => setShowLabels(event.target.checked)} /><span><strong>Подписи помещений</strong><small>Названия и номера кабинетов</small></span></label><label><input type="checkbox" checked={showDoorMarks} onChange={(event) => setShowDoorMarks(event.target.checked)} /><span><strong>Отметки дверей</strong><small>Показывать входы в помещения</small></span></label><label><input type="checkbox" checked={contrast} onChange={(event) => toggleContrast(event.target.checked)} /><span><strong>Контрастный план</strong><small>Чёткие стены, жирные подписи и толстая линия маршрута</small></span></label>{anchorsHere.length > 0 && <button type="button" className="map-reset-anchors" onClick={() => setGpsAnchors((current) => ({ ...current, [floor]: [] }))}>Сбросить GPS-привязку {floor} этажа</button>}</div>}
-        <div className="map-category-filters" role="group" aria-label="Фильтр помещений">{categoryLabels.map((category) => { const count = category === 'Все места' ? floorRooms.length : floorRooms.filter((room) => room.category === category).length; return <button key={category} className={filter === category ? 'map-filter map-filter-active' : 'map-filter'} onClick={() => setFilter(category)} aria-pressed={filter === category} disabled={!count}>{category}<span className="map-filter-count">{count}</span></button> })}</div>
-        {filter !== 'Все места' && <div className="map-filter-results" aria-live="polite">{floorRooms.filter((room) => room.category === filter).map((room) => <button type="button" key={room.id} className={selected?.id === room.id ? 'is-on' : ''} onClick={() => selectRoom(room)}>{room.name}{room.number ? ` №${room.number}` : ''}</button>)}<button type="button" className="map-filter-reset" onClick={() => setFilter('Все места')}>Сбросить фильтр</button></div>}
+  const popular = floorRooms.filter((room) => room.category === 'Общие пространства' && !/^(stairs|lift|elevator|entrance|exit|wc|toilet)/.test(room.id)).slice(0, 4)
+
+  return <section className="map-page-section mp container">
+    <header className="mp-head">
+      <div className="mp-title">
+        <h1>Карта этажей</h1>
+        <p>Найдите кабинет или коснитесь его на плане. Кнопка «Где я» покажет, где вы стоите.</p>
+      </div>
+      <div className="mp-floors" role="group" aria-label="Выбор этажа">
+        {floors.map((item) => <button key={item.id} type="button" aria-pressed={floor === item.id} className={floor === item.id ? 'is-on' : ''} onClick={() => chooseFloor(item.id)}>
+          <b>{item.id}</b><span>этаж</span><small>{rooms.filter((room) => room.floor === item.id).length}</small>
+        </button>)}
+      </div>
+    </header>
+
+    <div className="mp-toolbar">
+      <div className="mp-search"><RoomSearchSelect label="Найти на карте" value={selected?.id || ''} onChange={(id) => selectRoom(rooms.find((room) => room.id === id))} placeholder="Номер, название или преподаватель" /></div>
+      <div className="mp-actions">
+        <button type="button" className={`mp-action mp-locate ${gpsEnabled ? 'is-on' : ''} ${gps.status === 'loading' ? 'is-wait' : ''}`} onClick={locate} aria-pressed={gpsEnabled}><LocateFixed size={17} /><span>Где я</span></button>
+        <button type="button" className={`mp-action ${picking === 'manual' ? 'is-on' : ''}`} onClick={() => { setMode3d(false); setPicking(picking === 'manual' ? '' : 'manual'); setPointFeedback('') }} aria-pressed={picking === 'manual'}><MapPin size={17} /><span>{picking === 'manual' ? 'Отменить' : 'Поставить метку'}</span></button>
+        <button type="button" className={`mp-action mp-icon ${settingsOpen ? 'is-on' : ''}`} onClick={() => setSettingsOpen((value) => !value)} aria-expanded={settingsOpen} aria-label="Настройки карты" title="Настройки карты"><Settings2 size={17} /></button>
+      </div>
+    </div>
+
+    {settingsOpen && <div className="mp-settings" aria-label="Настройки карты">
+      <label><input type="checkbox" checked={showLabels} onChange={(event) => setShowLabels(event.target.checked)} /><span><strong>Подписи помещений</strong><small>Названия и номера кабинетов</small></span></label>
+      <label><input type="checkbox" checked={showDoorMarks} onChange={(event) => setShowDoorMarks(event.target.checked)} /><span><strong>Отметки дверей</strong><small>Синие черточки у входов</small></span></label>
+      <label><input type="checkbox" checked={contrast} onChange={(event) => toggleContrast(event.target.checked)} /><span><strong>Контрастный план</strong><small>Чёткие стены, жирные подписи и толстая линия маршрута</small></span></label>
+      <div className="mp-settings-gps">
+        <span><strong>Привязка GPS</strong><small>{gpsAnchors[floor]?.length === 2 ? `На ${floor} этаже — ваши две точки` : `По углам корпуса. Если метка заметно уезжает, отметьте две точки сами.`}</small></span>
+        {gps.status === 'active' && <button type="button" onClick={() => { setMode3d(false); setPicking(picking === 'gps' ? '' : 'gps'); setPointFeedback('') }}>{picking === 'gps' ? 'Отменить' : 'Уточнить привязку'}</button>}
+        {gpsAnchors[floor]?.length > 0 && <button type="button" onClick={() => setGpsAnchors((current) => ({ ...current, [floor]: [] }))}>Вернуть по корпусу</button>}
+      </div>
+    </div>}
+
+    <div className="mp-chips" role="group" aria-label="Фильтр помещений">
+      {categoryLabels.map((category) => {
+        const count = category === 'Все места' ? floorRooms.length : floorRooms.filter((room) => room.category === category).length
+        return <button key={category} type="button" className={filter === category ? 'is-on' : ''} onClick={() => setFilter(category)} aria-pressed={filter === category} disabled={!count}>{category}<span>{count}</span></button>
+      })}
+    </div>
+    {filter !== 'Все места' && <div className="mp-filter-results" aria-live="polite">{floorRooms.filter((room) => room.category === filter).map((room) => <button type="button" key={room.id} className={selected?.id === room.id ? 'is-on' : ''} onClick={() => selectRoom(room)}>{roomTitle(room)}</button>)}</div>}
+
+    <div className="mp-workspace">
+      <div className={`mp-map ${picking ? 'is-picking' : ''}`}>
+        <div className="mp-map-top">
+          <span className="mp-map-views">
+            <span className="mp-segment" role="group" aria-label="Вид карты">
+              <button type="button" aria-pressed={!mode3d} onClick={() => setMode3d(false)}><Square size={14} /> 2D</button>
+              <button type="button" aria-pressed={mode3d} onClick={() => { setPicking(''); setZoomed(false); setMode3d(true) }}><Box size={14} /> 3D</button>
+            </span>
+            {!mode3d && <button type="button" className="mp-zoom" onClick={() => setZoomed((value) => !value)} aria-label={zoomed ? 'Показать весь план' : 'Увеличить план'} title={zoomed ? 'Весь план' : 'Крупнее'}>{zoomed ? <ZoomOut size={16} /> : <ZoomIn size={16} />}</button>}
+          </span>
+        </div>
+        {mode3d
+          ? <div className="map-scene"><RouteScene floor={floor} mode="3d" points={scenePoints} selectedId={selected?.id || ''} targetId={routeTargetId && routeStart ? routeTargetId : ''} onRoomClick={selectRoom} notices={floorNotices} filterCategory={filter} /></div>
+          : <FloorMap floor={floor} selectedId={selected?.id || ''} onSelect={selectRoom} onFloorRequest={picking ? undefined : chooseFloor} onPointSelect={placePoint} picking={Boolean(picking)} zoomed={zoomed} filterCategory={filter} showLabels={showLabels} showDoorMarks={showDoorMarks} manualPoint={manualPoint} gpsMarker={gpsMarker} centerOn={centerOn} routeStart={routeStart} routeTargetId={routeTargetId} transition={routeModeParam} notices={floorNotices} />}
+
+        <div className="mp-overlay" aria-live="polite">
+          {picking && <div className="mp-pill mp-pill-hint" role="status"><MapPin size={15} /><span>{picking === 'gps' ? 'Коснитесь на плане места, где вы стоите. Нужны две точки на одном этаже.' : 'Коснитесь места на плане: кабинета или коридора.'}</span><button type="button" className="mp-pill-close" onClick={() => setPicking('')} aria-label="Отменить"><X size={15} /></button></div>}
+          {gpsInfo && <div className={`mp-pill mp-pill-gps mp-tone-${gpsInfo.tone}`} role="status">
+            {gpsInfo.tone === 'bad' ? <LocateOff size={15} /> : <LocateFixed size={15} />}
+            <span>{gpsInfo.text}</span>
+            <button type="button" className="mp-pill-close" onClick={stopGps} aria-label="Выключить GPS" title="Выключить GPS"><X size={15} /></button>
+            {gpsInfo.ok && <span className="mp-pill-actions">
+              <button type="button" onClick={useGpsAsStart}><Navigation size={14} /> Начать маршрут отсюда</button>
+              <button type="button" onClick={() => chooseFloor(otherFloor(floor))}>Я на {otherFloor(floor)} этаже</button>
+              {gpsMarker && !Number.isFinite(compassHeading) && hasTouch && <button type="button" onClick={requestCompass} title="Показать, куда вы смотрите"><Compass size={14} /> Компас</button>}
+            </span>}
+          </div>}
+          {pointFeedback && !picking && <div className="mp-pill" role="status"><span>{pointFeedback}</span><button type="button" className="mp-pill-close" onClick={() => setPointFeedback('')} aria-label="Скрыть"><X size={15} /></button></div>}
+        </div>
       </div>
 
-      <div className="map-workspace"><Reveal className="map-plan-panel"><div className="map-panel-heading"><span><strong>{floor === 1 ? 'Первый этаж' : 'Второй этаж'}</strong><small>{picking ? 'Коснитесь точки внутри здания' : 'Нажмите на помещение. Дважды на лестницу, чтобы сменить этаж'}</small></span><span className="map-view-actions"><span className="map-view-switch" role="group" aria-label="Вид карты"><button type="button" aria-pressed={!mode3d} onClick={() => setMode3d(false)}><Square size={14} /> 2D</button><button type="button" aria-pressed={mode3d} onClick={() => { setPicking(''); setZoomed(false); setMode3d(true) }}><Box size={14} /> 3D</button></span>{!mode3d && <button type="button" className="map-zoom-button" onClick={() => setZoomed((value) => !value)} aria-label={zoomed ? 'Показать весь план' : 'Увеличить план'}>{zoomed ? <ZoomOut size={17} /> : <ZoomIn size={17} />}<span>{zoomed ? 'Весь план' : 'Крупнее'}</span></button>}</span></div>
-        {mode3d ? <div className="map-scene"><RouteScene floor={floor} mode="3d" points={scenePoints} selectedId={selected?.id || ''} targetId={routeTargetId && routeStart ? routeTargetId : ''} onRoomClick={selectRoom} notices={floorNotices} filterCategory={filter} /></div> : <FloorMap floor={floor} selectedId={selected?.id || ''} onSelect={selectRoom} onFloorRequest={picking ? undefined : chooseFloor} onPointSelect={placePoint} picking={Boolean(picking)} zoomed={zoomed} filterCategory={filter} showLabels={showLabels} showDoorMarks={showDoorMarks} manualPoint={manualPoint} gpsMarker={gpsMarker} routeStart={routeStart} routeTargetId={routeTargetId} transition={routeModeParam} notices={floorNotices} />}
-        {floorNotices.length > 0 && <div className="map-notices" aria-label="Объявления на этаже">{floorNotices.map((notice, index) => { const room = rooms.find((item) => item.id === notice.roomId); return <button type="button" key={index} className={`map-notice map-notice-${notice.type}`} onClick={() => selectRoom(room)}><TriangleAlert size={14} /><span><strong>{notice.title}</strong><small>{room.name}{room.number ? ` №${room.number}` : ''}</small></span></button> })}</div>}<div className="map-panel-foot">{showDoorMarks && <span><i className="door-legend" /> Двери</span>}<span><i className="route-legend" /> Маршрут по коридору</span><span>На телефоне: план двигается пальцем, масштаб двумя пальцами</span></div></Reveal>
-        <Reveal className={`room-detail-panel ${selected ? 'room-detail-selected' : ''}`} delay={100} aria-live="polite">{selected ? <><RoomPhoto room={selected} /><div className="room-detail-top"><span className="eyebrow">{selected.category}</span><span className="room-detail-number">{selected.floor} этаж</span></div>{!photosFor(selected).length && <div className="room-detail-icon"><Building2 size={21} strokeWidth={1.5} /></div>}<FloorTag floor={selected.floor} /><h2>{selected.name}</h2>{selected.number && <div className="room-number-line">Кабинет <strong>{selected.number}</strong></div>}<p>{selected.description}</p><RoomInfo room={selected} /><div className="room-detail-rule" /><div className="room-detail-info"><span><DoorOpen size={15} />{showDoorMarks ? 'Синяя черта на плане обозначает дверь' : 'Двери можно включить в настройках'}</span><span><MapPin size={15} /> {selected.floor} этаж</span></div>{stair && <button className="room-floor-button" onClick={() => chooseFloor(otherFloor(floor), rooms.find((room) => room.id === `${stair[1]}-${otherFloor(floor)}`))}>Перейти по лестнице на {otherFloor(floor)} этаж <ArrowRight size={15} /></button>}<Link className="button button-primary room-route-button" to={`/route?${fromParam ? `from=${encodeURIComponent(fromParam)}&` : manualPoint ? 'from=manual&' : ''}to=${encodeURIComponent(selected.id)}${params.get('mode') === 'stairs' ? '&mode=stairs' : ''}`}>Построить маршрут <ArrowRight size={15} /></Link><div className="room-detail-extra"><FavoriteButton id={selected.id} /><Link className="room-ask-ai" to={`/ai?about=${encodeURIComponent(selected.id)}`}><Info size={15} /> Спросить ИИ</Link></div>{selectedNotices.map((notice, index) => <div key={index} className={`nv-notice-item nv-notice-${NOTICE_TYPES[notice.type].tone}`}><TriangleAlert size={16} aria-hidden="true" /><span><strong>{notice.title}</strong>{notice.text && <small>{notice.text}</small>}</span></div>)}<MeetButton key={`meet-${selected.id}`} room={selected} /><ReportProblem key={selected.id} room={selected} /><button className="room-clear" onClick={() => chooseFloor(floor, null, true)}>Снять выделение</button></> : <><div className="room-empty-illustration"><MapPin size={24} /></div><span className="eyebrow">На плане</span><h2>Куда идём?</h2><p>Выберите кабинет на схеме. Здесь появятся его номер, назначение и кнопка маршрута.</p><div className="room-detail-rule" /><div className="room-quick-stat"><strong>{floorRooms.length}</strong><span>мест на этом этаже</span></div><Link className="room-browse-link" to="/rooms">Открыть справочник <ArrowUpRight size={14} /></Link></>}</Reveal>
-      </div>
-      <div className="map-under-note"><span><Info size={15} /> О схеме</span><p>Маршрут проходит по отмеченным коридорам и дверям. Схема ориентировочная: если проход закрыт, следуйте указателям в здании.</p><Link to="/route">Построить маршрут <ArrowRight size={14} /></Link></div>
-    </section>
-  </>
+      <aside className={`mp-detail ${selected ? 'is-room' : ''}`} aria-live="polite">
+        {manualPoint && <div className="mp-start">
+          <MapPin size={16} />
+          <span><strong>Ваша метка</strong><small>{manualPoint.floor} этаж, начало маршрута</small></span>
+          {manualPoint.floor !== floor && <button type="button" onClick={() => chooseFloor(manualPoint.floor)}>Показать</button>}
+          <button type="button" onClick={() => { setManualPoint(null); setPointFeedback('') }} aria-label="Удалить метку"><X size={16} /></button>
+        </div>}
+        {selected ? <div className="mp-room">
+          <RoomPhoto room={selected} />
+          {!photosFor(selected).length && <div className="mp-room-icon"><Building2 size={22} strokeWidth={1.6} /></div>}
+          <div className="mp-room-meta"><FloorTag floor={selected.floor} /><span>{selected.category}</span></div>
+          <h2>{selected.name}</h2>
+          {selected.number && <div className="mp-room-number">Кабинет <strong>{selected.number}</strong></div>}
+          {selected.description && <p>{selected.description}</p>}
+          <Link className="button button-primary mp-route" to={`/route?${fromParam ? `from=${encodeURIComponent(fromParam)}&` : manualPoint ? 'from=manual&' : ''}to=${encodeURIComponent(selected.id)}${params.get('mode') === 'stairs' ? '&mode=stairs' : ''}`}>Построить маршрут <ArrowRight size={16} /></Link>
+          {stair && <button type="button" className="mp-secondary" onClick={() => chooseFloor(otherFloor(floor), rooms.find((room) => room.id === `${stair[1]}-${otherFloor(floor)}`))}>Подняться по лестнице на {otherFloor(floor)} этаж <ArrowRight size={15} /></button>}
+          <div className="mp-room-extra"><FavoriteButton id={selected.id} /><Link className="room-ask-ai" to={`/ai?about=${encodeURIComponent(selected.id)}`}><Info size={15} /> Спросить ИИ</Link></div>
+          {selectedNotices.map((notice, index) => <div key={index} className={`nv-notice-item nv-notice-${NOTICE_TYPES[notice.type].tone}`}><TriangleAlert size={16} aria-hidden="true" /><span><strong>{notice.title}</strong>{notice.text && <small>{notice.text}</small>}</span></div>)}
+          <RoomInfo room={selected} />
+          <div className="mp-room-door"><DoorOpen size={15} />{showDoorMarks ? 'Вход — синяя черточка у стены кабинета' : 'Двери можно включить в настройках карты'}</div>
+          <MeetButton key={`meet-${selected.id}`} room={selected} />
+          <ReportProblem key={selected.id} room={selected} />
+          <button type="button" className="mp-clear" onClick={() => chooseFloor(floor, null, true)}>Снять выделение</button>
+        </div> : <div className="mp-empty">
+          <h2>Куда идём?</h2>
+          <p>Коснитесь кабинета на плане или найдите его в поиске. Здесь появятся номер, вход и кнопка маршрута.</p>
+          {popular.length > 0 && <div className="mp-popular"><span>Часто ищут на {floor} этаже</span>{popular.map((room) => <button type="button" key={room.id} onClick={() => selectRoom(room)}><MapPin size={14} />{roomTitle(room)}</button>)}</div>}
+          <Link className="mp-directory" to="/rooms">Все кабинеты списком <ArrowUpRight size={14} /></Link>
+        </div>}
+      </aside>
+    </div>
+
+    {floorNotices.length > 0 && <div className="mp-notices" aria-label="Объявления на этаже">{floorNotices.map((notice, index) => { const room = rooms.find((item) => item.id === notice.roomId); return <button type="button" key={index} className={`map-notice map-notice-${notice.type}`} onClick={() => selectRoom(room)}><TriangleAlert size={14} /><span><strong>{notice.title}</strong><small>{roomTitle(room)}</small></span></button> })}</div>}
+
+    <footer className="mp-foot">
+      <span className="mp-legend">{showDoorMarks && <span><i className="door-legend" /> Двери</span>}<span><i className="route-legend" /> Маршрут</span><span><i className="mp-legend-you" /> Вы по GPS</span><span><i className="mp-legend-pin" /> Ваша метка</span></span>
+      <p>Маршрут идёт по коридорам и дверям. Схема примерная: если проход закрыт, следуйте указателям. GPS в здании ошибается на 5–30 м.</p>
+    </footer>
+  </section>
 }

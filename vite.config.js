@@ -4,6 +4,7 @@ import localizeJsx from './scripts/localize-jsx.js'
 import { transformAsync } from '@babel/core'
 import { buildKnowledge } from './src/ai-knowledge.js'
 import { BELLS, LUNCH } from './src/schedule.js'
+import { HOLIDAYS } from './src/holidays.js'
 import { SITE_VERSION, SITE_VERSION_LABEL } from './src/version.js'
 import { PAGES, pageHtml } from './src/seo.js'
 import { createHash } from 'node:crypto'
@@ -82,7 +83,7 @@ export default defineConfig({
     name: 'logos-push-meta',
     apply: 'build',
     generateBundle() {
-      this.emitFile({ type: 'asset', fileName: 'api/push-meta.json', source: JSON.stringify({ bells: BELLS, lunch: LUNCH, version: SITE_VERSION, versionLabel: SITE_VERSION_LABEL }) })
+      this.emitFile({ type: 'asset', fileName: 'api/push-meta.json', source: JSON.stringify({ bells: BELLS, lunch: LUNCH, holidays: Object.keys(HOLIDAYS), version: SITE_VERSION, versionLabel: SITE_VERSION_LABEL }) })
     },
   }, prerenderPages(), offlineServiceWorker(), react()],
   server: {

@@ -45,3 +45,20 @@ test('in-app browsers are recognised, normal ones are not', () => {
   assert.equal(inAppBrowser('Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/130.0 Mobile Safari/537.36'), false)
   assert.equal(inAppBrowser('Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/130.0'), false)
 })
+
+test('reminders come 5 minutes before each of today\'s own lessons, not before past ones', async () => {
+  const { lessonReminders } = await import('./push.js')
+  const lessons = [
+    { date: '2026-10-27', start: '09:00', end: '10:30', subject: 'История', roomId: 'physics-211' },
+    { date: '2026-10-27', start: '10:40', end: '12:10', subject: 'Физика', roomId: 'physics-211' },
+    { date: '2026-10-27', start: '13:15', end: '14:00', subject: 'Факультатив', roomId: 'physics-211' },
+    { date: '2026-10-28', start: '09:00', end: '10:30', subject: 'Завтра', roomId: 'physics-211' },
+  ]
+  const plan = lessonReminders(lessons, new Date(2026, 9, 27, 10, 30))
+  assert.deepEqual(plan.map((item) => item.push.title), ['Через 5 минут: Физика', 'Через 5 минут: Факультатив'])
+  assert.equal(plan[0].delay, 5 * 60_000)
+  assert.equal(plan[0].push.tag, 'lesson-2026-10-27-10:40', 'тот же tag, что ставит сервис-воркер: дубля не будет')
+  assert.equal(plan[1].delay, (13 * 60 + 10 - 10 * 60 - 30) * 60_000, 'пара не по звонкам тоже напомнит')
+  const late = lessonReminders(lessons, new Date(2026, 9, 27, 10, 37))
+  assert.equal(late[0].delay, 0, 'открыли сайт за 3 минуты до пары — напоминаем сразу')
+})

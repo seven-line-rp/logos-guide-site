@@ -61,6 +61,13 @@ self.addEventListener('fetch', (event) => {
 const PUSH_ICON = '/apple-touch-icon.png'
 const PUSH_BADGE = '/push-badge.png'
 
+function minutesLabel(count) {
+  const mod10 = count % 10
+  const mod100 = count % 100
+  const word = mod10 === 1 && mod100 !== 11 ? 'минуту' : mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14) ? 'минуты' : 'минут'
+  return `${count} ${word}`
+}
+
 // Расписание сервер не знает: предмет и кабинет подставляем из копии в кэше.
 async function personalize(push) {
   if (!push.bell || (push.kind !== 'lesson-start' && push.kind !== 'lesson-end')) return push
@@ -73,9 +80,12 @@ async function personalize(push) {
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
   const todays = lessons.filter((lesson) => lesson.date === today).sort((a, b) => a.start.localeCompare(b.start))
   if (push.kind === 'lesson-start') {
+    // Тот же tag ставит и напоминание из открытой вкладки (src/push.js,
+    // scheduleLessonReminders), поэтому два уведомления об одной паре не придут.
+    push = { ...push, tag: `lesson-${today}-${push.bell.start}` }
     const lesson = todays.find((item) => item.start === push.bell.start)
     if (!lesson) return push
-    return { ...push, title: `Через 5 минут: ${lesson.subject}`, body: `${lesson.room}, начало в ${lesson.start}. Маршрут уже готов.`, url: `/route?to=${encodeURIComponent(lesson.roomId)}`, route: true }
+    return { ...push, title: `Через ${minutesLabel(push.left || 5)}: ${lesson.subject}`, body: `${lesson.room}, начало в ${lesson.start}. Маршрут уже готов.`, url: `/route?to=${encodeURIComponent(lesson.roomId)}`, route: true }
   }
   const finished = todays.find((item) => item.end === push.bell.end)
   const next = todays.find((item) => item.start >= push.bell.end)
@@ -92,16 +102,22 @@ async function personalize(push) {
 self.addEventListener('push', (event) => {
   let push
   try { push = event.data ? event.data.json() : {} } catch { push = { body: event.data ? event.data.text() : '' } }
-  event.waitUntil(personalize({ title: 'ЛОГОС', body: '', url: '/', kind: 'news', ...push }).then((item) => self.registration.showNotification(item.title, {
+  event.waitUntil(personalize({ title: 'ЛОГОС', body: '', url: '/', kind: 'news', ...push }).then(async (item) => {
+    const tag = item.tag || item.kind
+    // Уже показано вкладкой сайта — обновляем текст молча, без второго звука.
+    const shown = await self.registration.getNotifications({ tag }).catch(() => [])
+    return self.registration.showNotification(item.title, {
     body: item.body,
     icon: PUSH_ICON,
     badge: PUSH_BADGE,
-    tag: item.tag || item.kind,
-    renotify: true,
+    tag,
+    renotify: !shown.length,
+    silent: shown.length > 0,
     timestamp: item.ts ? item.ts * 1000 : Date.now(),
     data: { url: item.url || '/' },
     actions: item.route ? [{ action: 'open', title: 'Маршрут' }] : [],
-  })))
+    })
+  }))
 })
 
 // Нажатие на уведомление: открытая вкладка сайта переходит по ссылке, иначе открываем новую.

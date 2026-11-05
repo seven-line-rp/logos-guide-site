@@ -30,3 +30,33 @@ test('GPS is not converted to a fake indoor position without two measured anchor
   assert.equal(gpsPointOnPlan(2, current, anchors), null, 'a browser cannot detect the floor')
   assert.equal(gpsPointOnPlan(1, { ...current, longitude: 18.1 }, anchors), null, 'no pin outside the building')
 })
+
+test('GPS works out of the box with the building corners from the Android app', async () => {
+  const { BUILDING_ANCHORS, anchorsFor, geoTransform, locateOnPlan, planAngleForBearing } = await import('./map-location.js')
+  for (const floor of [1, 2]) {
+    const transform = geoTransform(BUILDING_ANCHORS[floor])
+    for (const anchor of BUILDING_ANCHORS[floor]) {
+      const [x, y] = transform(anchor)
+      assert.ok(Math.hypot(x - anchor.x, y - anchor.y) < 15, `угол ${anchor.id} ложится на план`)
+    }
+    assert.ok(Number.isFinite(planAngleForBearing(floor, 0)))
+  }
+  assert.equal(anchorsFor(1, { 1: [], 2: [] }).source, 'building')
+  // Середина главного коридора первого этажа, между углами 1_5 и 1_6.
+  const corridor = { latitude: (55.214762 + 55.215103) / 2, longitude: (36.536331 + 36.537163) / 2, accuracy: 8 }
+  const here = locateOnPlan(1, corridor)
+  assert.equal(here.inside, true)
+  assert.ok(Math.abs(here.point[0] - 452) < 40 && Math.abs(here.point[1] - 242) < 40)
+  const far = locateOnPlan(1, { latitude: 55.2175, longitude: 36.5365, accuracy: 10 })
+  assert.equal(far.inside, false)
+  assert.ok(far.distance > 100, 'снаружи — расстояние до корпуса, а не метка')
+})
+
+test('position smoothing follows a walk and ignores GPS jitter', async () => {
+  const { createPositionSmoother } = await import('./map-location.js')
+  const smoother = createPositionSmoother()
+  assert.deepEqual(smoother.update(1, [100, 200], 10, 0), [100, 200])
+  const [x] = smoother.update(1, [140, 200], 25, 1000)
+  assert.ok(x > 100 && x < 140, 'шумная точка тянет метку, но не прыгает')
+  assert.deepEqual(smoother.update(2, [10, 10], 10, 2000), [10, 10], 'другой этаж — начинаем заново')
+})
