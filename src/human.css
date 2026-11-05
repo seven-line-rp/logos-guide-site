@@ -225,3 +225,19 @@
   .door-card { width: 190mm; margin: 0 0 8mm; border: .3mm dashed #9aa7bd; border-radius: 0; page-break-inside: avoid; }
   .door-card:nth-child(2n) { page-break-after: always; }
 }
+
+/* Портреты, цитаты и любимые места преподавателей (src/teacher-profiles.js). */
+.teacher-avatar { position: relative; overflow: hidden; }
+.teacher-avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
+.teacher-card-profiled .teacher-avatar { width: 56px; height: 56px; font-size: 17px; }
+.teacher-profile { display: flex; flex-direction: column; gap: 10px; }
+.teacher-quote { margin: 0; padding: 10px 12px; display: flex; gap: 8px; border-left: 3px solid var(--blue); border-radius: 4px 12px 12px 4px; background: var(--surface-soft); }
+.teacher-quote svg { flex: 0 0 auto; margin-top: 3px; color: var(--blue); }
+.teacher-quote p { margin: 0; color: var(--ink); font-size: 14px; font-style: italic; line-height: 1.5; }
+.teacher-quote small { color: var(--muted); font-size: 12.5px; font-style: normal; }
+.teacher-place { display: flex; flex-direction: column; gap: 3px; font-size: 14px; line-height: 1.45; }
+.teacher-place-label { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; font-weight: 650; letter-spacing: .02em; text-transform: uppercase; }
+.teacher-place-label svg { color: var(--blue); }
+.teacher-place strong { color: var(--ink); font-weight: 700; }
+.teacher-place strong a { color: inherit; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--blue) 40%, transparent); text-underline-offset: 3px; }
+.teacher-place p { margin: 0; color: var(--muted); }
