@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { GraduationCap, MapPin, Navigation, Search, X } from 'lucide-react'
+import { GraduationCap, Heart, MapPin, Navigation, Quote, Search, X } from 'lucide-react'
 import { PageHeading, Reveal } from '../components/Primitives.jsx'
 import VoiceSearchButton from '../components/VoiceSearchButton.jsx'
 import { RawText } from '../components/ai-message.js'
+import { rooms } from '../data.js'
 import { loadTeachers, normalize, roomForTeacher } from '../search.js'
 import { focusInputOnPress } from '../search-field.js'
+import { normalizeQuote, portraitUrl, withProfiles } from '../teacher-profiles.js'
 
 // «Преподаватели»: весь педагогический состав (public/teachers.json) с
 // кабинетами. Кабинет берётся из roomId, а если его нет — угадывается по
@@ -24,14 +26,39 @@ function initials(name) {
   return `${first[0] || ''}${last[0] || ''}`.toUpperCase()
 }
 
+// Портрет из public/teachers/«Имя Фамилия.png»; нет файла — инициалы.
+function TeacherAvatar({ name }) {
+  const [failed, setFailed] = useState(false)
+  return <span className="teacher-avatar" aria-hidden="true">
+    {initials(name)}
+    {!failed && <img src={portraitUrl(name)} alt="" loading="lazy" decoding="async" onError={() => setFailed(true)} />}
+  </span>
+}
+
+function TeacherProfile({ profile }) {
+  const { place, quotes = [] } = profile
+  return <div className="teacher-profile">
+    {quotes.map(normalizeQuote).map((quote) => <blockquote key={quote.text} className="teacher-quote">
+      <Quote size={15} aria-hidden="true" />
+      <p><RawText text={quote.text} />{quote.note && <small> — <RawText text={quote.note} /></small>}</p>
+    </blockquote>)}
+    {place && <div className="teacher-place">
+      <span className="teacher-place-label"><Heart size={14} aria-hidden="true" /> Любимое место</span>
+      <strong>{place.roomId ? <Link to={`/map?floor=${rooms.find((item) => item.id === place.roomId)?.floor || 1}&room=${place.roomId}`}><RawText text={place.title} /></Link> : <RawText text={place.title} />}</strong>
+      {place.why && <p><RawText text={place.why} /></p>}
+    </div>}
+  </div>
+}
+
 function TeacherCard({ teacher }) {
   const { room, bySubject } = roomForTeacher(teacher)
-  return <article className="teacher-card">
+  return <article className={teacher.profile ? 'teacher-card teacher-card-profiled' : 'teacher-card'}>
     <div className="teacher-card-top">
-      <span className="teacher-avatar" aria-hidden="true">{initials(teacher.name)}</span>
+      <TeacherAvatar name={teacher.name} />
       <div className="teacher-card-name"><h2><RawText text={teacher.name} /></h2>{teacher.position && <span>{teacher.position}</span>}</div>
     </div>
     {teacher.subjects?.length > 0 && <ul className="teacher-subjects" aria-label="Предметы">{teacher.subjects.map((subject) => <li key={subject}>{subject}</li>)}</ul>}
+    {teacher.profile && <TeacherProfile profile={teacher.profile} />}
     <div className="teacher-card-room">
       <MapPin size={15} aria-hidden="true" />
       {room ? <span>{room.name}{room.number && ` №${room.number}`}, {room.floor} этаж{bySubject && <small> — по предмету, уточняйте</small>}</span> : <span>Кабинет уточните в учебной части</span>}
@@ -48,7 +75,7 @@ export default function TeachersPage() {
   const [teachers, setTeachers] = useState(null)
   useEffect(() => {
     let alive = true
-    loadTeachers().then((value) => { if (alive) setTeachers(value) })
+    loadTeachers().then((value) => { if (alive) setTeachers(withProfiles(value)) })
     return () => { alive = false }
   }, [])
   const [query, setQuery] = useState('')
