@@ -10,7 +10,7 @@ import { storageGet, storageSet } from './storage.js'
 
 export const THEMES = ['light', 'dark', 'pickme', 'motion', 'unity']
 export const THEME_KEY = 'site-theme'
-const META_COLORS = { light: '#2f5fe8', dark: '#11131b', pickme: '#ffd9e8', motion: '#f4f4f1', unity: '#0b2a6b' }
+const META_COLORS = { light: '#2f5fe8', dark: '#11131b', pickme: '#ffd9e8', motion: '#f6f6f3', unity: '#0b2a6b' }
 
 export function resolveTheme(stored) {
   return THEMES.includes(stored) ? stored : 'light'

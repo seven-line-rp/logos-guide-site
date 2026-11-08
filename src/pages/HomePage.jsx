@@ -11,7 +11,7 @@ import HomeDashboard from '../components/HomeDashboard.jsx'
 import { UnityBanner, UnityChip, UnityExtras } from '../components/Unity.jsx'
 import UnityKremlin from '../components/UnityKremlin.jsx'
 import { PickmeChip, PickmeGarden, PickmeNote } from '../components/Pickme.jsx'
-import { MotionChip, MotionStage, MotionTicker, MotionWords } from '../components/MotionTheme.jsx'
+import { MotionChip, MotionIndex, MotionStage, MotionWords } from '../components/MotionTheme.jsx'
 import { fireConfetti, isUnityEasterEgg } from '../unity-fx.js'
 import { Reveal } from '../components/Primitives.jsx'
 import VoiceSearchButton from '../components/VoiceSearchButton.jsx'
@@ -131,7 +131,7 @@ export default function HomePage() {
       </div>
     </section>
 
-    <MotionTicker />
+    <MotionIndex />
 
     <UnityBanner />
     <UnityExtras />
