@@ -87,8 +87,8 @@
       (function () {
         try {
           var asked = new URLSearchParams(window.location.search).get('theme')
-          var theme = /^(light|dark|unity)$/.test(asked || '') ? asked : localStorage.getItem('site-theme')
-          if (/^(light|dark|unity)$/.test(theme || '')) document.documentElement.dataset.theme = theme
+          var theme = /^(light|dark|pickme|motion|unity)$/.test(asked || '') ? asked : localStorage.getItem('site-theme')
+          if (/^(light|dark|pickme|motion|unity)$/.test(theme || '')) document.documentElement.dataset.theme = theme
         } catch (_error) { /* без localStorage остаётся светлая тема */ }
       })()
     </script>
@@ -107,6 +107,8 @@
       }
       html[data-theme='dark'] #splash { --sp-bg: #07162e; --sp-ink: #e5edfb; --sp-brand: #7b8fff; }
       html[data-theme='unity'] #splash { --sp-bg: #f4f6fa; --sp-ink: #0d1b3e; --sp-brand: #0039a6; }
+      html[data-theme='pickme'] #splash { --sp-bg: #fff6fa; --sp-ink: #4a1736; --sp-brand: #ff4f9a; }
+      html[data-theme='motion'] #splash { --sp-bg: #f6f6f3; --sp-ink: #0e0e10; --sp-brand: #0e0e10; }
       html.splash-on, html.splash-on body { overflow: hidden; }
       #splash.is-leaving { opacity: 0; visibility: hidden; pointer-events: none; }
       #splash.is-leaving .sp-mark { transform: scale(1.025); }

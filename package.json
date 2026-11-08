@@ -1,6 +1,6 @@
 {
   "name": "logos-guide-site",
-  "version": "1.11.1-alpha",
+  "version": "1.11.2-alpha",
   "private": true,
   "type": "module",
   "scripts": {
