@@ -10,7 +10,9 @@ public/api/ai-config.php
 logos-ai-config.php
 __pycache__/
 
-# Голос для промо-ролика (docs/promo.md)
+# Временные окружения для сборки промо и озвучки
+.venv-buildtools/
+.venv-promo/
 .venv-tts/
 *.onnx
 *.onnx.json

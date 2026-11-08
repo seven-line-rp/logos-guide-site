@@ -10,6 +10,7 @@
 
 Запуск: python3 scripts/build-promo-music.py  (нужны numpy и ffmpeg)
 """
+import argparse
 import json
 import subprocess
 import tempfile
@@ -120,6 +121,33 @@ def jingle(seconds):
     return lowpass(track, 7000) * env(n, .01, .35)
 
 
+def sound_effect(name):
+    """Короткие неречевые акценты: интерфейсные щелчки, скан и кинематографичные переходы."""
+    if name in ('cinematic-hit', 'logo-impact', 'offline-shield'):
+        hit = kick() * (1.2 if name == 'cinematic-hit' else .9)
+        tone = pluck(72 if name != 'offline-shield' else 79, .8)
+        return np.pad(hit, (0, max(0, len(tone) - len(hit))))[:len(tone)] * .7 + tone * .45
+    if name in ('search-tick', 'schedule-ding', 'map-reveal', 'advert-jingle'):
+        notes = {'search-tick': 88, 'schedule-ding': 79, 'map-reveal': 84, 'advert-jingle': 74}
+        return pluck(notes[name], .75) * .9
+    if name in ('route-pulse', 'qr-scan'):
+        seconds = .8 if name == 'route-pulse' else .65
+        n = int(seconds * RATE)
+        t = np.arange(n) / RATE
+        f0, f1 = (440, 740) if name == 'qr-scan' else (330, 520)
+        freq = f0 + (f1 - f0) * np.minimum(1, t / seconds)
+        phase = 2 * np.pi * np.cumsum(freq) / RATE
+        tone = np.sin(phase) * np.exp(-t * (4 if name == 'qr-scan' else 3.2))
+        return tone * env(n, .015, .14) * .7
+    if name == 'lift-swoosh':
+        n = int(.9 * RATE)
+        t = np.arange(n) / RATE
+        noise = rng.standard_normal(n)
+        noise = lowpass(noise, 1500) - lowpass(noise, 240)
+        return noise * np.sin(np.pi * np.minimum(1, t / .9)) * env(n, .08, .2) * .18
+    return np.zeros(int(.2 * RATE))
+
+
 def place(track, clip, at, gain):
     start = int(at * RATE)
     end = min(len(track), start + len(clip))
@@ -128,7 +156,12 @@ def place(track, clip, at, gain):
 
 
 def main():
-    duration = json.loads((ROOT / 'src' / 'admin' / 'promo-timeline.json').read_text(encoding='utf-8'))['duration']
+    parser = argparse.ArgumentParser(description='Собрать музыку и звуковые эффекты промо-ролика.')
+    parser.add_argument('--longform', action='store_true', help='собрать полнометражный ролик без диктора')
+    args = parser.parse_args()
+    timeline_path = ROOT / 'src' / 'admin' / ('promo-longform-timeline.json' if args.longform else 'promo-timeline.json')
+    timeline = json.loads(timeline_path.read_text(encoding='utf-8'))
+    duration = timeline['duration']
     n = int((duration + .2) * RATE)
     pads, plucks, low, drums = (np.zeros(n) for _ in range(4))
     bars = int(np.ceil(duration / BAR))
@@ -160,7 +193,7 @@ def main():
             duck[start:end] = np.minimum(duck[start:end], 1 - .35 * np.linspace(1, 0, end - start))
     mix = lowpass(pads, 2200) * duck + lowpass(plucks, 5200) + lowpass(low, 900) + drums
     # Рекламная пауза: от конца фразы перед ней до начала следующей сцены.
-    lines = json.loads((ROOT / 'src' / 'admin' / 'promo-timeline.json').read_text(encoding='utf-8'))['lines']
+    lines = timeline.get('chapters', timeline.get('lines', []))
     ids = [line['id'] for line in lines]
     if 'ad' in ids:
         index = ids.index('ad')
@@ -173,6 +206,9 @@ def main():
         gate[i1:i1 + f] = np.linspace(0, 1, f)
         mix = mix * gate
         place(mix, jingle(b - a + .2), a, 1.5)
+    # Неречевые эффекты привязаны к монтажным событиям, а не к голосовым репликам.
+    for event in timeline.get('effects', []):
+        place(mix, sound_effect(event['id']), event['at'], .42)
     # Плавное начало и затухание к концу ролика.
     fade = env(n, .8, 3.0)
     mix = mix * fade
@@ -186,11 +222,12 @@ def main():
             out.setsampwidth(2)
             out.setframerate(RATE)
             out.writeframes((stereo * 32767).astype('<i2').tobytes())
-        target = ROOT / 'public' / 'promo' / 'music.mp3'
-        # Музыка тише голоса: -21 LUFS против -16 у голоса.
-        subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', str(raw), '-af', 'loudnorm=I=-21:TP=-2:LRA=9',
+        target = ROOT / 'public' / 'promo' / ('music-longform.mp3' if args.longform else 'music.mp3')
+        # У длинной версии нет диктора: полноценный музыкальный уровень, не ducked под голос.
+        loudness = '-18' if args.longform else '-21'
+        subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', str(raw), '-af', f'loudnorm=I={loudness}:TP=-2:LRA=9',
                         '-ar', '44100', '-b:a', '128k', str(target)], check=True)
-    print(f'music.mp3: {duration} с, {bars} тактов')
+    print(f'{target.name}: {duration} с, {bars} тактов')
 
 
 if __name__ == '__main__':

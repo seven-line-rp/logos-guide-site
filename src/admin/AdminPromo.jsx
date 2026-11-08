@@ -19,6 +19,8 @@ const FULL_URL = fresh('/promo/logos-promo.mp4')
 const VOICE_URL = fresh('/promo/voice.mp3')
 const MUSIC_URL = fresh('/promo/music.mp3')
 const POSTER_URL = fresh('/promo/poster.jpg')
+const LONG_VIDEO_URL = fresh('/promo/logos-promo-long.mp4')
+const LONG_POSTER_URL = fresh('/promo/poster-longform.jpg')
 const SLOTS = timeline.lines.map((line, index) => ({ ...line, ...PROMO_LINES[index], slotEnd: timeline.lines[index + 1]?.start ?? timeline.duration }))
 const clock = (seconds) => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`
 const download = (blob, name) => {
@@ -37,6 +39,25 @@ function RenderOnly() {
     return () => { delete window.__promoSeek; delete window.__promoDuration }
   }, [])
   return <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: '#000' }}><PromoStage t={t} /></div>
+}
+
+function LongformPreview() {
+  return <>
+    <div className="adm-head">
+      <div>
+        <h1>ЛОГОС Путеводитель — полнометражный ролик</h1>
+        <p>2 минуты 25 секунд. Без диктора: музыка, звуковые эффекты и короткие экранные подписи.</p>
+      </div>
+      <a className="adm-button" href="/admin/promo">Короткая версия и студия голоса</a>
+    </div>
+    <section className="adm-promo-player" aria-label="Полнометражный промо-ролик">
+      <div className="adm-promo-screen"><video src={LONG_VIDEO_URL} poster={LONG_POSTER_URL} controls playsInline preload="metadata" /></div>
+      <div className="adm-promo-export">
+        <a className="adm-button adm-button-primary" href={LONG_VIDEO_URL} download="logos-promo-long.mp4"><Download size={16} /> Скачать MP4 без диктора</a>
+        <span className="adm-muted">Звуковая дорожка: оригинальная музыка и эффекты, без голоса.</span>
+      </div>
+    </section>
+  </>
 }
 
 function useAudioContext() {
@@ -278,11 +299,13 @@ function Studio() {
 export default function AdminPromo() {
   const [params] = useSearchParams()
   if (params.get('render') === '1') return <RenderOnly />
+  if (params.get('long') === '1') return <LongformPreview />
   return <>
     <div className="adm-head">
       <div>
         <h1>Промо-ролик</h1>
-        <p>Ролик о путеводителе на {Math.round(PROMO_DURATION)} секунд на настоящих экранах сайта: поиск кабинета, карта, маршрут, расписание и таблички «Вы здесь». Можно озвучить своим голосом прямо здесь и скачать.</p>
+        <p>Короткая версия на {Math.round(PROMO_DURATION)} секунд с настоящими экранами сайта. Сейчас можно посмотреть полнометражный монтаж без диктора: 2:25, музыка и звуковые эффекты.</p>
+        <a className="adm-button adm-button-primary" href="/admin/promo?long=1">Полнометражный ролик · 2:25</a>
       </div>
     </div>
     <Studio />

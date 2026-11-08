@@ -218,8 +218,11 @@ body:has(.adm) { background: var(--bg); }
 .adm-push-note p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.4; overflow-wrap: anywhere; }
 
 /* ---------- Промо-ролик (AdminPromo.jsx) ---------- */
-.adm-promo-player { display: grid; gap: 14px; }
-.adm-promo-screen { position: relative; overflow: hidden; border-radius: 14px; background: #0f2557; box-shadow: 0 24px 50px -30px rgba(9, 24, 54, .6); cursor: pointer; }
+.adm-promo-player { display: grid; gap: 14px; width: min(100%, 640px); margin-inline: auto; }
+.adm-head:has(+ .adm-promo-player) { justify-content: center; text-align: center; }
+.adm-head:has(+ .adm-promo-player) > div { max-width: 680px; }
+.adm-head:has(+ .adm-promo-player) p { max-width: 680px; margin-inline: auto; }
+.adm-promo-screen { position: relative; overflow: hidden; border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent); border-radius: 18px; background: #0f2557; box-shadow: 0 30px 75px -42px rgba(9, 24, 54, .72), 0 0 0 8px color-mix(in srgb, var(--ink) 3%, transparent); cursor: pointer; }
 .adm-promo-big-play { position: absolute; left: 50%; top: 50%; display: grid; place-items: center; width: 84px; height: 84px; border-radius: 50%; color: #0f2557; background: rgba(255, 255, 255, .94); box-shadow: 0 14px 30px rgba(9, 24, 54, .35); transform: translate(-50%, -50%); pointer-events: none; }
 .adm-promo-big-play svg { margin-left: 5px; }
 .adm-promo-controls { display: flex; align-items: center; gap: 12px; }

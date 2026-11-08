@@ -38,6 +38,33 @@ test('every screen the video shows was captured', () => {
   for (const name of new Set([...stage.matchAll(/(?<![\w-])shots(?:\.([a-z]+)|\['([a-z0-9-]+)'\])/g)].map((match) => match[1] || match[2]))) assert.ok(shots[name], `снимок ${name} есть в promo-shots.json`)
 })
 
+test('the joke ad stays centered at half-size with a cinematic 3D treatment', () => {
+  const stage = readFileSync(new URL('./admin/PromoStage.jsx', import.meta.url), 'utf8')
+  assert.match(stage, /left: 320, top: 180, width: 640, height: 360/)
+  assert.match(stage, /perspective\(1400px\) rotateY/)
+  assert.match(stage, /rotateY\(\$\{rotate\}deg\) scale\(\$\{scale\}\)/)
+})
+
+test('the full-length no-narration cut is 2:25, with music and sound-effect cues', () => {
+  const timeline = JSON.parse(readFileSync(new URL('./admin/promo-longform-timeline.json', import.meta.url), 'utf8'))
+  assert.equal(timeline.duration, 145)
+  assert.equal(timeline.chapters[0].start, 0)
+  assert.equal(timeline.chapters.at(-1).end, timeline.duration)
+  for (const [index, chapter] of timeline.chapters.entries()) {
+    assert.ok(chapter.end > chapter.start, chapter.id)
+    if (index) assert.equal(chapter.start, timeline.chapters[index - 1].end, `${chapter.id}: no gap in picture`)
+  }
+  assert.ok(timeline.effects.length >= 8)
+  const ad = timeline.chapters.find((chapter) => chapter.id === 'ad')
+  assert.equal(ad.start, 69)
+  const renderer = readFileSync(new URL('../scripts/render-promo-longform.py', import.meta.url), 'utf8')
+  assert.match(renderer, /'logos-promo-long\.mp4'/)
+  assert.match(renderer, /'-map', '0:v', '-map', '1:a'/, 'music/SFX are the only audio track')
+  for (const file of ['music-longform.mp3', 'logos-promo-long-video.mp4', 'logos-promo-long.mp4', 'poster-longform.jpg']) {
+    assert.ok(existsSync(new URL(`../public/promo/${file}`, import.meta.url)), file)
+  }
+})
+
 test('the voice-over guide lists every phrase file', () => {
   const guide = readFileSync(new URL('../promo-voice/README.md', import.meta.url), 'utf8')
   PROMO_LINES.forEach((line, index) => assert.ok(guide.includes(`${String(index + 1).padStart(2, '0')}-${line.id}.`), line.id))
