@@ -1,14 +1,16 @@
 import { useSyncExternalStore } from 'react'
 import { storageGet, storageSet } from './storage.js'
 
-// Тема оформления: светлая, тёмная или «Единство» (праздничная, ко Дню
-// народного единства, стили в src/unity.css). Выбор лежит в localStorage
+// Тема оформления: светлая, тёмная, «Пикми» (розовая, с цветами, стили в
+// src/pickme.css), Motion (тестовая: светлый цифровой продукт с чёрными
+// акцентами и движением, src/motion-theme.css) или «Единство» (праздничная, ко
+// Дню народного единства, src/unity.css). Выбор лежит в localStorage
 // (ключ site-theme). Пока человек не выбирал, сайт светлый.
-// Для проверки: любая страница с ?theme=unity (или light, dark) ставит тему.
+// Для проверки: любая страница с ?theme=pickme (или light, dark, motion, unity) ставит тему.
 
-export const THEMES = ['light', 'dark', 'unity']
+export const THEMES = ['light', 'dark', 'pickme', 'motion', 'unity']
 export const THEME_KEY = 'site-theme'
-const META_COLORS = { light: '#2f5fe8', dark: '#11131b', unity: '#0b2a6b' }
+const META_COLORS = { light: '#2f5fe8', dark: '#11131b', pickme: '#ffd9e8', motion: '#f4f4f1', unity: '#0b2a6b' }
 
 export function resolveTheme(stored) {
   return THEMES.includes(stored) ? stored : 'light'
@@ -42,7 +44,7 @@ export function setTheme(next) {
   listeners.forEach((listener) => listener())
 }
 
-// Кнопка в шапке перебирает темы по кругу: светлая → тёмная → «Единство».
+// Кнопка в шапке перебирает темы по кругу: светлая → тёмная → «Пикми» → Motion → «Единство».
 export function nextTheme(theme) {
   return THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length]
 }

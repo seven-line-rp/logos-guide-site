@@ -10,6 +10,8 @@ import { useSchedule } from '../components/NextLesson.jsx'
 import HomeDashboard from '../components/HomeDashboard.jsx'
 import { UnityBanner, UnityChip, UnityExtras } from '../components/Unity.jsx'
 import UnityKremlin from '../components/UnityKremlin.jsx'
+import { PickmeChip, PickmeGarden, PickmeNote } from '../components/Pickme.jsx'
+import { MotionChip, MotionStage, MotionTicker, MotionWords } from '../components/MotionTheme.jsx'
 import { fireConfetti, isUnityEasterEgg } from '../unity-fx.js'
 import { Reveal } from '../components/Primitives.jsx'
 import VoiceSearchButton from '../components/VoiceSearchButton.jsx'
@@ -93,7 +95,12 @@ function HeroCaption() {
 
 export default function HomePage() {
   const scene3d = useScene3d()
-  const unity = useTheme() === 'unity'
+  const theme = useTheme()
+  const unity = theme === 'unity'
+  const pickme = theme === 'pickme'
+  const motion = theme === 'motion'
+  // У тем со своей сценой на главном экране 3D-сцены и подписи к ней нет.
+  const plainHero = !unity && !pickme && !motion
   // Кто зашёл впервые, сначала видит, что умеет путеводитель: «Мой день» у него пока пустой.
   // Кто уже добавил пары или места, сначала видит свой день, указатель — ниже.
   const lessons = useSchedule()
@@ -101,12 +108,15 @@ export default function HomePage() {
   const recent = useRecentRoutes()
   const newcomer = !lessons.length && !favorites.length && !recent.length
   return <>
-    <section className={`home-hero hero-mesh home-hero-usual home-hero-scene${unity ? ' home-hero-unity' : ''}`} id="top">
-      {unity ? <><Suspense fallback={null}><UnitySky /><UnityFlag /></Suspense><UnityKremlin /></> : scene3d && <Suspense fallback={null}><HeroScene /></Suspense>}
+    <section className={`home-hero hero-mesh home-hero-usual home-hero-scene${unity ? ' home-hero-unity' : ''}${pickme ? ' home-hero-pickme' : ''}${motion ? ' home-hero-motion' : ''}`} id="top">
+      {unity ? <><Suspense fallback={null}><UnitySky /><UnityFlag /></Suspense><UnityKremlin /></> : pickme ? <PickmeGarden /> : motion ? <MotionStage /> : scene3d && <Suspense fallback={null}><HeroScene /></Suspense>}
       <div className="container home-hero-inner">
         <div className="home-hero-copy">
           <UnityChip />
-          <h1>Где найти кабинет</h1>
+          <PickmeChip />
+          <MotionChip />
+          <h1>{motion ? <MotionWords text="Где найти кабинет" /> : 'Где найти кабинет'}</h1>
+          <PickmeNote />
           <p>Введите номер, название или фамилию преподавателя. Кабинет откроется на карте, оттуда можно построить маршрут.</p>
           <div className="home-search-group">
             <label className="home-search-label" htmlFor="home-room-search">Поиск по колледжу</label>
@@ -117,9 +127,11 @@ export default function HomePage() {
             <Link className="home-plain-link" to="/route" aria-label="Построить маршрут"><span className="home-route-long">Построить маршрут</span><span className="home-route-short">Маршрут</span><ArrowUpRight size={16} /></Link>
           </div>
         </div>
-        {!unity && <HeroCaption />}
+        {plainHero && <HeroCaption />}
       </div>
     </section>
+
+    <MotionTicker />
 
     <UnityBanner />
     <UnityExtras />

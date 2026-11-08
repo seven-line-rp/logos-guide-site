@@ -266,3 +266,10 @@
 }
 /* Старое правило тёмной темы для кнопки меню специфичнее — перекрываем. */
 :root[data-theme='dark'] .hd .hd-burger.is-open { border-color: transparent; color: var(--bg); background: var(--ink); }
+
+/* Пять тем не помещаются в одну строку переключателя: подпись сверху,
+   кнопки переносятся сеткой. */
+.hd-menu-row-theme { flex-direction: column; align-items: stretch; }
+.hd-seg.hd-seg-themes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.hd-seg-themes button { justify-content: center; padding: 0 8px; }
+.hd-seg-themes .nav-badge { margin-left: 2px; }

@@ -41,8 +41,13 @@ self.addEventListener('fetch', (event) => {
   if (url.pathname.startsWith('/promo/')) return
 
   // Страницы приложения: сначала сеть (свежая версия), без сети — сохранённая оболочка.
+  // Если хостинг по адресу раздела ответил ошибкой (404 вместо index.html — так
+  // бывало с /map, и иконка сайта на экране «Домой» iPhone не открывалась),
+  // тоже отдаём сохранённую оболочку: нужный раздел откроет React Router.
   if (request.mode === 'navigate') {
-    event.respondWith(fromNetwork(request, '/index.html').catch(async () => (await caches.match('/index.html')) || Response.error()))
+    event.respondWith(fromNetwork(request, '/index.html')
+      .then(async (response) => response.ok ? response : (await caches.match('/index.html')) || response)
+      .catch(async () => (await caches.match('/index.html')) || Response.error()))
     return
   }
 

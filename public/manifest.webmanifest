@@ -3,7 +3,7 @@
   "name": "ЛОГОС:Путеводитель",
   "short_name": "ЛОГОС",
   "description": "Карта этажей, кабинеты и маршруты по колледжу «Логос»",
-  "start_url": "/map",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "any",
