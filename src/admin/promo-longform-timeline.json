@@ -1,0 +1,29 @@
+{
+  "duration": 145,
+  "chapters": [
+    { "id": "hook", "start": 0, "end": 10, "title": "Первая пара. Новый корпус.", "copy": "А куда идти?", "shot": null, "kind": "opening" },
+    { "id": "brand", "start": 10, "end": 20, "title": "ЛОГОС Путеводитель", "copy": "Карта колледжа — в вашем телефоне", "shot": "home", "kind": "brand" },
+    { "id": "map", "start": 20, "end": 32, "title": "Два этажа. 47 помещений.", "copy": "Понятная карта корпуса помогает сориентироваться", "shot": "map", "kind": "map" },
+    { "id": "search", "start": 32, "end": 44, "title": "Найдите нужный кабинет", "copy": "По номеру, названию или фамилии преподавателя", "shot": "type-3", "kind": "search" },
+    { "id": "route", "start": 44, "end": 57, "title": "Маршрут — шаг за шагом", "copy": "От входа или от любой двери · повороты голосом", "shot": "route-1", "kind": "route" },
+    { "id": "floors", "start": 57, "end": 69, "title": "На другой этаж? Легко.", "copy": "Лифт и три лестницы — путь выбирается за вас", "shot": "route-3", "kind": "floors" },
+    { "id": "ad", "start": 69, "end": 77, "title": "Mr.Брекин VPN", "copy": "Обходит ваши пары стороной", "shot": null, "kind": "ad" },
+    { "id": "schedule", "start": 77, "end": 90, "title": "Ваш день — на главной", "copy": "Добавьте своё расписание — и сразу будет понятно, куда идти дальше", "shot": "phone-day", "kind": "phone" },
+    { "id": "here", "start": 90, "end": 102, "title": "Начните прямо у двери", "copy": "Сканируйте табличку «Вы здесь» — и стройте маршрут", "shot": "phone-here", "kind": "qr" },
+    { "id": "teachers", "start": 102, "end": 114, "title": "Преподаватели и сотрудники", "copy": "Найдите фамилию и посмотрите, где находится нужный кабинет", "shot": "home", "kind": "directory" },
+    { "id": "offline", "start": 114, "end": 128, "title": "Нужное — всегда под рукой", "copy": "Без регистрации · личные данные в браузере · карта работает офлайн после первого открытия", "shot": "map", "kind": "offline" },
+    { "id": "outro", "start": 128, "end": 145, "title": "ЛОГОС Путеводитель", "copy": "Карта. Маршрут. Ваш учебный день.\nlogos-guide.ru", "shot": null, "kind": "outro" }
+  ],
+  "effects": [
+    { "id": "cinematic-hit", "at": 0.18 },
+    { "id": "map-reveal", "at": 20.1 },
+    { "id": "search-tick", "at": 36.5 },
+    { "id": "route-pulse", "at": 48.2 },
+    { "id": "lift-swoosh", "at": 59.4 },
+    { "id": "advert-jingle", "at": 69.1 },
+    { "id": "schedule-ding", "at": 79.3 },
+    { "id": "qr-scan", "at": 93.2 },
+    { "id": "offline-shield", "at": 117.1 },
+    { "id": "logo-impact", "at": 136.2 }
+  ]
+}

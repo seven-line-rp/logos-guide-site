@@ -95,7 +95,8 @@ function Screen({ layers, cam, viewW, viewH }) {
 }
 
 function Browser({ url, children, enter = 1 }) {
-  return <div style={{ position: 'absolute', left: WIN.x, top: WIN.y + (1 - enter) * 50, width: WIN.w, opacity: enter, borderRadius: 14, overflow: 'hidden', background: '#fff', boxShadow: '0 40px 90px -40px rgba(9,24,54,.55), 0 0 0 1px rgba(15,37,87,.08)' }}>
+  const settle = easeInOut(enter)
+  return <div style={{ position: 'absolute', left: WIN.x, top: WIN.y + (1 - enter) * 50, width: WIN.w, opacity: enter, borderRadius: 14, overflow: 'hidden', background: '#fff', boxShadow: '0 40px 90px -40px rgba(9,24,54,.55), 0 0 0 1px rgba(15,37,87,.08)', transform: `perspective(1500px) rotateX(${(1 - settle) * 5}deg) rotateY(${(1 - settle) * -7}deg) scale(${.96 + .04 * settle})`, transformOrigin: 'center center' }}>
     <div style={{ height: WIN.bar, display: 'flex', alignItems: 'center', gap: 8, padding: '0 14px', background: '#eef2f8', borderBottom: '1px solid #dfe5ef' }}>
       {['#ff6058', '#ffbd2e', '#28c941'].map((color) => <i key={color} style={{ width: 11, height: 11, borderRadius: '50%', background: color }} />)}
       <div style={{ marginLeft: 14, flex: 1, maxWidth: 460, height: 24, display: 'flex', alignItems: 'center', gap: 6, padding: '0 12px', borderRadius: 7, background: '#fff', color: MUTED, fontSize: 13 }}>🔒 <span style={{ color: INK }}>{url}</span></div>
@@ -192,7 +193,7 @@ function PhoneShot({ shot, highlight, glow = 0, x, y, enter = 1 }) {
   const viewW = 256
   const viewH = Math.round(viewW * shot.h / shot.w)
   const cam = cameraFor(shot, null, 1, viewW, viewH)
-  return <div style={{ position: 'absolute', left: x, top: y + (1 - enter) * 60, width: viewW + 18, padding: 9, borderRadius: 40, background: '#0d1830', boxShadow: '0 40px 80px -34px rgba(9,24,54,.6)', opacity: enter }}>
+  return <div style={{ position: 'absolute', left: x, top: y + (1 - enter) * 60, width: viewW + 18, padding: 9, borderRadius: 40, background: 'linear-gradient(145deg, #334362, #0d1830 38%)', boxShadow: '0 40px 80px -34px rgba(9,24,54,.6), inset 0 1px rgba(255,255,255,.24)', opacity: enter, transform: `perspective(900px) rotateY(-8deg) rotateX(2deg) translateZ(24px) scale(${.96 + .04 * enter})`, transformOrigin: 'center center' }}>
     <div style={{ position: 'relative', borderRadius: 31, overflow: 'hidden' }}>
       <Screen layers={[{ shot, opacity: 1 }]} cam={cam} viewW={viewW} viewH={viewH} />
       {highlight && <span style={{ position: 'absolute', left: highlight.x * cam.k - 4, top: highlight.y * cam.k - 4, width: highlight.w * cam.k + 8, height: highlight.h * cam.k + 8, borderRadius: 16, boxShadow: `0 0 0 3px ${GOLD}, 0 0 24px 4px rgba(255,210,103,.55)`, opacity: glow }} />}
@@ -250,7 +251,15 @@ function AdScene({ local }) {
   const noise = local < .35 ? 1 : 0
   const product = appear(local, 1.05, .45)
   const wobble = Math.sin(local * 7) * 4 * product
-  return <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', background: `radial-gradient(circle at 50% 42%, #6a1fb5 0%, ${AD_DEEP} 70%)` }}>
+  const cardEnter = easeInOut(seg(local, .12, .72))
+  const tilt = (1 - cardEnter) * 8 + Math.sin(local * 1.4) * .8
+  return <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', display: 'grid', placeItems: 'center', background: 'radial-gradient(ellipse at 50% 48%, #273b83 0%, #101b42 58%, #080d20 100%)' }}>
+    {/* Мягкие световые кольца дают глубину, но не спорят с роликом. */}
+    <div aria-hidden="true" style={{ position: 'absolute', width: 760, height: 500, border: '1px solid rgba(143,166,255,.16)', borderRadius: '50%', transform: `rotateX(68deg) rotateZ(${local * 3}deg)`, boxShadow: '0 0 80px rgba(81,104,255,.12)' }} />
+    <div aria-hidden="true" style={{ position: 'absolute', width: 600, height: 390, border: '1px solid rgba(255,210,103,.12)', borderRadius: '50%', transform: `rotateX(68deg) rotateZ(${-local * 4}deg)` }} />
+    {/* Вставка «Реклама» — намеренно только половина кадра, как отдельный ролик в фильме. */}
+    <div style={{ position: 'absolute', left: 320, top: 180, width: 640, height: 360, overflow: 'hidden', border: '1px solid rgba(255,255,255,.42)', borderRadius: 20, background: AD_DEEP, boxShadow: '0 36px 90px rgba(0,0,0,.55), 0 0 0 8px rgba(255,255,255,.035), inset 0 1px rgba(255,255,255,.65)', transform: `perspective(1400px) rotateY(${tilt}deg) rotateX(${-tilt * .22}deg) scale(${.88 + .12 * cardEnter})`, transformOrigin: 'center center' }}>
+      <div style={{ position: 'absolute', left: 0, top: 0, width: STAGE_W, height: STAGE_H, transform: 'scale(.5)', transformOrigin: 'top left', overflow: 'hidden', background: `radial-gradient(circle at 50% 42%, #6a1fb5 0%, ${AD_DEEP} 70%)` }}>
     {/* Лучи за щитом, медленно крутятся. */}
     <svg width={STAGE_W} height={STAGE_H} style={{ position: 'absolute', inset: 0, opacity: .35 * product }} aria-hidden="true">
       <g transform={`translate(${SHIELD.x} ${SHIELD.y}) rotate(${local * 18})`}>
@@ -290,6 +299,10 @@ function AdScene({ local }) {
     {noise > 0 && <svg width={STAGE_W} height={STAGE_H} style={{ position: 'absolute', inset: 0 }} aria-hidden="true">
       {Array.from({ length: 26 }, (_, i) => { const r = Math.sin(i * 91.7 + Math.floor(local * 30) * 13.1) * 43758.5453; const v = r - Math.floor(r); return <rect key={i} x="0" y={i * 28} width={STAGE_W} height={6 + v * 22} fill={v > .5 ? '#fff' : '#000'} opacity={.25 + v * .5} transform={`translate(${(v - .5) * 80} 0)`} /> })}
     </svg>}
+      </div>
+      <div aria-hidden="true" style={{ position: 'absolute', inset: '0 0 auto', height: 2, background: 'linear-gradient(90deg, transparent, rgba(255,255,255,.8), transparent)', opacity: .55 }} />
+    </div>
+    <div aria-hidden="true" style={{ position: 'absolute', left: 0, right: 0, bottom: 42, color: 'rgba(255,255,255,.6)', fontSize: 16, fontWeight: 650, letterSpacing: '.18em', textAlign: 'center', opacity: appear(local, 1.2, .5) }}>ВСТАВКА · РЕКЛАМНАЯ ПАУЗА</div>
   </div>
 }
 
@@ -352,9 +365,13 @@ export default function PromoStage({ t }) {
   return <div className="promo-stage" style={{ position: 'relative', width: STAGE_W, height: STAGE_H, overflow: 'hidden', background: PALE, fontFamily: "'Onest Variable', Onest, system-ui, sans-serif" }}>
     {visible.map((scene) => {
       const View = SCENE_VIEWS[scene.id]
-      // Мягкая смена сцен: новая проявляется поверх старой.
-      const opacity = scene.start === 0 ? 1 : seg(t, scene.start, scene.start + fade)
-      return <div key={scene.id} style={{ position: 'absolute', inset: 0, opacity }}><View t={t} local={t - scene.start} /></div>
+      // Сцены входят как планы фильма: лёгкий поворот в перспективе и выход из глубины.
+      const enter = scene.start === 0 ? 1 : easeInOut(seg(t, scene.start, scene.start + fade))
+      const leave = scene.end === timeline.duration ? 1 : easeInOut(1 - seg(t, scene.end - fade, scene.end))
+      const opacity = enter * leave
+      const rotate = (1 - enter) * 7 - (1 - leave) * 5
+      const scale = .97 + .03 * Math.max(enter, leave)
+      return <div key={scene.id} style={{ position: 'absolute', inset: 0, opacity, transform: `perspective(1600px) rotateY(${rotate}deg) scale(${scale})`, transformOrigin: 'center center', backfaceVisibility: 'hidden' }}><View t={t} local={t - scene.start} /></div>
     })}
     <div aria-hidden="true" style={{ position: 'absolute', left: 36, top: 30, opacity: t > 1 && t < SCENES.at(-1).start && !inAd(t) ? .9 : 0 }}><Compass size={40} /></div>
   </div>
