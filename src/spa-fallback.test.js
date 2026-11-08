@@ -145,3 +145,17 @@ test('nginx snippet keeps deep links on index.html', () => {
   assert.match(nginx, /try_files \$uri \/_pages\$uri\.html \/index\.html;/)
   assert.match(nginx, /error_page 404 \/404\.html;/)
 })
+
+// Иконка сайта на экране «Домой» (iPhone, Android) открывает start_url из манифеста.
+// Это должен быть корень сайта: адрес раздела (/map) на iPhone не открывался.
+test('the home-screen app starts at the site root', () => {
+  const manifest = JSON.parse(read('../public/manifest.webmanifest'))
+  assert.equal(manifest.start_url, '/')
+  assert.equal(manifest.scope, '/')
+  assert.equal(manifest.id, '/')
+})
+
+test('the service worker shows the saved app shell when the host answers a page with an error', () => {
+  const sw = read('../scripts/sw-template.js')
+  assert.match(sw, /response\.ok \? response : \(await caches\.match\('\/index\.html'\)\)/)
+})

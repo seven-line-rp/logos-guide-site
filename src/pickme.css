@@ -1,0 +1,267 @@
+/* Тема «Пикми» — розовая, нежная, с цветами: <html data-theme="pickme">, см. src/theme.js.
+   Палитра: светло-розовый фон, ярко-розовый акцент (#ff4f9a), сливовый текст,
+   сиреневый и персиковый как второстепенные. Скругления крупнее, тени мягкие
+   розовые. Цветы, лепестки и сердечки — src/components/Pickme.jsx.
+   Подключается в самом конце (src/main.jsx), поэтому перекрывает общие правила. */
+
+:root[data-theme='pickme'] {
+  color-scheme: light;
+  --pm-pink: #ff4f9a;
+  --pm-pink-deep: #e2347f;
+  --pm-rose: #ff8fbf;
+  --pm-blush: #ffe4ef;
+  --pm-lilac: #c9a2ff;
+  --pm-peach: #ffc4a8;
+  --pm-plum: #5a1a3f;
+  --pm-hand: 'Caveat Variable', 'Segoe Print', 'Bradley Hand', cursive;
+  --pm-shadow: 0 14px 34px -14px rgba(226, 52, 127, .35);
+  --bg: #fff6fa;
+  --surface: #ffffff;
+  --surface-soft: #fff0f6;
+  --surface-raised: #ffffff;
+  --blue: #ff4f9a;
+  --blue-bright: #ff3d8f;
+  --blue-deep: #5a1a3f;
+  --blue-night: #5a1a3f;
+  --blue-pale: #ffd6e7;
+  --blue-soft: #fff0f6;
+  --accent-tint: rgba(255, 79, 154, .1);
+  --line: #f6d3e3;
+  --line-strong: #efb6cf;
+  --ink: #4a1736;
+  --muted: #8f5675;
+  --muted-2: #b07f99;
+  --action-bg: #ff4f9a;
+  --action-hover: #e2347f;
+  --glass: rgba(255, 246, 250, .82);
+  --glass-border: rgba(255, 214, 231, .9);
+  --map-bg: #fff8fb;
+  --map-door: #ff4f9a;
+  color: var(--ink);
+  background: var(--bg);
+}
+:root[data-theme='pickme'] body {
+  color: var(--ink);
+  background:
+    radial-gradient(900px 500px at 100% 0%, rgba(255, 196, 168, .18), transparent 60%),
+    radial-gradient(800px 600px at 0% 30%, rgba(201, 162, 255, .12), transparent 60%),
+    var(--bg);
+}
+:root[data-theme='pickme'] ::selection { color: #fff; background: var(--pm-pink); }
+:root[data-theme='pickme'] :is(button, a, input, select, textarea):focus-visible { outline-color: var(--pm-pink); }
+
+/* ---------- Шапка ---------- */
+:root[data-theme='pickme'] .hd.site-header { background: color-mix(in srgb, #fff6fa 88%, transparent); border-bottom-color: var(--line); }
+:root[data-theme='pickme'] .hd.site-header::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  z-index: 1;
+  height: 3px;
+  background: linear-gradient(90deg, var(--pm-rose), var(--pm-lilac), var(--pm-peach), var(--pm-rose));
+  pointer-events: none;
+}
+:root[data-theme='pickme'] .brand-copy strong { color: var(--pm-plum); }
+:root[data-theme='pickme'] .brand-copy small { color: var(--pm-pink); }
+:root[data-theme='pickme'] .brand-mark { filter: hue-rotate(110deg) saturate(1.3); }
+:root[data-theme='pickme'] .hd .desktop-nav { border-color: var(--line); background: #fff; }
+:root[data-theme='pickme'] .hd .nav-link:hover { color: var(--pm-pink); }
+:root[data-theme='pickme'] .hd .nav-link-active,
+:root[data-theme='pickme'] .hd .nav-link-active:hover { color: var(--pm-pink-deep); background: var(--pm-blush); }
+:root[data-theme='pickme'] .hd :is(.search-trigger, .theme-toggle, .hd-icon, .mobile-map-link) { border-color: var(--line); background: #fff; }
+:root[data-theme='pickme'] .hd .theme-toggle { color: var(--pm-pink); }
+:root[data-theme='pickme'] .hd-seg button[aria-pressed='true'] { color: #fff; background: var(--pm-pink); }
+:root[data-theme='pickme'] .hd-menu-tour { background: linear-gradient(135deg, var(--pm-rose), var(--pm-pink)); }
+:root[data-theme='pickme'] .nav-badge { color: var(--pm-pink-deep); border-color: var(--line-strong); background: var(--pm-blush); }
+
+/* ---------- Общие элементы: крупнее скругления, розовые тени ---------- */
+:root[data-theme='pickme'] :is(.button-primary, .route-submit, .cookie-primary) { border-radius: 999px; color: #fff; background: linear-gradient(135deg, var(--pm-rose), var(--pm-pink)); box-shadow: var(--pm-shadow); }
+:root[data-theme='pickme'] :is(.button-primary, .route-submit, .cookie-primary):hover { color: #fff; background: linear-gradient(135deg, var(--pm-pink), var(--pm-pink-deep)); }
+:root[data-theme='pickme'] :is(.quick-place-card, .room-card, .service-card, .directory-card, .dash-card, .home-dash-card, .cookie-banner, .room-detail-panel, .route-form-panel, .route-result-panel, .game-mode-card, .map-plan-panel) { border-color: var(--line); box-shadow: var(--pm-shadow); }
+:root[data-theme='pickme'] :is(.page-heading h1, .section-top h2, .guide-board-intro h2) { color: var(--pm-plum); }
+:root[data-theme='pickme'] :is(.page-heading h1, .section-top h2) em { color: var(--pm-pink); }
+:root[data-theme='pickme'] .section-top h2::after,
+:root[data-theme='pickme'] .guide-board-intro h2::after { content: ' ✿'; color: var(--pm-rose); font-weight: 500; }
+:root[data-theme='pickme'] :is(.eyebrow-dot, .section-label-dot) { background: var(--pm-pink); box-shadow: 0 0 0 4px var(--accent-tint); }
+:root[data-theme='pickme'] .text-link > span { border-color: var(--line-strong); color: var(--pm-pink); }
+
+/* ---------- Главный экран: розовое утро и букет ---------- */
+:root[data-theme='pickme'] .home-hero.hero-mesh {
+  border-bottom: 1px solid var(--line);
+  background:
+    radial-gradient(60% 90% at 85% 30%, rgba(255, 255, 255, .85), transparent 70%),
+    radial-gradient(50% 70% at 0% 100%, rgba(201, 162, 255, .35), transparent 70%),
+    radial-gradient(40% 60% at 60% 0%, rgba(255, 196, 168, .45), transparent 70%),
+    linear-gradient(160deg, #ffd9e8 0%, #ffe9f2 48%, #f6e6ff 100%);
+}
+:root[data-theme='pickme'] .home-hero.hero-mesh::after { display: none; }
+:root[data-theme='pickme'] .home-hero h1 {
+  color: var(--pm-plum);
+  background: linear-gradient(100deg, #b51f66 0%, #ff4f9a 45%, #b07cff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -.045em;
+  padding-bottom: .06em;
+}
+:root[data-theme='pickme'] .home-hero-copy > p { color: #7a3c5f; }
+:root[data-theme='pickme'] .home-search-label { color: var(--pm-plum); }
+:root[data-theme='pickme'] .home-search { border-color: #fff; border-radius: 999px; padding-left: 22px; box-shadow: 0 18px 40px -16px rgba(226, 52, 127, .45), 0 0 0 6px rgba(255, 255, 255, .55); }
+:root[data-theme='pickme'] .home-search:focus-within { outline-color: var(--pm-pink); }
+:root[data-theme='pickme'] .home-search input { color: var(--ink); }
+:root[data-theme='pickme'] .home-search input::placeholder { color: #a8738f; }
+:root[data-theme='pickme'] .home-search > button[type=submit] { border-radius: 999px; background: linear-gradient(135deg, var(--pm-rose), var(--pm-pink)); }
+:root[data-theme='pickme'] :is(.home-map-cta, .home-map-cta:hover) { border-radius: 999px; border-color: transparent; color: #fff; background: linear-gradient(135deg, var(--pm-rose), var(--pm-pink)); box-shadow: var(--pm-shadow); }
+:root[data-theme='pickme'] .home-map-cta:hover { filter: brightness(1.05); }
+:root[data-theme='pickme'] .home-plain-link { border-radius: 999px; border-color: var(--line-strong); color: var(--pm-plum); background: rgba(255, 255, 255, .7); }
+:root[data-theme='pickme'] .home-plain-link:hover { color: var(--pm-pink-deep); border-color: var(--pm-rose); background: #fff; }
+:root[data-theme='pickme'] .home-plain-link svg { color: var(--pm-pink); }
+
+.pm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 7px 14px;
+  border: 1px solid rgba(255, 255, 255, .9);
+  border-radius: 999px;
+  color: var(--pm-pink-deep, #e2347f);
+  background: rgba(255, 255, 255, .7);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .02em;
+  box-shadow: 0 6px 18px -10px rgba(226, 52, 127, .5);
+}
+.pm-chip span { color: var(--pm-rose, #ff8fbf); }
+.pm-note {
+  display: inline-block;
+  margin-top: 4px;
+  color: var(--pm-pink, #ff4f9a);
+  font-family: var(--pm-hand);
+  font-size: clamp(26px, 2.6vw, 34px);
+  font-weight: 600;
+  line-height: 1;
+  transform: rotate(-4deg);
+  transform-origin: left center;
+}
+
+/* Букет справа и лепестки по всему экрану. */
+.pm-garden { position: absolute; z-index: 1; inset: 0; overflow: hidden; pointer-events: none; }
+.pm-bouquet {
+  position: absolute;
+  top: 50%;
+  right: max(24px, calc((100vw - var(--container)) / 2 + 10px));
+  width: min(520px, 42vw);
+  aspect-ratio: 1;
+  transform: translateY(-46%);
+}
+.pm-bouquet::before {
+  content: '';
+  position: absolute;
+  inset: 8%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, .9), rgba(255, 255, 255, 0) 68%);
+}
+.pm-flower { position: absolute; filter: drop-shadow(0 12px 18px rgba(226, 52, 127, .22)); animation: pm-sway 6s ease-in-out infinite; }
+.pm-f1 { left: 26%; top: 22%; width: 44%; height: auto; animation-duration: 7s; }
+.pm-f2 { left: 6%; top: 44%; width: 29%; height: auto; animation-delay: -1.5s; }
+.pm-f3 { left: 64%; top: 14%; width: 24%; height: auto; animation-delay: -3s; }
+.pm-f4 { left: 58%; top: 52%; width: 28%; height: auto; animation-delay: -2.2s; }
+.pm-f5 { left: 14%; top: 10%; width: 18%; height: auto; animation-delay: -4s; }
+.pm-f6 { left: 40%; top: 70%; width: 16%; height: auto; animation-delay: -.8s; }
+.pm-flower ellipse, .pm-flower path { transform-box: view-box; }
+.pm-leaf { position: absolute; left: var(--x); top: var(--y); width: 16%; height: auto; transform: rotate(var(--r)); opacity: .9; }
+.pm-sparkle { position: absolute; left: var(--x); top: var(--y); color: var(--pm-pink, #ff4f9a); font-size: 26px; animation: pm-twinkle 2.8s ease-in-out infinite; animation-delay: var(--d, 0s); }
+@keyframes pm-sway { 0%, 100% { transform: rotate(-4deg) translateY(0); } 50% { transform: rotate(5deg) translateY(-8px); } }
+@keyframes pm-twinkle { 0%, 100% { opacity: .35; transform: scale(.8); } 50% { opacity: 1; transform: scale(1.15); } }
+
+.pm-petals i {
+  position: absolute;
+  top: -24px;
+  left: var(--left);
+  width: var(--size);
+  height: calc(var(--size) * .8);
+  border-radius: 80% 0 80% 0;
+  background: var(--c);
+  opacity: .85;
+  animation: pm-fall var(--dur) linear infinite;
+  animation-delay: var(--delay);
+}
+@keyframes pm-fall {
+  0% { transform: translate3d(0, -20px, 0) rotate(0deg); }
+  50% { transform: translate3d(var(--sway), 50vh, 0) rotate(200deg); }
+  100% { transform: translate3d(calc(var(--sway) * -.4), 110vh, 0) rotate(420deg); opacity: 0; }
+}
+
+/* Сердечки от нажатия. */
+.pm-hearts { position: fixed; z-index: 9999; inset: 0; overflow: hidden; pointer-events: none; }
+.pm-heart {
+  position: absolute;
+  font-size: 18px;
+  line-height: 1;
+  transform: translate(-50%, -50%);
+  animation: pm-pop .9s cubic-bezier(.2, .8, .3, 1) forwards;
+}
+@keyframes pm-pop {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.3); }
+  20% { opacity: 1; }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.1) rotate(20deg); }
+}
+
+/* ---------- Указатель «Что есть в путеводителе» ---------- */
+:root[data-theme='pickme'] .guide-board {
+  --gb-bg: linear-gradient(150deg, #ff7fb5 0%, #ff4f9a 55%, #c47bff 100%);
+  --gb-line: rgba(255, 255, 255, .28);
+  --gb-text: #ffffff;
+  --gb-muted: rgba(255, 255, 255, .86);
+  --gb-plate-bg: #ffffff;
+  --gb-plate-ink: #e2347f;
+  --gb-hover: rgba(255, 255, 255, .12);
+  --gb-arrow: #fff3a8;
+}
+:root[data-theme='pickme'] .guide-board-sign { border-radius: 28px; box-shadow: 0 24px 50px -24px rgba(226, 52, 127, .6); }
+:root[data-theme='pickme'] .guide-board-plate { border-radius: 14px; }
+:root[data-theme='pickme'] .guide-board-art { filter: hue-rotate(95deg) saturate(.9); }
+
+/* ---------- Карточки «Часто ищут» и «Мой день» ---------- */
+:root[data-theme='pickme'] .quick-place-card { border-radius: 26px; }
+:root[data-theme='pickme'] .quick-place-num { color: var(--pm-pink-deep); background: rgba(255, 255, 255, .92); }
+:root[data-theme='pickme'] .quick-place-arrow { color: #fff; background: var(--pm-pink); }
+:root[data-theme='pickme'] .quick-place-media::after { background: linear-gradient(180deg, rgba(90, 26, 63, 0) 35%, rgba(90, 26, 63, .72) 100%); }
+
+/* ---------- Карта ---------- */
+:root[data-theme='pickme'] :is(.floor-map-viewport, .floor-map-stage) { background: var(--map-bg); }
+:root[data-theme='pickme'] .floor-map-art svg > :is(rect, path)[fill='#DFE6FF'] { fill: #ffe1ee; }
+:root[data-theme='pickme'] .floor-map-art svg > :is(rect, path)[fill='#D9D9D9'] { fill: #f3dbe6; }
+:root[data-theme='pickme'] .floor-map-art svg > :is(rect, path)[fill='#878DA2'] { fill: #d8a9c0; }
+:root[data-theme='pickme'] .floor-map-art svg > :is(rect, path)[stroke='#ACAEB3'] { stroke: #e8b3cb; }
+:root[data-theme='pickme'] .plan-room-shape { stroke: #e8b3cb; }
+:root[data-theme='pickme'] :is(.plan-room:hover, .plan-room:focus-visible) .plan-room-shape { fill: rgba(255, 79, 154, .14); stroke: var(--pm-pink); }
+:root[data-theme='pickme'] .plan-room-selected .plan-room-shape { fill: rgba(255, 79, 154, .24); stroke: var(--pm-pink-deep); }
+:root[data-theme='pickme'] .mp { --mp-you: #ff4f9a; --mp-pin: #b07cff; }
+:root[data-theme='pickme'] :is(.mp-floors button.is-on, .mp-locate) { border-radius: 999px; box-shadow: var(--pm-shadow); }
+:root[data-theme='pickme'] :is(.map-filter-active, .directory-chip.directory-chip-active) { border-color: var(--pm-pink); color: #fff; background: var(--pm-pink); }
+
+/* ---------- Подвал ---------- */
+:root[data-theme='pickme'] .site-footer { border-top-color: var(--line); background: linear-gradient(180deg, #fff 0%, #fff0f6 100%); }
+:root[data-theme='pickme'] .site-footer::after {
+  content: '✿ ♡ ✿';
+  display: block;
+  padding: 4px 0 18px;
+  color: var(--pm-rose);
+  font-size: 15px;
+  letter-spacing: .6em;
+  text-align: center;
+}
+:root[data-theme='pickme'] .footer-version { color: var(--pm-pink-deep); border-color: var(--line-strong); background: var(--pm-blush); }
+
+/* ---------- Телефоны ---------- */
+@media (max-width: 860px) {
+  .pm-bouquet { top: auto; bottom: -40px; right: -70px; width: 300px; transform: none; opacity: .55; }
+  .pm-petals i:nth-child(n + 9) { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pm-flower, .pm-sparkle, .pm-petals i { animation: none; }
+  .pm-petals { display: none; }
+}

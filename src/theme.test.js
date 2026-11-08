@@ -5,8 +5,10 @@ import { holidayName } from './holidays.js'
 import { daysToUnity } from './festive.js'
 import { bellsFor } from './schedule.js'
 
-test('the site has light, dark and unity themes, and falls back to light', () => {
-  assert.deepEqual(THEMES, ['light', 'dark', 'unity'])
+test('the site has light, dark, pickme, motion and unity themes, and falls back to light', () => {
+  assert.deepEqual(THEMES, ['light', 'dark', 'pickme', 'motion', 'unity'])
+  assert.equal(resolveTheme('pickme'), 'pickme')
+  assert.equal(resolveTheme('motion'), 'motion')
   assert.equal(resolveTheme('dark'), 'dark')
   assert.equal(resolveTheme('light'), 'light')
   assert.equal(resolveTheme('unity'), 'unity')
@@ -14,9 +16,11 @@ test('the site has light, dark and unity themes, and falls back to light', () =>
   assert.equal(resolveTheme('sepia'), 'light')
 })
 
-test('the theme button cycles through all three themes', () => {
+test('the theme button cycles through all five themes', () => {
   assert.equal(nextTheme('light'), 'dark')
-  assert.equal(nextTheme('dark'), 'unity')
+  assert.equal(nextTheme('dark'), 'pickme')
+  assert.equal(nextTheme('pickme'), 'motion')
+  assert.equal(nextTheme('motion'), 'unity')
   assert.equal(nextTheme('unity'), 'light')
 })
 
