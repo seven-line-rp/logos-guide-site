@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { ArrowLeft, ArrowRight, Check, Footprints, MapPin, MoveDown, MoveUp, Pause, Volume2, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Check, Footprints, LocateFixed, MapPin, MoveDown, MoveUp, Pause, Volume2, X } from 'lucide-react'
 import RoomPhoto from './RoomPhoto.jsx'
 import { lockBodyScroll } from '../storage.js'
 
@@ -33,7 +33,7 @@ function useWakeLock() {
   }, [])
 }
 
-export default function WalkMode({ steps, index, onStep, onRepeat, onClose, onArrive, target, stop, children }) {
+export default function WalkMode({ steps, index, onStep, onRepeat, onClose, onArrive, target, stop, status = null, live = false, onLive, children }) {
   useWakeLock()
   const nextRef = useRef(null)
   // Пока открыт режим, остальная страница недоступна ни мышью, ни с клавиатуры, ни для экранного диктора.
@@ -68,13 +68,15 @@ export default function WalkMode({ steps, index, onStep, onRepeat, onClose, onAr
       <h2 className="walk-title">{step.title}</h2>
       {step.detail && step.detail !== `${step.floor} этаж` && <p className="walk-detail">{step.detail.replace(new RegExp(`\\. ${step.floor} этаж$`), '')}</p>}
       {photoRoom && <RoomPhoto room={photoRoom} className="walk-photo" sizes="(max-width: 680px) 92vw, 420px" />}
+      {status}
     </div>
 
     <div className="walk-map">{children}</div>
 
-    <div className="walk-controls">
+    <div className={`walk-controls ${onLive ? 'walk-controls-live' : ''}`}>
       <button type="button" className="walk-ctl" onClick={() => onStep(index - 1)} disabled={index === 0} aria-label="Предыдущий шаг"><ArrowLeft size={20} /></button>
       <button type="button" className="walk-ctl" onClick={onRepeat} aria-label="Повторить подсказку голосом"><Volume2 size={19} /></button>
+      {onLive && <button type="button" className={`walk-ctl ${live ? 'is-on' : ''}`} onClick={onLive} aria-pressed={live} aria-label={live ? 'Выключить ведение по GPS' : 'Вести по GPS: шаги листаются сами'} title="Вести по GPS"><LocateFixed size={19} /></button>}
       {last
         ? <button ref={nextRef} type="button" className="walk-next walk-next-done" onClick={onArrive}><Check size={20} /> Я на месте</button>
         : <button ref={nextRef} type="button" className="walk-next" onClick={() => onStep(index + 1)}>Дальше <ArrowRight size={20} /></button>}

@@ -46,8 +46,12 @@ import './finish.css'
 import './arrival.css'
 import './search-fields.css'
 import './map-page.css'
+// Общее выравнивание кнопок и новых блоков — для всех тем.
+import './align.css'
 // Тема «Пикми» — последней, чтобы перекрывать общие правила.
 import './pickme.css'
+// Тёмная тема задаётся окончательно здесь, поверх накопившихся слоёв.
+import './dark.css'
 import './interactions.js'
 import { applyMapContrast } from './map-contrast.js'
 import { applyTextSize, readTextSize } from './text-size.js'

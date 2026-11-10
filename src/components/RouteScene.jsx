@@ -5,7 +5,7 @@ import floorTwoPlan from '../../map2lower.svg?raw'
 import { rooms } from '../data.js'
 import { composePlanArt } from '../map-art.js'
 import { planSizes, roomOutline } from '../map-geometry.js'
-import { floorDoors, floorWalls } from '../hero-scene-model.js'
+import { doorsOnRoute, floorDoors, floorWalls, openWalls } from '../hero-scene-model.js'
 import { useLanguage } from '../i18n.js'
 import { isLitePerf } from '../perf.js'
 import { FOLLOW_ZOOM, TILT_3D, cameraTransform, clampCamera, fitCamera, flyDuration, flyFrame, headingYaw, panCamera, pathData, pinchCamera, pathHeading, projectPoint, zoomCamera } from '../route-scene-model.js'
@@ -35,7 +35,7 @@ function floorScene(floor) {
 const PERSPECTIVE = 1500
 const ORIGIN_Y = 0.4 // perspective-origin в route-scene.css
 
-export default function RouteScene({ floor, points = [], progress = null, following = false, mode = '3d', selectedId = '', targetId = '', transfer = null, notices = [], filterCategory = '', onRoomClick, onFollowChange }) {
+export default function RouteScene({ floor, points = [], progress = null, following = false, mode = '3d', selectedId = '', targetId = '', transfer = null, notices = [], filterCategory = '', live = null, onRoomClick, onFollowChange }) {
   const language = useLanguage()
   const size = planSizes[floor]
   const scene = floorScene(floor)
@@ -61,8 +61,10 @@ export default function RouteScene({ floor, points = [], progress = null, follow
   }, [])
 
   const index = progress === null ? null : Math.max(0, Math.min(points.length - 1, progress))
-  const active = index === null ? null : points[index]
-  const heading = index === null ? null : pathHeading(points, index)
+  // live — где человек на самом деле (GPS или Bluetooth): тогда метка стоит
+  // там, а не на вершине шага, и камера летит за ней.
+  const active = live?.point || (index === null ? null : points[index])
+  const heading = live?.point ? (Number.isFinite(live.heading) ? live.heading * 180 / Math.PI : pathHeading(points, live.segment ?? index ?? 0)) : index === null ? null : pathHeading(points, index)
 
   // Куда смотреть: за шагом маршрута или на весь маршрут этажа сразу.
   const autoCamera = useCallback((reference = 0) => {
@@ -75,6 +77,12 @@ export default function RouteScene({ floor, points = [], progress = null, follow
   }, [following, active, heading, mode, tilt, points, viewport, size])
 
   const pointsKey = points.map((point) => point.join(',')).join(';')
+  // Там, где идёт маршрут, в стенах оставляем проёмы, а створки дверей убираем:
+  // иначе в 3D линия выглядит так, будто проходит сквозь стену.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const walls = useMemo(() => openWalls(scene.walls, points), [scene, pointsKey])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const openDoors = useMemo(() => doorsOnRoute(scene.doors, points), [scene, pointsKey])
   useEffect(() => {
     setAnimated(true)
     setCamera((current) => autoCamera(current?.yaw ?? 0))
@@ -260,10 +268,11 @@ export default function RouteScene({ floor, points = [], progress = null, follow
         <circle className="rs-route-end" cx={end[0]} cy={end[1]} r="7" />
       </svg>}
       <div className="rs-walls" key={`walls-${floor}`}>
-        {scene.walls.map((wall, i) => <i key={i} className="rs-wall" style={{ left: wall.x, top: wall.y, width: wall.length, '--a': `${wall.angle}deg`, '--i': i % 40 }} />)}
-        {scene.doors.map((door) => <i key={door.id} className={`rs-door ${door.id === targetId ? 'is-target' : ''}`} style={{ left: door.x, top: door.y, width: door.width, '--a': `${door.angle}deg` }} />)}
+        {walls.map((wall, i) => <i key={`${wall.x}:${wall.y}:${wall.angle}:${wall.length}`} className="rs-wall" style={{ left: wall.x, top: wall.y, width: wall.length, '--a': `${wall.angle}deg`, '--i': i % 40 }} />)}
+        {scene.doors.filter((door) => door.id === targetId || !openDoors.has(door.id)).map((door) => <i key={door.id} className={`rs-door ${door.id === targetId ? 'is-target' : ''}`} style={{ left: door.x, top: door.y, width: door.width, '--a': `${door.angle}deg` }} />)}
       </div>
-      {active && <div className="rs-walker" style={{ transform: `translate3d(${active[0]}px, ${active[1]}px, 1.5px)` }}>
+      {live?.point && live.radius > 0 && <div className="rs-live-accuracy" style={{ width: live.radius * 2, height: live.radius * 2, transform: `translate3d(${live.point[0] - live.radius}px, ${live.point[1] - live.radius}px, .8px)` }} />}
+      {active && <div className={`rs-walker ${live?.point ? 'is-live' : ''}`} style={{ transform: `translate3d(${active[0]}px, ${active[1]}px, 1.5px)` }}>
         <span className="rs-walker-ring" />
         <span className="rs-walker-dot" style={{ transform: `rotate(${(heading ?? 0) + 90}deg)` }}><svg viewBox="-12 -12 24 24" aria-hidden="true"><path d="M0 -9 L7 7 L0 3.5 L-7 7 Z" /></svg></span>
       </div>}

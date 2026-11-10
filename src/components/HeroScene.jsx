@@ -6,7 +6,7 @@ import { buildRouteOptions } from '../map-routing.js'
 import { planSizes } from '../map-geometry.js'
 import { useLanguage } from '../i18n.js'
 import { isLitePerf } from '../perf.js'
-import { FLIGHT_SECONDS, FLOOR_GAP, HERO_ROUTES, WALL_HEIGHT, buildFlight, floorDoors, floorWalls, stairSteps, transferColumns } from '../hero-scene-model.js'
+import { FLIGHT_SECONDS, FLOOR_GAP, HERO_ROUTES, WALL_HEIGHT, buildFlight, doorsOnRoute, floorDoors, floorWalls, openWalls, stairSteps, transferColumns } from '../hero-scene-model.js'
 
 // Декорация первого экрана: корпус в 3D. Пол каждого этажа — настоящий план,
 // стены и двери подняты из той же геометрии, второй этаж висит над первым,
@@ -33,6 +33,12 @@ const routes = HERO_ROUTES.map((route) => {
     ...route,
     lower: pathOf(lower),
     upper: pathOf(upper),
+    // Стены с проёмами и без створок дверей там, где идёт этот маршрут.
+    floors: floors.map((item, index) => {
+      const points = index === 0 ? lower : upper
+      const open = doorsOnRoute(item.doors, points)
+      return { floor: item.floor, walls: openWalls(item.walls, points), doors: item.doors.filter((door) => !open.has(door.id)) }
+    }),
     flight: buildFlight(lower, upper, FLOOR_GAP, transfer),
     climb: lower.at(-1),
     target: upper.at(-1),
@@ -56,7 +62,7 @@ function Floor({ floor, walls, doors, path, lineRef, routeRef }) {
       <path className="hs-route-base" d={path} />
       <path className="hs-route-line" ref={lineRef} d={path} pathLength="1" />
     </svg>}
-    {walls.map((wall, index) => <i key={`w${index}`} className="hs-wall" style={{ left: wall.x, top: wall.y, width: wall.length, '--a': `${wall.angle}deg`, '--i': index }} />)}
+    {walls.map((wall, index) => <i key={`${wall.x}:${wall.y}:${wall.angle}:${wall.length}`} className="hs-wall" style={{ left: wall.x, top: wall.y, width: wall.length, '--a': `${wall.angle}deg`, '--i': index }} />)}
     {doors.map((door) => <i key={door.id} className="hs-door" style={{ left: door.x, top: door.y, width: door.width, '--a': `${door.angle}deg` }} />)}
   </div>
 }
@@ -205,7 +211,7 @@ export default function HeroScene() {
     return () => { cancelAnimationFrame(frame); window.removeEventListener('pointermove', onMove) }
   }, [])
 
-  const [floorOne, floorTwo] = floors
+  const [floorOne, floorTwo] = scene.floors
 
   return <div className="hero-scene" ref={rootRef} aria-hidden="true" style={{ '--wall-h': `${WALL_HEIGHT}px`, '--gap': `${FLOOR_GAP}px` }}>
     <div className="hs-parallax">

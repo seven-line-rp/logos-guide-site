@@ -281,3 +281,19 @@ export function createPositionSmoother({ walkingSpeed = 1.6, resetAfterMs = 30_0
     },
   }
 }
+
+// Чему верить, когда есть и GPS, и Bluetooth-маячки. Маячок рядом надёжнее GPS
+// под крышей и знает этаж, поэтому берём его, если замер свежий и GPS нет,
+// он слабый (хуже BLE_PREFER_OVER м) или грубее маячков. Иначе — GPS, если
+// точка внутри корпуса и точность лучше GPS_SHOW_LIMIT.
+export const BLE_PREFER_OVER = 12
+
+export function choosePosition({ gps = null, accuracy = null, ble = null, now = Date.now(), freshMs = 8000 } = {}) {
+  const bleOk = Boolean(ble && now - ble.at <= freshMs)
+  const gpsOk = Boolean(gps && gps.inside && Number.isFinite(accuracy) && accuracy <= GPS_SHOW_LIMIT)
+  if (bleOk && (!gpsOk || accuracy > BLE_PREFER_OVER || ble.accuracy <= accuracy)) {
+    return { source: 'bluetooth', floor: ble.floor, point: ble.point, accuracy: ble.accuracy, snapped: false }
+  }
+  if (gpsOk) return { source: 'gps', floor: gps.floor, point: gps.point, accuracy, snapped: gps.snapped }
+  return null
+}

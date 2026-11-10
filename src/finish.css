@@ -143,8 +143,8 @@ html { scroll-behavior: smooth; }
 
 /* ---------- Тёмная тема: кнопки действия с читаемым белым текстом ---------- */
 :root[data-theme='dark'] { --action-bg: #3f66ea; --action-hover: #4d74f2; }
-:root[data-theme='dark'] :is(.button-primary, .rt-go, .rt-next, .ex-next, .schedule-add, .cookie-primary, .route-submit) { color: #fff; background: var(--action-bg); }
-:root[data-theme='dark'] :is(.button-primary, .rt-go, .rt-next, .ex-next, .schedule-add, .cookie-primary, .route-submit):hover { background: var(--action-hover); }
+:root[data-theme='dark'] :is(.button-primary, .rt-go, .rt-next, .ex-next, .cookie-primary, .route-submit) { color: #fff; background: var(--action-bg); }
+:root[data-theme='dark'] :is(.button-primary, .rt-go, .rt-next, .ex-next, .cookie-primary, .route-submit):hover { background: var(--action-hover); }
 
 /* ---------- Тёмная тема: одна палитра ---------- */
 /* Старые правила тёмной темы местами остались тёпло-серыми, а основная палитра

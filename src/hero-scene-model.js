@@ -50,6 +50,65 @@ export function floorWalls(floor) {
   return walls
 }
 
+// Проёмы в стенах там, где идёт маршрут. Путь проложен по коридорам и через
+// двери, но стены собраны из контуров помещений, и в 3D линия маршрута
+// выглядела так, будто проходит сквозь стену. Каждую стену, которую путь
+// пересекает или вдоль которой идёт вплотную, режем: вокруг места пересечения
+// остаётся проход шириной gap. Стены без пересечений возвращаются как были.
+export function openWalls(walls, points, gap = 15) {
+  if (!Array.isArray(points) || points.length < 2) return walls
+  const near = 1.5 // путь ближе этого к стене и почти параллелен ей — идёт «по стене»
+  const result = []
+  for (const wall of walls) {
+    const angle = wall.angle * Math.PI / 180
+    const ux = Math.cos(angle)
+    const uy = Math.sin(angle)
+    const cuts = []
+    for (let index = 1; index < points.length; index += 1) {
+      const [ax, ay] = points[index - 1]
+      const [bx, by] = points[index]
+      // Концы отрезка пути в координатах стены: t — вдоль, d — поперёк.
+      const ta = (ax - wall.x) * ux + (ay - wall.y) * uy
+      const tb = (bx - wall.x) * ux + (by - wall.y) * uy
+      const da = -(ax - wall.x) * uy + (ay - wall.y) * ux
+      const db = -(bx - wall.x) * uy + (by - wall.y) * ux
+      if (Math.abs(da) <= near && Math.abs(db) <= near) {
+        const from = Math.min(ta, tb)
+        const to = Math.max(ta, tb)
+        if (to > 0 && from < wall.length) cuts.push([from - gap / 2, to + gap / 2])
+        continue
+      }
+      if ((da > 0) === (db > 0) && Math.abs(da) > near && Math.abs(db) > near) continue
+      const t = ta + (tb - ta) * (da / (da - db))
+      if (t >= -near && t <= wall.length + near) cuts.push([t - gap / 2, t + gap / 2])
+    }
+    if (!cuts.length) { result.push(wall); continue }
+    cuts.sort((a, b) => a[0] - b[0])
+    let cursor = 0
+    const piece = (from, to) => {
+      if (to - from < 2) return
+      result.push({ ...wall, x: round(wall.x + ux * from), y: round(wall.y + uy * from), length: round(to - from) })
+    }
+    for (const [from, to] of cuts) {
+      piece(cursor, Math.min(from, wall.length))
+      cursor = Math.max(cursor, to)
+    }
+    piece(cursor, wall.length)
+  }
+  return result
+}
+
+// Двери, через которые проходит маршрут: их створку в 3D тоже убираем.
+export function doorsOnRoute(doors, points, reach = 3) {
+  if (!Array.isArray(points) || points.length < 2) return new Set()
+  const hit = new Set()
+  for (const door of doors) {
+    const probe = openWalls([{ x: door.x, y: door.y, length: door.width, angle: door.angle }], points, reach * 2)
+    if (probe.length !== 1 || probe[0].length !== door.width) hit.add(door.id)
+  }
+  return hit
+}
+
 // Дверь ставим на ту стену своего помещения, к которой ближе всего точка
 // входа из roomAccess, — и проецируем точку на эту стену.
 export function floorDoors(floor, width = 11) {

@@ -1,0 +1,189 @@
+/* Тёмная тема, последний слой. Подключается после всех остальных стилей
+   (src/main.jsx) и задаёт палитру окончательно: раньше её по очереди
+   перекрашивали refinement.css, soft.css и finish.css, и тема выходила
+   сине-фиолетовой, со свечениями и стеклом.
+
+   Правила простые:
+   — фон и поверхности нейтральные, графитовые, без синего оттенка;
+   — глубину дают граница в один пиксель и ступень яркости, а не тень;
+   — акцент один, синий: ссылки, выбранное, главная кнопка, маршрут;
+   — никаких градиентов, свечений и размытия под панелями.
+   Селектор html:root[…] специфичнее старых, поэтому !important почти не нужен. */
+
+html:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #151516;
+  --surface: #1c1c1e;
+  --surface-soft: #242427;
+  --surface-raised: #2c2c30;
+  --line: rgba(255, 255, 255, .09);
+  --line-strong: rgba(255, 255, 255, .18);
+  --ink: #ececea;
+  --muted: #a3a39e;
+  --muted-2: #8a8a85;
+  --blue: #8db1ff;
+  --blue-bright: #8db1ff;
+  --blue-deep: #ececea;
+  --blue-night: #151516;
+  --blue-pale: #2a3040;
+  --blue-soft: #22252d;
+  --accent-tint: rgba(141, 177, 255, .12);
+  --action-bg: #3b6cf0;
+  --action-hover: #4c7af4;
+  --glass: #19191b;
+  --glass-border: rgba(255, 255, 255, .09);
+  --glass-dark: #19191b;
+  --glass-strong: #19191b;
+  --rt-glass: #1c1c1e;
+  --map-bg: #19191b;
+  --map-room: #26262a;
+  --map-wall: #5c5c62;
+  --map-label: #deded9;
+  --map-door: #8db1ff;
+  --shadow-rest: none;
+  --shadow-hover: none;
+  --shadow-xs: none;
+  --shadow-sm: none;
+  --shadow-md: 0 12px 28px -16px rgba(0, 0, 0, .7);
+  --shadow-lg: 0 18px 44px -18px rgba(0, 0, 0, .8);
+  color: var(--ink);
+  background: var(--bg);
+}
+
+html:root[data-theme='dark'] body { color: var(--ink); background: var(--bg); }
+html:root[data-theme='dark'] ::selection { color: #fff; background: #3b6cf0; }
+html:root[data-theme='dark'] :is(button, a, input, select, textarea, summary, [tabindex]):focus-visible { outline-color: #8db1ff; }
+
+/* ---------- Шапка и меню: сплошной фон вместо стекла ---------- */
+html:root[data-theme='dark'] :is(.site-header, .hd-menu, .adm-top) {
+  border-color: var(--line);
+  background: var(--bg);
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+html:root[data-theme='dark'] .desktop-nav { border-color: var(--line); background: var(--surface); box-shadow: none; }
+html:root[data-theme='dark'] .nav-link { color: var(--muted); }
+html:root[data-theme='dark'] :is(.nav-link:hover, .nav-link-active) { color: var(--ink); }
+html:root[data-theme='dark'] .nav-link-active { background: var(--surface-raised); box-shadow: none; }
+html:root[data-theme='dark'] .nav-badge { border-color: var(--line-strong); color: var(--muted); background: transparent; }
+html:root[data-theme='dark'] :is(.theme-toggle, .search-trigger, .mobile-menu-toggle, .mobile-map-link, .hd-icon, .hd-burger, .nb-toggle) {
+  border: 1px solid var(--line);
+  color: var(--ink);
+  background: var(--surface);
+  box-shadow: none;
+}
+html:root[data-theme='dark'] :is(.theme-toggle, .search-trigger, .mobile-menu-toggle, .hd-icon, .hd-burger, .nb-toggle):hover { border-color: var(--line-strong); color: var(--ink); background: var(--surface-soft); transform: none; }
+html:root[data-theme='dark'] .hd-menu-card { border-color: var(--line); background: var(--surface); box-shadow: none; }
+html:root[data-theme='dark'] .hd-menu-card:hover { border-color: var(--line-strong); background: var(--surface-soft); }
+html:root[data-theme='dark'] .hd-menu-card.is-active { border-color: var(--blue); background: var(--accent-tint); }
+/* Цветные плашки значков в меню — в один тон: в темноте семь цветов рябят. */
+html:root[data-theme='dark'] .hd-menu-icon { color: var(--blue); background: var(--surface-raised); }
+html:root[data-theme='dark'] :is(.hd-seg, .adm-seg) { border-color: var(--line); background: var(--surface); }
+html:root[data-theme='dark'] .hd-seg button[aria-pressed='true'] { color: var(--ink); background: var(--surface-raised); box-shadow: none; }
+html:root[data-theme='dark'] :is(.menu-scrim, .hd-scrim, .search-backdrop) { background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: none; backdrop-filter: none; }
+html:root[data-theme='dark'] :is(.search-dialog, .home-search-suggestions, .search-popover) { border-color: var(--line-strong); background: var(--surface); box-shadow: var(--shadow-lg); -webkit-backdrop-filter: none; backdrop-filter: none; }
+
+/* ---------- Главная ---------- */
+html:root[data-theme='dark'] :is(.home-hero, .home-hero.hero-mesh) { border-bottom: 1px solid var(--line); background: var(--bg); }
+html:root[data-theme='dark'] .hero-mesh::before, html:root[data-theme='dark'] .hero-mesh::after, html:root[data-theme='dark'] .home-hero::before, html:root[data-theme='dark'] .home-hero::after { display: none; }
+/* 3D-корпус за заголовком: серые стены, синий только у маршрута. */
+html:root[data-theme='dark'] .home-hero-scene {
+  --scene-room: rgba(255, 255, 255, .035);
+  --scene-shaft: rgba(255, 255, 255, .02);
+  --scene-wall: rgba(255, 255, 255, .18);
+  --scene-label: rgba(236, 236, 234, .5);
+  --scene-icon: rgba(236, 236, 234, .55);
+  --wall-top: rgba(236, 236, 234, .42);
+  --wall-face: rgba(236, 236, 234, .07);
+  --wall-face-2: rgba(236, 236, 234, .01);
+  --route: #8db1ff;
+  --route-glow: rgba(141, 177, 255, .35);
+  --column: rgba(236, 236, 234, .16);
+  --shade: rgba(21, 21, 22, .96);
+  --shade-mid: rgba(21, 21, 22, .55);
+}
+html:root[data-theme='dark'] .home-hero h1 :is(em, span) { color: var(--ink); }
+html:root[data-theme='dark'] .home-search { border-color: var(--line-strong); background: var(--surface); box-shadow: none; }
+html:root[data-theme='dark'] .home-search:focus-within { border-color: var(--blue); outline-color: var(--blue); }
+html:root[data-theme='dark'] :is(.home-hero .home-map-cta, .home-map-cta, .button-white) { border: 1px solid transparent !important; color: #151516 !important; background: #ececea !important; box-shadow: none; }
+html:root[data-theme='dark'] :is(.home-hero .home-map-cta, .home-map-cta, .button-white):hover { color: #151516 !important; background: #fff !important; }
+html:root[data-theme='dark'] .home-plain-link { border-color: var(--line-strong); color: var(--ink); background: transparent; }
+html:root[data-theme='dark'] .home-plain-link:hover { background: var(--surface-soft); }
+html:root[data-theme='dark'] .guide-board { --gb-bg: #1c1c1e; --gb-line: rgba(255, 255, 255, .09); --gb-ink: #ececea; --gb-muted: #a3a39e; --gb-plate-bg: #ececea; --gb-plate-ink: #151516; --gb-hover: rgba(255, 255, 255, .04); --gb-arrow: #8db1ff; }
+html:root[data-theme='dark'] .guide-board-sign { box-shadow: inset 0 0 0 1px var(--line); }
+html:root[data-theme='dark'] .day-card-lesson { background: var(--surface); }
+
+/* ---------- Кнопки ---------- */
+html:root[data-theme='dark'] :is(.button-primary, .rt-go, .rt-next, .ex-next, .cookie-primary, .route-submit, .walk-next, .tn-enable, .header-cta, .adm-button-primary) {
+  border-color: transparent;
+  color: #fff;
+  background: var(--action-bg);
+  box-shadow: none;
+}
+html:root[data-theme='dark'] :is(.button-primary, .rt-go, .rt-next, .ex-next, .cookie-primary, .route-submit, .walk-next, .tn-enable, .header-cta, .adm-button-primary):hover:not(:disabled) { color: #fff; background: var(--action-hover); filter: none; }
+html:root[data-theme='dark'] :is(.rt-next-done, .walk-next-done) { background: #2f9461; }
+
+/* ---------- Карточки и панели: рамка, без тени и стекла ---------- */
+html:root[data-theme='dark'] :is(.rt-card, .rt-map, .rt-now-card, .rt-controls, .rt-pick, .rt-view, .rt-floors, .mp-map, .mp-detail, .mp-pill, .mp-settings, .day-card, .quick-place-card, .tn-section, .tn-card, .tn-status, .room-card, .directory-card, .service-card, .teacher-card, .start-step, .docs-section, .cookie-banner, .walk, .ai-panel, .report-box, .feedback-card, .here-card, .adm-card, .adm-kpi, .adm-login) {
+  border-color: var(--line);
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+html:root[data-theme='dark'] :is(.rt-now-card, .rt-controls, .rt-pick, .rt-view, .rt-floors, .mp-pill, .rs-controls button, .rs-hint) { background: var(--surface); }
+html:root[data-theme='dark'] .rs-controls button { border-color: var(--line-strong); box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+html:root[data-theme='dark'] :is(.site-footer, .footer-top) { border-color: var(--line); background: var(--bg); }
+html:root[data-theme='dark'] .docs-hero { background: var(--surface); }
+html:root[data-theme='dark'] .floor-preview-band { background: var(--surface); }
+
+/* ---------- 3D-карта: графит, синий только у маршрута ---------- */
+html:root[data-theme='dark'] .rs {
+  --rs-bg-1: #1b1b1d;
+  --rs-bg-2: #1b1b1d;
+  --rs-floor: #232326;
+  --rs-room: #2b2b2f;
+  --rs-shaft: #3a3a3f;
+  --rs-line: #45454b;
+  --rs-label: #a3a39e;
+  --rs-icon: #8db1ff;
+  --rs-wall-top: #6a6a71;
+  --rs-wall-1: rgba(70, 70, 76, .95);
+  --rs-wall-2: rgba(48, 48, 53, .92);
+  --rs-door: #8db1ff;
+  --rs-route: #6f9cff;
+  --rs-route-2: #9dbbff;
+  --rs-route-glow: rgba(111, 156, 255, .28);
+  --rs-passed: #4a5265;
+  background: var(--rs-bg-1);
+}
+html:root[data-theme='dark'] .rs-ground { box-shadow: 0 0 0 1px var(--rs-line); }
+html:root[data-theme='dark'] .rs-walker-dot { box-shadow: none; }
+html:root[data-theme='dark'] .rs-mark-head { box-shadow: none; }
+
+/* ---------- Карта этажей ---------- */
+html:root[data-theme='dark'] :is(.mp-locate, .mp-floors button.is-on, .mp-pill-actions button:first-child) { border-color: var(--action-bg); color: #fff; background: var(--action-bg); box-shadow: none; }
+html:root[data-theme='dark'] .mp-locate:hover { border-color: var(--action-hover); background: var(--action-hover); }
+html:root[data-theme='dark'] :is(.mp-floors, .mp-segment, .mp-zoom, .mp-chips button, .mp-action:not(.mp-locate), .floor-map-zoom-controls) { border-color: var(--line); box-shadow: none; }
+html:root[data-theme='dark'] .floor-map-art svg > :is(rect, path)[fill='#D9D9D9'] { fill: var(--map-bg); }
+html:root[data-theme='dark'] .floor-map-art svg > :is(rect, path)[fill='#878DA2'] { fill: #36363b; }
+
+/* ---------- Маршрут ---------- */
+html:root[data-theme='dark'] .rt-switch i { background: #3a3a3f; }
+html:root[data-theme='dark'] .rt-switch-on i { background: var(--action-bg); }
+html:root[data-theme='dark'] .rt-now button { background: var(--surface-soft); }
+html:root[data-theme='dark'] .rt-now .rt-pin { box-shadow: none; }
+html:root[data-theme='dark'] :is(.rt-floors, .rt-view) > button[aria-pressed='true'] { color: #fff; background: var(--action-bg); }
+html:root[data-theme='dark'] .rt-now-icon { box-shadow: none; }
+html:root[data-theme='dark'] :is(.walk-next, .walk-icon) { color: #fff; }
+
+/* ---------- Плашки состояний: приглушённые, без кислотных тонов ---------- */
+html:root[data-theme='dark'] .bell-now-lesson { color: #a9c3ff; background: rgba(141, 177, 255, .1); }
+html:root[data-theme='dark'] .bell-now-lunch { color: #e6c57a; background: rgba(230, 197, 122, .1); }
+html:root[data-theme='dark'] .bell-now-break { color: #8fd0a6; background: rgba(143, 208, 166, .1); }
+html:root[data-theme='dark'] :is(.rt-live-ok, .tn-reminder-list li.is-ok) > svg { color: #8fd0a6; }
+html:root[data-theme='dark'] :is(.rt-live-warn, .tn-reminder-list li.is-warn) > svg { color: #e6c57a; }
+html:root[data-theme='dark'] .rt-live-bad > svg { color: #f19a8e; }
+
+/* ---------- Панель ---------- */
+html:root[data-theme='dark'] .adm { --adm-accent: #8db1ff; --adm-accent-soft: rgba(141, 177, 255, .12); --adm-card: var(--surface); }

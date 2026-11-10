@@ -1,12 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Accessibility, AlarmClock, ArrowLeft, ArrowRight, ArrowUpDown, ArrowUpRight, Check, ChevronDown, Flag, Footprints, Handshake, Info, Map as MapIcon, MapPin, MessageCircle, MoveDown, MoveUp, Navigation, Pause, Play, Plus, RotateCcw, Share2, Star, TriangleAlert, Users, Volume2, VolumeX, X } from 'lucide-react'
+import { Accessibility, AlarmClock, ArrowLeft, ArrowRight, ArrowUpDown, ArrowUpRight, Bluetooth, Check, ChevronDown, Flag, Footprints, Handshake, Info, LocateFixed, Map as MapIcon, MapPin, MessageCircle, MoveDown, MoveUp, Navigation, Pause, Play, Plus, RotateCcw, Share2, Star, TriangleAlert, Users, Volume2, VolumeX, X } from 'lucide-react'
 import { rooms } from '../data.js'
 import RouteScene from '../components/RouteScene.jsx'
 import RoomSearchSelect from '../components/RoomSearchSelect.jsx'
 import { buildRouteOptions, pickRoute } from '../map-routing.js'
 import { buildTripSteps } from '../route-steps.js'
-import { readManualLocation } from '../map-location.js'
+import { GPS_SHOW_LIMIT, METRES_PER_UNIT, readGpsAnchors, readManualLocation } from '../map-location.js'
+import { isOffRoute, liveStepIndex, projectOnRoute } from '../live-route.js'
+import { useLivePosition } from '../use-live-position.js'
+import { bluetoothSupport, disableBluetooth, enableBluetooth } from '../bluetooth-location.js'
+import { useSiteSettings } from '../site-settings.js'
+import { requestCompass } from '../use-location.js'
 import { VOICE_PRESETS, getStoredPreset, setVoicePreset, speakText, stopSpeech } from '../speech.js'
 import { VOICE_PACK_MALE_ID, playVoicePack, stopVoicePack, voicePackForPreset } from '../voice-pack.js'
 import { storageGet, storageSet } from '../storage.js'
@@ -213,9 +218,14 @@ export default function RoutePage() {
     return () => window.clearTimeout(timer)
   }, [startId, target.id])
   const [walking, setWalking] = useState(false)
+  // Растёт, когда маршрут перестроили от места по GPS: отметка лежит в
+  // хранилище, и странице надо перечитать её.
+  const [, setRerouted] = useState(0)
   const arrive = () => {
     setHere(target.id)
     setWalking(false)
+    setLive(false)
+    disableBluetooth()
     if (startId !== target.id) setStartId(target.id)
   }
   const [favorite, toggleFavorite] = useFavorite(target.id)
@@ -265,6 +275,88 @@ export default function RoutePage() {
 
   const followsStep = shownFloor === current.floor
   const leg = shownLeg.route.byFloor[shownFloor]
+
+  // ---------- Ведение в реальном времени ----------
+  // Место берём по GPS, а где он слабый — по Bluetooth-маячкам. Шаги листаются
+  // сами, когда человек доходит до поворота; этаж GPS не знает, поэтому после
+  // лестницы или лифта шаг переключает маячок на новом этаже или сам человек.
+  const [live, setLive] = useState(false)
+  const gpsAnchors = useMemo(() => readGpsAnchors(storageGet('map-gps-anchors')), [])
+  const { beacons } = useSiteSettings()
+  const bleSupport = useMemo(() => bluetoothSupport(), [])
+  const canBluetooth = beacons.length > 0 && bleSupport !== 'none'
+  const position = useLivePosition(live, current.floor, gpsAnchors)
+  const liveMarker = position.marker
+  const stepLegPoints = legs[current.leg || 0].route.byFloor[current.floor]?.points
+  const onRoute = useMemo(() => liveMarker && liveMarker.floor === current.floor && stepLegPoints?.length ? projectOnRoute(stepLegPoints, liveMarker.point) : null, [liveMarker, current.floor, stepLegPoints])
+  const offRoute = Boolean(onRoute) && isOffRoute(onRoute.offset, current.floor, liveMarker.accuracy)
+  const startLive = () => {
+    setLive(true)
+    setFollowing(true)
+    requestCompass()
+    // Слушать маячки браузер разрешает только по нажатию.
+    if (canBluetooth && bleSupport === 'scan') void enableBluetooth()
+  }
+  const stopLive = () => { setLive(false); disableBluetooth() }
+  useEffect(() => () => disableBluetooth(), [])
+  // Дошли до следующего поворота — листаем шаг и говорим подсказку.
+  useEffect(() => {
+    if (!live || !liveMarker) return
+    // Маячок на другом этаже: человек уже поднялся или спустился.
+    if (liveMarker.source === 'bluetooth' && liveMarker.floor !== current.floor) {
+      const next = steps.findIndex((step, index) => index > stepIndex && step.floor === liveMarker.floor)
+      if (next > 0 && steps.slice(stepIndex, next).every((step) => step.kind === 'transfer' || step.floor === liveMarker.floor)) goToStep(next)
+      return
+    }
+    if (!onRoute || offRoute) return
+    const next = liveStepIndex(steps, stepIndex, stepLegPoints, onRoute.along, { floor: current.floor, accuracy: liveMarker.accuracy })
+    if (next > stepIndex) goToStep(next)
+    // goToStep и steps пересоздаются на каждой отрисовке; важны место и шаг
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [live, liveMarker, onRoute, offRoute, stepIndex, routeKey])
+  // Метка на карте: пока человек на маршруте, держим её на линии пути.
+  const liveOnMap = live && liveMarker && liveMarker.floor === shownFloor ? {
+    point: onRoute && !offRoute && shownFloor === current.floor ? onRoute.point : liveMarker.point,
+    radius: liveMarker.radius,
+    heading: liveMarker.heading,
+    segment: onRoute?.segment,
+  } : null
+  const rerouteFromHere = () => {
+    if (!liveMarker) return
+    storageSet('map-manual-point', JSON.stringify({ floor: liveMarker.floor, x: Math.round(liveMarker.point[0] * 10) / 10, y: Math.round(liveMarker.point[1] * 10) / 10 }))
+    setViaId(''); setViaOpen(false)
+    setStartId('manual')
+    setNav({ key: '', index: 0 })
+    setRerouted((value) => value + 1)
+  }
+  const gpsAccuracy = Math.round(position.gps.coords?.accuracy || 0)
+  const liveInfo = (() => {
+    if (!live) return null
+    const bleOn = position.ble.status === 'on'
+    const bleHint = !canBluetooth ? '' : bleOn ? (position.ble.heard ? '' : ' Маячков рядом не слышно.') : ' Включите Bluetooth: рядом с маячком место определится без GPS.'
+    if (liveMarker) {
+      const source = liveMarker.source === 'bluetooth' ? 'Bluetooth' : 'GPS'
+      const metres = Math.max(1, Math.round(liveMarker.accuracy))
+      if (offRoute) return { tone: 'warn', text: `Вы отошли от маршрута на ${Math.round(onRoute.offset * (METRES_PER_UNIT[current.floor] || 0.0833))} м.`, reroute: true }
+      if (liveMarker.floor !== current.floor) return { tone: 'warn', text: `Маячок рядом с вами на ${liveMarker.floor} этаже, а шаг — на ${current.floor}.`, reroute: true }
+      const left = onRoute ? Math.max(0, Math.round((onRoute.total - onRoute.along) * (METRES_PER_UNIT[current.floor] || 0.0833))) : null
+      return { tone: 'ok', text: `Ведём по ${source}, точность ±${metres} м.${left !== null ? ` До конца участка ${left} м.` : ''}${current.kind === 'transfer' ? ' После перехода на другой этаж нажмите «Дальше».' : ''}` }
+    }
+    const { status } = position.gps
+    if (status === 'loading') return { tone: 'wait', text: 'Ищем вас. Если браузер спросит, разрешите доступ к геопозиции.' }
+    if (status === 'denied') return { tone: 'bad', text: `Нет доступа к геопозиции: разрешите его для сайта в настройках браузера.${bleHint}` }
+    if (status === 'unsupported') return { tone: 'bad', text: 'Этот браузер не даёт сайту геопозицию. Листайте шаги кнопкой «Дальше».' }
+    if (status === 'timeout' || status === 'unavailable') return { tone: 'bad', text: `Телефон не смог определить место. Листайте шаги сами.${bleHint}` }
+    if (position.located && !position.located.inside) return { tone: 'warn', text: position.located.distance > 1 ? `Вы примерно в ${Math.round(position.located.distance)} м от корпуса. Поведём, когда зайдёте внутрь.` : 'Вы рядом с корпусом. Поведём, когда зайдёте внутрь.' }
+    if (gpsAccuracy > GPS_SHOW_LIMIT) return { tone: 'warn', text: `Сигнал GPS слабый (±${gpsAccuracy} м), вести по нему нельзя. Листайте шаги сами.${bleHint}` }
+    return { tone: 'wait', text: 'Получили координаты, считаем место на плане.' }
+  })()
+  const liveStatus = liveInfo && <div className={`rt-live rt-live-${liveInfo.tone}`} role="status">
+    <LocateFixed size={15} aria-hidden="true" />
+    <span>{liveInfo.text}</span>
+    {liveInfo.reroute && <button type="button" onClick={rerouteFromHere}>Перестроить отсюда</button>}
+    {canBluetooth && position.ble.status !== 'on' && <button type="button" onClick={() => void enableBluetooth()} disabled={position.ble.status === 'starting'}><Bluetooth size={14} /> Bluetooth</button>}
+  </div>
   const legTransfer = shownLeg.route.transfer
   const transferMarks = legCross && legTransfer ? {
     floor: shownLeg.fromRoom.floor,
@@ -402,19 +494,23 @@ export default function RoutePage() {
 
       <section className="rt-stage" ref={stageRef} aria-label="Карта маршрута">
         <div className="rt-map">
-          <div className="rt-now-card" aria-live="polite">
-            <span className="rt-now-icon" aria-hidden="true"><CurrentIcon size={22} /></span>
-            <div className="rt-now-text">
-              <span>{`Шаг ${stepIndex + 1} из ${steps.length}`}, {`${current.floor} этаж`}</span>
-              <strong>{current.title}</strong>
-              <em>{current.detail}</em>
+          <div className="rt-map-top">
+            <div className="rt-now-card" aria-live="polite">
+              <span className="rt-now-icon" aria-hidden="true"><CurrentIcon size={22} /></span>
+              <div className="rt-now-text">
+                <span>{`Шаг ${stepIndex + 1} из ${steps.length}`}, {`${current.floor} этаж`}</span>
+                <strong>{current.title}</strong>
+                <em>{current.detail}</em>
+              </div>
             </div>
+            {liveStatus}
           </div>
           <RouteScene
             floor={shownFloor}
             points={leg?.points || []}
             progress={followsStep ? current.progress : null}
             following={following && followsStep}
+            live={liveOnMap}
             mode={mode3d ? '3d' : 'top'}
             selectedId={picked?.floor === shownFloor ? picked.id : ''}
             targetId={shownLeg.toRoom.id}
@@ -439,6 +535,7 @@ export default function RoutePage() {
             {legCross && <div className="rt-floors" role="group" aria-label="Этаж на карте">
               {[shownLeg.fromRoom.floor, shownLeg.toRoom.floor].map((floor) => <button type="button" key={floor} aria-pressed={shownFloor === floor} onClick={() => setPeek({ key: peekKey, floor })}>{`${floor} этаж`}</button>)}
             </div>}
+            <button type="button" className={`rt-live-toggle ${live ? 'is-on' : ''}`} aria-pressed={live} onClick={live ? stopLive : startLive} title="Метка на карте идёт за вами, шаги листаются сами"><LocateFixed size={15} /> {live ? 'Ведём' : 'Вести по GPS'}</button>
             <div className="rt-view" role="group" aria-label="Вид карты">
               <button type="button" aria-pressed={mode3d} onClick={() => setMode3d(true)}>3D</button>
               <button type="button" aria-pressed={!mode3d} onClick={() => setMode3d(false)}>Сверху</button>
@@ -457,8 +554,8 @@ export default function RoutePage() {
 
       </section>
     </div>
-    {walking && <WalkMode steps={steps} index={stepIndex} onStep={(index) => goToStep(index)} onRepeat={repeatStep} onClose={() => setWalking(false)} onArrive={arrive} target={target} stop={via}>
-      <RouteScene floor={shownFloor} points={leg?.points || []} progress={followsStep ? current.progress : null} following={followsStep} mode="top" targetId={shownLeg.toRoom.id} transfer={transferMarks} notices={notices} />
+    {walking && <WalkMode steps={steps} index={stepIndex} onStep={(index) => goToStep(index)} onRepeat={repeatStep} onClose={() => setWalking(false)} onArrive={arrive} target={target} stop={via} status={liveStatus} live={live} onLive={live ? stopLive : startLive}>
+      <RouteScene floor={shownFloor} points={leg?.points || []} progress={followsStep ? current.progress : null} following={followsStep} mode="top" targetId={shownLeg.toRoom.id} transfer={transferMarks} notices={notices} live={liveOnMap} />
     </WalkMode>}
     {sharing && <ShareRoute onClose={() => setSharing(false)} from={startId === 'manual' ? 'entrance-1' : startId} to={target.id} via={via?.id || ''} mode={routePreference} title={`${startLabel} → ${roomName(target)}`} meta={`${sameRoom ? 'Вы уже на месте' : `≈ ${Math.round(route.meters)} м, ${route.seconds < 60 ? 'меньше минуты' : `${minutes(route.seconds)} мин`}`}${crossFloor ? `, ${viaLabel}` : ''}`} steps={steps} manualStart={startId === 'manual'} />}
   </div>
