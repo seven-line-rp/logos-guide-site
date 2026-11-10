@@ -43,27 +43,28 @@ import './admin/admin.css'
 import './soft.css'
 import './route.css'
 import './finish.css'
-import './unity.css'
 import './arrival.css'
 import './search-fields.css'
 import './map-page.css'
-// Темы «Пикми» и Motion — последними, чтобы перекрывать общие правила.
+// Тема «Пикми» — последней, чтобы перекрывать общие правила.
 import './pickme.css'
-import './motion-theme.css'
 import './interactions.js'
 import { applyMapContrast } from './map-contrast.js'
 import { applyTextSize, readTextSize } from './text-size.js'
 import { installErrorReporting } from './error-report.js'
-import { keepScheduleForPush } from './push.js'
+import { keepPushAlive } from './push.js'
+import { initSiteSettings, readCachedSettings } from './site-settings.js'
 import { initTheme } from './theme.js'
 
 applyMapContrast()
 applyTextSize(readTextSize())
-initTheme(window.location.search)
+// Какие темы включены, знает сервер (панель /admin/settings); до его ответа — копия из браузера.
+initTheme(window.location.search, readCachedSettings().themes)
+initSiteSettings()
 // Сообщения о сбоях страницы для оповещений владельцу (только в рабочей сборке).
 if (import.meta.env.PROD) installErrorReporting()
-// Уведомления о парах берут предмет и кабинет из копии расписания (src/push.js).
-keepScheduleForPush()
+// Напоминания о парах по звонкам, пока сайт открыт (src/push.js).
+keepPushAlive()
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>

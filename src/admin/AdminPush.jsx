@@ -11,10 +11,10 @@ import { postPush } from './admin-api.js'
 
 const KINDS = ['news', 'event', 'update', 'lesson-start']
 const TOPIC_OF = { news: 'news', event: 'events', update: 'updates', 'lesson-start': 'lessons' }
-const LINKS = [['/', 'Главная'], ['/map', 'Карта'], ['/schedule', 'Расписание'], ['/route', 'Маршрут']]
+const LINKS = [['/', 'Главная'], ['/map', 'Карта'], ['/route', 'Маршрут']]
 const PRESETS = [
   { label: 'Новая версия сайта', kind: 'update', title: `ЛОГОС обновился: ${SITE_VERSION_LABEL}`, body: 'Посмотрите, что нового на сайте.', url: '/' },
-  { label: 'Пары отменены', kind: 'lesson-start', title: 'Сегодня пары отменяются', body: 'Подробности у куратора и в учебной части.', url: '/schedule' },
+  { label: 'Пары отменены', kind: 'lesson-start', title: 'Сегодня пары отменяются', body: 'Подробности у куратора и в учебной части.', url: '/' },
   { label: 'Мероприятие', kind: 'event', title: 'Концерт в актовом зале', body: 'Сегодня в 15:00, вход свободный.', url: '/map?room=auditorium-104' },
 ]
 const empty = { kind: 'news', title: '', body: '', url: '/' }

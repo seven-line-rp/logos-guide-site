@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react'
 import { rooms } from './data.js'
 import { storageGet, storageRemove, storageSet } from './storage.js'
-import { bellState } from './schedule.js'
+import { bellState } from './bells.js'
 
 // Настройки и состояние навигатора, которые живут между маршрутами:
 // «мне нужен лифт» (ключ route-need-lift) и «я здесь» — где человек

@@ -194,9 +194,9 @@ function test_payload(string $kind): string
     $bell = ['pair' => 2, 'label' => '2-я пара', 'start' => '10:40', 'end' => '12:10'];
     switch ($kind) {
         case 'lesson-start':
-            return payload($kind, 'Через 5 минут: 2-я пара', 'Начало в 10:40. Откройте маршрут, чтобы не опоздать.', '/schedule', ['bell' => $bell, 'test' => true]);
+            return payload($kind, 'Через 5 минут: 2-я пара', 'Начало в 10:40. Откройте маршрут, чтобы не опоздать.', '/route', ['bell' => $bell, 'test' => true]);
         case 'lesson-end':
-            return payload($kind, '2-я пара закончилась', 'Перемена до 12:30.', '/schedule', ['bell' => $bell, 'next' => '12:30', 'test' => true]);
+            return payload($kind, '2-я пара закончилась', 'Перемена до 12:30.', '/', ['bell' => $bell, 'next' => '12:30', 'test' => true]);
         case 'event':
             return payload($kind, 'Концерт в актовом зале', 'Начало в 15:00, вход свободный.', '/map?room=auditorium-104', ['test' => true]);
         case 'update':
@@ -222,19 +222,19 @@ function lesson_jobs(array $meta, int $now): array
     $jobs = [];
     foreach ($bells as $index => $bell) {
         $info = ['pair' => $bell['pair'], 'label' => $bell['label'], 'start' => $bell['start'], 'end' => $bell['end']];
-        // Напоминание о начале уходит в любую минуту из последних пяти до звонка:
-        // если крон запускается раз в 5 минут или опоздал, оно всё равно придёт,
-        // а в тексте будет честное «через 2 минуты».
+        // Напоминание уходит за 5 минут до звонка: в 8:55 перед парой в 9:00,
+        // в понедельник — по своим звонкам. Если крон опоздал, оно всё равно
+        // придёт в оставшиеся минуты, а в тексте будет честное «через 2 минуты».
         $start = $minutes($bell['start']);
         $jobs[] = ['at' => $start - LESSON_NOTICE_BEFORE, 'until' => $start, 'kind' => 'lesson-start', 'json' => function (int $minute) use ($bell, $info, $start) {
             $left = max(1, $start - $minute);
-            return payload('lesson-start', 'Через ' . minutes_label($left) . ": {$bell['label']}", "Начало в {$bell['start']}. Откройте маршрут, чтобы не опоздать.", '/schedule', ['bell' => $info, 'left' => $left]);
+            return payload('lesson-start', 'Через ' . minutes_label($left) . ": {$bell['label']}", "Начало в {$bell['start']}. Откройте маршрут, чтобы не опоздать.", '/route', ['bell' => $info, 'left' => $left]);
         }];
         $next = $bells[$index + 1] ?? null;
         $meals = array_values(array_filter($lunch, fn ($item) => $item['start'] === $bell['end']));
         $body = !$next ? 'Пары на сегодня закончились.' : ($meals ? "Обед {$meals[0]['course']} курса до {$meals[0]['end']}. Следующая пара в {$next['start']}." : "Перемена до {$next['start']}.");
         $end = $minutes($bell['end']);
-        $jobs[] = ['at' => $end, 'until' => $end + CRON_WINDOW, 'kind' => 'lesson-end', 'json' => payload('lesson-end', "{$bell['label']} закончилась", $body, '/schedule', ['bell' => $info, 'next' => $next['start'] ?? null])];
+        $jobs[] = ['at' => $end, 'until' => $end + CRON_WINDOW, 'kind' => 'lesson-end', 'json' => payload('lesson-end', "{$bell['label']} закончилась", $body, '/', ['bell' => $info, 'next' => $next['start'] ?? null])];
     }
     return $jobs;
 }

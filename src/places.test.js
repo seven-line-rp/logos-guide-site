@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { findNearest, nearbyKinds, roomTitle } from './places.js'
-import { addDays, arrivalStatus, bellState, bellsFor, dayLabel, formatCountdown, nextLesson, parseSchedule, validLesson } from './schedule.js'
+import { addDays, arrivalStatus, bellState, bellsFor, formatCountdown, nextBell, reminderTimes } from './bells.js'
 import { activeNotices, avoidClosed, closedRoomIds, validNotice } from './notices.js'
 import { buildRouteOptions } from './map-routing.js'
 import { tourLeg, tours } from './tours.js'
@@ -17,28 +17,23 @@ test('nearest place is found by walking time, not straight distance', () => {
   assert.equal(roomTitle('physics-211'), 'Кабинет физики №211')
 })
 
-test('next lesson by date, bells and arrival status', () => {
-  const lessons = parseSchedule(JSON.stringify([
-    { date: '2026-10-19', start: '09:40', end: '11:10', subject: 'Физика', roomId: 'physics-211' },
-    { date: '2026-10-19', start: '11:20', end: '12:50', subject: 'Информатика', roomId: 'informatics-222' },
-    { date: '2026-10-21', start: '12:30', end: '14:00', subject: 'Химия', roomId: 'chemistry-biology-202' },
-    { date: '2026-10-01', start: '09:00', end: '10:30', subject: 'Старая', roomId: 'physics-211' },
-    { day: 1, start: '12:10', end: '13:40', subject: 'Без даты', roomId: 'physics-211' },
-  ]), '2026-10-19')
-  assert.deepEqual(lessons.map((lesson) => lesson.subject), ['Физика', 'Информатика', 'Химия']) // старые и без даты отброшены
-  const monday = new Date(2026, 9, 19, 10, 0)
-  assert.deepEqual([nextLesson(lessons, monday).lesson.subject, nextLesson(lessons, monday).ongoing], ['Физика', true])
-  const breakTime = new Date(2026, 9, 19, 11, 12)
-  assert.deepEqual([nextLesson(lessons, breakTime).lesson.subject, nextLesson(lessons, breakTime).minutes], ['Информатика', 8])
-  const evening = nextLesson(lessons, new Date(2026, 9, 19, 18, 0))
-  assert.deepEqual([evening.lesson.subject, evening.offset], ['Химия', 2])
-  assert.equal(nextLesson(lessons, new Date(2026, 9, 22, 9, 0)), null)
+test('the next bell and whether you make it in time', () => {
+  assert.deepEqual(nextBell(new Date(2026, 9, 20, 8, 50)), { label: '1-я пара', start: '09:00', minutes: 10 })
+  assert.equal(nextBell(new Date(2026, 9, 19, 11, 12)).minutes, 8, 'перемена в понедельник: 2-я пара в 11:20')
+  assert.equal(nextBell(new Date(2026, 9, 20, 12, 15)).start, '12:30', 'в обед считаем до следующей пары')
+  assert.equal(nextBell(new Date(2026, 9, 20, 11, 0)), null, 'пара уже идёт')
+  assert.equal(nextBell(new Date(2026, 9, 20, 5, 0)), null, 'до занятий больше трёх часов')
+  assert.equal(nextBell(new Date(2026, 9, 25, 8, 50)), null, 'воскресенье')
   assert.equal(arrivalStatus(120, 10).kind, 'ok')
   assert.equal(arrivalStatus(120, 3).kind, 'tight')
   assert.equal(arrivalStatus(300, 2).kind, 'late')
   assert.equal(arrivalStatus(60, -5).kind, 'late')
   assert.equal(formatCountdown(8), 'через 8 мин')
-  assert.equal(validLesson({ date: '2026-10-19', start: '10:00', end: '09:00', subject: 'x', roomId: 'physics-211' }), false)
+})
+
+test('lesson reminders come 5 minutes before each bell: 8:55 on weekdays, Monday has its own times', () => {
+  assert.deepEqual(reminderTimes('weekday').map((bell) => bell.at), ['08:55', '10:35', '12:25', '14:15'])
+  assert.deepEqual(reminderTimes('monday').map((bell) => bell.at), ['08:55', '09:35', '11:15', '13:05', '14:55'])
 })
 
 test('bells: Monday starts with РОВ, Tuesday–Friday at 9:00, lunch by course', () => {
@@ -53,7 +48,6 @@ test('bells: Monday starts with РОВ, Tuesday–Friday at 9:00, lunch by cours
   assert.equal(bellState(new Date(2026, 9, 20, 8, 0)).kind, 'before')
   assert.equal(bellState(new Date(2026, 9, 20, 17, 0)).kind, 'over')
   assert.equal(addDays('2026-10-31', 1), '2026-11-01')
-  assert.equal(dayLabel('2026-10-20', '2026-10-19').name, 'Завтра')
 })
 
 test('notices: dates, validation and closed stairs are avoided', () => {

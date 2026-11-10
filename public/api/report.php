@@ -1,7 +1,8 @@
 <?php
 // Обращения с сайта: «Сообщить о неточности» на карте (помещение) и общая форма
 // «Сообщить о проблеме» (/feedback: баг, идея, ошибка ИИ). Складывает всё в файл на сервере. Без базы данных и без внешних сервисов.
-// Где лежат сообщения, как их читать и как включить письма — deploy/reports.md.
+// Читают их в панели /admin/reports (ключ notices_key); там же сообщение можно отметить решённым или удалить.
+// Где лежат сообщения и как включить письма — deploy/reports.md.
 // Совместим с PHP 7.4+.
 
 declare(strict_types=1);
@@ -29,7 +30,7 @@ function respond(int $status, array $body): void
 // Те же места, что и у ИИ-агента: файл рядом с папкой сайта или в api/.
 function load_config(): array
 {
-    $config = ['reports_key' => '', 'reports_email' => ''];
+    $config = ['reports_key' => '', 'reports_email' => '', 'notices_key' => ''];
     foreach ([dirname(__DIR__, 2) . '/logos-ai-config.php', __DIR__ . '/ai-config.php'] as $file) {
         if (is_file($file)) {
             $loaded = include $file;
@@ -95,14 +96,69 @@ function clean_text($value, int $max): string
 $config = load_config();
 $method = $_SERVER['REQUEST_METHOD'] ?? '';
 
-// Просмотр: /api/report.php?list&key=… (ключ задаётся в конфиге, см. deploy/reports.md).
-if ($method === 'GET' && isset($_GET['list'])) {
-    $key = (string) ($_GET['key'] ?? '');
-    if ($config['reports_key'] === '' || !hash_equals((string) $config['reports_key'], $key)) respond(403, ['error' => 'Нужен ключ.']);
+// Номер сообщения: по нему панель отмечает его решённым или удаляет.
+function report_id(array $entry): string
+{
+    return substr(sha1(($entry['at'] ?? '') . '|' . ($entry['visitor'] ?? '') . '|' . ($entry['kind'] ?? '') . '|' . ($entry['text'] ?? '')), 0, 16);
+}
+
+function read_reports(): array
+{
     $file = reports_dir() . '/reports.jsonl';
     $lines = is_file($file) ? file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
-    $items = array_map(function ($line) { return json_decode($line, true); }, array_slice($lines ?: [], -200));
-    respond(200, ['count' => count($lines ?: []), 'items' => array_reverse(array_values(array_filter($items)))]);
+    $items = [];
+    foreach ($lines ?: [] as $line) {
+        $entry = json_decode($line, true);
+        if (is_array($entry)) $items[] = $entry;
+    }
+    return $items;
+}
+
+// Неверный ключ панели: не больше 10 попыток в час с одного адреса.
+function admin_fails(bool $failed): bool
+{
+    $handle = @fopen(reports_dir() . '/admin-fails.json', 'c+');
+    if (!$handle) return false;
+    flock($handle, LOCK_EX);
+    $state = json_decode(stream_get_contents($handle) ?: '{}', true);
+    $hour = date('Y-m-d H');
+    if (!is_array($state) || ($state['hour'] ?? '') !== $hour) $state = ['hour' => $hour, 'ips' => []];
+    $me = visitor_key();
+    if ($failed) $state['ips'][$me] = ($state['ips'][$me] ?? 0) + 1;
+    $blocked = ($state['ips'][$me] ?? 0) > 10;
+    ftruncate($handle, 0);
+    rewind($handle);
+    fwrite($handle, json_encode($state));
+    flock($handle, LOCK_UN);
+    fclose($handle);
+    return $blocked;
+}
+
+// Панель /admin: заголовок X-Admin-Key с тем же ключом, что у объявлений.
+function admin_allowed(array $config): bool
+{
+    $sent = trim((string) ($_SERVER['HTTP_X_ADMIN_KEY'] ?? ''));
+    if ($sent === '') return false;
+    if ((string) $config['notices_key'] === '') respond(503, ['error' => 'Панель не настроена: задайте notices_key (deploy/notices.md).']);
+    if (admin_fails(false)) respond(429, ['error' => 'Слишком много неверных попыток. Подождите час.']);
+    if (!hash_equals(trim((string) $config['notices_key']), $sent)) {
+        admin_fails(true);
+        respond(403, ['error' => 'Неверный ключ.']);
+    }
+    return true;
+}
+
+// Просмотр: панель /admin/reports (X-Admin-Key) или старая ссылка
+// /api/report.php?list&key=… с reports_key из конфига (deploy/reports.md).
+if ($method === 'GET' && isset($_GET['list'])) {
+    if (!admin_allowed($config)) {
+        $key = (string) ($_GET['key'] ?? '');
+        if ($config['reports_key'] === '' || !hash_equals((string) $config['reports_key'], $key)) respond(403, ['error' => 'Нужен ключ.']);
+    }
+    $all = read_reports();
+    $items = array_map(function ($entry) { return $entry + ['id' => report_id($entry)]; }, array_slice($all, -300));
+    $open = count(array_filter($all, function ($entry) { return empty($entry['done']); }));
+    respond(200, ['count' => count($all), 'open' => $open, 'items' => array_reverse($items)]);
 }
 if ($method === 'GET' && isset($_GET['health'])) respond(200, ['ok' => is_writable(reports_dir())]);
 if ($method !== 'POST') respond(405, ['error' => 'Метод не поддерживается.']);
@@ -114,6 +170,39 @@ if ($origin !== '' && parse_url($origin, PHP_URL_HOST) !== $host) respond(403, [
 $raw = file_get_contents('php://input', false, null, 0, 8192);
 $data = json_decode((string) $raw, true);
 if (!is_array($data)) respond(400, ['error' => 'Не получилось прочитать сообщение.']);
+
+// Панель: отметить сообщение решённым, вернуть в работу или удалить.
+if (in_array($data['action'] ?? '', ['done', 'reopen', 'delete'], true)) {
+    if (!admin_allowed($config)) respond(403, ['error' => 'Нужен ключ.']);
+    $id = (string) ($data['id'] ?? '');
+    $file = reports_dir() . '/reports.jsonl';
+    $handle = @fopen($file, 'c+');
+    if (!$handle) respond(500, ['error' => 'Сервер не смог открыть файл сообщений.']);
+    flock($handle, LOCK_EX);
+    $found = false;
+    $kept = [];
+    foreach (explode("\n", (string) stream_get_contents($handle)) as $line) {
+        $entry = json_decode($line, true);
+        if (!is_array($entry)) continue;
+        if (report_id($entry) === $id) {
+            $found = true;
+            if ($data['action'] === 'delete') continue;
+            // Номер считается без отметки, поэтому после неё он тот же.
+            if ($data['action'] === 'done') $entry['done'] = date('c');
+            else unset($entry['done']);
+        }
+        $kept[] = json_encode($entry, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    }
+    if ($found) {
+        ftruncate($handle, 0);
+        rewind($handle);
+        fwrite($handle, $kept ? implode("\n", $kept) . "\n" : '');
+    }
+    flock($handle, LOCK_UN);
+    fclose($handle);
+    if (!$found) respond(404, ['error' => 'Сообщение не найдено: возможно, его уже удалили.']);
+    respond(200, ['ok' => true]);
+}
 
 $room = clean_text($data['room'] ?? '', 60);
 $kind = clean_text($data['kind'] ?? '', 20);

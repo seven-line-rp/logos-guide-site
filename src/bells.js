@@ -1,14 +1,9 @@
-import { rooms } from './data.js'
-import { storageGet, storageSet } from './storage.js'
 import { holidayName } from './holidays.js'
 
-// «Моё расписание». Пары в колледже каждый день новые, поэтому пара
-// привязана к дате, а не к дню недели. Студент добавляет их сам, хранятся
-// только в браузере (ключ logos-schedule). По ним главная показывает
-// следующую пару с маршрутом, а страница маршрута — успеваете ли вы.
-
-export const SCHEDULE_KEY = 'logos-schedule'
-const KEEP_DAYS = 14 // старые дни удаляются сами
+// Звонки колледжа. По ним главная показывает, что идёт сейчас, страница
+// маршрута считает «успею ли на пару», а сервер рассылает напоминания за
+// 5 минут до начала (public/api/notify.php получает их копию при сборке).
+// Личного расписания на сайте нет: пары у всех начинаются по одним звонкам.
 
 // Расписание звонков на 2026–2027 учебный год (начало занятий в 9:00).
 // В понедельник первым идёт РОВ («Разговоры о важном»), поэтому пары
@@ -33,9 +28,7 @@ export const LUNCH = {
   weekday: [{ course: 1, start: '12:10', end: '12:30' }, { course: 2, start: '14:00', end: '14:20' }],
 }
 
-const TIME = /^([01]\d|2[0-3]):[0-5]\d$/
-const DATE = /^\d{4}-\d{2}-\d{2}$/
-const listeners = new Set()
+export const LESSON_NOTICE_BEFORE = 5 // за сколько минут до звонка приходит напоминание
 
 export function toMinutes(time) {
   const [h, m] = time.split(':').map(Number)
@@ -81,56 +74,21 @@ export function bellState(now = new Date()) {
   return { kind: 'over', next: null }
 }
 
-export function validLesson(lesson) {
-  return Boolean(lesson && typeof lesson.date === 'string' && DATE.test(lesson.date)
-    && TIME.test(lesson.start) && TIME.test(lesson.end) && toMinutes(lesson.end) > toMinutes(lesson.start)
-    && typeof lesson.subject === 'string' && lesson.subject.trim()
-    && rooms.some((room) => room.id === lesson.roomId))
+// Ближайший звонок на пару, если до него меньше трёх часов и пара ещё не идёт:
+// для «успею ли» на странице маршрута.
+export function nextBell(now = new Date()) {
+  const state = bellState(now)
+  if (!state || !state.next || state.kind === 'lesson') return null
+  const minutes = toMinutes(state.next.start) - (now.getHours() * 60 + now.getMinutes())
+  return minutes < 180 ? { label: state.next.label, start: state.next.start, minutes } : null
 }
 
-export function sortLessons(lessons) {
-  return [...lessons].sort((a, b) => a.date.localeCompare(b.date) || toMinutes(a.start) - toMinutes(b.start))
-}
-
-export function parseSchedule(raw, today = dateKey(new Date())) {
-  try {
-    const value = JSON.parse(raw || '[]')
-    const oldest = addDays(today, -KEEP_DAYS)
-    return Array.isArray(value) ? sortLessons(value.filter(validLesson).filter((lesson) => lesson.date >= oldest)) : []
-  } catch {
-    return []
-  }
-}
-
-export function readSchedule() {
-  return parseSchedule(storageGet(SCHEDULE_KEY))
-}
-
-export function saveSchedule(lessons) {
-  storageSet(SCHEDULE_KEY, JSON.stringify(sortLessons(lessons.filter(validLesson))))
-  listeners.forEach((listener) => listener())
-}
-
-export function subscribeSchedule(listener) {
-  listeners.add(listener)
-  return () => listeners.delete(listener)
-}
-
-// Ближайшая пара: идущая сейчас или следующая (сегодня или в другой день).
-// minutes — сколько минут до начала (отрицательно, если уже идёт),
-// offset — через сколько дней.
-export function nextLesson(lessons, now = new Date()) {
-  const today = dateKey(now)
-  const minute = now.getHours() * 60 + now.getMinutes()
-  for (const lesson of sortLessons(lessons)) {
-    if (lesson.date < today) continue
-    const offset = Math.round((parseDateKey(lesson.date) - parseDateKey(today)) / 86400000)
-    const start = toMinutes(lesson.start) + offset * 1440
-    const end = toMinutes(lesson.end) + offset * 1440
-    if (end <= minute) continue
-    return { lesson, minutes: start - minute, ongoing: start <= minute, offset }
-  }
-  return null
+// Во сколько сегодня придут напоминания о парах: «08:55», «10:35»…
+export function reminderTimes(kind) {
+  return BELLS[kind].map((bell) => {
+    const minute = toMinutes(bell.start) - LESSON_NOTICE_BEFORE
+    return { ...bell, at: `${String(Math.floor(minute / 60)).padStart(2, '0')}:${String(minute % 60).padStart(2, '0')}` }
+  })
 }
 
 // Успеваете ли дойти: сравниваем время пути с временем до начала пары.
@@ -150,13 +108,4 @@ export function formatCountdown(minutes) {
   const hours = Math.floor(minutes / 60)
   if (hours < 24) return `через ${hours} ч ${minutes % 60} мин`
   return `через ${Math.round(hours / 24)} дн.`
-}
-
-const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря']
-const WEEKDAYS = ['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота']
-
-export function dayLabel(key, today = dateKey(new Date())) {
-  const date = parseDateKey(key)
-  const name = key === today ? 'Сегодня' : key === addDays(today, 1) ? 'Завтра' : key === addDays(today, 2) ? 'Послезавтра' : WEEKDAYS[date.getDay()][0].toUpperCase() + WEEKDAYS[date.getDay()].slice(1)
-  return { name, date: `${date.getDate()} ${MONTHS[date.getMonth()]}`, weekday: WEEKDAYS[date.getDay()] }
 }

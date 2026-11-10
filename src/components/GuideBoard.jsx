@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { ArrowUpRight, Bot, CalendarClock, Users } from 'lucide-react'
+import { ArrowUpRight, BellRing, Bot, Users } from 'lucide-react'
 import { rooms } from '../data.js'
 import { useTeachers } from '../search.js'
 
@@ -15,7 +15,7 @@ export default function GuideBoard() {
     { to: '/map', plate: String(rooms.length), title: 'Карта этажей', text: `${rooms.length} помещений на двух этажах: кабинеты, столовая, гардероб, медпункт.` },
     { to: '/route', plate: String(FLOOR_LINKS), title: 'Маршрут до двери', text: 'Лифт и три лестницы между этажами. Покажем самый быстрый путь и подскажем повороты голосом.' },
     { to: '/teachers', plate: teachers.length ? String(teachers.length) : null, icon: Users, title: 'Преподаватели', text: 'Введите фамилию преподавателя или сотрудника, и откроется кабинет, где его искать.' },
-    { to: '/schedule', icon: CalendarClock, title: 'Моё расписание', text: 'Внесите пары один раз, и на главной будет видно, куда идти дальше и сколько осталось до звонка.' },
+    { to: '/notifications', icon: BellRing, title: 'Напоминания о парах', text: 'За 5 минут до звонка придёт уведомление: в 8:55 перед первой парой и дальше по звонкам.' },
     { to: '/here', plate: 'QR', title: 'Таблички «Вы здесь»', text: 'Наведите камеру на код у двери, и маршрут построится от этого места.' },
     { to: '/ai', icon: Bot, title: 'Спросить помощника', text: 'Чат подскажет, где кабинет и как дойти. Работает на нейросети и иногда ошибается.' },
   ]

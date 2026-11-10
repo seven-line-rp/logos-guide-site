@@ -9,7 +9,7 @@ import { tmpdir } from 'node:os'
 import process from 'node:process'
 import { Buffer } from 'node:buffer'
 import { join } from 'node:path'
-import { BELLS, LUNCH } from './schedule.js'
+import { BELLS, LUNCH } from './bells.js'
 import { HOLIDAYS } from './holidays.js'
 
 // Push-уведомления (public/api/notify.php) на настоящем PHP. Вместо FCM и Apple —

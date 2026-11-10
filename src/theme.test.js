@@ -1,34 +1,37 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { THEMES, nextTheme, resolveTheme } from './theme.js'
+import { THEMES, cleanEnabledThemes, nextTheme, resolveTheme } from './theme.js'
 import { holidayName } from './holidays.js'
-import { daysToUnity } from './festive.js'
-import { bellsFor } from './schedule.js'
+import { bellsFor } from './bells.js'
 
-test('the site has light, dark, pickme, motion and unity themes, and falls back to light', () => {
-  assert.deepEqual(THEMES, ['light', 'dark', 'pickme', 'motion', 'unity'])
+test('the site has light, dark and pickme themes, and falls back to light', () => {
+  assert.deepEqual(THEMES, ['light', 'dark', 'pickme'])
   assert.equal(resolveTheme('pickme'), 'pickme')
-  assert.equal(resolveTheme('motion'), 'motion')
   assert.equal(resolveTheme('dark'), 'dark')
   assert.equal(resolveTheme('light'), 'light')
-  assert.equal(resolveTheme('unity'), 'unity')
   assert.equal(resolveTheme(null), 'light')
   assert.equal(resolveTheme('sepia'), 'light')
+  // Убранные темы у тех, кто их когда-то выбрал, становятся светлой.
+  assert.equal(resolveTheme('motion'), 'light')
+  assert.equal(resolveTheme('unity'), 'light')
 })
 
-test('the theme button cycles through all five themes', () => {
+test('the theme button cycles through the themes', () => {
   assert.equal(nextTheme('light'), 'dark')
   assert.equal(nextTheme('dark'), 'pickme')
-  assert.equal(nextTheme('pickme'), 'motion')
-  assert.equal(nextTheme('motion'), 'unity')
-  assert.equal(nextTheme('unity'), 'light')
+  assert.equal(nextTheme('pickme'), 'light')
 })
 
-test('unity countdown counts days to 4 November', () => {
-  assert.equal(daysToUnity(new Date(2026, 10, 3, 15)), 1)
-  assert.equal(daysToUnity(new Date(2026, 10, 4, 9)), 0)
-  assert.equal(daysToUnity(new Date(2026, 10, 5, 9)), -1)
-  assert.equal(daysToUnity(new Date(2026, 9, 25, 9)), 10)
+test('themes switched off in the admin panel disappear; light always stays', () => {
+  assert.deepEqual(cleanEnabledThemes(['light', 'pickme']), ['light', 'pickme'])
+  assert.deepEqual(cleanEnabledThemes(['dark']), ['light', 'dark'], 'светлую выключить нельзя')
+  assert.deepEqual(cleanEnabledThemes([]), ['light'])
+  assert.deepEqual(cleanEnabledThemes(['pickme', 'unity', 'dark']), ['light', 'dark', 'pickme'], 'неизвестные отброшены, порядок обычный')
+  assert.deepEqual(cleanEnabledThemes(undefined), THEMES, 'сервер не ответил — все темы')
+  assert.equal(resolveTheme('dark', ['light', 'pickme']), 'light', 'выбранную тему выключили — сайт светлый')
+  assert.equal(nextTheme('light', ['light', 'pickme']), 'pickme')
+  assert.equal(nextTheme('pickme', ['light', 'pickme']), 'light')
+  assert.equal(nextTheme('light', ['light']), 'light')
 })
 
 test('public holidays have no bells, ordinary days do', () => {

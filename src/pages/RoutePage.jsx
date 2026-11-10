@@ -12,7 +12,7 @@ import { VOICE_PACK_MALE_ID, playVoicePack, stopVoicePack, voicePackForPreset } 
 import { storageGet, storageSet } from '../storage.js'
 import { NOTICE_TYPES, avoidClosed, closedRoomIds, useNotices } from '../notices.js'
 import { findNearest, nearbyKinds, rememberRoute } from '../places.js'
-import { arrivalStatus, formatCountdown, nextLesson, readSchedule } from '../schedule.js'
+import { arrivalStatus, formatCountdown, nextBell } from '../bells.js'
 import { useFavorite } from '../components/FavoriteButton.jsx'
 import ShareRoute from '../components/ShareRoute.jsx'
 import WalkMode from '../components/WalkMode.jsx'
@@ -220,9 +220,11 @@ export default function RoutePage() {
   }
   const [favorite, toggleFavorite] = useFavorite(target.id)
   const [sharing, setSharing] = useState(false)
-  // «Успеть на пару»: время до начала берём из своего расписания, если
-  // следующая пара — в этом кабинете, иначе человек выбирает его сам.
-  const lessonAhead = useMemo(() => { const next = nextLesson(readSchedule()); return next && next.lesson.roomId === target.id && next.minutes < 180 ? next : null }, [target.id])
+  // «Успеть на пару»: время до ближайшего звонка на пару берём из звонков
+  // колледжа (перемена, обед или утро до занятий); можно выбрать и своё.
+  // crowd обновляется раз в полминуты, вместе с ним пересчитываем и звонок.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const lessonAhead = useMemo(() => nextBell(), [crowd])
   const meetMinutes = useMemo(() => {
     if (!meet?.at) return null
     const now = new Date()
@@ -333,7 +335,7 @@ export default function RoutePage() {
             {route.crowdSeconds > 0 && <p className="rt-crowd"><Users size={14} aria-hidden="true" /> {crowd?.kind === 'lunch' ? 'Сейчас обед' : crowd?.kind === 'before' ? 'Скоро первая пара' : 'Сейчас перемена'}: у лестниц и лифта людно, время посчитано с запасом.</p>}
           </>}
           {!sameRoom && <div className="rt-arrive">
-            <span className="rt-arrive-label"><AlarmClock size={15} /> {lessonAhead && deadline === null ? `${lessonAhead.lesson.subject} ${formatCountdown(lessonAhead.minutes)}` : 'Пара через'}</span>
+            <span className="rt-arrive-label"><AlarmClock size={15} /> {lessonAhead && deadline === null ? `${lessonAhead.label} ${formatCountdown(lessonAhead.minutes)}` : 'Пара через'}</span>
             <div className="rt-arrive-chips" role="group" aria-label="Сколько минут до пары">
               {[5, 10, 15, 20].map((value) => <button type="button" key={value} aria-pressed={deadline === value} onClick={() => setDeadline(deadline === value ? null : value)}>{value} мин</button>)}
             </div>

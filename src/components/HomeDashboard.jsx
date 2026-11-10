@@ -1,14 +1,24 @@
 import { Link } from 'react-router-dom'
-import { ArrowRight, ArrowUpRight, BellRing, CalendarPlus, History, LocateFixed, Star } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { ArrowRight, ArrowUpRight, BellRing, History, LocateFixed, Star } from 'lucide-react'
 import { rooms } from '../data.js'
 import { nearbyKinds, roomTitle } from '../places.js'
-import { bellState, dateKey, nextLesson } from '../schedule.js'
+import { bellState, bellsFor, dateKey } from '../bells.js'
 import { holidayName } from '../holidays.js'
 import { useFavorites, useRecentRoutes } from './FavoriteButton.jsx'
-import { NextLessonCard, useNow, useSchedule } from './NextLesson.jsx'
 import { RawText } from './ai-message.js'
 
-// Что сейчас по звонкам — видно и без своего расписания.
+// Текущее время, обновляется раз в полминуты: по нему считаются звонки.
+function useNow() {
+  const [now, setNow] = useState(() => new Date())
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 30000)
+    return () => window.clearInterval(timer)
+  }, [])
+  return now
+}
+
+// Что сейчас по звонкам.
 function BellNow({ now }) {
   const state = bellState(now)
   if (!state) return <div className="bell-now"><BellRing size={15} /><span>{holidayName(dateKey(now)) ? `Сегодня ${holidayName(dateKey(now))}, занятий нет` : 'Сегодня выходной'}</span></div>
@@ -21,10 +31,21 @@ function BellNow({ now }) {
   return <div className={`bell-now bell-now-${state.kind}`}><BellRing size={15} /><span>{text}</span></div>
 }
 
-// «Мой день» на главной: следующая пара с маршрутом, избранные места и
-// недавние маршруты и «где ближайший…». Всё личное — из браузера.
+// Звонки на сегодня списком: прошедшие бледные, текущая пара выделена.
+function BellList({ now }) {
+  const { bells } = bellsFor(dateKey(now))
+  if (!bells.length) return null
+  const minute = now.getHours() * 60 + now.getMinutes()
+  const toMinute = (time) => Number(time.slice(0, 2)) * 60 + Number(time.slice(3))
+  return <ol className="day-bells">{bells.map((bell) => {
+    const state = toMinute(bell.end) <= minute ? 'is-past' : toMinute(bell.start) <= minute ? 'is-now' : ''
+    return <li key={bell.start} className={state}><span>{bell.label}</span><time>{bell.start}–{bell.end}</time></li>
+  })}</ol>
+}
+
+// «Мой день» на главной: звонки на сегодня, избранные места, недавние
+// маршруты и «где ближайший…». Всё личное — из браузера.
 export default function HomeDashboard() {
-  const lessons = useSchedule()
   const now = useNow()
   const favorites = useFavorites()
   const recent = useRecentRoutes()
@@ -34,12 +55,8 @@ export default function HomeDashboard() {
     <div className="home-day-grid">
       <article className="day-card day-card-lesson">
         <BellNow now={now} />
-        {nextLesson(lessons, now) ? <NextLessonCard lessons={lessons} now={now} compact /> : <div className="day-empty">
-          <span className="day-icon"><CalendarPlus size={20} /></span>
-          <strong>{lessons.length ? 'Новых пар пока нет' : 'Добавьте своё расписание'}</strong>
-          <p>{lessons.length ? 'Расписание каждый день новое. Добавьте пары на завтра.' : 'Покажем следующую пару, сколько до неё осталось и как дойти.'}</p>
-        </div>}
-        <Link className="day-link" to="/schedule">{lessons.length ? 'Всё расписание' : 'Заполнить расписание'} <ArrowRight size={15} /></Link>
+        <BellList now={now} />
+        <Link className="day-link" to="/notifications">Напоминать за 5 минут до пары <ArrowRight size={15} /></Link>
       </article>
 
       <article className="day-card">

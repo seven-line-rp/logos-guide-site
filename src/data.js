@@ -4,7 +4,7 @@ export const navigation = [
   { label: 'Карта', to: '/map' },
   { label: 'Маршрут', to: '/route' },
   { label: 'Кабинеты', to: '/rooms' },
-  { label: 'Расписание', to: '/schedule' },
+  { label: 'Преподаватели', to: '/teachers' },
   { label: 'ИИ-помощник', to: '/ai', badge: 'АЛЬФА' },
 ]
 
