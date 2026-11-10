@@ -14,8 +14,8 @@ export const storedItems = [
   { key: 'logos-favorites, logos-recent-routes, logos-recent-places', purpose: 'Избранные места, последние маршруты и места из поиска', kind: 'Функциональные' },
   { key: 'logos-text-size', purpose: 'Крупный текст на сайте', kind: 'Функциональные' },
   { key: 'logos-start-checklist', purpose: 'Отметки в чек-листе первой недели', kind: 'Функциональные' },
-  { key: 'logos-schedule', purpose: 'Ваше расписание пар', kind: 'Функциональные' },
   { key: 'logos-push-topics', purpose: 'Какие уведомления присылать (пары, события, версии, сообщения)', kind: 'Функциональные' },
   { key: 'logos-here, route-need-lift', purpose: 'Где закончился последний маршрут (на 3 часа) и настройка «Мне нужен лифт»', kind: 'Функциональные' },
   { key: 'logos-tour-done', purpose: 'Обучение по сайту пройдено', kind: 'Функциональные' },
+  { key: 'logos-site-settings', purpose: 'Копия настроек сайта с сервера: какие темы включены и где Bluetooth-маячки', kind: 'Функциональные' },
 ]

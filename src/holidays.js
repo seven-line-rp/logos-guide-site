@@ -10,7 +10,7 @@ export const HOLIDAYS = {
   '05-09': 'День Победы', '06-12': 'День России', '11-04': 'День народного единства',
 }
 
-// key — дата вида «2026-11-04» (как в src/schedule.js).
+// key — дата вида «2026-11-04» (как в src/bells.js).
 export function holidayName(key) {
   return HOLIDAYS[String(key).slice(5)] || null
 }

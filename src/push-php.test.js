@@ -9,7 +9,7 @@ import { tmpdir } from 'node:os'
 import process from 'node:process'
 import { Buffer } from 'node:buffer'
 import { join } from 'node:path'
-import { BELLS, LUNCH } from './schedule.js'
+import { BELLS, LUNCH } from './bells.js'
 import { HOLIDAYS } from './holidays.js'
 
 // Push-уведомления (public/api/notify.php) на настоящем PHP. Вместо FCM и Apple —
@@ -220,6 +220,19 @@ test('a late or 5-minute cron still sends the lesson reminder, never on holidays
   assert.equal((await cron(Date.parse('2026-10-28T10:41:00+03:00'))).sent.filter((item) => item.kind === 'lesson-start').length, 0, 'после звонка уже поздно')
   // 4 ноября — День народного единства, пар нет.
   assert.equal((await cron(Date.parse('2026-11-04T10:35:00+03:00'))).sent.length, 0)
+})
+
+test('the first reminder goes out at 8:55, and Monday follows its own bells', { skip }, async () => {
+  const student = browser('/morning')
+  await post({ action: 'subscribe', subscription: student.subscription, topics: ['lessons'] })
+  const starts = async (time) => (await cron(Date.parse(time))).sent.filter((item) => item.kind === 'lesson-start').map((item) => item.title)
+  // Четверг, 29 октября: в 8:54 ещё рано, в 8:55 — напоминание о первой паре.
+  assert.deepEqual(await starts('2026-10-29T08:54:00+03:00'), [])
+  assert.deepEqual(await starts('2026-10-29T08:55:00+03:00'), ['Через 5 минут: 1-я пара'])
+  // Понедельник, 2 ноября: в 8:55 РОВ, в 9:35 первая пара (она начинается в 9:40).
+  assert.deepEqual(await starts('2026-11-02T08:55:00+03:00'), ['Через 5 минут: РОВ'])
+  assert.deepEqual(await starts('2026-11-02T09:35:00+03:00'), ['Через 5 минут: 1-я пара'])
+  assert.deepEqual(await starts('2026-11-02T10:35:00+03:00'), [], 'в понедельник в 10:35 напоминания нет: пара идёт до 11:10')
 })
 
 test('the public key response tells when the bells were last sent, ?tick runs the cron itself', { skip }, async () => {

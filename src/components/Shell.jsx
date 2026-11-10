@@ -1,11 +1,11 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { ArrowUpRight, Bell, BookOpen, Building2, Bot, CalendarDays, Check, Compass, Flag, Flower2, Gamepad2, GraduationCap, History, Info, LayoutGrid, ListChecks, Map as MapIcon, MapPin, Moon, Navigation, QrCode, Search, Sparkles, Sun, Type, Users, X } from 'lucide-react'
+import { ArrowUpRight, Bell, BookOpen, Building2, Bot, Check, Compass, Flag, Flower2, Gamepad2, GraduationCap, History, Info, LayoutGrid, ListChecks, Map as MapIcon, MapPin, Moon, Navigation, QrCode, Search, Sun, Type, Users, X } from 'lucide-react'
 import { navigation, quickPlaces, rooms } from '../data'
 import { clearRecentPlaces, nearbyKinds, readRecentPlaces, rememberPlace } from '../places.js'
 import { readHere } from '../route-prefs.js'
-import { nextTheme, setTheme, useTheme } from '../theme.js'
+import { nextTheme, setTheme, useEnabledThemes, useTheme } from '../theme.js'
 import { readTextSize, setTextSize } from '../text-size.js'
 import { lockBodyScroll } from '../storage'
 import { setLanguage, useLanguage } from '../i18n.js'
@@ -15,7 +15,6 @@ import { isSearchShortcut } from '../shortcuts.js'
 import { startTour } from '../tour-bus.js'
 import { openCookieSettings } from '../consent.js'
 import { SITE_VERSION_LABEL } from '../version.js'
-import { UnityFooterNote } from './Unity.jsx'
 import { isLitePerf } from '../perf.js'
 import NotificationBell from './NotificationBell.jsx'
 
@@ -44,7 +43,7 @@ export function useToast() { return useContext(ToastContext) }
 
 // Меню: разделы сгруппированы по задачам человека, а не по устройству сайта.
 // Иконки пунктов верхней навигации (сами пункты — в data.js).
-const navIcons = { '/map': MapIcon, '/route': Navigation, '/rooms': LayoutGrid, '/schedule': CalendarDays, '/ai': Bot }
+const navIcons = { '/map': MapIcon, '/route': Navigation, '/rooms': LayoutGrid, '/teachers': Users, '/ai': Bot }
 
 function NavIcon({ to }) {
   const Icon = navIcons[to]
@@ -60,9 +59,8 @@ const menuGroups = [
     { to: '/services', label: 'Пространства', hint: 'Столовая, библиотека, залы', icon: Building2, tone: 'amber' },
   ] },
   { title: 'Учёба', items: [
-    { to: '/schedule', label: 'Моё расписание', hint: 'Пары, звонки, успеете ли', icon: CalendarDays, tone: 'green' },
     { to: '/ai', label: 'ИИ-помощник', badge: 'АЛЬФА', hint: 'Спросите о чём угодно', icon: Bot, tone: 'violet' },
-    { to: '/notifications', label: 'Уведомления', hint: 'Пары, события, новые версии', icon: Bell, tone: 'amber' },
+    { to: '/notifications', label: 'Уведомления', hint: 'За 5 минут до пары, события', icon: Bell, tone: 'amber' },
     { to: '/start', label: 'Первая неделя', hint: 'Чек-лист для новичков', icon: ListChecks, tone: 'blue' },
   ] },
   { title: 'Ещё', items: [
@@ -79,20 +77,16 @@ const THEME_LABELS = {
   light: { aria: 'Включить светлую тему', title: 'Светлая тема' },
   dark: { aria: 'Включить тёмную тему', title: 'Тёмная тема' },
   pickme: { aria: 'Включить розовую тему «Пикми»', title: 'Тема «Пикми»' },
-  motion: { aria: 'Включить тему Motion', title: 'Тема Motion (тест)' },
-  unity: { aria: 'Включить праздничную тему «Единство»', title: 'Тема «Единство»' },
 }
 
 // Значок на кнопке темы — та тема, которая включится следующей.
-const THEME_ICONS = { light: Sun, dark: Moon, pickme: Flower2, motion: Sparkles, unity: Flag }
+const THEME_ICONS = { light: Sun, dark: Moon, pickme: Flower2 }
 
-// Темы в меню «Ещё». Motion пока тестовая — с пометкой.
+// Темы в меню «Ещё». Показываем только включённые в панели /admin/settings.
 const THEME_CHOICES = [
   { id: 'light', label: 'Светлая' },
   { id: 'dark', label: 'Тёмная' },
   { id: 'pickme', label: 'Пикми' },
-  { id: 'motion', label: 'Motion', badge: 'ТЕСТ' },
-  { id: 'unity', label: 'Единство' },
 ]
 
 function Brand() {
@@ -195,6 +189,8 @@ export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const menuToggleRef = useRef(null)
   const theme = useTheme()
+  const enabledThemes = useEnabledThemes()
+  const upcomingTheme = nextTheme(theme, enabledThemes)
   const [textSize, setTextSizeState] = useState(readTextSize)
   const location = useLocation()
   const closeSearch = useCallback(() => setSearchOpen(false), [])
@@ -223,7 +219,7 @@ export function Header() {
     // Страховка: если браузер не завершил переход, сцена всё равно оживёт.
     window.setTimeout(done, 3000)
   }
-  const changeTheme = (event) => switchTheme(nextTheme(theme), event)
+  const changeTheme = (event) => switchTheme(upcomingTheme, event)
   const openSearch = () => { setMobileOpen(false); setSearchOpen(true) }
   const takeTour = () => { setMobileOpen(false); startTour() }
   const changeTextSize = (value) => setTextSizeState(setTextSize(value))
@@ -255,7 +251,7 @@ export function Header() {
         </nav>
         <div className="header-actions">
           <button className="search-trigger" type="button" aria-keyshortcuts="K" onClick={openSearch} aria-label="Найти кабинет"><Search size={17} /><span>Найти место</span><kbd>K</kbd></button>
-          <button className="theme-toggle header-theme hd-icon" type="button" onClick={changeTheme} aria-label={THEME_LABELS[nextTheme(theme)].aria} title={THEME_LABELS[nextTheme(theme)].title}>{(() => { const Icon = THEME_ICONS[nextTheme(theme)]; return <Icon size={17} /> })()}</button>
+          {enabledThemes.length > 1 && <button className="theme-toggle header-theme hd-icon" type="button" onClick={changeTheme} aria-label={THEME_LABELS[upcomingTheme].aria} title={THEME_LABELS[upcomingTheme].title}>{(() => { const Icon = THEME_ICONS[upcomingTheme]; return <Icon size={17} /> })()}</button>}
           <NotificationBell />
           <NavLink className={({ isActive }) => `mobile-map-link ${isActive ? 'mobile-map-link-active' : ''}`} to="/map" aria-label="Открыть карту"><MapPin size={18} /><span>Карта</span></NavLink>
           <button ref={menuToggleRef} className={`mobile-menu-toggle hd-burger ${mobileOpen ? 'is-open' : ''}`} type="button" onClick={() => setMobileOpen((value) => !value)} aria-controls="site-menu" aria-label={mobileOpen ? 'Закрыть меню' : 'Открыть меню'} aria-expanded={mobileOpen}><span className="hd-burger-lines" aria-hidden="true"><i /><i /><i /></span><span className="hd-burger-label">Ещё</span></button>
@@ -281,10 +277,10 @@ export function Header() {
               <span>Язык</span>
               <div className="hd-seg" role="group" aria-label="Язык сайта">{['ru', 'en'].map((locale) => <button key={locale} type="button" lang={locale} aria-pressed={language === locale} onClick={() => setLanguage(locale)} title={locale === 'ru' ? 'Русская версия' : 'English version'}>{locale.toUpperCase()}</button>)}</div>
             </div>
-            <div className="hd-menu-row hd-menu-row-theme">
+            {enabledThemes.length > 1 && <div className="hd-menu-row hd-menu-row-theme">
               <span>Тема</span>
-              <div className="hd-seg hd-seg-themes" role="group" aria-label="Тема оформления">{THEME_CHOICES.map((choice) => { const Icon = THEME_ICONS[choice.id]; return <button key={choice.id} type="button" className={`hd-seg-${choice.id}`} aria-pressed={theme === choice.id} onClick={(event) => switchTheme(choice.id, event)}><Icon size={14} /> {choice.label}{choice.badge && <span className="nav-badge">{choice.badge}</span>}</button> })}</div>
-            </div>
+              <div className="hd-seg hd-seg-themes" role="group" aria-label="Тема оформления">{THEME_CHOICES.filter((choice) => enabledThemes.includes(choice.id)).map((choice) => { const Icon = THEME_ICONS[choice.id]; return <button key={choice.id} type="button" className={`hd-seg-${choice.id}`} aria-pressed={theme === choice.id} onClick={(event) => switchTheme(choice.id, event)}><Icon size={14} /> {choice.label}</button> })}</div>
+            </div>}
             <div className="hd-menu-row">
               <span>Текст</span>
               <div className="hd-seg" role="group" aria-label="Размер текста"><button type="button" aria-pressed={textSize !== 'large'} onClick={() => changeTextSize('normal')}>Обычный</button><button type="button" aria-pressed={textSize === 'large'} onClick={() => changeTextSize('large')}><Type size={14} /> Крупный</button></div>
@@ -302,5 +298,5 @@ export function Header() {
 }
 
 export function Footer() {
-  return <footer className="site-footer"><div className="footer-top container"><div className="footer-brand-block"><Brand /><p>Карта, маршруты и всё, что<br />нужно найти в колледже.</p><span className="footer-version">Версия {SITE_VERSION_LABEL}</span></div>{menuGroups.map((group) => <div key={group.title} className="footer-links-group"><span className="footer-label">{group.title}</span>{group.items.map((item) => <Link key={item.to} to={item.to} className="footer-link"><item.icon size={15} aria-hidden="true" />{item.label}</Link>)}</div>)}</div><UnityFooterNote /><div className="footer-bottom container"><span>Путеводитель колледжа «Логос»</span><nav className="footer-legal" aria-label="Правовая информация"><Link to="/privacy">Политика конфиденциальности</Link><Link to="/terms">Пользовательское соглашение</Link><Link to="/consent">Согласие на обработку данных</Link><Link to="/privacy#cookies">Cookie</Link><Link to="/notifications">Уведомления</Link><button type="button" onClick={openCookieSettings}>Настройки cookie</button></nav><a href="#top" onClick={(event) => { event.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>Наверх ↑</a></div></footer>
+  return <footer className="site-footer"><div className="footer-top container"><div className="footer-brand-block"><Brand /><p>Карта, маршруты и всё, что<br />нужно найти в колледже.</p><span className="footer-version">Версия {SITE_VERSION_LABEL}</span></div>{menuGroups.map((group) => <div key={group.title} className="footer-links-group"><span className="footer-label">{group.title}</span>{group.items.map((item) => <Link key={item.to} to={item.to} className="footer-link"><item.icon size={15} aria-hidden="true" />{item.label}</Link>)}</div>)}</div><div className="footer-bottom container"><span>Путеводитель колледжа «Логос»</span><nav className="footer-legal" aria-label="Правовая информация"><Link to="/privacy">Политика конфиденциальности</Link><Link to="/terms">Пользовательское соглашение</Link><Link to="/consent">Согласие на обработку данных</Link><Link to="/privacy#cookies">Cookie</Link><Link to="/notifications">Уведомления</Link><button type="button" onClick={openCookieSettings}>Настройки cookie</button></nav><a href="#top" onClick={(event) => { event.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>Наверх ↑</a></div></footer>
 }

@@ -86,3 +86,47 @@ test('each camera flight is continuous, climbs smoothly and loops back to the op
     }
   }
 })
+
+test('walls open up where the route goes, and stay whole elsewhere', async () => {
+  const { doorsOnRoute, floorDoors, floorWalls, openWalls } = await import('./hero-scene-model.js')
+  const wall = { x: 0, y: 10, length: 100, angle: 0 }
+  assert.deepEqual(openWalls([wall], []), [wall], 'без маршрута стены не трогаем')
+  assert.deepEqual(openWalls([wall], [[0, 50], [100, 50]]), [wall], 'путь рядом, но не через стену')
+  // Путь пересекает стену в середине: остаются два куска и проход 15 единиц.
+  assert.deepEqual(openWalls([wall], [[50, 0], [50, 30]]), [{ x: 0, y: 10, length: 42.5, angle: 0 }, { x: 57.5, y: 10, length: 42.5, angle: 0 }])
+  // Путь идёт прямо по стене: открываем весь этот участок.
+  assert.deepEqual(openWalls([wall], [[20, 10], [60, 10]]), [{ x: 0, y: 10, length: 12.5, angle: 0 }, { x: 67.5, y: 10, length: 32.5, angle: 0 }])
+  // Стена под углом: считаем в её собственных координатах.
+  const tilted = openWalls([{ x: 0, y: 0, length: 100, angle: 90 }], [[-20, 50], [20, 50]])
+  assert.deepEqual(tilted.map((item) => [item.x, item.y, item.length]), [[0, 0, 42.5], [0, 57.5, 42.5]])
+  assert.equal(openWalls([{ x: 0, y: 0, length: 12, angle: 0 }], [[6, -5], [6, 5]]).length, 0, 'короткая стена на пути убирается целиком')
+
+  // На настоящем плане ни один отрезок маршрута не пересекает оставшиеся стены.
+  const { buildRouteOptions } = await import('./map-routing.js')
+  const crosses = (a, b, w) => {
+    const rad = w.angle * Math.PI / 180
+    const [ux, uy] = [Math.cos(rad), Math.sin(rad)]
+    const side = ([x, y]) => -(x - w.x) * uy + (y - w.y) * ux
+    const along = ([x, y]) => (x - w.x) * ux + (y - w.y) * uy
+    const [da, db] = [side(a), side(b)]
+    if (Math.abs(da) < 0.01 || Math.abs(db) < 0.01 || (da > 0) === (db > 0)) return false
+    const t = along(a) + (along(b) - along(a)) * (da / (da - db))
+    return t > 0.01 && t < w.length - 0.01
+  }
+  for (const [from, to] of [['entrance-1', 'physics-211'], ['canteen', 'radio-lab-228'], ['auditorium-104', 'library-214'], ['class-139', 'medical-post']]) {
+    for (const option of buildRouteOptions(from, to)) {
+      for (const floor of [1, 2]) {
+        const points = option.byFloor[floor]?.points || []
+        if (points.length < 2) continue
+        const walls = openWalls(floorWalls(floor), points)
+        assert.ok(walls.length >= floorWalls(floor).length - 4 || walls.length > 50, 'стены не пропали целиком')
+        for (let index = 1; index < points.length; index += 1) {
+          const hit = walls.find((item) => crosses(points[index - 1], points[index], item))
+          assert.equal(hit, undefined, `${from} → ${to} (${option.kind}), ${floor} этаж: путь упирается в стену`)
+        }
+        const doors = floorDoors(floor)
+        assert.ok(doorsOnRoute(doors, points).size <= 4, 'убираем только двери на пути')
+      }
+    }
+  }
+})

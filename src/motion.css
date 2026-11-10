@@ -49,7 +49,7 @@
 .quick-place-card:hover .quick-place-arrow { transform: translate(2px, -2px); }
 
 /* ---------- Кнопки: отклик на нажатие ---------- */
-:is(.button, .header-cta, .search-trigger, .hd-icon, .hd-burger, .directory-chip, .day-chip, .here-chip, .teacher-action, .start-go, .search-route, .ai-chip, .ai-send, .lesson-next-go):active { transform: scale(.97); transition-duration: .08s; }
+:is(.button, .header-cta, .search-trigger, .hd-icon, .hd-burger, .directory-chip, .day-chip, .here-chip, .teacher-action, .start-go, .search-route, .ai-chip, .ai-send):active { transform: scale(.97); transition-duration: .08s; }
 .button svg, .text-link svg { transition: transform var(--t-mid) var(--ease-out); }
 .button:hover svg:last-child, .text-link:hover svg:last-child { transform: translateX(2px); }
 

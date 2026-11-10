@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, BookOpen, CalendarDays, Check, Compass, HeartPulse, Info, Landmark, MessageCircle, RotateCcw, Shirt, Users, UtensilsCrossed } from 'lucide-react'
+import { ArrowRight, BellRing, BookOpen, Check, Compass, HeartPulse, Info, Landmark, MessageCircle, RotateCcw, Shirt, Users, UtensilsCrossed } from 'lucide-react'
 import { PageHeading, Reveal } from '../components/Primitives.jsx'
 import { storageGet, storageSet } from '../storage.js'
 
@@ -13,7 +13,7 @@ export const START_KEY = 'logos-start-checklist'
 export const startSteps = [
   { id: 'changing-room', icon: Shirt, title: 'Где раздевалка', text: 'Первое место, куда заходят утром. Первый этаж, рядом с холлом.', to: '/route?to=changing-room', action: 'Маршрут' },
   { id: 'academic-office', icon: Landmark, title: 'Учебная часть', text: 'Расписание, справки, вопросы по учёбе — всё сюда.', to: '/route?to=academic-office', action: 'Маршрут' },
-  { id: 'schedule', icon: CalendarDays, title: 'Заполнить расписание', text: 'Добавьте пары на завтра — главная будет подсказывать, куда идти.', to: '/schedule', action: 'Открыть' },
+  { id: 'notifications', icon: BellRing, title: 'Включить напоминания о парах', text: 'За 5 минут до звонка телефон напомнит, что пора идти.', to: '/notifications', action: 'Включить' },
   { id: 'canteen', icon: UtensilsCrossed, title: 'Столовая', text: 'Левое крыло первого этажа. Обед для 1 и 2 курса в разное время.', to: '/route?to=canteen', action: 'Маршрут' },
   { id: 'library-214', icon: BookOpen, title: 'Библиотека', text: 'Читальный зал на втором этаже, кабинет 214.', to: '/route?to=library-214', action: 'Маршрут' },
   { id: 'medical-post', icon: HeartPulse, title: 'Медпункт', text: 'Запомните заранее: западное крыло первого этажа.', to: '/route?to=medical-post', action: 'Маршрут' },

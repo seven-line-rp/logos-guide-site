@@ -1,23 +1,16 @@
-import { rooms } from './data.js'
-import { bellsFor, dateKey, readSchedule, subscribeSchedule, toMinutes } from './schedule.js'
+import { LESSON_NOTICE_BEFORE, bellsFor, dateKey, toMinutes } from './bells.js'
 import { storageGet, storageRemove, storageSet } from './storage.js'
 import { SITE_VERSION_LABEL } from './version.js'
 
 // Push-уведомления (страница /notifications). Браузер
 // подписывается через сервис-воркер, подписка и выбранные темы уходят в
-// public/api/notify.php. Расписание пар сервер не видит: перед каждым
-// уведомлением о паре сервис-воркер сам подставляет из него предмет и кабинет
-// (копия лежит в кэше браузера, см. syncScheduleForPush). Настройка — deploy/push.md.
+// public/api/notify.php. О парах сервер напоминает по звонкам колледжа: за
+// 5 минут до начала (в 8:55 перед парой в 9:00) и в конце пары. Настройка — deploy/push.md.
 
 export const PUSH_API = '/api/notify.php'
 export const PUSH_TOPICS_KEY = 'logos-push-topics'
-// Кэш, из которого сервис-воркер читает расписание. Не начинается с «logos-»,
-// иначе его удалит очистка старых версий сайта в sw.js.
-export const PUSH_DATA_CACHE = 'push-data'
-export const PUSH_SCHEDULE_URL = '/__push/schedule.json'
-
 export const PUSH_TOPICS = [
-  { id: 'lessons', title: 'Пары', hint: 'За 5 минут до начала и в конце пары, по звонкам' },
+  { id: 'lessons', title: 'Пары', hint: 'За 5 минут до начала (в 8:55 перед первой парой) и в конце пары' },
   { id: 'events', title: 'События', hint: 'Концерты, собрания и другие объявления на карте' },
   { id: 'updates', title: 'Новые версии', hint: 'Когда на сайте появилось что-то новое' },
   { id: 'news', title: 'Сообщения колледжа', hint: 'Важное от команды сайта и колледжа' },
@@ -34,14 +27,12 @@ export const PUSH_KINDS = {
 }
 
 // Пример каждого вида — для кнопки «Показать здесь» и превью.
-// Пару берём из расписания, если она есть, иначе показываем общий текст.
-export function samplePush(kind, { lesson, roomLabel } = {}) {
-  const where = lesson && roomLabel ? `${lesson.subject}, ${roomLabel}` : ''
+export function samplePush(kind) {
   switch (kind) {
     case 'lesson-start':
-      return { kind, title: where ? `Через 5 минут: ${lesson.subject}` : 'Через 5 минут: 2-я пара', body: where ? `${roomLabel}, начало в ${lesson.start}. Маршрут уже готов.` : 'Начало в 10:40. Откройте маршрут, чтобы не опоздать.', url: lesson ? `/route?to=${lesson.roomId}` : '/schedule' }
+      return { kind, title: 'Через 5 минут: 2-я пара', body: 'Начало в 10:40. Откройте маршрут, чтобы не опоздать.', url: '/route' }
     case 'lesson-end':
-      return { kind, title: lesson ? `${lesson.subject}: пара закончилась` : '2-я пара закончилась', body: 'Перемена до 12:30. Следующий кабинет — в расписании.', url: '/schedule' }
+      return { kind, title: '2-я пара закончилась', body: 'Перемена до 12:30.', url: '/' }
     case 'event':
       return { kind, title: 'Концерт в актовом зале', body: 'Начало в 15:00, вход свободный.', url: '/map?room=auditorium-104' }
     case 'update':
@@ -52,7 +43,7 @@ export function samplePush(kind, { lesson, roomLabel } = {}) {
 }
 
 export function notificationOptions(push) {
-  const lesson = push.kind === 'lesson-start' && push.url?.startsWith('/route')
+  const lesson = push.kind === 'lesson-start'
   return {
     body: push.body,
     icon: '/apple-touch-icon.png',
@@ -213,31 +204,12 @@ export async function showLocalPush(push) {
   return notification
 }
 
-// Копия расписания для сервис-воркера: он подставит предмет и кабинет в
-// уведомление о паре. Хранится в кэше браузера и на сервер не уходит.
-export async function syncScheduleForPush(lessons) {
-  if (typeof caches === 'undefined') return
-  const compact = lessons.map((lesson) => {
-    const room = rooms.find((item) => item.id === lesson.roomId)
-    return { date: lesson.date, start: lesson.start, end: lesson.end, subject: lesson.subject, roomId: lesson.roomId, room: room ? `${room.name}${room.number ? ` №${room.number}` : ''}` : '' }
-  })
-  try {
-    const cache = await caches.open(PUSH_DATA_CACHE)
-    await cache.put(PUSH_SCHEDULE_URL, new Response(JSON.stringify(compact), { headers: { 'Content-Type': 'application/json' } }))
-  } catch { /* приватный режим: уведомления будут без предмета */ }
-}
-
-// Держим копию свежей: при запуске сайта и после каждой правки расписания.
-// Пока уведомления не разрешены, ничего не пишем.
-export function keepScheduleForPush() {
+// При запуске сайта: напоминания из открытой вкладки, сверка подписки с
+// сервером и запасной крон. Пока уведомления не разрешены, ничего не делаем.
+export function keepPushAlive() {
   if (typeof window === 'undefined' || !('Notification' in window)) return
-  const sync = () => {
-    if (Notification.permission !== 'granted') return
-    if (typeof caches !== 'undefined') syncScheduleForPush(readSchedule())
-    scheduleLessonReminders()
-  }
+  const sync = () => { if (Notification.permission === 'granted') scheduleLessonReminders() }
   sync()
-  subscribeSchedule(sync)
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { sync(); resyncPush() } })
   resyncPush()
   startCronTicker()
@@ -269,21 +241,19 @@ export async function resyncPush({ force = false, now = Date.now() } = {}) {
   } catch { return false }
 }
 
-// Какие напоминания о своих парах показать сегодня: за 5 минут до начала
-// каждой пары из «Моего расписания» (а не только по звонкам, как с сервера).
-export function lessonReminders(lessons, now = new Date()) {
+// Какие напоминания о парах показать сегодня: за 5 минут до каждого звонка
+// на пару (те же, что рассылает сервер). В воскресенье и праздники — ничего.
+export function lessonReminders(now = new Date()) {
   const today = dateKey(now)
   const minute = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60
-  return lessons
-    .filter((lesson) => lesson.date === today)
-    .map((lesson) => {
-      const room = rooms.find((item) => item.id === lesson.roomId)
-      const roomLabel = room ? `${room.name}${room.number ? ` №${room.number}` : ''}` : ''
-      const start = toMinutes(lesson.start)
+  return bellsFor(today).bells
+    .map((bell) => {
+      const start = toMinutes(bell.start)
       return {
-        at: start - 5,
+        at: start - LESSON_NOTICE_BEFORE,
         start,
-        push: { kind: 'lesson-start', tag: `lesson-${today}-${lesson.start}`, title: `Через 5 минут: ${lesson.subject}`, body: `${roomLabel ? `${roomLabel}, н` : 'Н'}ачало в ${lesson.start}. Маршрут уже готов.`, url: `/route?to=${encodeURIComponent(lesson.roomId)}` },
+        bell,
+        push: { kind: 'lesson-start', tag: `lesson-${today}-${bell.start}`, title: `Через ${LESSON_NOTICE_BEFORE} минут: ${bell.label}`, body: `Начало в ${bell.start}. Откройте маршрут, чтобы не опоздать.`, url: '/route' },
       }
     })
     .filter((item) => item.start > minute)
@@ -299,7 +269,7 @@ export function scheduleLessonReminders(now = new Date()) {
   reminderTimers.forEach((timer) => clearTimeout(timer))
   reminderTimers.clear()
   if (typeof window === 'undefined' || Notification.permission !== 'granted' || !lessonsWanted()) return []
-  const plan = lessonReminders(readSchedule(), now)
+  const plan = lessonReminders(now)
   for (const item of plan) {
     reminderTimers.add(setTimeout(() => showReminderOnce(item.push), item.delay))
   }

@@ -1,24 +1,40 @@
 import { useSyncExternalStore } from 'react'
 import { storageGet, storageSet } from './storage.js'
 
-// Тема оформления: светлая, тёмная, «Пикми» (розовая, с цветами, стили в
-// src/pickme.css), Motion (тестовая: светлый цифровой продукт с чёрными
-// акцентами и движением, src/motion-theme.css) или «Единство» (праздничная, ко
-// Дню народного единства, src/unity.css). Выбор лежит в localStorage
-// (ключ site-theme). Пока человек не выбирал, сайт светлый.
-// Для проверки: любая страница с ?theme=pickme (или light, dark, motion, unity) ставит тему.
+// Тема оформления: светлая, тёмная (src/dark-theme.css) или «Пикми» (розовая,
+// с цветами, src/pickme.css). Выбор лежит в localStorage (ключ site-theme).
+// Пока человек не выбирал, сайт светлый.
+// Тёмную и «Пикми» можно выключить для всех в панели /admin/settings
+// (src/site-settings.js): выключенная тема пропадает из меню, а у тех, кто её
+// выбрал, сайт становится светлым. Светлая есть всегда.
+// Для проверки: любая страница с ?theme=dark (или light, pickme) ставит тему.
 
-export const THEMES = ['light', 'dark', 'pickme', 'motion', 'unity']
+export const THEMES = ['light', 'dark', 'pickme']
 export const THEME_KEY = 'site-theme'
-const META_COLORS = { light: '#2f5fe8', dark: '#11131b', pickme: '#ffd9e8', motion: '#f6f6f3', unity: '#0b2a6b' }
+const META_COLORS = { light: '#2f5fe8', dark: '#17181b', pickme: '#ffd9e8' }
 
-export function resolveTheme(stored) {
-  return THEMES.includes(stored) ? stored : 'light'
+// Список включённых тем из того, что прислал сервер: только известные,
+// в обычном порядке, светлая всегда на месте.
+export function cleanEnabledThemes(list) {
+  if (!Array.isArray(list)) return THEMES
+  return THEMES.filter((theme) => theme === 'light' || list.includes(theme))
+}
+
+export function resolveTheme(stored, enabled = THEMES) {
+  return THEMES.includes(stored) && enabled.includes(stored) ? stored : 'light'
+}
+
+// Кнопка в шапке перебирает включённые темы по кругу: светлая → тёмная → «Пикми».
+export function nextTheme(theme, enabled = THEMES) {
+  return enabled[(enabled.indexOf(theme) + 1) % enabled.length] || 'light'
 }
 
 let current = 'light'
+let chosen = 'light' // что выбрал человек; current может отличаться, пока тема выключена
+let enabled = THEMES
 const listeners = new Set()
 const subscribe = (listener) => { listeners.add(listener); return () => listeners.delete(listener) }
+const emit = () => listeners.forEach((listener) => listener())
 
 export function applyTheme(theme) {
   if (typeof document === 'undefined') return
@@ -27,28 +43,42 @@ export function applyTheme(theme) {
 }
 
 // Вызывается один раз до первой отрисовки (main.jsx).
-export function initTheme(search = '') {
+export function initTheme(search = '', enabledThemes = THEMES) {
   const asked = new URLSearchParams(search).get('theme')
   if (THEMES.includes(asked)) storageSet(THEME_KEY, asked)
-  current = resolveTheme(THEMES.includes(asked) ? asked : storageGet(THEME_KEY))
+  enabled = cleanEnabledThemes(enabledThemes)
+  chosen = THEMES.includes(asked) ? asked : storageGet(THEME_KEY) || 'light'
+  current = resolveTheme(chosen, enabled)
   applyTheme(current)
 }
 
 export function getTheme() { return current }
+export function getEnabledThemes() { return enabled }
 
 export function setTheme(next) {
-  if (!THEMES.includes(next) || next === current) return
+  if (!enabled.includes(next) || next === current) return
   current = next
+  chosen = next
   storageSet(THEME_KEY, next)
   applyTheme(next)
-  listeners.forEach((listener) => listener())
+  emit()
 }
 
-// Кнопка в шапке перебирает темы по кругу: светлая → тёмная → «Пикми» → Motion → «Единство».
-export function nextTheme(theme) {
-  return THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length]
+// Сервер прислал, какие темы включены. Выбор человека не стираем: если тему
+// включат обратно, она вернётся сама.
+export function setEnabledThemes(list) {
+  const next = cleanEnabledThemes(list)
+  if (next.join() === enabled.join()) return
+  enabled = next
+  const theme = resolveTheme(chosen, enabled)
+  if (theme !== current) { current = theme; applyTheme(theme) }
+  emit()
 }
 
 export function useTheme() {
   return useSyncExternalStore(subscribe, getTheme, () => 'light')
+}
+
+export function useEnabledThemes() {
+  return useSyncExternalStore(subscribe, getEnabledThemes, () => THEMES)
 }

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { ArrowRight, ArrowUpRight, Box, Building2, Compass, DoorOpen, Info, LocateFixed, LocateOff, MapPin, Navigation, Settings2, Square, TriangleAlert, X, ZoomIn, ZoomOut } from 'lucide-react'
+import { ArrowRight, ArrowUpRight, Bluetooth, Box, Building2, Compass, DoorOpen, Info, LocateFixed, LocateOff, MapPin, Navigation, Settings2, Square, TriangleAlert, X, ZoomIn, ZoomOut } from 'lucide-react'
 import { categoryLabels, floors, photosFor, rooms } from '../data.js'
 import FloorMap from '../components/FloorMap.jsx'
 import RouteScene from '../components/RouteScene.jsx'
@@ -14,8 +14,11 @@ import RoomPhoto from '../components/RoomPhoto.jsx'
 import { NOTICE_TYPES, useNotices } from '../notices.js'
 import { FloorTag } from '../components/Primitives.jsx'
 import { isInsidePlan, planRoomBounds } from '../map-geometry.js'
-import { GPS_GOOD_ACCURACY, GPS_SHOW_LIMIT, addGpsAnchor, createPositionSmoother, locateOnPlan, planAngleForBearing, readGpsAnchors, readManualLocation } from '../map-location.js'
-import { requestCompass, useCompass, useGeolocation } from '../use-location.js'
+import { GPS_GOOD_ACCURACY, GPS_SHOW_LIMIT, addGpsAnchor, readGpsAnchors, readManualLocation } from '../map-location.js'
+import { requestCompass } from '../use-location.js'
+import { useLivePosition } from '../use-live-position.js'
+import { bluetoothSupport, disableBluetooth, enableBluetooth } from '../bluetooth-location.js'
+import { useSiteSettings } from '../site-settings.js'
 import { storageGet, storageRemove, storageSet } from '../storage.js'
 import { readMapContrast, setMapContrast } from '../map-contrast.js'
 
@@ -46,9 +49,12 @@ export default function MapPage() {
   const [zoomed, setZoomed] = useState(() => window.matchMedia('(max-width: 680px)').matches)
   const [mode3d, setMode3d] = useState(false)
   const [gpsEnabled, setGpsEnabled] = useState(false)
-  const gps = useGeolocation(gpsEnabled)
-  const compassHeading = useCompass(gpsEnabled)
   const [gpsAnchors, setGpsAnchors] = useState(() => readGpsAnchors(storageGet('map-gps-anchors')))
+  // GPS, компас и Bluetooth-маячки вместе: где GPS слабый, место берётся по маячку.
+  const { marker: gpsMarker, gps, located, ble, compassHeading } = useLivePosition(gpsEnabled, floor, gpsAnchors)
+  const { beacons } = useSiteSettings()
+  const bleSupport = useMemo(() => bluetoothSupport(), [])
+  const canBluetooth = beacons.length > 0 && bleSupport !== 'none'
   const [manualPoint, setManualPoint] = useState(() => {
     const saved = readManualLocation(storageGet('map-manual-point'))
     if (saved) return saved
@@ -67,20 +73,17 @@ export default function MapPage() {
   const scenePoints = useMemo(() => routeStart && routeTargetId ? calculateIndoorRoute(routeStart, routeTargetId, floor, routeModeParam).points || [] : [], [routeStart, routeTargetId, floor, routeModeParam])
   const stair = selected?.id.match(/^(stairs-(?:north|middle|west))-[12]$/)
 
-  // GPS → точка на плане выбранного этажа, со сглаживанием между замерами.
-  const smoother = useRef(createPositionSmoother())
-  const [located, setLocated] = useState(null)
+  // Маячок знает этаж: если он на другом, показываем тот этаж.
+  const bleFloor = gpsMarker?.source === 'bluetooth' ? gpsMarker.floor : null
   useEffect(() => {
-    if (gps.status !== 'active' || !gps.coords) { setLocated(null); smoother.current.reset(); return }
-    const result = locateOnPlan(floor, gps.coords, gpsAnchors)
-    if (!result || !result.inside || gps.coords.accuracy > GPS_SHOW_LIMIT) { setLocated(result && { ...result, hidden: true }); smoother.current.reset(); return }
-    setLocated({ ...result, point: smoother.current.update(floor, result.point, gps.coords.accuracy, gps.at) })
-  }, [gps.status, gps.coords, gps.at, floor, gpsAnchors])
-  const gpsMarker = useMemo(() => located && !located.hidden ? { ...located, heading: Number.isFinite(compassHeading) ? planAngleForBearing(floor, compassHeading) : null } : null, [located, compassHeading, floor])
+    if (bleFloor && bleFloor !== floor) chooseFloor(bleFloor)
+    // chooseFloor меняет только адрес страницы
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bleFloor])
   // Первая точка — сразу показываем её на плане.
   const centeredOnce = useRef(false)
   useEffect(() => {
-    if (!gpsMarker || centeredOnce.current) return
+    if (!gpsMarker || gpsMarker.floor !== floor || centeredOnce.current) return
     centeredOnce.current = true
     setCenterOn({ floor, point: gpsMarker.point, key: Date.now() })
   }, [gpsMarker, floor])
@@ -150,29 +153,40 @@ export default function MapPage() {
     centeredOnce.current = false
     requestCompass() // iPhone спрашивает разрешение на компас только по нажатию
     setGpsEnabled(true)
+    // Слушать маячки браузер разрешает только по нажатию, поэтому включаем сразу.
+    if (canBluetooth && bleSupport === 'scan') void enableBluetooth()
   }
   const stopGps = () => {
     setGpsEnabled(false)
+    disableBluetooth()
     if (picking === 'gps') setPicking('')
   }
   const useGpsAsStart = () => {
     if (!gpsMarker) return
-    setManualPoint({ floor, x: Math.round(gpsMarker.point[0] * 10) / 10, y: Math.round(gpsMarker.point[1] * 10) / 10 })
-    setPointFeedback('Ваше место по GPS стало началом маршрута. Выберите, куда идти.')
+    setManualPoint({ floor: gpsMarker.floor, x: Math.round(gpsMarker.point[0] * 10) / 10, y: Math.round(gpsMarker.point[1] * 10) / 10 })
+    setPointFeedback('Ваше место стало началом маршрута. Выберите, куда идти.')
   }
 
   const accuracy = Math.round(gps.coords?.accuracy || 0)
+  const byBluetooth = gpsMarker?.source === 'bluetooth'
+  const bleOn = ble.status === 'on'
+  // Что предложить про Bluetooth, когда GPS не справляется.
+  const bleHint = !canBluetooth ? '' : bleOn ? (ble.heard ? '' : ' Bluetooth включён, но маячков рядом не слышно.') : ' Попробуйте Bluetooth: рядом с маячком место определится без GPS.'
   const gpsInfo = (() => {
     if (!gpsEnabled && gps.status === 'idle') return null
+    if (byBluetooth) return { tone: 'ok', text: `Вы здесь, ${gpsMarker.floor} этаж. Место по Bluetooth-маячк${ble.fix?.count > 1 ? 'ам' : 'у'}, точность ±${Math.max(1, Math.round(gpsMarker.accuracy))} м.`, ok: true }
     if (gps.status === 'loading') return { tone: 'wait', text: 'Ищем вас. Если браузер спросит, разрешите доступ к геопозиции.' }
-    if (gps.status === 'denied') return { tone: 'bad', text: 'Нет доступа к геопозиции. Разрешите его для сайта в настройках браузера или поставьте метку вручную.' }
+    if (gps.status === 'denied') return { tone: 'bad', text: `Нет доступа к геопозиции. Разрешите его для сайта в настройках браузера или поставьте метку вручную.${bleHint}` }
     if (gps.status === 'unsupported') return { tone: 'bad', text: 'Этот браузер не даёт сайту геопозицию. Откройте logos-guide.ru по https в Chrome или Safari.' }
-    if (gps.status === 'timeout' || gps.status === 'unavailable') return { tone: 'bad', text: 'Телефон не смог определить место. Включите геолокацию в шторке, подойдите к окну или поставьте метку вручную.' }
+    if (gps.status === 'timeout' || gps.status === 'unavailable') return { tone: 'bad', text: `Телефон не смог определить место. Включите геолокацию в шторке, подойдите к окну или поставьте метку вручную.${bleHint}` }
     if (!located) return { tone: 'wait', text: 'Получили координаты, считаем место на плане.' }
     if (!located.inside) return { tone: 'warn', text: located.distance > 1 ? `Вы примерно в ${Math.round(located.distance)} м от корпуса. Метка появится, когда зайдёте внутрь.` : 'Вы рядом с корпусом. Метка появится, когда зайдёте внутрь.' }
-    if (located.hidden) return { tone: 'warn', text: `Сигнал слабый, точность ±${accuracy} м. Подойдите к окну: метка появится, когда станет точнее ${GPS_SHOW_LIMIT} м.` }
-    return { tone: accuracy <= GPS_GOOD_ACCURACY ? 'ok' : 'warn', text: `Вы здесь, точность ±${accuracy} м. Телефон не знает этаж, поэтому показываем ${floor}-й.`, ok: true }
+    if (!gpsMarker) return { tone: 'warn', text: `Сигнал GPS слабый, точность ±${accuracy} м. Подойдите к окну: метка появится, когда станет точнее ${GPS_SHOW_LIMIT} м.${bleHint}` }
+    return { tone: accuracy <= GPS_GOOD_ACCURACY ? 'ok' : 'warn', text: `Вы здесь, точность ±${accuracy} м. Телефон не знает этаж, поэтому показываем ${floor}-й.${accuracy > GPS_GOOD_ACCURACY ? bleHint : ''}`, ok: true }
   })()
+  const bleNote = ble.status === 'denied' ? 'Браузер не дал доступ к Bluetooth. Разрешите его для сайта и нажмите ещё раз.'
+    : ble.status === 'error' ? 'Bluetooth не запустился. Проверьте, что он включён на телефоне.'
+    : ''
 
   const popular = floorRooms.filter((room) => room.category === 'Общие пространства' && !/^(stairs|lift|elevator|entrance|exit|wc|toilet)/.test(room.id)).slice(0, 4)
 
@@ -207,6 +221,10 @@ export default function MapPage() {
         {gps.status === 'active' && <button type="button" onClick={() => { setMode3d(false); setPicking(picking === 'gps' ? '' : 'gps'); setPointFeedback('') }}>{picking === 'gps' ? 'Отменить' : 'Уточнить привязку'}</button>}
         {gpsAnchors[floor]?.length > 0 && <button type="button" onClick={() => setGpsAnchors((current) => ({ ...current, [floor]: [] }))}>Вернуть по корпусу</button>}
       </div>
+      <div className="mp-settings-gps">
+        <span><strong>Bluetooth-маячки</strong><small>{!beacons.length ? 'В колледже пока не установлены. Когда появятся, место будет определяться и там, где GPS не ловит.' : bleSupport === 'none' ? 'Этот браузер не даёт сайту Bluetooth (так на iPhone и в Safari). Работает в Chrome на Android.' : bleOn ? `Включён, слышно маячков: ${ble.heard}` : `Установлено маячков: ${beacons.length}. Рядом с ними место определяется без GPS и с этажом.`}</small></span>
+        {canBluetooth && (bleOn ? <button type="button" onClick={disableBluetooth}>Выключить</button> : <button type="button" onClick={() => void enableBluetooth()}>Включить</button>)}
+      </div>
     </div>}
 
     <div className="mp-chips" role="group" aria-label="Фильтр помещений">
@@ -238,11 +256,13 @@ export default function MapPage() {
             {gpsInfo.tone === 'bad' ? <LocateOff size={15} /> : <LocateFixed size={15} />}
             <span>{gpsInfo.text}</span>
             <button type="button" className="mp-pill-close" onClick={stopGps} aria-label="Выключить GPS" title="Выключить GPS"><X size={15} /></button>
-            {gpsInfo.ok && <span className="mp-pill-actions">
-              <button type="button" onClick={useGpsAsStart}><Navigation size={14} /> Начать маршрут отсюда</button>
-              <button type="button" onClick={() => chooseFloor(otherFloor(floor))}>Я на {otherFloor(floor)} этаже</button>
+            {(gpsInfo.ok || (canBluetooth && !bleOn)) && <span className="mp-pill-actions">
+              {gpsInfo.ok && <button type="button" onClick={useGpsAsStart}><Navigation size={14} /> Начать маршрут отсюда</button>}
+              {gpsInfo.ok && !byBluetooth && <button type="button" onClick={() => chooseFloor(otherFloor(floor))}>Я на {otherFloor(floor)} этаже</button>}
+              {canBluetooth && !bleOn && <button type="button" onClick={() => void enableBluetooth()} disabled={ble.status === 'starting'}><Bluetooth size={14} /> {ble.status === 'starting' ? 'Включаем…' : 'Уточнить по Bluetooth'}</button>}
               {gpsMarker && !Number.isFinite(compassHeading) && hasTouch && <button type="button" onClick={requestCompass} title="Показать, куда вы смотрите"><Compass size={14} /> Компас</button>}
             </span>}
+            {bleNote && <small className="mp-pill-note">{bleNote}</small>}
           </div>}
           {pointFeedback && !picking && <div className="mp-pill" role="status"><span>{pointFeedback}</span><button type="button" className="mp-pill-close" onClick={() => setPointFeedback('')} aria-label="Скрыть"><X size={15} /></button></div>}
         </div>
@@ -283,8 +303,8 @@ export default function MapPage() {
     {floorNotices.length > 0 && <div className="mp-notices" aria-label="Объявления на этаже">{floorNotices.map((notice, index) => { const room = rooms.find((item) => item.id === notice.roomId); return <button type="button" key={index} className={`map-notice map-notice-${notice.type}`} onClick={() => selectRoom(room)}><TriangleAlert size={14} /><span><strong>{notice.title}</strong><small>{roomTitle(room)}</small></span></button> })}</div>}
 
     <footer className="mp-foot">
-      <span className="mp-legend">{showDoorMarks && <span><i className="door-legend" /> Двери</span>}<span><i className="route-legend" /> Маршрут</span><span><i className="mp-legend-you" /> Вы по GPS</span><span><i className="mp-legend-pin" /> Ваша метка</span></span>
-      <p>Маршрут идёт по коридорам и дверям. Схема примерная: если проход закрыт, следуйте указателям. GPS в здании ошибается на 5–30 м.</p>
+      <span className="mp-legend">{showDoorMarks && <span><i className="door-legend" /> Двери</span>}<span><i className="route-legend" /> Маршрут</span><span><i className="mp-legend-you" /> Вы (GPS или Bluetooth)</span><span><i className="mp-legend-pin" /> Ваша метка</span></span>
+      <p>Маршрут идёт по коридорам и дверям. Схема примерная: если проход закрыт, следуйте указателям. GPS в здании ошибается на 5–30 м, рядом с Bluetooth-маячком место точнее.</p>
     </footer>
   </section>
 }

@@ -4,10 +4,8 @@ import { Link } from 'react-router-dom'
 import { PageHeading } from '../components/Primitives.jsx'
 import { noticeRoomLabel } from '../components/NotificationBell.jsx'
 import { NOTICE_TYPES, useNotices } from '../notices.js'
-import { useSchedule } from '../components/NextLesson.jsx'
-import { rooms } from '../data.js'
-import { nextLesson } from '../schedule.js'
-import { PUSH_API, PUSH_KINDS, PUSH_TOPICS, currentSubscription, lessonReminders, scheduleLessonReminders, pushSupport, readTopics, samplePush, sendTestPush, showLocalPush, subscribePush, syncScheduleForPush, unsubscribePush } from '../push.js'
+import { reminderTimes } from '../bells.js'
+import { PUSH_API, PUSH_KINDS, PUSH_TOPICS, currentSubscription, lessonReminders, scheduleLessonReminders, pushSupport, readTopics, samplePush, sendTestPush, showLocalPush, subscribePush, unsubscribePush } from '../push.js'
 
 // Уведомления сайта: здесь их включают и выбирают темы (колокольчик в шапке
 // и пункт меню ведут сюда). Каждый вид можно показать сразу на устройстве или прислать
@@ -104,12 +102,20 @@ function useCronStatus() {
   return cronAt
 }
 
-function LessonReminders({ lessons, cronAt }) {
-  const today = lessonReminders(lessons)
+const TIMETABLE = [['Понедельник', 'monday'], ['Вторник – суббота', 'weekday']]
+
+function LessonReminders({ cronAt }) {
+  const today = lessonReminders()
   const minutesAgo = Number.isFinite(cronAt) ? Math.round((Date.now() / 1000 - cronAt) / 60) : null
   const serverOk = minutesAgo !== null && minutesAgo <= 90
   return <section className="tn-section tn-reminders">
-    <div className="tn-section-head"><div><h2>Напоминания о парах</h2><p>За 5 минут до начала каждой пары.</p></div></div>
+    <div className="tn-section-head"><div><h2>Напоминания о парах</h2><p>Приходят за 5 минут до звонка на пару. В воскресенье и праздники их нет.</p></div></div>
+    <div className="tn-timetable">
+      {TIMETABLE.map(([title, kind]) => <div key={kind} className="tn-timetable-day">
+        <strong>{title}</strong>
+        <ul>{reminderTimes(kind).map((bell) => <li key={bell.start}><b>{bell.at}</b><span>{bell.label} в {bell.start}</span></li>)}</ul>
+      </div>)}
+    </div>
     <ul className="tn-reminder-list">
       <li className={serverOk ? 'is-ok' : 'is-warn'}>
         {serverOk ? <Check size={16} /> : <TriangleAlert size={16} />}
@@ -117,7 +123,7 @@ function LessonReminders({ lessons, cronAt }) {
       </li>
       <li className={today.length ? 'is-ok' : ''}>
         <CalendarClock size={16} />
-        <span>{today.length ? `Сегодня: ${today.map((item) => `${item.push.title.replace('Через 5 минут: ', '')} в ${String(Math.floor(item.start / 60)).padStart(2, '0')}:${String(item.start % 60).padStart(2, '0')}`).join(', ')}.` : 'Сегодня своих пар впереди нет.'} {lessons.length ? '' : <Link to="/schedule">Добавьте пары в расписание</Link>}</span>
+        <span>{today.length ? `Сегодня ещё придут: ${today.map((item) => `${item.bell.label} в ${item.bell.start}`).join(', ')}.` : 'Сегодня напоминаний больше не будет.'}</span>
       </li>
     </ul>
   </section>
@@ -125,7 +131,6 @@ function LessonReminders({ lessons, cronAt }) {
 
 export default function NotificationsPage() {
   const { support, subscription, refresh } = useSubscription()
-  const lessons = useSchedule()
   const notices = useNotices()
   const [topics, setTopics] = useState(readTopics)
   const [busy, setBusy] = useState('')
@@ -134,10 +139,7 @@ export default function NotificationsPage() {
   const subscribed = Boolean(subscription) && support.permission === 'granted'
   const cronAt = useCronStatus()
 
-  const lesson = useMemo(() => nextLesson(lessons)?.lesson, [lessons])
-  const room = lesson && rooms.find((item) => item.id === lesson.roomId)
-  const roomLabel = room ? `${room.name}${room.number ? ` №${room.number}` : ''}` : ''
-  const samples = useMemo(() => Object.keys(PUSH_KINDS).map((kind) => ({ kind, push: samplePush(kind, { lesson, roomLabel }) })), [lesson, roomLabel])
+  const samples = useMemo(() => Object.keys(PUSH_KINDS).map((kind) => ({ kind, push: samplePush(kind) })), [])
 
   const run = async (id, action, done) => {
     setBusy(id); setFlash({ kind: '', text: '' })
@@ -154,7 +156,6 @@ export default function NotificationsPage() {
 
   const enable = () => run('enable', async () => {
     await subscribePush(topics)
-    await syncScheduleForPush(lessons)
     scheduleLessonReminders()
   }, 'Готово! Теперь проверьте уведомления ниже.')
   const disable = () => run('enable', unsubscribePush, 'Уведомления отключены. Это устройство больше ничего не получит.')
@@ -177,7 +178,7 @@ export default function NotificationsPage() {
       <StatusCard support={support} subscription={subscription} busy={busy === 'enable'} onEnable={enable} onDisable={disable} />
       {flash.text && <p className={`tn-flash tn-flash-${flash.kind}`} role="status">{flash.kind === 'ok' ? <Check size={16} /> : <TriangleAlert size={16} />} {flash.text}</p>}
 
-      {subscribed && topics.includes('lessons') && <LessonReminders lessons={lessons} cronAt={cronAt} />}
+      {subscribed && topics.includes('lessons') && <LessonReminders cronAt={cronAt} />}
 
       {notices.length > 0 && <section className="tn-section">
         <div className="tn-section-head"><div><h2>Сейчас на карте</h2><p>Действующие объявления: закрытые проходы и события.</p></div></div>
@@ -199,7 +200,6 @@ export default function NotificationsPage() {
             </div>
           </li>)}
         </ul>
-        {!lesson && <p className="tn-note">Добавьте пары в «Моё расписание», и в уведомлении о паре появятся предмет, кабинет и кнопка маршрута.</p>}
       </section>
 
       <div className="tn-columns">
@@ -226,7 +226,7 @@ export default function NotificationsPage() {
         </section>
       </div>
 
-      <p className="tn-note">Сайт хранит на сервере только адрес подписки браузера и выбранные темы. Расписание остаётся на устройстве: предмет и кабинет подставляются в уведомление уже на нём. Подробнее в политике конфиденциальности.</p>
+      <p className="tn-note">Сайт хранит на сервере только адрес подписки браузера и выбранные темы. Напоминания о парах одинаковые для всех: они идут по звонкам колледжа. Подробнее в политике конфиденциальности.</p>
     </div>
   </>
 }

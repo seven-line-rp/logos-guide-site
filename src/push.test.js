@@ -11,16 +11,15 @@ test('platform detection covers Android, iPhone, iPad in desktop mode and comput
   assert.equal(detectPlatform('Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/130.0'), 'desktop')
 })
 
-test('every kind has a sample, and a lesson sample uses the schedule', () => {
+test('every kind has a sample, and a lesson reminder offers the route', () => {
   for (const kind of Object.keys(PUSH_KINDS)) {
     const sample = samplePush(kind)
     assert.equal(sample.kind, kind)
     assert.ok(sample.title && sample.body && sample.url.startsWith('/'))
   }
-  const lesson = { date: '2026-10-27', start: '10:40', end: '12:10', subject: 'Физика', roomId: 'physics-211' }
-  const sample = samplePush('lesson-start', { lesson, roomLabel: 'Кабинет физики №211' })
-  assert.equal(sample.title, 'Через 5 минут: Физика')
-  assert.equal(sample.url, '/route?to=physics-211')
+  const sample = samplePush('lesson-start')
+  assert.equal(sample.title, 'Через 5 минут: 2-я пара')
+  assert.equal(sample.url, '/route')
   assert.deepEqual(notificationOptions(sample).actions, [{ action: 'open', title: 'Маршрут' }])
   assert.equal(notificationOptions(samplePush('event')).actions, undefined)
 })
@@ -30,13 +29,11 @@ test('topics default to everything and keys decode from base64url', () => {
   assert.deepEqual([...base64UrlToBytes('-_8')], [251, 255])
 })
 
-test('the service worker shows pushes, opens links and keeps the schedule cache', () => {
+test('the service worker shows pushes and opens links; there is no personal schedule in it', () => {
   const sw = readFileSync('scripts/sw-template.js', 'utf8')
   assert.match(sw, /addEventListener\('push'/)
   assert.match(sw, /addEventListener\('notificationclick'/)
-  assert.match(sw, /caches\.open\('push-data'\)/)
-  // Очистка старых версий удаляет только кэши «logos-…», кэш расписания под другим именем.
-  assert.ok(!'push-data'.startsWith('logos-'))
+  assert.doesNotMatch(sw, /schedule\.json/)
 })
 
 test('in-app browsers are recognised, normal ones are not', () => {
@@ -46,19 +43,16 @@ test('in-app browsers are recognised, normal ones are not', () => {
   assert.equal(inAppBrowser('Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/130.0'), false)
 })
 
-test('reminders come 5 minutes before each of today\'s own lessons, not before past ones', async () => {
+test('reminders follow the bells: 5 minutes before each lesson still ahead today', async () => {
   const { lessonReminders } = await import('./push.js')
-  const lessons = [
-    { date: '2026-10-27', start: '09:00', end: '10:30', subject: 'История', roomId: 'physics-211' },
-    { date: '2026-10-27', start: '10:40', end: '12:10', subject: 'Физика', roomId: 'physics-211' },
-    { date: '2026-10-27', start: '13:15', end: '14:00', subject: 'Факультатив', roomId: 'physics-211' },
-    { date: '2026-10-28', start: '09:00', end: '10:30', subject: 'Завтра', roomId: 'physics-211' },
-  ]
-  const plan = lessonReminders(lessons, new Date(2026, 9, 27, 10, 30))
-  assert.deepEqual(plan.map((item) => item.push.title), ['Через 5 минут: Физика', 'Через 5 минут: Факультатив'])
+  // Вторник, 10:30: первая пара прошла, до напоминания о второй 5 минут.
+  const plan = lessonReminders(new Date(2026, 9, 27, 10, 30))
+  assert.deepEqual(plan.map((item) => item.push.title), ['Через 5 минут: 2-я пара', 'Через 5 минут: 3-я пара', 'Через 5 минут: 4-я пара'])
   assert.equal(plan[0].delay, 5 * 60_000)
   assert.equal(plan[0].push.tag, 'lesson-2026-10-27-10:40', 'тот же tag, что ставит сервис-воркер: дубля не будет')
-  assert.equal(plan[1].delay, (13 * 60 + 10 - 10 * 60 - 30) * 60_000, 'пара не по звонкам тоже напомнит')
-  const late = lessonReminders(lessons, new Date(2026, 9, 27, 10, 37))
-  assert.equal(late[0].delay, 0, 'открыли сайт за 3 минуты до пары — напоминаем сразу')
+  assert.equal(lessonReminders(new Date(2026, 9, 27, 8, 0))[0].delay, 55 * 60_000, 'первое напоминание в 8:55')
+  assert.equal(lessonReminders(new Date(2026, 9, 27, 10, 37))[0].delay, 0, 'открыли сайт за 3 минуты до пары — напоминаем сразу')
+  assert.deepEqual(lessonReminders(new Date(2026, 9, 26, 8, 0)).map((item) => item.bell.start), ['09:00', '09:40', '11:20', '13:10', '15:00'], 'понедельник: свои звонки')
+  assert.deepEqual(lessonReminders(new Date(2026, 9, 25, 8, 0)), [], 'воскресенье')
+  assert.deepEqual(lessonReminders(new Date(2026, 10, 4, 8, 0)), [], 'праздник')
 })

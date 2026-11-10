@@ -6,13 +6,8 @@ import { photoSrcSet, photosFor, rooms, quickPlaces } from '../data.js'
 import { HERO_ROUTES } from '../hero-scene-model.js'
 import GuideBoard from '../components/GuideBoard.jsx'
 import { useFavorites, useRecentRoutes } from '../components/FavoriteButton.jsx'
-import { useSchedule } from '../components/NextLesson.jsx'
 import HomeDashboard from '../components/HomeDashboard.jsx'
-import { UnityBanner, UnityChip, UnityExtras } from '../components/Unity.jsx'
-import UnityKremlin from '../components/UnityKremlin.jsx'
 import { PickmeChip, PickmeGarden, PickmeNote } from '../components/Pickme.jsx'
-import { MotionChip, MotionIndex, MotionStage, MotionWords } from '../components/MotionTheme.jsx'
-import { fireConfetti, isUnityEasterEgg } from '../unity-fx.js'
 import { Reveal } from '../components/Primitives.jsx'
 import VoiceSearchButton from '../components/VoiceSearchButton.jsx'
 import { focusInputOnPress, useAnchorRect } from '../search-field.js'
@@ -23,9 +18,6 @@ import { useTheme } from '../theme.js'
 // 3D-корпус тяжёлый: грузим его отдельным файлом и только там, где он потянет
 // (компьютер с мышью, не «Лёгкий» режим). На телефонах остаётся градиентный фон.
 const HeroScene = lazy(() => import('../components/HeroScene.jsx'))
-// В теме «Единство» вместо корпуса на главном экране развевается флаг России.
-const UnityFlag = lazy(() => import('../components/UnityFlag.jsx'))
-const UnitySky = lazy(() => import('../components/UnitySky.jsx'))
 
 function HomeSearch() {
   const [query, setQuery] = useState('')
@@ -40,7 +32,6 @@ function HomeSearch() {
   const missed = Boolean(query.trim()) && !matches.length && !teacherHits.length
   useEffect(() => { if (missed) reportMiss(query); else cancelMiss() }, [missed, query])
   const goTo = (room) => navigate(`/map?floor=${room.floor}&room=${encodeURIComponent(room.id)}`)
-  const unity = useTheme() === 'unity'
   // Один список вариантов для мыши и клавиатуры: сначала преподаватели, потом места.
   const options = [
     ...teacherHits.map(({ teacher, room, bySubject }) => ({ key: `t-${teacher.name}`, title: shortName(teacher.name), meta: room ? `${room.name}${room.number ? ` №${room.number}` : ''}${bySubject ? ', по предмету' : ''}` : 'Кабинет уточните в учебной части', go: () => goTo(room || rooms.find((item) => item.id === 'academic-office')) })),
@@ -52,8 +43,6 @@ function HomeSearch() {
 
   const submit = (event) => {
     event.preventDefault()
-    // Пасхалка темы «Единство»: «1612», «Минин», «Пожарский» и т. п. запускают салют.
-    if (unity && isUnityEasterEgg(query)) { fireConfetti(); return }
     if (showList && options[active]) options[active].go()
     else if (matches[0]) goTo(matches[0])
     else if (teacherHits[0]?.room) goTo(teacherHits[0].room)
@@ -96,26 +85,21 @@ function HeroCaption() {
 export default function HomePage() {
   const scene3d = useScene3d()
   const theme = useTheme()
-  const unity = theme === 'unity'
   const pickme = theme === 'pickme'
-  const motion = theme === 'motion'
-  // У тем со своей сценой на главном экране 3D-сцены и подписи к ней нет.
-  const plainHero = !unity && !pickme && !motion
+  // У «Пикми» на главном экране своя сцена: 3D-корпуса и подписи к нему нет.
+  const plainHero = !pickme
   // Кто зашёл впервые, сначала видит, что умеет путеводитель: «Мой день» у него пока пустой.
-  // Кто уже добавил пары или места, сначала видит свой день, указатель — ниже.
-  const lessons = useSchedule()
+  // Кто уже сохранял места или строил маршруты, сначала видит свой день, указатель — ниже.
   const favorites = useFavorites()
   const recent = useRecentRoutes()
-  const newcomer = !lessons.length && !favorites.length && !recent.length
+  const newcomer = !favorites.length && !recent.length
   return <>
-    <section className={`home-hero hero-mesh home-hero-usual home-hero-scene${unity ? ' home-hero-unity' : ''}${pickme ? ' home-hero-pickme' : ''}${motion ? ' home-hero-motion' : ''}`} id="top">
-      {unity ? <><Suspense fallback={null}><UnitySky /><UnityFlag /></Suspense><UnityKremlin /></> : pickme ? <PickmeGarden /> : motion ? <MotionStage /> : scene3d && <Suspense fallback={null}><HeroScene /></Suspense>}
+    <section className={`home-hero hero-mesh home-hero-usual home-hero-scene${pickme ? ' home-hero-pickme' : ''}`} id="top">
+      {pickme ? <PickmeGarden /> : scene3d && <Suspense fallback={null}><HeroScene /></Suspense>}
       <div className="container home-hero-inner">
         <div className="home-hero-copy">
-          <UnityChip />
           <PickmeChip />
-          <MotionChip />
-          <h1>{motion ? <MotionWords text="Где найти кабинет" /> : 'Где найти кабинет'}</h1>
+          <h1>Где найти кабинет</h1>
           <PickmeNote />
           <p>Введите номер, название или фамилию преподавателя. Кабинет откроется на карте, оттуда можно построить маршрут.</p>
           <div className="home-search-group">
@@ -130,11 +114,6 @@ export default function HomePage() {
         {plainHero && <HeroCaption />}
       </div>
     </section>
-
-    <MotionIndex />
-
-    <UnityBanner />
-    <UnityExtras />
 
     {newcomer && <GuideBoard />}
 

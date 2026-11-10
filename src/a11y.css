@@ -8,9 +8,6 @@
 .floor-switch-copy small { color: #dbe5fb; }
 .footer-legal a, .footer-legal button { opacity: 1; }
 .footer-legal a, .site-footer a[href$='privacy'] { color: #4d5b6e; }
-.schedule-days button.is-off { opacity: 1; color: #5f6d82; }
-.schedule-days button.is-off > * { color: inherit; }
-.schedule-bells button[aria-pressed='true'] small { color: #fff; }
 .legal-kind { color: #115e59; }
 .legal-kind-required { color: #92400e; }
 .rt-option-on > em, .quiz-preview-options .quiz-preview-right { color: #166534; }
@@ -26,5 +23,4 @@
 :root[data-theme='dark'] :is(.rt-floors, .rt-view) > button[aria-pressed='true'] { color: #0b1630; }
 :root[data-theme='dark'] .footer-legal a, :root[data-theme='dark'] .site-footer a[href$='privacy'] { color: var(--muted); }
 :root[data-theme='dark'] .quick-place-num { color: var(--muted); }
-:root[data-theme='dark'] .schedule-days button.is-off { color: #9a9993; }
 :root[data-theme='dark'] :is(.rs-mark-transfer, .rs-mark-arrival) .rs-mark-head { color: #0b1630; }
