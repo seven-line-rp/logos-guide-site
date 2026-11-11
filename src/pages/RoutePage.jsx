@@ -7,7 +7,8 @@ import RoomSearchSelect from '../components/RoomSearchSelect.jsx'
 import { buildRouteOptions, pickRoute } from '../map-routing.js'
 import { buildTripSteps } from '../route-steps.js'
 import { GPS_SHOW_LIMIT, METRES_PER_UNIT, readGpsAnchors, readManualLocation } from '../map-location.js'
-import { isOffRoute, liveStepIndex, projectOnRoute } from '../live-route.js'
+import { isOffRoute, liveStepIndex, pointAtDistance, projectOnRoute, routeLengths, sensorProgress } from '../live-route.js'
+import { requestMotion, useStepCounter } from '../step-sensor.js'
 import { useLivePosition } from '../use-live-position.js'
 import { bluetoothSupport, disableBluetooth, enableBluetooth } from '../bluetooth-location.js'
 import { useSiteSettings } from '../site-settings.js'
@@ -290,10 +291,30 @@ export default function RoutePage() {
   const stepLegPoints = legs[current.leg || 0].route.byFloor[current.floor]?.points
   const onRoute = useMemo(() => liveMarker && liveMarker.floor === current.floor && stepLegPoints?.length ? projectOnRoute(stepLegPoints, liveMarker.point) : null, [liveMarker, current.floor, stepLegPoints])
   const offRoute = Boolean(onRoute) && isOffRoute(onRoute.offset, current.floor, liveMarker.accuracy)
+  // Нет ни GPS, ни маячка — ведём по шагам (датчик движения телефона): от
+  // последней точной отметки вперёд по линии маршрута. Отметка — место по
+  // GPS/Bluetooth на маршруте, а без него — вершина шага, который выбрал человек.
+  const walker = useStepCounter(live)
+  const sensorScope = `${routeKey}|${current.leg || 0}|${current.floor}`
+  const [anchor, setAnchor] = useState({ scope: '', along: 0, steps: 0 })
+  const fixAlong = onRoute && !offRoute ? onRoute.along : null
+  useEffect(() => {
+    if (!live || !stepLegPoints?.length) return
+    const along = fixAlong ?? routeLengths(stepLegPoints)[Math.min(stepLegPoints.length - 1, current.progress)] ?? 0
+    setAnchor({ scope: sensorScope, along, steps: walker.steps })
+    // Отметку обновляем при новом точном месте и при смене шага, а не на каждый шаг человека.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [live, fixAlong, stepIndex, sensorScope])
+  const bySensors = useMemo(() => {
+    if (!live || liveMarker || !walker.active || anchor.scope !== sensorScope || !stepLegPoints?.length) return null
+    const progress = sensorProgress(anchor, walker.steps, current.floor, routeLengths(stepLegPoints).at(-1))
+    return { ...progress, ...pointAtDistance(stepLegPoints, progress.along) }
+  }, [live, liveMarker, walker.active, walker.steps, anchor, sensorScope, stepLegPoints, current.floor])
   const startLive = () => {
     setLive(true)
     setFollowing(true)
     requestCompass()
+    void requestMotion() // iPhone спрашивает разрешение на датчик движения только по нажатию
     // Слушать маячки браузер разрешает только по нажатию.
     if (canBluetooth && bleSupport === 'scan') void enableBluetooth()
   }
@@ -301,7 +322,13 @@ export default function RoutePage() {
   useEffect(() => () => disableBluetooth(), [])
   // Дошли до следующего поворота — листаем шаг и говорим подсказку.
   useEffect(() => {
-    if (!live || !liveMarker) return
+    if (!live) return
+    if (!liveMarker) {
+      if (!bySensors) return
+      const next = liveStepIndex(steps, stepIndex, stepLegPoints, bySensors.along, { floor: current.floor, accuracy: bySensors.accuracy })
+      if (next > stepIndex) goToStep(next)
+      return
+    }
     // Маячок на другом этаже: человек уже поднялся или спустился.
     if (liveMarker.source === 'bluetooth' && liveMarker.floor !== current.floor) {
       const next = steps.findIndex((step, index) => index > stepIndex && step.floor === liveMarker.floor)
@@ -313,13 +340,18 @@ export default function RoutePage() {
     if (next > stepIndex) goToStep(next)
     // goToStep и steps пересоздаются на каждой отрисовке; важны место и шаг
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [live, liveMarker, onRoute, offRoute, stepIndex, routeKey])
+  }, [live, liveMarker, onRoute, offRoute, bySensors, stepIndex, routeKey])
   // Метка на карте: пока человек на маршруте, держим её на линии пути.
   const liveOnMap = live && liveMarker && liveMarker.floor === shownFloor ? {
     point: onRoute && !offRoute && shownFloor === current.floor ? onRoute.point : liveMarker.point,
     radius: liveMarker.radius,
     heading: liveMarker.heading,
     segment: onRoute?.segment,
+  } : bySensors && shownFloor === current.floor ? {
+    point: bySensors.point,
+    radius: bySensors.accuracy / (METRES_PER_UNIT[current.floor] || 0.0833),
+    heading: null, // по шагам смотрим вдоль маршрута
+    segment: bySensors.segment,
   } : null
   const rerouteFromHere = () => {
     if (!liveMarker) return
@@ -341,6 +373,11 @@ export default function RoutePage() {
       if (liveMarker.floor !== current.floor) return { tone: 'warn', text: `Маячок рядом с вами на ${liveMarker.floor} этаже, а шаг — на ${current.floor}.`, reroute: true }
       const left = onRoute ? Math.max(0, Math.round((onRoute.total - onRoute.along) * (METRES_PER_UNIT[current.floor] || 0.0833))) : null
       return { tone: 'ok', text: `Ведём по ${source}, точность ±${metres} м.${left !== null ? ` До конца участка ${left} м.` : ''}${current.kind === 'transfer' ? ' После перехода на другой этаж нажмите «Дальше».' : ''}` }
+    }
+    // Места не знаем, но датчик шагов работает: ведём по нему.
+    if (bySensors) {
+      const why = position.gps.status === 'active' && gpsAccuracy > 0 ? `GPS слабый (±${gpsAccuracy} м)` : 'GPS не ловит'
+      return { tone: 'ok', text: `${why}, ведём по шагам: телефон считает их датчиком движения. Пройдено ${Math.round(bySensors.walked)} м от последней отметки.${current.kind === 'transfer' ? ' После перехода на другой этаж нажмите «Дальше».' : ' Если метка отстала или убежала, поправьте шаг кнопками.'}` }
     }
     const { status } = position.gps
     if (status === 'loading') return { tone: 'wait', text: 'Ищем вас. Если браузер спросит, разрешите доступ к геопозиции.' }
