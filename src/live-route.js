@@ -67,3 +67,34 @@ export function isOffRoute(offset, floor, accuracy = 0) {
   const metres = offset * (METRES_PER_UNIT[floor] || 0.0833)
   return metres > Math.max(OFF_ROUTE_METRES, accuracy * 1.5)
 }
+
+// ---------- Ведение по шагам, когда места не знаем ----------
+// GPS пропал или слабый — продолжаем по датчику шагов: от последней точной
+// отметки (anchor.along) идём вперёд по линии маршрута на длину шага за каждый
+// шаг. Так навигаторы едут в тоннеле по инерциальным датчикам: путь известен,
+// нужно только знать, сколько пройдено.
+export const STRIDE_METRES = 0.7
+
+// Точка линии маршрута на расстоянии along от начала и номер её отрезка.
+export function pointAtDistance(points, along) {
+  if (!Array.isArray(points) || !points.length) return null
+  const lengths = routeLengths(points)
+  const d = Math.max(0, Math.min(lengths.at(-1), along))
+  let index = 1
+  while (index < points.length - 1 && lengths[index] < d) index += 1
+  if (points.length === 1) return { point: points[0], segment: 0 }
+  const span = lengths[index] - lengths[index - 1] || 1
+  const k = (d - lengths[index - 1]) / span
+  const [ax, ay] = points[index - 1]
+  const [bx, by] = points[index]
+  return { point: [ax + (bx - ax) * k, ay + (by - ay) * k], segment: index - 1 }
+}
+
+// Где человек по шагам: anchor — { along, steps } в момент последней точной
+// отметки, steps — сколько шагов насчитано сейчас. Точность падает с каждым
+// шагом: длина шага у всех разная.
+export function sensorProgress(anchor, steps, floor, total) {
+  const walked = Math.max(0, steps - anchor.steps) * STRIDE_METRES
+  const scale = METRES_PER_UNIT[floor] || 0.0833
+  return { along: Math.min(total, anchor.along + walked / scale), walked, accuracy: 3 + walked * 0.15 }
+}

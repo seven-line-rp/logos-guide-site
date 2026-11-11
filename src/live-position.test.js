@@ -1,7 +1,8 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { beaconFix, beaconPoint, bluetoothSupport, ibeaconId, rssiToMetres, smoothRssi } from './bluetooth-location.js'
-import { isOffRoute, liveStepIndex, projectOnRoute, routeLengths } from './live-route.js'
+import { isOffRoute, liveStepIndex, pointAtDistance, projectOnRoute, routeLengths, sensorProgress } from './live-route.js'
+import { createStepDetector } from './step-sensor.js'
 import { choosePosition } from './map-location.js'
 import { cleanSettings } from './site-settings.js'
 import { buildRouteOptions } from './map-routing.js'
@@ -98,4 +99,46 @@ test('steps advance as the walker reaches each turn, never backwards or across f
   // На втором этаже у двери — «Приход».
   const upper = route.byFloor[2].points
   assert.equal(liveStepIndex(steps, transfer, upper, routeLengths(upper).at(-1), { floor: 2, accuracy: 5 }), steps.length - 1)
+})
+
+// Запись акселерометра: покой — 9,81 с лёгким шумом, ходьба — толчки два раза в секунду.
+function feed(detector, seconds, from, walking) {
+  let steps = 0
+  for (let ms = 0; ms < seconds * 1000; ms += 16) {
+    const t = from + ms
+    const magnitude = 9.81 + (walking ? 3 * Math.max(0, Math.sin(2 * Math.PI * 2 * t / 1000)) ** 3 : 0.15 * Math.sin(t / 37))
+    steps += detector.push(magnitude, t)
+  }
+  return steps
+}
+
+test('the step sensor counts a walk and ignores a phone lying still or a single bump', () => {
+  const still = createStepDetector()
+  assert.equal(feed(still, 10, 0, false), 0, 'телефон лежит — шагов нет')
+  const walk = createStepDetector()
+  feed(walk, 2, 0, false)
+  const steps = feed(walk, 10, 2000, true)
+  assert.ok(steps >= 18 && steps <= 21, `10 секунд ходьбы по 2 шага в секунду: ${steps}`)
+  const bump = createStepDetector()
+  feed(bump, 2, 0, false)
+  let counted = 0
+  for (let ms = 0; ms < 300; ms += 16) counted += bump.push(9.81 + 4, 2000 + ms)
+  counted += feed(bump, 5, 2300, false)
+  assert.equal(counted, 0, 'одиночный толчок — не шаг')
+  assert.equal(createStepDetector().push(NaN, 0), 0)
+})
+
+test('without GPS the marker moves along the route by counted steps', () => {
+  const points = [[0, 0], [120, 0], [120, 60]]
+  assert.deepEqual(pointAtDistance(points, 60), { point: [60, 0], segment: 0 })
+  assert.deepEqual(pointAtDistance(points, 150), { point: [120, 30], segment: 1 })
+  assert.deepEqual(pointAtDistance(points, 999).point, [120, 60], 'дальше конца пути не уходим')
+  assert.equal(pointAtDistance([], 10), null)
+  // 10 шагов по 0,7 м от отметки: 7 метров, это около 84 единиц плана первого этажа.
+  const progress = sensorProgress({ along: 20, steps: 5 }, 15, 1, 180)
+  assert.ok(Math.abs(progress.walked - 7) < 1e-9)
+  assert.ok(Math.abs(progress.along - (20 + 7 / 0.08332894)) < 1e-6)
+  assert.ok(progress.accuracy > 3, 'чем дальше от отметки, тем грубее')
+  assert.equal(sensorProgress({ along: 20, steps: 5 }, 500, 1, 180).along, 180)
+  assert.equal(sensorProgress({ along: 20, steps: 5 }, 3, 1, 180).along, 20, 'назад не идём')
 })
