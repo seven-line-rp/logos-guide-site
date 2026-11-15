@@ -52,6 +52,8 @@ import './align.css'
 import './pickme.css'
 // Тёмная тема задаётся окончательно здесь, поверх накопившихся слоёв.
 import './dark.css'
+// Дизайн-токены и итоговый слой интерфейса (docs/ux-ui-spec.md) — самым последним.
+import './tokens.css'
 import './interactions.js'
 import { applyMapContrast } from './map-contrast.js'
 import { applyTextSize, readTextSize } from './text-size.js'

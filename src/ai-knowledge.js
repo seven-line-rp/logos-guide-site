@@ -48,7 +48,7 @@ function roomLine(room) {
 }
 
 export function buildKnowledge() {
-  const sections = navigation.map((item) => item.to).concat(['/', '/games', '/services', '/about', '/teachers', '/start', '/tour', '/docs', '/privacy', '/terms', '/consent', '/feedback'])
+  const sections = navigation.map((item) => item.to).concat(['/', '/rooms', '/notifications', '/games', '/services', '/about', '/teachers', '/start', '/tour', '/docs', '/privacy', '/terms', '/consent', '/feedback'])
   const unique = [...new Set(sections)]
   return [
     '# Сайт «ЛОГОС: Путеводитель»',

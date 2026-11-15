@@ -1,17 +1,17 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { ArrowUpRight, Bell, BookOpen, Building2, Bot, Check, Compass, Flag, Flower2, Gamepad2, GraduationCap, History, Info, LayoutGrid, ListChecks, Map as MapIcon, MapPin, Moon, Navigation, QrCode, Search, Sun, Type, Users, X } from 'lucide-react'
+import { ArrowUpRight, Bell, BookOpen, Building2, Bot, CalendarClock, Check, Compass, Flag, Flower2, Gamepad2, GraduationCap, History, House, Info, Keyboard, LayoutGrid, ListChecks, Map as MapIcon, Moon, Navigation, QrCode, Search, Sun, Type, Users, X } from 'lucide-react'
 import { navigation, quickPlaces, rooms } from '../data'
 import { clearRecentPlaces, nearbyKinds, readRecentPlaces, rememberPlace } from '../places.js'
 import { readHere } from '../route-prefs.js'
-import { nextTheme, setTheme, useEnabledThemes, useTheme } from '../theme.js'
+import { setTheme, useEnabledThemes, useTheme } from '../theme.js'
 import { readTextSize, setTextSize } from '../text-size.js'
 import { lockBodyScroll } from '../storage'
 import { setLanguage, useLanguage } from '../i18n.js'
 import { cancelMiss, reportMiss, searchRooms, searchTeachers, shortName, useTeachers } from '../search.js'
 import VoiceSearchButton from './VoiceSearchButton.jsx'
-import { isSearchShortcut } from '../shortcuts.js'
+import { isSearchShortcut, setSlashShortcut, slashShortcutEnabled } from '../shortcuts.js'
 import { startTour } from '../tour-bus.js'
 import { openCookieSettings } from '../consent.js'
 import { SITE_VERSION_LABEL } from '../version.js'
@@ -43,23 +43,17 @@ export function useToast() { return useContext(ToastContext) }
 
 // Меню: разделы сгруппированы по задачам человека, а не по устройству сайта.
 // Иконки пунктов верхней навигации (сами пункты — в data.js).
-const navIcons = { '/map': MapIcon, '/route': Navigation, '/rooms': LayoutGrid, '/teachers': Users, '/ai': Bot }
+const navIcons = { '/': House, '/map': MapIcon, '/route': Navigation, '/schedule': CalendarClock, '/ai': Bot }
 
-function NavIcon({ to }) {
-  const Icon = navIcons[to]
-  return Icon ? <Icon className="nav-link-icon" size={15} aria-hidden="true" /> : null
-}
 
 const menuGroups = [
   { title: 'Найти дорогу', items: [
-    { to: '/map', label: 'Карта этажей', hint: 'План 1 и 2 этажа', icon: MapIcon, tone: 'blue' },
-    { to: '/route', label: 'Маршрут', hint: 'Путь по шагам с голосом', icon: Navigation, tone: 'violet' },
+    { to: '/route', label: 'Маршрут', hint: 'Путь по шагам с голосом', icon: Navigation, tone: 'violet', primary: true },
     { to: '/rooms', label: 'Кабинеты', hint: 'Справочник помещений', icon: LayoutGrid, tone: 'sky' },
     { to: '/teachers', label: 'Преподаватели', hint: 'Кто где сидит', icon: Users, tone: 'green' },
     { to: '/services', label: 'Пространства', hint: 'Столовая, библиотека, залы', icon: Building2, tone: 'amber' },
   ] },
   { title: 'Учёба', items: [
-    { to: '/ai', label: 'ИИ-помощник', badge: 'АЛЬФА', hint: 'Спросите о чём угодно', icon: Bot, tone: 'violet' },
     { to: '/notifications', label: 'Уведомления', hint: 'За 5 минут до пары, события', icon: Bell, tone: 'amber' },
     { to: '/start', label: 'Первая неделя', hint: 'Чек-лист для новичков', icon: ListChecks, tone: 'blue' },
   ] },
@@ -73,11 +67,11 @@ const menuGroups = [
   ] },
 ]
 
-const THEME_LABELS = {
-  light: { aria: 'Включить светлую тему', title: 'Светлая тема' },
-  dark: { aria: 'Включить тёмную тему', title: 'Тёмная тема' },
-  pickme: { aria: 'Включить розовую тему «Пикми»', title: 'Тема «Пикми»' },
-}
+// Подвал — полная карта сайта: основные разделы и всё из меню «Ещё».
+const footerGroups = [
+  { title: 'Основное', items: [{ to: '/map', label: 'Карта этажей', icon: MapIcon }, { to: '/route', label: 'Маршрут', icon: Navigation }, { to: '/schedule', label: 'Звонки', icon: CalendarClock }, { to: '/ai', label: 'Помощник', icon: Bot }] },
+  ...menuGroups.map((group) => ({ ...group, items: group.items.filter((item) => !item.primary) })),
+]
 
 // Значок на кнопке темы — та тема, которая включится следующей.
 const THEME_ICONS = { light: Sun, dark: Moon, pickme: Flower2 }
@@ -190,8 +184,8 @@ export function Header() {
   const menuToggleRef = useRef(null)
   const theme = useTheme()
   const enabledThemes = useEnabledThemes()
-  const upcomingTheme = nextTheme(theme, enabledThemes)
   const [textSize, setTextSizeState] = useState(readTextSize)
+  const [slashKeys, setSlashKeys] = useState(slashShortcutEnabled)
   const location = useLocation()
   const closeSearch = useCallback(() => setSearchOpen(false), [])
   // Смена темы кругом от кнопки (View Transitions API). Круг — это снимок всей
@@ -219,7 +213,6 @@ export function Header() {
     // Страховка: если браузер не завершил переход, сцена всё равно оживёт.
     window.setTimeout(done, 3000)
   }
-  const changeTheme = (event) => switchTheme(upcomingTheme, event)
   const openSearch = () => { setMobileOpen(false); setSearchOpen(true) }
   const takeTour = () => { setMobileOpen(false); startTour() }
   const changeTextSize = (value) => setTextSizeState(setTextSize(value))
@@ -227,7 +220,7 @@ export function Header() {
   useEffect(() => setMobileOpen(false), [location.pathname])
   useEffect(() => {
     const onKeyDown = (event) => {
-      if (isSearchShortcut(event)) { event.preventDefault(); setMobileOpen(false); setSearchOpen(true) }
+      if (isSearchShortcut(event, { slash: slashShortcutEnabled() })) { event.preventDefault(); setMobileOpen(false); setSearchOpen(true) }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
@@ -247,14 +240,12 @@ export function Header() {
       <div className="header-inner">
         <Brand />
         <nav className="desktop-nav" aria-label="Основная навигация">
-          {navigation.map((item) => <NavLink end key={item.to} to={item.to} className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}><NavIcon to={item.to} />{item.label}{item.badge && <span className="nav-badge">{item.badge}</span>}</NavLink>)}
+          {navigation.map((item) => <NavLink end key={item.to} to={item.to} className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}>{item.label}</NavLink>)}
         </nav>
         <div className="header-actions">
-          <button className="search-trigger" type="button" aria-keyshortcuts="K" onClick={openSearch} aria-label="Найти кабинет"><Search size={17} /><span>Найти место</span><kbd>K</kbd></button>
-          {enabledThemes.length > 1 && <button className="theme-toggle header-theme hd-icon" type="button" onClick={changeTheme} aria-label={THEME_LABELS[upcomingTheme].aria} title={THEME_LABELS[upcomingTheme].title}>{(() => { const Icon = THEME_ICONS[upcomingTheme]; return <Icon size={17} /> })()}</button>}
+          <button className="search-trigger" type="button" aria-keyshortcuts="Control+K Meta+K /" onClick={openSearch}><Search size={17} aria-hidden="true" /><span>Кабинет, место или преподаватель</span><kbd aria-hidden="true">/</kbd></button>
           <NotificationBell />
-          <NavLink className={({ isActive }) => `mobile-map-link ${isActive ? 'mobile-map-link-active' : ''}`} to="/map" aria-label="Открыть карту"><MapPin size={18} /><span>Карта</span></NavLink>
-          <button ref={menuToggleRef} className={`mobile-menu-toggle hd-burger ${mobileOpen ? 'is-open' : ''}`} type="button" onClick={() => setMobileOpen((value) => !value)} aria-controls="site-menu" aria-label={mobileOpen ? 'Закрыть меню' : 'Открыть меню'} aria-expanded={mobileOpen}><span className="hd-burger-lines" aria-hidden="true"><i /><i /><i /></span><span className="hd-burger-label">Ещё</span></button>
+          <button ref={menuToggleRef} className={`mobile-menu-toggle hd-burger ${mobileOpen ? 'is-open' : ''}`} type="button" onClick={() => setMobileOpen((value) => !value)} aria-controls="site-menu" aria-label={mobileOpen ? 'Закрыть меню «Ещё»' : 'Ещё: разделы и настройки'} aria-expanded={mobileOpen}><span className="hd-burger-lines" aria-hidden="true"><i /><i /><i /></span><span className="hd-burger-label">Ещё</span></button>
         </div>
       </div>
       <nav id="site-menu" className="hd-menu" aria-label="Меню сайта" hidden={!mobileOpen}>
@@ -263,7 +254,7 @@ export function Header() {
             {menuGroups.map((group) => <section key={group.title} className="hd-menu-group" aria-label={group.title}>
               <h2 className="hd-menu-group-title">{group.title}</h2>
               <div className="hd-menu-grid">
-                {group.items.map((item) => { const Icon = item.icon; const index = cardIndex++; return <NavLink end key={item.to} to={item.to} style={{ '--i': index }} onClick={() => setMobileOpen(false)} className={({ isActive }) => `hd-menu-card hd-tone-${item.tone} ${isActive ? 'is-active' : ''}`}>
+                {group.items.map((item) => { const Icon = item.icon; const index = cardIndex++; return <NavLink end key={item.to} to={item.to} style={{ '--i': index }} onClick={() => setMobileOpen(false)} className={({ isActive }) => `hd-menu-card hd-tone-${item.tone} ${item.primary ? 'hd-menu-card-phone' : ''} ${isActive ? 'is-active' : ''}`}>
                   <span className="hd-menu-icon" aria-hidden="true"><Icon size={19} /></span>
                   <span className="hd-menu-text"><strong>{item.label}{item.badge && <span className="nav-badge">{item.badge}</span>}</strong><small>{item.hint}</small></span>
                   <ArrowUpRight className="hd-menu-arrow" size={16} aria-hidden="true" />
@@ -272,7 +263,7 @@ export function Header() {
             </section>)}
           </div>
           <div className="hd-menu-side">
-            <button type="button" className="hd-menu-search" onClick={openSearch}><Search size={17} /><span>Найти место</span><kbd>K</kbd></button>
+            <button type="button" className="hd-menu-search" onClick={openSearch}><Search size={17} aria-hidden="true" /><span>Найти место</span></button>
             <div className="hd-menu-row">
               <span>Язык</span>
               <div className="hd-seg" role="group" aria-label="Язык сайта">{['ru', 'en'].map((locale) => <button key={locale} type="button" lang={locale} aria-pressed={language === locale} onClick={() => setLanguage(locale)} title={locale === 'ru' ? 'Русская версия' : 'English version'}>{locale.toUpperCase()}</button>)}</div>
@@ -284,6 +275,10 @@ export function Header() {
             <div className="hd-menu-row">
               <span>Текст</span>
               <div className="hd-seg" role="group" aria-label="Размер текста"><button type="button" aria-pressed={textSize !== 'large'} onClick={() => changeTextSize('normal')}>Обычный</button><button type="button" aria-pressed={textSize === 'large'} onClick={() => changeTextSize('large')}><Type size={14} /> Крупный</button></div>
+            </div>
+            <div className="hd-menu-row hd-menu-row-keys">
+              <span>Клавиша «/»</span>
+              <div className="hd-seg" role="group" aria-label="Открывать поиск клавишей «/»"><button type="button" aria-pressed={slashKeys} onClick={() => setSlashKeys(setSlashShortcut(true))}><Keyboard size={14} aria-hidden="true" /> Вкл.</button><button type="button" aria-pressed={!slashKeys} onClick={() => setSlashKeys(setSlashShortcut(false))}>Выкл.</button></div>
             </div>
             <div className="hd-menu-actions">
               <button type="button" className="hd-menu-link hd-menu-tour" onClick={takeTour}><Compass size={16} /> Пройти обучение</button>
@@ -298,5 +293,37 @@ export function Header() {
 }
 
 export function Footer() {
-  return <footer className="site-footer"><div className="footer-top container"><div className="footer-brand-block"><Brand /><p>Карта, маршруты и всё, что<br />нужно найти в колледже.</p><span className="footer-version">Версия {SITE_VERSION_LABEL}</span></div>{menuGroups.map((group) => <div key={group.title} className="footer-links-group"><span className="footer-label">{group.title}</span>{group.items.map((item) => <Link key={item.to} to={item.to} className="footer-link"><item.icon size={15} aria-hidden="true" />{item.label}</Link>)}</div>)}</div><div className="footer-bottom container"><span>Путеводитель колледжа «Логос»</span><nav className="footer-legal" aria-label="Правовая информация"><Link to="/privacy">Политика конфиденциальности</Link><Link to="/terms">Пользовательское соглашение</Link><Link to="/consent">Согласие на обработку данных</Link><Link to="/privacy#cookies">Cookie</Link><Link to="/notifications">Уведомления</Link><button type="button" onClick={openCookieSettings}>Настройки cookie</button></nav><a href="#top" onClick={(event) => { event.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>Наверх ↑</a></div></footer>
+  return <footer className="site-footer"><div className="footer-top container"><div className="footer-brand-block"><Brand /><p>Карта, маршруты и всё, что<br />нужно найти в колледже.</p><span className="footer-version">Версия {SITE_VERSION_LABEL}</span></div>{footerGroups.map((group) => <div key={group.title} className="footer-links-group"><span className="footer-label">{group.title}</span>{group.items.map((item) => <Link key={item.to} to={item.to} className="footer-link"><item.icon size={15} aria-hidden="true" />{item.label}</Link>)}</div>)}</div><div className="footer-bottom container"><span>Путеводитель колледжа «Логос»</span><nav className="footer-legal" aria-label="Правовая информация"><Link to="/privacy">Политика конфиденциальности</Link><Link to="/terms">Пользовательское соглашение</Link><Link to="/consent">Согласие на обработку данных</Link><Link to="/privacy#cookies">Cookie</Link><Link to="/notifications">Уведомления</Link><button type="button" onClick={openCookieSettings}>Настройки cookie</button></nav><a href="#top" onClick={(event) => { event.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>Наверх ↑</a></div></footer>
+}
+
+// Нижняя панель на телефоне и планшете: четыре основных раздела в зоне
+// большого пальца. Маршрут — действие над местом (кнопка в карточке места,
+// в поиске), поэтому отдельной вкладки у него нет; он есть в меню «Ещё».
+// Пока открыта экранная клавиатура, панель прячется, чтобы не съедать место.
+const bottomTabs = [{ to: '/', label: 'Главная' }, ...navigation.filter((item) => item.to !== '/route')]
+
+export function BottomNav() {
+  const [keyboard, setKeyboard] = useState(false)
+  useEffect(() => {
+    const viewport = window.visualViewport
+    if (!viewport) return undefined
+    const check = () => setKeyboard(window.innerHeight - viewport.height > 150)
+    viewport.addEventListener('resize', check)
+    return () => viewport.removeEventListener('resize', check)
+  }, [])
+  const onTabClick = (event, to, isActive) => {
+    if (!isActive) return
+    event.preventDefault()
+    window.scrollTo({ top: 0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' })
+    if (to === '/map') window.dispatchEvent(new Event('logos-map-fit'))
+  }
+  return <nav className={`bottom-nav${keyboard ? ' is-hidden' : ''}`} aria-label="Основные разделы">
+    {bottomTabs.map((item) => { const Icon = navIcons[item.to]; return <NavLink key={item.to} to={item.to} end className="bottom-nav-tab" onClick={(event) => onTabClick(event, item.to, event.currentTarget.getAttribute('aria-current') === 'page')}>
+      <Icon size={22} aria-hidden="true" /><span>{item.label}</span>
+    </NavLink> })}
+  </nav>
+}
+
+export function SkipLink() {
+  return <a className="skip-link" href="#main-content">К основному содержимому</a>
 }

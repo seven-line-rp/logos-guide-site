@@ -109,3 +109,48 @@ export function formatCountdown(minutes) {
   if (hours < 24) return `через ${hours} ч ${minutes % 60} мин`
   return `через ${Math.round(hours / 24)} дн.`
 }
+
+// Первый учебный день после даты (пропуская воскресенья и праздники): для
+// «Мой день», когда пары на сегодня закончились.
+export function nextSchoolDay(key, limit = 14) {
+  for (let step = 1; step <= limit; step += 1) {
+    const day = addDays(key, step)
+    const { bells } = bellsFor(day)
+    if (bells.length) return { key: day, bell: bells[0], inDays: step }
+  }
+  return null
+}
+
+const SOON_MINUTES = 15
+export const minutesText = (minutes) => minutes < 60 ? `${minutes} мин` : `${Math.floor(minutes / 60)} ч ${minutes % 60} мин`
+
+// Статус для виджета «Мой день». Расписания групп на сайте пока нет,
+// поэтому статус строится по звонкам: какая пара идёт или будет следующей.
+//   now   — пара идёт («Сейчас идёт», до конца N мин)
+//   soon  — до пары ≤ 15 мин («Скоро начнётся»)
+//   next  — перемена, обед или утро, до пары > 15 мин («Следующая пара»)
+//   over  — пары на сегодня закончились
+//   off   — выходной или праздник
+export function dayStatus(now = new Date()) {
+  const key = dateKey(now)
+  const minute = now.getHours() * 60 + now.getMinutes()
+  const { bells, lunch } = bellsFor(key)
+  if (!bells.length) {
+    const holiday = holidayName(key)
+    return { kind: 'off', label: holiday ? `Сегодня ${holiday}` : 'Сегодня занятий нет', upcoming: nextSchoolDay(key) }
+  }
+  const current = bells.find((bell) => toMinutes(bell.start) <= minute && minute < toMinutes(bell.end))
+  const next = bells.find((bell) => toMinutes(bell.start) > minute)
+  const meal = lunch.find((item) => toMinutes(item.start) <= minute && minute < toMinutes(item.end))
+  if (current) {
+    const left = toMinutes(current.end) - minute
+    return { kind: 'now', label: 'Сейчас идёт', bell: current, left, countdown: `до конца ${minutesText(left)}`, after: next || null }
+  }
+  if (next) {
+    const left = toMinutes(next.start) - minute
+    const kind = left <= SOON_MINUTES ? 'soon' : 'next'
+    const pause = meal ? `Обед ${meal.course} курса` : minute < toMinutes(bells[0].start) ? '' : 'Перемена'
+    return { kind, label: kind === 'soon' ? 'Скоро начнётся' : 'Следующая пара', bell: next, left, countdown: left <= 0 ? 'начинается' : `через ${minutesText(left)}`, pause }
+  }
+  return { kind: 'over', label: 'Занятий сегодня больше нет', upcoming: nextSchoolDay(key) }
+}

@@ -2,22 +2,20 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { ArrowRight, ArrowUpRight, Search } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
-import { photoSrcSet, photosFor, rooms, quickPlaces } from '../data.js'
-import { HERO_ROUTES } from '../hero-scene-model.js'
+import { rooms, quickPlaces } from '../data.js'
 import GuideBoard from '../components/GuideBoard.jsx'
 import { useFavorites, useRecentRoutes } from '../components/FavoriteButton.jsx'
-import HomeDashboard from '../components/HomeDashboard.jsx'
+import { LessonCard, MyPlaces, NearbyStrip } from '../components/HomeDashboard.jsx'
 import { PickmeChip, PickmeGarden, PickmeNote } from '../components/Pickme.jsx'
-import { Reveal } from '../components/Primitives.jsx'
 import VoiceSearchButton from '../components/VoiceSearchButton.jsx'
 import { focusInputOnPress, useAnchorRect } from '../search-field.js'
 import { cancelMiss, reportMiss, searchRooms, searchTeachers, shortName, useTeachers } from '../search.js'
-import { useScene3d } from '../use-scene3d.js'
+import { useMinuteNow } from '../use-now.js'
 import { useTheme } from '../theme.js'
 
-// 3D-корпус тяжёлый: грузим его отдельным файлом и только там, где он потянет
-// (компьютер с мышью, не «Лёгкий» режим). На телефонах остаётся градиентный фон.
-const HeroScene = lazy(() => import('../components/HeroScene.jsx'))
+// План этажа тяжёлый (геометрия обоих этажей): грузим его отдельным файлом,
+// после первого экрана. Заголовок и поиск рисуются без него.
+const FloorMap = lazy(() => import('../components/FloorMap.jsx'))
 
 function HomeSearch() {
   const [query, setQuery] = useState('')
@@ -67,60 +65,83 @@ function HomeSearch() {
   </form>
 }
 
-const VIA_LABELS = { lift: 'на лифте', 'stairs-west': 'по западной лестнице', 'stairs-middle': 'по центральной лестнице', 'stairs-north': 'по северной лестнице' }
-const roomTitle = (id) => { const room = rooms.find((item) => item.id === id); return room.number ? `${room.name.toLowerCase()} ${room.number}` : room.name }
+// Быстрые запросы под поиском: самые частые места. Открывают место на карте.
+const QUICK_IDS = ['canteen', 'library-214', 'academic-office', 'auditorium-104', 'medical-post']
+const QUICK_LABELS = { 'academic-office': 'Учебная часть', 'medical-post': 'Медпункт' }
 
-// Подпись под сценой: сцена сообщает, какой маршрут сейчас летит.
-function HeroCaption() {
-  const [route, setRoute] = useState(HERO_ROUTES[0])
+// Превью карты на главной: тот же план, что на /map, но без жестов —
+// вертикальный свайп по нему прокручивает страницу, а не двигает план.
+// Выбор помещения открывает его на полной карте.
+function MapPreview() {
+  const [floor, setFloor] = useState(1)
+  const navigate = useNavigate()
+  const open = (room) => room && navigate(`/map?floor=${room.floor}&room=${encodeURIComponent(room.id)}`)
+  return <section className="home-map" aria-labelledby="home-map-title">
+    <div className="home-map-head">
+      <h2 id="home-map-title">Карта корпуса</h2>
+      <div className="home-map-floors" role="group" aria-label="Этаж">{[1, 2].map((value) => <button key={value} type="button" aria-pressed={floor === value} onClick={() => setFloor(value)}>{value} этаж</button>)}</div>
+    </div>
+    <div className="home-map-frame">
+      <Suspense fallback={<div className="home-map-skeleton" role="status"><span className="visually-hidden">Загружаем план этажа</span></div>}>
+        <FloorMap floor={floor} compact onSelect={open} onFloorRequest={(next) => setFloor(next)} />
+      </Suspense>
+    </div>
+    <Link className="home-map-open" to={`/map?floor=${floor}`}>Открыть карту <ArrowUpRight size={16} aria-hidden="true" /></Link>
+  </section>
+}
+
+// Пока поле поиска на главной видно, кнопка поиска в шапке скрыта: на экране
+// одно поле поиска, а не два. Ушло из вида — кнопка в шапке появляется.
+function useHeroSearchVisibility(ref) {
   useEffect(() => {
-    const onRoute = (event) => setRoute(event.detail)
-    window.addEventListener('hero-route', onRoute)
-    return () => window.removeEventListener('hero-route', onRoute)
-  }, [])
-  const from = rooms.find((item) => item.id === route.from)
-  return <Link className="hero-scene-caption" to={`/route?from=${route.from}&to=${route.to}&mode=${route.via}`}><small>Пример маршрута {VIA_LABELS[route.via]}</small><strong>{from.name} → {roomTitle(route.to)} <ArrowUpRight size={14} aria-hidden="true" /></strong></Link>
+    const node = ref.current
+    const root = document.documentElement
+    if (!node || typeof IntersectionObserver === 'undefined') return undefined
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) root.dataset.heroSearch = 'visible'
+      else delete root.dataset.heroSearch
+    }, { rootMargin: '-56px 0px 0px 0px' })
+    observer.observe(node)
+    return () => { observer.disconnect(); delete root.dataset.heroSearch }
+  }, [ref])
 }
 
 export default function HomePage() {
-  const scene3d = useScene3d()
   const theme = useTheme()
   const pickme = theme === 'pickme'
-  // У «Пикми» на главном экране своя сцена: 3D-корпуса и подписи к нему нет.
-  const plainHero = !pickme
-  // Кто зашёл впервые, сначала видит, что умеет путеводитель: «Мой день» у него пока пустой.
-  // Кто уже сохранял места или строил маршруты, сначала видит свой день, указатель — ниже.
+  const now = useMinuteNow()
+  const searchRef = useRef(null)
+  useHeroSearchVisibility(searchRef)
+  // Кто зашёл впервые, видит под картой, что умеет путеводитель.
   const favorites = useFavorites()
   const recent = useRecentRoutes()
   const newcomer = !favorites.length && !recent.length
   return <>
-    <section className={`home-hero hero-mesh home-hero-usual home-hero-scene${pickme ? ' home-hero-pickme' : ''}`} id="top">
-      {pickme ? <PickmeGarden /> : scene3d && <Suspense fallback={null}><HeroScene /></Suspense>}
-      <div className="container home-hero-inner">
-        <div className="home-hero-copy">
-          <PickmeChip />
-          <h1>Где найти кабинет</h1>
-          <PickmeNote />
-          <p>Введите номер, название или фамилию преподавателя. Кабинет откроется на карте, оттуда можно построить маршрут.</p>
-          <div className="home-search-group">
-            <label className="home-search-label" htmlFor="home-room-search">Поиск по колледжу</label>
-            <HomeSearch />
-          </div>
-          <div className="home-hero-actions">
-            <Link className="button button-white home-map-cta" to="/map">Смотреть карту <ArrowRight size={16} /></Link>
-            <Link className="home-plain-link" to="/route" aria-label="Построить маршрут"><span className="home-route-long">Построить маршрут</span><span className="home-route-short">Маршрут</span><ArrowUpRight size={16} /></Link>
-          </div>
+    <section className={`hm-hero${pickme ? ' home-hero-pickme' : ''}`} id="top">
+      {pickme && <PickmeGarden />}
+      <div className="container hm-hero-inner">
+        <PickmeChip />
+        <h1>Найдите кабинет и постройте маршрут</h1>
+        <PickmeNote />
+        <div className="home-search-group" ref={searchRef}>
+          <label className="visually-hidden" htmlFor="home-room-search">Поиск по колледжу: номер кабинета, место или преподаватель</label>
+          <HomeSearch />
         </div>
-        {plainHero && <HeroCaption />}
+        <ul className="home-quick" id="quick-places" aria-label="Часто ищут">{QUICK_IDS.map((id) => { const room = rooms.find((item) => item.id === id); return room && <li key={id}><Link className="home-quick-chip" to={`/map?floor=${room.floor}&room=${encodeURIComponent(id)}`}>{QUICK_LABELS[id] || quickPlaces.find((place) => place.roomId === id)?.label || room.name}</Link></li> })}</ul>
       </div>
     </section>
 
+    <div className="home-main container">
+      <MapPreview />
+      <aside className="hm-day" aria-labelledby="home-day-title">
+        <h2 id="home-day-title">Мой день</h2>
+        <LessonCard now={now} />
+        <MyPlaces />
+      </aside>
+    </div>
+
+    <NearbyStrip />
+
     {newcomer && <GuideBoard />}
-
-    <HomeDashboard />
-
-    <section className="quick-places container section-pad" id="quick-places"><div className="section-top"><div><h2>Часто ищут</h2></div><Link className="text-link" to="/rooms">Все помещения <span><ArrowRight size={15} /></span></Link></div><div className="quick-place-grid">{quickPlaces.map((place, index) => { const room = rooms.find((item) => item.id === place.roomId); return <Reveal key={place.roomId} delay={index * 60} variant="up"><Link className={`quick-place-card quick-place-${place.tone}${photosFor(room).length ? ' quick-place-media' : ''}`} to={`/map?floor=${room.floor}&room=${room.id}`}>{photosFor(room).length > 0 && <img className="quick-place-photo" src={photosFor(room)[0]} srcSet={photoSrcSet(photosFor(room)[0])} sizes="(max-width: 680px) 100vw, 320px" alt="" loading="lazy" decoding="async" />}<span className="quick-place-num">{room.floor} этаж</span><span className="quick-place-copy"><strong>{place.label}</strong><small>{place.meta}</small></span><span className="quick-place-arrow"><ArrowUpRight size={16} /></span></Link></Reveal> })}</div></section>
-
-    {!newcomer && <GuideBoard />}
   </>
 }
