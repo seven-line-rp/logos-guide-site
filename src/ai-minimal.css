@@ -76,7 +76,7 @@
 .ai-callout-example { --k: #0891b2; }
 .ai-callout-tip { --k: #a16207; }
 .ai-callout-check { --k: #16a34a; }
-:root[data-theme='dark'] .ai-callout-summary { --k: #7ba4ff; }
+:root[data-theme='dark'] .ai-callout-summary { --k: #5c95ff; }
 :root[data-theme='dark'] .ai-callout-definition { --k: #5eead4; }
 :root[data-theme='dark'] .ai-callout-example { --k: #67e8f9; }
 :root[data-theme='dark'] .ai-callout-tip { --k: #fbbf24; }

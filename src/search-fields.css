@@ -61,7 +61,7 @@ html[data-theme='dark'] :is(.home-search, .directory-search-bar, .route-room-sea
   outline: none;
   box-shadow: 0 0 0 3px var(--sf-ring) !important;
 }
-html[data-theme='dark'] :is(.directory-search-bar:focus-within, .route-room-search-field:focus-within, .route-room-search-open .route-room-search-field) { border-color: #8fb3ff !important; }
+html[data-theme='dark'] :is(.directory-search-bar:focus-within, .route-room-search-field:focus-within, .route-room-search-open .route-room-search-field) { border-color: #5c95ff !important; }
 /* На синем первом экране главной рамка жёлтая, как и раньше, но вплотную к строке:
    отступ в 3 px на скруглённых углах выглядел кривым. */
 .home-search:focus-within { outline: none !important; box-shadow: 0 0 0 3px #ffd66d, 0 10px 30px rgba(1, 12, 35, .22) !important; }

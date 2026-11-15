@@ -5,7 +5,7 @@
   --ai-accent: var(--blue);
   --c0: #2f6bff; --c1: #e8590c; --c2: #2f9e44; --c3: #ae3ec9; --c4: #0c8599; --c5: #e03131;
 }
-:root[data-theme='dark'] .ai-text { --c0: #7ba4ff; --c1: #ff922b; --c2: #69db7c; --c3: #da77f2; --c4: #3bc9db; --c5: #ff8787; }
+:root[data-theme='dark'] .ai-text { --c0: #5c95ff; --c1: #ff922b; --c2: #69db7c; --c3: #da77f2; --c4: #3bc9db; --c5: #ff8787; }
 
 /* ---------- Предметы ---------- */
 .ai-subject { padding: 14px 16px 16px; border: 1px solid color-mix(in srgb, var(--ai-accent) 28%, var(--line)); border-left: 4px solid var(--ai-accent); border-radius: 16px; background: color-mix(in srgb, var(--ai-accent) 5%, var(--surface)); }
@@ -23,7 +23,7 @@
 .ai-subject-english { --ai-accent: #4f46e5; }
 .ai-subject-economics { --ai-accent: #a16207; }
 .ai-subject-drawing { --ai-accent: #475569; }
-:root[data-theme='dark'] .ai-subject-math { --ai-accent: #7ba4ff; }
+:root[data-theme='dark'] .ai-subject-math { --ai-accent: #5c95ff; }
 :root[data-theme='dark'] .ai-subject-physics { --ai-accent: #b794f6; }
 :root[data-theme='dark'] .ai-subject-chemistry { --ai-accent: #6ee7a0; }
 :root[data-theme='dark'] .ai-subject-informatics { --ai-accent: #5eead4; }
