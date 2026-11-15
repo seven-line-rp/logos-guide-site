@@ -52,6 +52,8 @@ import './align.css'
 import './pickme.css'
 // Тёмная тема задаётся окончательно здесь, поверх накопившихся слоёв.
 import './dark.css'
+// Главная: общая сетка, отступы и эффекты для всех трёх тем — самым последним слоем.
+import './landing.css'
 import './interactions.js'
 import { applyMapContrast } from './map-contrast.js'
 import { applyTextSize, readTextSize } from './text-size.js'
