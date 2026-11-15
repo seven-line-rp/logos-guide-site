@@ -15,15 +15,15 @@
   --ink: #ecebe6;
   --muted: #a9a8a1;
   --muted-2: #8c8b85;
-  --blue: #7ba4ff;
-  --blue-bright: #7ba4ff;
+  --blue: #5c95ff;
+  --blue-bright: #5c95ff;
   --blue-deep: #ecebe6;
   --blue-night: #1d1d1c;
   --blue-pale: #2b3550;
   --blue-soft: #262b38;
-  --accent-tint: rgba(91, 140, 255, .14);
-  --action-bg: #2f66eb;
-  --action-hover: #4277f2;
+  --accent-tint: rgba(92, 149, 255, .14);
+  --action-bg: #1f5eff;
+  --action-hover: #3570ff;
   --glass: rgba(29, 29, 28, .86);
   --glass-border: rgba(255, 255, 255, .08);
   --glass-dark: rgba(29, 29, 28, .78);
@@ -32,14 +32,14 @@
   --map-room: #30323a;
   --map-wall: #5f636e;
   --map-label: #e6e5e0;
-  --map-door: #7ba4ff;
+  --map-door: #5c95ff;
   color: var(--ink);
   background: var(--bg);
 }
 
 :root[data-theme='dark'] body { color: var(--ink); background: var(--bg); }
-:root[data-theme='dark'] ::selection { color: #fff; background: #2f66eb; }
-:root[data-theme='dark'] :is(button, a, input, select):focus-visible { outline-color: #7ba4ff; }
+:root[data-theme='dark'] ::selection { color: #fff; background: #1f5eff; }
+:root[data-theme='dark'] :is(button, a, input, select):focus-visible { outline-color: #5c95ff; }
 
 /* ---------- Шапка, меню, поиск ---------- */
 :root[data-theme='dark'] .site-header { border-bottom-color: var(--line); background: var(--glass); box-shadow: none; }
@@ -49,7 +49,7 @@
 :root[data-theme='dark'] :is(.theme-toggle, .search-trigger, .mobile-menu-toggle, .header-docs, .mobile-map-link) { border: 1px solid var(--line); color: var(--ink); background: var(--surface); }
 :root[data-theme='dark'] :is(.theme-toggle, .search-trigger, .mobile-menu-toggle, .header-docs):hover { border-color: var(--line-strong); background: var(--surface-soft); }
 :root[data-theme='dark'] .header-docs svg { color: var(--blue); }
-:root[data-theme='dark'] .header-docs-active { border-color: rgba(123, 164, 255, .4); color: var(--ink); background: var(--accent-tint); }
+:root[data-theme='dark'] .header-docs-active { border-color: rgba(92, 149, 255, .4); color: var(--ink); background: var(--accent-tint); }
 :root[data-theme='dark'] .search-trigger kbd { border-color: var(--line); color: var(--muted); background: var(--surface-soft); }
 :root[data-theme='dark'] :is(.header-cta, .mobile-map-link-active) { color: #fff; background: var(--action-bg); }
 :root[data-theme='dark'] .header-cta:hover { background: var(--action-hover); }
@@ -89,14 +89,14 @@
 }
 :root[data-theme='dark'] .home-hero h1 { color: var(--ink); }
 :root[data-theme='dark'] .home-hero h1 span { color: var(--ink); }
-:root[data-theme='dark'] .home-hero h1 em { color: #8fb3ff; }
+:root[data-theme='dark'] .home-hero h1 em { color: #5c95ff; }
 :root[data-theme='dark'] .hero-mesh::after { background: radial-gradient(circle at 80% 15%, rgba(70, 120, 255, .12), transparent 45%), radial-gradient(circle at 15% 85%, rgba(70, 120, 255, .06), transparent 45%); }
-:root[data-theme='dark'] :is(.home-eyebrow svg, .home-hero-edge a svg) { color: #8fb3ff; }
+:root[data-theme='dark'] :is(.home-eyebrow svg, .home-hero-edge a svg) { color: #5c95ff; }
 :root[data-theme='dark'] .home-hero-edge { border-color: var(--line); color: var(--muted); }
 :root[data-theme='dark'] .home-hero-edge a { color: var(--ink); }
-:root[data-theme='dark'] .home-hero-edge a:hover { color: #8fb3ff; }
-:root[data-theme='dark'] :is(.home-plain-link svg, .route-heading-mark i) { color: #8fb3ff; }
-:root[data-theme='dark'] .home-search:focus-within { outline-color: #7ba4ff; }
+:root[data-theme='dark'] .home-hero-edge a:hover { color: #5c95ff; }
+:root[data-theme='dark'] :is(.home-plain-link svg, .route-heading-mark i) { color: #5c95ff; }
+:root[data-theme='dark'] .home-search:focus-within { outline-color: #5c95ff; }
 :root[data-theme='dark'] :is(.home-hero-copy > p, .home-hero-copy label, .home-hero-footer, .home-hero-footer a) { color: var(--muted); }
 :root[data-theme='dark'] .home-hero :is(.hero-badge, .home-badge, .eyebrow) { border-color: var(--line); color: var(--ink); background: var(--surface); }
 :root[data-theme='dark'] .home-search { border-color: var(--line-strong); background: var(--surface); }
@@ -114,11 +114,11 @@
    графитовая поверхность с синим акцентом, чтобы не было яркого пятна. */
 :root[data-theme='dark'] .floor-preview-band { border-block: 1px solid var(--line); background: linear-gradient(180deg, #252524, #222221); }
 :root[data-theme='dark'] .floor-preview-copy h2 { color: var(--ink); }
-:root[data-theme='dark'] .floor-preview-copy h2 em { color: #8fb3ff; }
+:root[data-theme='dark'] .floor-preview-copy h2 em { color: #5c95ff; }
 :root[data-theme='dark'] :is(.floor-preview-copy p, .floor-preview-copy .section-label) { color: var(--muted); }
 :root[data-theme='dark'] .floor-switch-card { border-color: var(--line); color: var(--ink); background: var(--surface); }
-:root[data-theme='dark'] .floor-switch-card:hover { border-color: rgba(123, 164, 255, .45); color: var(--ink); background: var(--surface-soft); }
-:root[data-theme='dark'] .floor-switch-number { border-color: rgba(123, 164, 255, .45); color: #8fb3ff; }
+:root[data-theme='dark'] .floor-switch-card:hover { border-color: rgba(92, 149, 255, .45); color: var(--ink); background: var(--surface-soft); }
+:root[data-theme='dark'] .floor-switch-number { border-color: rgba(92, 149, 255, .45); color: #5c95ff; }
 :root[data-theme='dark'] :is(.floor-switch-copy small, .floor-switch-card:hover .floor-switch-copy small) { color: var(--muted) !important; }
 :root[data-theme='dark'] .floor-switch-card > svg { color: var(--blue); }
 :root[data-theme='dark'] .play-teaser { border-color: var(--line); }
@@ -140,10 +140,10 @@
 
 /* ---------- Карта ---------- */
 :root[data-theme='dark'] :is(.floor-tab, .map-directory-link, .room-detail-panel, .route-form-panel, .route-result-panel, .game-panel, .game-mode-card, .directory-card, .room-card, .service-card, .map-plan-panel, .route-option-card, .route-single-strip, .directory-search-bar) { border-color: var(--line); color: var(--ink); background: var(--surface); box-shadow: none; }
-:root[data-theme='dark'] :is(.floor-tab-active, .route-option-active, .game-mode-active) { border-color: rgba(123, 164, 255, .5); background: var(--accent-tint); }
+:root[data-theme='dark'] :is(.floor-tab-active, .route-option-active, .game-mode-active) { border-color: rgba(92, 149, 255, .5); background: var(--accent-tint); }
 :root[data-theme='dark'] :is(.map-panel-heading, .map-panel-foot) { border-color: var(--line); color: var(--ink); background: var(--surface-soft); }
 :root[data-theme='dark'] :is(.map-filter, .route-mode-select button, .room-floor-button, .map-gps-button, .map-manual-button, .map-settings-button, .map-anchor-button) { border-color: var(--line); color: var(--ink); background: var(--surface); }
-:root[data-theme='dark'] :is(.map-filter-active, .route-mode-select button.route-mode-active) { border-color: rgba(123, 164, 255, .55); color: var(--ink); background: var(--accent-tint); }
+:root[data-theme='dark'] :is(.map-filter-active, .route-mode-select button.route-mode-active) { border-color: rgba(92, 149, 255, .55); color: var(--ink); background: var(--accent-tint); }
 :root[data-theme='dark'] .map-gps-button.map-gps-active { border-color: rgba(45, 180, 140, .5); background: rgba(45, 180, 140, .14); }
 :root[data-theme='dark'] :is(.map-gps-status, .map-manual-hint, .map-point-feedback, .map-manual-summary) { border-color: var(--line); color: var(--ink); background: var(--surface-soft); }
 :root[data-theme='dark'] :is(.room-detail-icon, .route-endpoints, .route-step-index, .route-option-icon, .game-score, .game-mode-icon, .find-target-symbol) { border-color: var(--line); color: var(--blue); background: var(--surface-soft); }
@@ -155,13 +155,13 @@
 :root[data-theme='dark'] .floor-map-art svg > path[fill='black'][opacity='0.2'] { fill: var(--map-label); opacity: .9; }
 :root[data-theme='dark'] .floor-map-art .plan-art-text { fill: var(--map-label); opacity: .9; }
 :root[data-theme='dark'] .plan-room-shape { stroke: var(--map-wall); }
-:root[data-theme='dark'] :is(.plan-room:hover, .plan-room:focus-visible) .plan-room-shape { fill: rgba(91, 140, 255, .18); stroke: #7ba4ff; }
-:root[data-theme='dark'] .plan-room-selected .plan-room-shape { fill: rgba(91, 140, 255, .26); stroke: #8fb3ff; }
+:root[data-theme='dark'] :is(.plan-room:hover, .plan-room:focus-visible) .plan-room-shape { fill: rgba(92, 149, 255, .18); stroke: #5c95ff; }
+:root[data-theme='dark'] .plan-room-selected .plan-room-shape { fill: rgba(92, 149, 255, .26); stroke: #5c95ff; }
 :root[data-theme='dark'] :is(.floor-map-zoom-controls button, .floor-map-3d-toggle-btn, .yandex-hud-3d-btn) { border-color: var(--line); color: var(--ink); background: var(--surface-soft); }
 
 /* ---------- Маршрут ---------- */
 :root[data-theme='dark'] :is(.route-select-wrap, .route-room-search-field, .route-voice-toggle, .route-voice-bar, .route-voice-select, .route-voice-test-button) { border-color: var(--line); color: var(--ink); background: var(--surface-soft); }
-:root[data-theme='dark'] .route-room-search-field:focus-within { border-color: rgba(123, 164, 255, .55); background: var(--surface); }
+:root[data-theme='dark'] .route-room-search-field:focus-within { border-color: rgba(92, 149, 255, .55); background: var(--surface); }
 :root[data-theme='dark'] :is(.route-room-search-list, .route-room-search-group-label, .route-select-wrap select, .route-select-wrap option, .route-select-wrap optgroup) { color: var(--ink); background: var(--surface); }
 :root[data-theme='dark'] .route-room-option-highlight { background: var(--accent-tint); }
 :root[data-theme='dark'] .route-room-option-number { color: var(--blue); background: var(--surface-soft); }
@@ -178,4 +178,4 @@
 :root[data-theme='dark'] :is(.cookie-banner, .docs-section, .docs-hero-steps li, .docs-faq details) { border-color: var(--line); background: var(--surface); }
 :root[data-theme='dark'] :is(.docs-items > div, .cookie-option, .privacy-consent, .legal-table thead th) { background: var(--surface-soft); }
 :root[data-theme='dark'] :is(.cookie-secondary) { border-color: var(--line); color: var(--ink); background: var(--surface-soft); }
-:root[data-theme='dark'] .cookie-icon, :root[data-theme='dark'] .privacy-consent-icon { color: #8fb3ff; background: var(--accent-tint); }
+:root[data-theme='dark'] .cookie-icon, :root[data-theme='dark'] .privacy-consent-icon { color: #5c95ff; background: var(--accent-tint); }

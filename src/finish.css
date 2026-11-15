@@ -87,7 +87,7 @@ body *:not(.home-hero):not(.home-hero *) { -webkit-backdrop-filter: none !import
 }
 :is(.button, .hd-seg button, .map-filter, .directory-chip, .map-zoom-button, .map-view-switch button, .day-chip, .search-nearby a, .icon-button, .theme-toggle, .search-trigger):active { transform: translateY(1px); }
 :is(button, a, input, select, textarea, summary, [tabindex]):focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; border-radius: inherit; }
-:root[data-theme='dark'] :is(button, a, input, select, textarea, summary, [tabindex]):focus-visible { outline-color: #8fb3ff; }
+:root[data-theme='dark'] :is(button, a, input, select, textarea, summary, [tabindex]):focus-visible { outline-color: #5c95ff; }
 :is(button, [role='button']):disabled { cursor: not-allowed; }
 
 /* ---------- Карта: шапка панели не выталкивает кнопки за край ---------- */
