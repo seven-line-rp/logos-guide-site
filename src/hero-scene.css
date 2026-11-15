@@ -106,21 +106,6 @@ html[data-theme='dark'] .home-hero-scene {
 .hs-plate svg > rect[height='2'] { fill: var(--route); opacity: .5; }
 .hs-floor-2 .hs-plate { opacity: calc(var(--floor-alpha, 1) * .85); }
 
-/* Скан-свет: полоса проходит по полу, как луч сканера. */
-.hs-sweep { position: absolute; inset: 0; clip-path: inset(0); }
-.hs-sweep::before {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: -60%;
-  width: 60%;
-  background: linear-gradient(100deg, transparent, color-mix(in srgb, var(--route) 14%, transparent) 50%, transparent);
-  content: '';
-  animation: hs-sweep 7s linear infinite;
-}
-.hs-floor-2 .hs-sweep::before { animation-delay: -3.5s; }
-@keyframes hs-sweep { to { transform: translateX(266%); } }
-
 /* ---------- Стены и двери ---------- */
 .hs-wall, .hs-door {
   position: absolute;
@@ -284,6 +269,6 @@ html[data-theme='dark'] .hero-scene-caption small { color: var(--muted); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hero-scene, .hs-wall, .hs-door, .hs-sweep, .hs-beacon b, .hs-walker i::after { animation: none; }
+  .hero-scene, .hs-wall, .hs-door, .hs-beacon b, .hs-walker i::after { animation: none; }
   .hs-parallax { transition: none; }
 }

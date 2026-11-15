@@ -140,11 +140,10 @@ html:root:not([data-theme='dark']):not([data-theme='pickme']) .home-hero:not(:ha
   --column: rgba(36, 92, 229, .14);
   --shade: rgba(244, 247, 252, .97);
   --shade-mid: rgba(244, 247, 252, .6);
-  border-bottom: 1px solid var(--line);
   color: var(--ink);
   background: var(--bg);
 
-  &::before, &::after { display: none; }
+  &::before { display: none; }
   & h1, & h1 :is(em, span) { color: var(--ink); }
   & .home-hero-copy > p { color: var(--muted); }
   & .home-search-label { color: var(--ink); }
@@ -160,3 +159,37 @@ html:root:not([data-theme='dark']):not([data-theme='pickme']) .home-hero:not(:ha
   & .hero-scene-caption strong { color: var(--ink); }
   & :focus-visible { outline-color: var(--blue); }
 }
+
+/* ---------- Мягкие переходы между блоками ----------
+   Первый экран не обрывается линией: его нижний край размывается и
+   растворяется в фоне страницы. Блоки ниже проявляются из лёгкого размытия,
+   когда въезжают в экран, поэтому граница между соседними блоками не видна. */
+.home-hero.home-hero-scene { border-bottom: 0 !important; }
+html:root .home-hero.home-hero-scene::after {
+  position: absolute;
+  z-index: 1;
+  inset: auto 0 0;
+  display: block !important;
+  height: clamp(96px, 15vw, 190px);
+  background: linear-gradient(180deg, transparent, var(--bg) 92%);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  -webkit-mask-image: linear-gradient(180deg, transparent, #000 75%);
+  mask-image: linear-gradient(180deg, transparent, #000 75%);
+  filter: none;
+  opacity: 1;
+  animation: none;
+  content: '';
+  pointer-events: none;
+}
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    :root:not([data-perf='lite']) .landing > section {
+      animation: ld-emerge linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 55%;
+    }
+  }
+}
+@keyframes ld-emerge { from { opacity: 0; filter: blur(14px); } to { opacity: 1; filter: blur(0); } }
+:root[data-perf='lite'] .home-hero.home-hero-scene::after { -webkit-backdrop-filter: none; backdrop-filter: none; }
