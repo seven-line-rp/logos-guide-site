@@ -177,6 +177,5 @@
 /* ---------- Окна ---------- */
 :root[data-theme='dark'] :is(.cookie-banner, .docs-section, .docs-hero-steps li, .docs-faq details) { border-color: var(--line); background: var(--surface); }
 :root[data-theme='dark'] :is(.docs-items > div, .cookie-option, .privacy-consent, .legal-table thead th) { background: var(--surface-soft); }
-:root[data-theme='dark'] .docs-hero { border-color: var(--line); background: radial-gradient(45% 80% at 90% 10%, rgba(70, 120, 255, .12), transparent 70%), #212120; }
 :root[data-theme='dark'] :is(.cookie-secondary) { border-color: var(--line); color: var(--ink); background: var(--surface-soft); }
 :root[data-theme='dark'] .cookie-icon, :root[data-theme='dark'] .privacy-consent-icon { color: #8fb3ff; background: var(--accent-tint); }

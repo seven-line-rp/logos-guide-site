@@ -1,10 +1,12 @@
-export const PRIVACY_UPDATED = '28 октября 2026 г.'
+import { LEGAL_UPDATED } from '../legal.js'
+
+export const PRIVACY_UPDATED = LEGAL_UPDATED
 
 // Всё, что путеводитель кладёт в localStorage. Список нужен и людям (таблица
 // в политике), и тестам: новый ключ без описания здесь — повод обновить политику.
 export const storedItems = [
   { key: 'logos-cookie-consent', purpose: 'Ваш ответ на вопрос о cookie', kind: 'Необходимые' },
-  { key: 'site-theme', purpose: 'Тема оформления: светлая, тёмная, «Пикми», Motion или праздничная', kind: 'Функциональные' },
+  { key: 'site-theme', purpose: 'Тема оформления: светлая, тёмная или «Пикми»', kind: 'Функциональные' },
   { key: 'site-language', purpose: 'Язык интерфейса', kind: 'Функциональные' },
   { key: 'map-show-labels, map-show-doors, map-contrast', purpose: 'Показывать ли подписи и двери на плане, контрастный план', kind: 'Функциональные' },
   { key: 'map-manual-point, map-gps-anchors', purpose: 'Ваша метка на плане и точки привязки GPS', kind: 'Функциональные' },
