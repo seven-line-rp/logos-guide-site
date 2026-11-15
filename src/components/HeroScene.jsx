@@ -56,7 +56,6 @@ function FloorPlate({ floor }) {
 function Floor({ floor, walls, doors, path, lineRef, routeRef }) {
   return <div className={`hs-floor hs-floor-${floor}`}>
     <FloorPlate floor={floor} />
-    <div className="hs-sweep" />
     {path && <svg className="hs-route" ref={routeRef} viewBox={`0 0 ${width} ${height}`}>
       <path className="hs-route-glow" d={path} />
       <path className="hs-route-base" d={path} />
