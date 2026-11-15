@@ -5,272 +5,491 @@
 <title>ЛОГОС: итоги Q3</title>
 <style>
 :root{
-  --bg:#0e0f13; --surface:#191a20; --raised:#22242c; --line:#2e3039;
-  --ink:#ececea; --muted:#a3a39e; --q3:#8db1ff; --q3-deep:#3b6cf0; --q1:#6a7080; --q2:#474b57;
+  --navy:#070a1e; --navy2:#10153a; --blue:#1f3dff; --sky:#8db1ff; --yel:#ffd23f; --pink:#ff4f9a;
+  --ink:#f4f5ff; --muted:#a9b0d6; --line:#262c5c; --q1:#7c86a8; --q2:#3a4270; --q3:#ffd23f;
+  --beat:.48s; --bar:1.92s;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{background:#000;font-family:Inter,'DejaVu Sans',sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
-#stage{position:relative;width:1920px;height:1080px;overflow:hidden;background:var(--bg)}
-.scene{position:absolute;inset:0;background:var(--bg);overflow:hidden}
-.scene *{animation-play-state:paused!important}
-.scene{animation-play-state:paused!important}
-.inner{position:absolute;inset:0;padding:96px 120px;animation:drift 12s linear both}
-@keyframes drift{from{transform:scale(1)}to{transform:scale(1.035)}}
-
-/* фон */
-.grid{position:absolute;inset:-80px;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:80px 80px;opacity:.28;animation:gridmove 20s linear infinite}
-@keyframes gridmove{to{transform:translate(80px,80px)}}
-.blob{position:absolute;border-radius:50%;filter:blur(120px);opacity:.34}
-.blob.a{width:760px;height:760px;background:var(--q3-deep);left:-180px;top:-240px;animation:float1 14s ease-in-out infinite alternate}
-.blob.b{width:620px;height:620px;background:#5b3df0;right:-160px;bottom:-260px;animation:float2 16s ease-in-out infinite alternate}
-@keyframes float1{to{transform:translate(260px,160px) scale(1.2)}}
-@keyframes float2{to{transform:translate(-300px,-140px) scale(1.15)}}
-
-/* входы сцен */
-.t-circle{animation:tCircle .9s cubic-bezier(.7,0,.2,1) both}
-@keyframes tCircle{from{clip-path:circle(0% at 50% 50%)}to{clip-path:circle(75% at 50% 50%)}}
-.t-wipe{animation:tWipe .8s cubic-bezier(.7,0,.2,1) both}
-@keyframes tWipe{from{clip-path:inset(0 0 0 100%)}to{clip-path:inset(0 0 0 0)}}
-.t-zoom{animation:tZoom .8s cubic-bezier(.2,.8,.2,1) both}
-@keyframes tZoom{from{opacity:0;transform:scale(1.35);filter:blur(24px)}to{opacity:1;transform:scale(1);filter:blur(0)}}
-.t-up{animation:tUp .8s cubic-bezier(.7,0,.2,1) both}
-@keyframes tUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-.t-diag{animation:tDiag .9s cubic-bezier(.7,0,.2,1) both}
-@keyframes tDiag{from{clip-path:polygon(0 0,0 0,-30% 100%,-30% 100%)}to{clip-path:polygon(0 0,130% 0,100% 100%,-30% 100%)}}
-.t-split{animation:tSplit .8s cubic-bezier(.7,0,.2,1) both}
-@keyframes tSplit{from{clip-path:inset(50% 0 50% 0)}to{clip-path:inset(0 0 0 0)}}
-.t-fade{animation:tFade 1s ease both}
-@keyframes tFade{from{opacity:0;filter:blur(30px)}to{opacity:1;filter:blur(0)}}
-
-/* входы элементов */
-[class*="a-"]{animation-delay:var(--d,0s)!important}
-.a-up{animation:aUp .7s cubic-bezier(.2,.8,.2,1) both}
-@keyframes aUp{from{opacity:0;transform:translateY(46px)}to{opacity:1;transform:none}}
-.a-fade{animation:aFade .8s ease both}
-@keyframes aFade{from{opacity:0}to{opacity:1}}
-.a-pop{animation:aPop .6s cubic-bezier(.3,1.6,.5,1) both}
-@keyframes aPop{from{opacity:0;transform:scale(.4)}to{opacity:1;transform:scale(1)}}
-.a-left{animation:aLeft .7s cubic-bezier(.2,.8,.2,1) both}
-@keyframes aLeft{from{opacity:0;transform:translateX(-70px)}to{opacity:1;transform:none}}
-.a-flip{animation:aFlip .8s cubic-bezier(.2,.8,.2,1) both;transform-origin:50% 100%}
-@keyframes aFlip{from{opacity:0;transform:perspective(900px) rotateX(-70deg)}to{opacity:1;transform:perspective(900px) rotateX(0)}}
-.a-growx{animation:aGrowX 1s cubic-bezier(.2,.8,.2,1) both;transform-origin:0 50%}
-@keyframes aGrowX{from{transform:scaleX(0)}to{transform:scaleX(1)}}
-.a-growy{animation:aGrowY .7s cubic-bezier(.2,.8,.2,1) both;transform-origin:50% 100%}
-@keyframes aGrowY{from{transform:scaleY(0)}to{transform:scaleY(1)}}
-.a-draw{stroke-dasharray:1;stroke-dashoffset:1;animation:aDraw 2.2s cubic-bezier(.5,0,.2,1) both}
-@keyframes aDraw{to{stroke-dashoffset:0}}
-.a-spin{animation:aSpin 1.6s cubic-bezier(.2,.8,.2,1) both}
-@keyframes aSpin{from{opacity:0;transform:rotate(-270deg) scale(.3)}to{opacity:1;transform:none}}
-
-/* типографика */
-.kicker{font-size:26px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--q3)}
-h1{font-size:132px;line-height:1.02;font-weight:800;letter-spacing:-.03em}
-h2{font-size:68px;line-height:1.08;font-weight:800;letter-spacing:-.02em;margin-top:14px}
-.sub{font-size:34px;color:var(--muted);margin-top:18px;line-height:1.35}
-.foot{position:absolute;left:120px;right:120px;bottom:56px;font-size:22px;color:var(--muted);display:flex;justify-content:space-between}
+#stage{position:relative;width:1920px;height:1080px;overflow:hidden;background:var(--navy)}
+.scene{position:absolute;inset:0;overflow:hidden;background:var(--navy);color:var(--ink)}
+.scene,.scene *,.scene *::before,.scene *::after{animation-play-state:paused!important}
+.cam{position:absolute;inset:0;animation:cam 8s linear both}
+@keyframes cam{from{transform:scale(1)}to{transform:scale(1.06) rotate(.25deg)}}
+.pad{position:absolute;inset:0;padding:84px 110px}
+.mono{font-family:'JetBrains Mono','DejaVu Sans Mono',monospace}
 .num{font-variant-numeric:tabular-nums}
 
+/* ---------- фоны ---------- */
+.bg-blue{background:var(--blue)}
+.bg-yel{background:var(--yel);color:#0b0f2c}
+.bg-light{background:#eef1ff;color:#0b0f2c}
+.bg-pink{background:linear-gradient(135deg,#ffd3e6,#f6c8ff 60%,#d9d2ff);color:#3a0b2c}
+.grid{position:absolute;inset:-96px;background-image:linear-gradient(currentColor 1.5px,transparent 1.5px),linear-gradient(90deg,currentColor 1.5px,transparent 1.5px);background-size:96px 96px;opacity:.07;animation:gridmove 7.68s linear infinite}
+@keyframes gridmove{to{transform:translate(96px,96px)}}
+.blob{position:absolute;border-radius:50%;filter:blur(110px);opacity:.55;animation:float 9s ease-in-out infinite alternate}
+@keyframes float{to{transform:translate(var(--bx,220px),var(--by,140px)) scale(1.25)}}
+.ring{position:absolute;border-radius:50%;border:3px solid currentColor;opacity:.16;animation:beat var(--beat) cubic-bezier(.1,.7,.2,1) infinite}
+@keyframes beat{0%{scale:1.09}100%{scale:1}}
+.ghost{position:absolute;font-family:'Inter Display',Inter,sans-serif;font-weight:900;line-height:.8;letter-spacing:-.05em;color:transparent;-webkit-text-stroke:3px currentColor;white-space:nowrap;opacity:.14;animation:breathe 3.84s ease-in-out infinite alternate}
+.scene .ghost{-webkit-text-stroke-color:var(--gc,#fff)}
+.bg-yel .ghost,.bg-light .ghost{--gc:#0b0f2c}
+@keyframes breathe{from{scale:1 1}to{scale:1.35 .9}}
+.band{position:absolute;left:-10%;width:120%;height:86px;overflow:hidden;display:flex;align-items:center;rotate:var(--rot,-5deg);background:var(--yel);color:#0b0f2c;font:900 44px/1 'Inter Display',Inter,sans-serif;letter-spacing:.02em;text-transform:uppercase;white-space:nowrap}
+.band span{display:inline-block;animation:marq 15.36s linear infinite}
+@keyframes marq{to{transform:translateX(-50%)}}
+
+/* ---------- склейки ---------- */
+.curtain{position:absolute;inset:-2px;z-index:50;background:var(--c,var(--yel));animation:curtX .55s cubic-bezier(.75,0,.2,1) .26s both}
+.curtain.b2{background:var(--c2,var(--blue));animation-delay:.36s;z-index:49}
+@keyframes curtX{to{transform:translateX(102%)}}
+.curtain.up{animation-name:curtY}
+@keyframes curtY{to{transform:translateY(-102%)}}
+.curtain.skew{animation-name:curtS;inset:-2px -30%}
+@keyframes curtS{from{transform:skewX(-18deg)}to{transform:skewX(-18deg) translateX(110%)}}
+.curtain.iris{animation-name:curtI}
+@keyframes curtI{from{clip-path:circle(120% at 50% 50%)}to{clip-path:circle(0% at 50% 50%)}}
+.t-wipe{animation:tWipe .42s cubic-bezier(.75,0,.25,1) both}
+@keyframes tWipe{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+.t-up{animation:tUpp .42s cubic-bezier(.75,0,.25,1) both}
+@keyframes tUpp{from{clip-path:inset(100% 0 0 0)}to{clip-path:inset(0 0 0 0)}}
+.t-skew{animation:tSkew .45s cubic-bezier(.75,0,.25,1) both}
+@keyframes tSkew{from{clip-path:polygon(-40% 0,-40% 0,-70% 100%,-70% 100%)}to{clip-path:polygon(-40% 0,140% 0,110% 100%,-70% 100%)}}
+.t-iris{animation:tIris .5s cubic-bezier(.75,0,.25,1) both}
+@keyframes tIris{from{clip-path:circle(0% at 50% 50%)}to{clip-path:circle(80% at 50% 50%)}}
+.t-zoom{animation:tZoom .45s cubic-bezier(.2,.9,.2,1) both}
+@keyframes tZoom{from{transform:scale(2.4);opacity:0;filter:blur(30px)}to{transform:none;opacity:1;filter:blur(0)}}
+
+/* ---------- живые буквы ---------- */
+.w{display:inline-block;white-space:nowrap}
+.k-rise .w{overflow:hidden;padding:.08em .04em .16em;margin:-.08em -.04em -.16em;vertical-align:top}
+.ch{display:inline-block;transform-origin:50% 100%;animation-delay:calc(var(--d,0s) + var(--i)*var(--st,.028s))!important}
+.k-rise .ch{animation:chRise .7s cubic-bezier(.16,1.25,.3,1) both}
+@keyframes chRise{from{transform:translateY(125%) scaleY(2.6) rotate(8deg)}to{transform:none}}
+.k-stretch .ch{animation:chStretch .75s cubic-bezier(.2,1.5,.3,1) both}
+@keyframes chStretch{0%{transform:scale(.1,4.5);opacity:0}45%{opacity:1;transform:scale(1.25,.7)}100%{transform:none;opacity:1}}
+.k-drop .ch{animation:chDrop .8s cubic-bezier(.2,1.6,.35,1) both;transform-origin:50% 50%}
+@keyframes chDrop{from{transform:translateY(-160%) rotate(-28deg) scale(1.6);opacity:0}to{transform:none;opacity:1}}
+.k-flip .ch{animation:chFlip .7s cubic-bezier(.2,1.2,.3,1) both}
+@keyframes chFlip{from{transform:perspective(600px) rotateX(-95deg) translateY(30%);opacity:0}to{transform:none;opacity:1}}
+.k-wave .ch{animation-name:chRise,chWave;animation-duration:.7s,.96s;animation-timing-function:cubic-bezier(.16,1.25,.3,1),ease-in-out;animation-iteration-count:1,infinite;animation-direction:normal,alternate;animation-fill-mode:both}
+.k-stretch.k-wave .ch{animation-name:chStretch,chWave}
+@keyframes chWave{from{translate:0 -7%;scale:1 1.08}to{translate:0 5%;scale:1 .94}}
+
+/* ---------- входы элементов ---------- */
+[class^="a-"],[class*=" a-"]{animation-delay:var(--d,0s)!important}
+.a-up{animation:aUp .6s cubic-bezier(.2,1.2,.3,1) both}
+@keyframes aUp{from{opacity:0;transform:translateY(70px) scaleY(1.3)}to{opacity:1;transform:none}}
+.a-fade{animation:aFade .5s ease both}
+@keyframes aFade{from{opacity:0}to{opacity:1}}
+.a-pop{animation:aPop .55s cubic-bezier(.3,1.9,.45,1) both}
+@keyframes aPop{from{opacity:0;transform:scale(.2) rotate(-12deg)}to{opacity:1;transform:none}}
+.a-left{animation:aLeft .6s cubic-bezier(.2,1.1,.3,1) both}
+@keyframes aLeft{from{opacity:0;transform:translateX(-160px) scaleX(1.5);filter:blur(10px)}to{opacity:1;transform:none;filter:blur(0)}}
+.a-right{animation:aRight .6s cubic-bezier(.2,1.1,.3,1) both}
+@keyframes aRight{from{opacity:0;transform:translateX(160px) scaleX(1.5);filter:blur(10px)}to{opacity:1;transform:none;filter:blur(0)}}
+.a-tilt{animation:aTilt .8s cubic-bezier(.2,1.25,.3,1) both}
+@keyframes aTilt{from{opacity:0;transform:perspective(1200px) translateY(260px) rotateX(55deg) rotateZ(var(--rz,-8deg)) scale(.7)}to{opacity:1;transform:perspective(1200px) rotateZ(var(--r,0deg))}}
+.a-growx{animation:aGrowX .75s cubic-bezier(.2,1.45,.35,1) both;transform-origin:0 50%}
+@keyframes aGrowX{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.a-growy{animation:aGrowY .6s cubic-bezier(.2,1.9,.35,1) both;transform-origin:50% 100%}
+@keyframes aGrowY{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+.a-elastic{animation:aElastic 1s cubic-bezier(.2,.9,.2,1) both;transform-origin:0 100%}
+@keyframes aElastic{0%{transform:scale(0,.2);opacity:0}30%{transform:scale(1.9,.55);opacity:1}55%{transform:scale(.82,1.3)}78%{transform:scale(1.08,.94)}100%{transform:none;opacity:1}}
+.a-punch{animation:aPunch .7s cubic-bezier(.2,1.3,.3,1) both}
+@keyframes aPunch{from{opacity:0;transform:scale(1.8);filter:blur(22px)}to{opacity:1;transform:none;filter:blur(0)}}
+.a-draw{stroke-dasharray:1;stroke-dashoffset:1;animation:aDraw 1.5s cubic-bezier(.6,0,.2,1) both}
+@keyframes aDraw{to{stroke-dashoffset:0}}
+.a-spin{animation:aSpin 1.2s cubic-bezier(.2,1.2,.3,1) both}
+@keyframes aSpin{from{opacity:0;transform:rotate(-540deg) scale(.1)}to{opacity:1;transform:none}}
+.a-type{animation:aType .35s steps(14) both}
+@keyframes aType{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+
+/* ---------- типографика ---------- */
+.kicker{display:inline-block;font:800 24px/1 Inter,sans-serif;letter-spacing:.16em;text-transform:uppercase;background:var(--yel);color:#0b0f2c;padding:12px 18px;border-radius:8px}
+.bg-yel .kicker{background:#0b0f2c;color:var(--yel)}
+.bg-light .kicker,.bg-pink .kicker{background:var(--blue);color:#fff}
+.bg-blue .kicker{background:#fff;color:var(--blue)}
+h1,h2,.big{font-family:'Inter Display',Inter,sans-serif;font-weight:900;letter-spacing:-.035em;line-height:.98}
+h2{font-size:92px;margin-top:22px}
+.hl{color:var(--yel)}
+.bg-yel .hl,.bg-light .hl{color:var(--blue)}
+.sub{font-size:32px;line-height:1.35;color:var(--muted);margin-top:20px;font-weight:500}
+.bg-yel .sub,.bg-light .sub,.bg-pink .sub{color:inherit;opacity:.72}
+.bg-blue .sub{color:#dfe5ff}
+.foot{position:absolute;left:110px;right:110px;bottom:44px;font-size:20px;opacity:.6;display:flex;justify-content:space-between;font-weight:500}
+
 /* 1 титул */
-#s1 .inner{display:flex;flex-direction:column;justify-content:center}
-.brand{display:flex;align-items:center;gap:22px;font-size:34px;font-weight:700;margin-bottom:60px}
-.brand svg{width:76px;height:76px}
-.pill{display:inline-flex;gap:18px;align-items:center;margin-top:44px;font-size:30px;color:var(--ink)}
-.pill b{background:var(--raised);border:1px solid var(--line);border-radius:999px;padding:12px 26px;font-weight:600}
-.pill b.hot{background:var(--q3-deep);border-color:var(--q3-deep)}
+.logo{display:flex;align-items:center;gap:20px;font:800 32px/1 Inter,sans-serif}
+.logo svg{width:70px;height:70px}
+#s1 h1{font-size:250px;margin-top:70px;line-height:.86}
+#s1 .row2{font:900 118px/1 'Inter Display',Inter,sans-serif;letter-spacing:-.03em;margin-top:26px}
+.pills{display:flex;gap:16px;align-items:center;margin-top:46px;font:700 30px/1 Inter,sans-serif}
+.pills b{border-radius:999px;padding:16px 28px}
+.pills b.q1{border:2px solid var(--q1);color:var(--ink)}
+.pills b.q3{background:var(--yel);color:#0b0f2c}
 
 /* 2 календарь */
-.chart{position:absolute;left:120px;right:120px;top:390px;height:480px}
-.bands{position:absolute;inset:0;display:flex;gap:10px}
-.band{border-radius:18px;background:var(--surface);border:1px solid var(--line);padding:18px 22px;font-size:26px;font-weight:700}
-.band small{display:block;font-size:20px;font-weight:500;color:var(--muted);margin-top:4px}
-.band.hot{border-color:var(--q3);background:#1a2030}
-.bars{position:absolute;left:0;right:0;bottom:0;height:330px;display:flex;align-items:flex-end}
-.bars .col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;position:relative}
-.bars .bar{width:26px;border-radius:4px 4px 0 0}
-.bars .val{font-size:22px;font-weight:700;margin-bottom:8px}
-.axis{position:absolute;left:120px;right:120px;top:884px;height:40px;font-size:22px;color:var(--muted)}
+.chart{position:absolute;left:110px;right:110px;top:400px;height:500px}
+.bands{position:absolute;inset:0;display:flex;gap:12px}
+.st{border-radius:22px;background:var(--navy2);border:2px solid var(--line);padding:20px 24px;font:900 34px/1 'Inter Display',Inter,sans-serif}
+.st small{display:block;font:500 20px/1.2 Inter,sans-serif;color:var(--muted);margin-top:8px}
+.st.hot{border-color:var(--yel);background:#1a1c3f}
+.st.hot b{color:var(--yel)}
+.bars{position:absolute;left:0;right:0;bottom:0;height:340px;display:flex;align-items:flex-end}
+.bars .col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+.bars .bar{width:30px;border-radius:5px 5px 0 0}
+.bars .val{font:900 26px/1 Inter,sans-serif;margin-bottom:10px}
+.axis{position:absolute;left:110px;right:110px;top:916px;height:40px;font-size:22px;color:var(--muted);font-weight:600}
 .axis span{position:absolute;transform:translateX(-50%);white-space:nowrap}
 
-/* 3 плитки */
-.tiles{display:grid;grid-template-columns:1fr 1fr 1fr 1.5fr;gap:28px;margin-top:110px;margin-bottom:60px}
-.tile{background:var(--surface);border:1px solid var(--line);border-radius:28px;padding:64px 40px 56px}
-.tile .big{white-space:nowrap;font-size:108px;font-weight:800;letter-spacing:-.04em;line-height:1}
-.tile .lbl{font-size:28px;color:var(--muted);margin-top:18px;line-height:1.3}
-.tile .rule{height:6px;border-radius:3px;background:var(--q3);margin-top:30px}
+/* 3 цифры */
+.tiles{position:absolute;left:110px;right:110px;top:420px;display:grid;grid-template-columns:1fr 1fr 1fr 1.45fr;gap:26px}
+.tile{background:#fff;color:#0b0f2c;border-radius:30px;padding:50px 38px 44px;box-shadow:0 30px 0 rgba(7,10,30,.28)}
+.tile.dark{background:#0b0f2c;color:#fff}
+.tile.yel{background:var(--yel)}
+.tile .big{font-size:150px;white-space:nowrap;line-height:.9}
+.tile .lbl{font-size:28px;font-weight:600;margin-top:22px;line-height:1.25;opacity:.8}
 
 /* 4 карточки */
-.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:26px;margin-top:60px}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:26px;padding:40px 38px;min-height:296px}
-.card svg{width:58px;height:58px;stroke:var(--q3);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.card h3{font-size:34px;font-weight:700;margin-top:20px}
-.card p{font-size:24px;color:var(--muted);margin-top:10px;line-height:1.35}
+.cards{position:absolute;left:110px;right:110px;top:356px;display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.card{border-radius:28px;padding:34px 36px 36px;min-height:292px;background:var(--navy2);border:2px solid var(--line)}
+.card.c1{background:var(--blue);border-color:var(--blue)}
+.card.c2{background:var(--yel);border-color:var(--yel);color:#0b0f2c}
+.card.c3{background:var(--pink);border-color:var(--pink);color:#fff}
+.card svg{width:64px;height:64px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.card h3{font:900 40px/1.05 'Inter Display',Inter,sans-serif;letter-spacing:-.02em;margin-top:20px}
+.card p{font-size:24px;line-height:1.32;margin-top:12px;opacity:.82;font-weight:500}
 
 /* 5 релизы */
-.rel{position:absolute;left:120px;right:120px;top:400px;height:500px;display:flex;align-items:flex-end;gap:0;border-bottom:2px solid var(--line)}
-.rel .day{flex:1;display:flex;flex-direction:column-reverse;align-items:center;gap:10px;padding-bottom:18px;position:relative}
-.rel .day::after{content:attr(data-d);position:absolute;bottom:-52px;font-size:24px;color:var(--muted);white-space:nowrap}
-.chip{background:var(--q3-deep);color:#fff;border-radius:12px;padding:10px 0;width:170px;text-align:center;font-size:26px;font-weight:700}
-.chip.alpha{background:transparent;border:2px solid var(--q3);color:var(--ink)}
-.legend{position:absolute;right:120px;top:300px;display:flex;gap:30px;font-size:24px;color:var(--muted)}
-.legend i{display:inline-block;width:22px;height:22px;border-radius:6px;vertical-align:-4px;margin-right:10px}
+.rel{position:absolute;left:110px;right:110px;top:430px;height:500px;display:flex;align-items:flex-end;border-bottom:4px solid #0b0f2c}
+.rel .day{flex:1;display:flex;flex-direction:column-reverse;align-items:center;gap:9px;padding-bottom:16px;position:relative}
+.rel .day::after{content:attr(data-d);position:absolute;bottom:-54px;font:800 26px/1 Inter,sans-serif;white-space:nowrap}
+.chip{background:#0b0f2c;color:var(--yel);border-radius:12px;padding:11px 0;width:190px;text-align:center;font:900 28px/1 Inter,sans-serif}
+.chip.alpha{background:transparent;border:3px solid #0b0f2c;color:#0b0f2c;padding:8px 0}
+.legend{position:absolute;right:110px;top:330px;display:flex;gap:30px;font:700 24px/1 Inter,sans-serif}
+.legend i{display:inline-block;width:24px;height:24px;border-radius:6px;vertical-align:-5px;margin-right:10px}
 
-/* 6 сравнение */
-.cmp{margin-top:44px;display:grid;gap:20px}
-.row{display:grid;grid-template-columns:330px 1fr 190px;align-items:center;gap:30px;background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:20px 34px}
-.row .name{font-size:30px;font-weight:700;line-height:1.2}
-.row .name small{display:block;font-size:20px;font-weight:500;color:var(--muted)}
+/* 6-8 дизайн */
+.browser{position:absolute;border-radius:16px;overflow:hidden;background:#fff;box-shadow:0 40px 90px rgba(11,15,44,.35),0 0 0 2px rgba(11,15,44,.12)}
+.browser::before{content:'';display:block;height:34px;background-color:#dfe3f3;background-image:radial-gradient(circle at 22px 17px,#ff5f57 6px,transparent 7px),radial-gradient(circle at 44px 17px,#febc2e 6px,transparent 7px),radial-gradient(circle at 66px 17px,#28c840 6px,transparent 7px)}
+.browser .vp{overflow:hidden;aspect-ratio:1440/900}
+.browser img{display:block;width:100%;animation:pan 4s ease-out both}
+@keyframes pan{from{transform:scale(1.12)}to{transform:scale(1)}}
+.tag{position:absolute;font:900 30px/1 Inter,sans-serif;padding:14px 22px;border-radius:999px;background:#0b0f2c;color:#fff;white-space:nowrap;z-index:5}
+.tag.q3{background:var(--yel);color:#0b0f2c}
+.notes{position:absolute;display:flex;flex-direction:column;gap:14px;font:700 28px/1.2 Inter,sans-serif}
+.notes span{display:inline-flex;align-items:center;gap:14px}
+.notes span::before{content:'';width:16px;height:16px;border-radius:50%;background:var(--blue);flex:none}
+.bg-blue .notes span::before{background:var(--yel)}
+.bg-pink .notes span::before{background:#ff2f86}
+.phone{position:absolute;border-radius:38px;overflow:hidden;border:10px solid #0b0f2c;background:#0b0f2c;box-shadow:0 40px 80px rgba(11,15,44,.4);z-index:6}
+.phone img{display:block;width:100%}
+
+/* 9 структура */
+.tree{position:absolute;left:110px;top:330px;width:900px;display:grid;gap:9px}
+.tr{display:grid;grid-template-columns:330px 1fr 190px;align-items:center;gap:18px;height:50px;font-size:26px}
+.tr .nm{font-weight:700;white-space:pre}
+.tr .nm em{font-style:normal;color:var(--muted)}
+.tr .track{position:relative;height:30px}
+.tr .b3{position:absolute;left:0;top:0;height:30px;border-radius:0 5px 5px 0;background:var(--q3)}
+.tr .b1{position:absolute;left:0;top:9px;height:12px;border-radius:0 3px 3px 0;background:var(--q1);outline:2px solid var(--navy)}
+.tr .vv{font-weight:700;text-align:right;white-space:nowrap}
+.tr .vv em{font-style:normal;color:var(--muted)}
+.tr .new{display:inline-block;background:var(--pink);color:#fff;font:800 17px/1 Inter,sans-serif;padding:6px 9px;border-radius:6px;margin-left:10px;letter-spacing:.04em;vertical-align:3px}
+.tkey{position:absolute;left:458px;top:288px;font:700 21px/1 Inter,sans-serif;color:var(--muted);display:flex;gap:26px}
+.tkey i{display:inline-block;width:26px;border-radius:3px;margin-right:9px;vertical-align:middle}
+.langs{position:absolute;left:1090px;top:288px;width:720px}
+.langs h4{font:900 34px/1 'Inter Display',Inter,sans-serif}
+.stack{display:flex;gap:3px;height:54px;margin-top:8px}
+.stack i{display:block;height:100%;border-radius:4px}
+.lrow{font:700 22px/1 Inter,sans-serif;color:var(--muted);margin-top:26px}
+.lrow b{color:var(--ink)}
+.lleg{display:grid;grid-template-columns:1fr;gap:11px;margin-top:28px;font:600 23px/1 Inter,sans-serif}
+.lleg i{display:inline-block;width:20px;height:20px;border-radius:5px;margin-right:10px;vertical-align:-3px}
+.lleg em{font-style:normal;color:var(--muted);float:right}
+.mini{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:30px}
+.mini div{background:var(--navy2);border:2px solid var(--line);border-radius:18px;padding:20px 20px 18px}
+.mini b{display:block;font:900 40px/1 'Inter Display',Inter,sans-serif;white-space:nowrap}
+.mini b em{font-style:normal;color:var(--q1)}
+.mini span{display:block;font:600 19px/1.2 Inter,sans-serif;color:var(--muted);margin-top:8px}
+
+/* 10 сравнение */
+.cmp{position:absolute;left:110px;right:110px;top:290px;display:grid;gap:14px}
+.row{display:grid;grid-template-columns:340px 1fr 230px;align-items:center;gap:30px;background:var(--navy2);border:2px solid var(--line);border-radius:22px;padding:13px 32px}
+.row .name{font:900 34px/1.1 'Inter Display',Inter,sans-serif}
+.row .name small{display:block;font:500 20px/1.2 Inter,sans-serif;color:var(--muted);margin-top:4px}
 .pair{display:grid;gap:8px}
 .hb{display:flex;align-items:center;gap:16px;height:34px}
-.hb .tag{width:44px;font-size:22px;font-weight:700;color:var(--muted)}
-.hb .fill{height:26px;border-radius:0 5px 5px 0}
-.hb .v{font-size:26px;font-weight:700}
-.delta{font-size:44px;font-weight:800;text-align:right;letter-spacing:-.02em}
-.delta small{display:block;font-size:19px;font-weight:500;color:var(--muted);letter-spacing:0}
+.hb .tg{width:44px;font:800 22px/1 Inter,sans-serif;color:var(--muted)}
+.hb .fill{height:28px;border-radius:0 6px 6px 0}
+.hb .v{font:800 28px/1 Inter,sans-serif}
+.delta{justify-self:end;font:900 40px/1 'Inter Display',Inter,sans-serif;background:var(--yel);color:#0b0f2c;border-radius:16px;padding:10px 20px;text-align:center;min-width:190px}
+.delta.down{background:transparent;border:3px solid var(--q1);color:var(--ink)}
+.delta small{display:block;font:600 16px/1 Inter,sans-serif;margin-top:4px;opacity:.75}
 
-/* 7 рост */
-#s7 svg.line{position:absolute;left:120px;top:330px;width:1680px;height:600px;overflow:visible}
-.x12{position:absolute;left:150px;top:300px}
-.x12 b{font-size:200px;font-weight:800;letter-spacing:-.05em;line-height:1;color:var(--ink)}
-.x12 span{display:block;font-size:26px;color:var(--muted)}
-.pt{position:absolute;font-size:26px;font-weight:700;white-space:nowrap}
-.pt small{display:block;font-size:20px;font-weight:500;color:var(--muted)}
+/* 11 рост */
+#s11 svg.line{position:absolute;left:110px;top:330px;width:1700px;height:620px;overflow:visible}
+.x12{position:absolute;left:120px;top:250px}
+.x12 b{display:block;font:900 400px/.8 'Inter Display',Inter,sans-serif;letter-spacing:-.06em;color:var(--yel)}
+.x12 span{display:block;font:700 30px/1 Inter,sans-serif;margin-top:22px}
+.pt{position:absolute;font:900 30px/1 Inter,sans-serif;white-space:nowrap}
+.pt small{display:block;font:600 20px/1.2 Inter,sans-serif;color:#dfe5ff;margin-top:5px}
 
-/* 8 итог */
-.take{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;margin-top:90px}
-.take div{background:var(--surface);border:1px solid var(--line);border-radius:26px;padding:52px 40px}
-.take b{display:block;font-size:76px;font-weight:800;letter-spacing:-.03em}
-.take span{display:block;font-size:26px;color:var(--muted);margin-top:12px;line-height:1.35}
-.next{margin-top:64px;font-size:30px;color:var(--muted)}
+/* 12 итог */
+.take{position:absolute;left:110px;right:110px;top:400px;display:grid;grid-template-columns:repeat(3,1fr);gap:26px}
+.take div{border-radius:28px;padding:44px 38px}
+.take div:nth-child(1){background:var(--blue)}
+.take div:nth-child(2){background:var(--yel);color:#0b0f2c}
+.take div:nth-child(3){background:#fff;color:#0b0f2c}
+.take b{display:block;font:900 110px/.95 'Inter Display',Inter,sans-serif;letter-spacing:-.04em;white-space:nowrap}
+.take span{display:block;font:600 26px/1.3 Inter,sans-serif;margin-top:16px;opacity:.85}
+.next{position:absolute;left:110px;top:800px;font:600 32px/1.3 Inter,sans-serif;color:var(--muted)}
 .next b{color:var(--ink)}
+.credit{position:absolute;left:110px;right:110px;bottom:44px;display:flex;justify-content:space-between;align-items:center;font:500 19px/1.3 Inter,sans-serif;color:var(--muted)}
 
-/* режим PDF */
-body.pdf{background:var(--bg)}
+/* ---------- PDF ---------- */
 body.pdf #stage{height:auto;overflow:visible}
 body.pdf .scene{position:relative;height:1080px;page-break-after:always;break-after:page}
-body.pdf .inner{animation:none}
-body.pdf .blob{filter:none;background:radial-gradient(closest-side,rgba(59,108,240,.5),rgba(59,108,240,0))!important;opacity:.6}
+body.pdf .cam{animation:none}
+body.pdf .blob{filter:none;background:radial-gradient(closest-side,var(--bc),transparent)!important;opacity:.5}
+body.pdf .curtain{display:none}
 @page{size:1920px 1080px;margin:0}
 </style>
 </head>
 <body>
 <div id="stage">
 
-<section class="scene" id="s1" data-start="0" data-end="5.6">
-  <div class="grid"></div><div class="blob a"></div><div class="blob b"></div>
-  <div class="inner">
-    <div class="brand a-fade" style="--d:.2s">
-      <svg class="a-spin" style="--d:.1s" viewBox="0 0 64 64"><path fill="#8db1ff" fill-rule="evenodd" d="M2 32a30 30 0 1 0 60 0a30 30 0 1 0 -60 0ZM50.38 13.62L38.87 35.36Q37.66 37.66 35.36 38.87L13.62 50.38L25.13 28.64Q26.34 26.34 28.64 25.13ZM28.6 32a3.4 3.4 0 1 0 6.8 0a3.4 3.4 0 1 0 -6.8 0Z"/></svg>
+<!-- 1 -->
+<section class="scene" id="s1" data-bar="0" data-bars="3">
+  <div class="grid"></div>
+  <div class="blob" style="--bc:#1f3dff;background:#1f3dff;width:900px;height:900px;left:-260px;top:-320px"></div>
+  <div class="blob" style="--bc:#7a2cff;background:#7a2cff;width:700px;height:700px;right:-200px;bottom:-300px;--bx:-260px;--by:-160px"></div>
+  <div class="ghost" style="font-size:980px;right:-80px;top:40px;transform-origin:100% 50%">Q3</div>
+  <div class="ring" style="width:520px;height:520px;right:150px;top:120px;color:var(--yel);opacity:.5"></div>
+  <div class="ring" style="width:820px;height:820px;right:0;top:-30px"></div>
+  <div class="cam"><div class="pad">
+    <div class="logo a-fade" style="--d:.15s">
+      <svg class="a-spin" style="--d:.05s" viewBox="0 0 64 64"><path fill="#ffd23f" fill-rule="evenodd" d="M2 32a30 30 0 1 0 60 0a30 30 0 1 0 -60 0ZM50.38 13.62L38.87 35.36Q37.66 37.66 35.36 38.87L13.62 50.38L25.13 28.64Q26.34 26.34 28.64 25.13ZM28.6 32a3.4 3.4 0 1 0 6.8 0a3.4 3.4 0 1 0 -6.8 0Z"/></svg>
       ЛОГОС: путеводитель по колледжу
     </div>
-    <div class="kicker a-up" style="--d:.7s">Итоги разработки</div>
-    <h1 class="a-up" style="--d:.95s">Третий этап.<br>Что сделано в Q3</h1>
-    <div class="sub a-up" style="--d:1.4s">1–15 ноября 2026 · сравнение с Q1, самым началом проекта</div>
-    <div class="pill a-up" style="--d:1.9s"><b>Q1 · 15–22 октября</b> → <b class="hot">Q3 · 1–15 ноября</b></div>
-  </div>
+    <h1 class="k-stretch k-wave" data-split style="--d:.5s;--st:.07s">ИТОГИ <span class="hl">Q3</span></h1>
+    <div class="row2 k-rise" data-split style="--d:1.25s">Что сделано за третий этап</div>
+    <div class="sub a-up" style="--d:1.9s">1–15 ноября 2026 · и сравнение с Q1, самым началом проекта</div>
+    <div class="pills"><b class="q1 a-left" style="--d:2.3s">Q1 · 15–22 октября</b><span class="a-fade" style="--d:2.5s">→</span><b class="q3 a-elastic" style="--d:2.6s">Q3 · 1–15 ноября</b></div>
+  </div></div>
+  <div class="band a-fade" style="bottom:70px;--rot:-4deg;--d:.4s"><span>итоги разработки ✦ Q3 ✦ 14 релизов ✦ ×12 кода ✦ 243 теста ✦ итоги разработки ✦ Q3 ✦ 14 релизов ✦ ×12 кода ✦ 243 теста ✦ итоги разработки ✦ Q3 ✦ 14 релизов ✦ ×12 кода ✦ 243 теста ✦ итоги разработки ✦ Q3 ✦ 14 релизов ✦ ×12 кода ✦ 243 теста ✦ </span></div>
 </section>
 
-<section class="scene t-circle" id="s2" data-start="5" data-end="13.6">
+<!-- 2 -->
+<section class="scene t-wipe" id="s2" data-bar="3" data-bars="3">
   <div class="grid"></div>
-  <div class="inner">
-    <div class="kicker a-up" style="--d:.5s">Месяц проекта</div>
-    <h2 class="a-up" style="--d:.7s">Три этапа за 32 дня</h2>
-    <div class="sub a-up" style="--d:.9s">Коммиты по дням, включая слияния. Всего 199 в основной ветке.</div>
+  <div class="ghost" style="font-size:520px;left:-30px;top:-120px;transform-origin:0 0;opacity:.07">32 ДНЯ</div>
+  <div class="cam"><div class="pad">
+    <div class="kicker a-pop" style="--d:.55s">Месяц проекта</div>
+    <h2 class="k-rise" data-split style="--d:.7s">Три этапа за <span class="hl">32 дня</span></h2>
+    <div class="sub a-up" style="--d:1.2s">Коммиты по дням, включая слияния. Всего 199 в основной ветке.</div>
   </div>
-  <div class="chart">
-    <div class="bands" id="bands"></div>
-    <div class="bars" id="bars"></div>
-  </div>
-  <div class="axis" id="axis"></div>
-  <div class="foot a-fade" style="--d:3s"><span>Источник: история git, 15 октября – 15 ноября 2026</span><span>ЛОГОС · итоги Q3</span></div>
+  <div class="chart"><div class="bands" id="bands"></div><div class="bars" id="bars"></div></div>
+  <div class="axis" id="axis"></div></div>
+  <div class="foot a-fade" style="--d:2s"><span>Источник: история git, 15 октября – 15 ноября 2026</span><span>ЛОГОС · итоги Q3</span></div>
+  <i class="curtain"></i><i class="curtain b2"></i>
 </section>
 
-<section class="scene t-wipe" id="s3" data-start="13" data-end="21.6">
-  <div class="blob a"></div>
-  <div class="inner">
-    <div class="kicker a-up" style="--d:.5s">Q3 в цифрах</div>
-    <h2 class="a-up" style="--d:.7s">1–15 ноября: от 1.2 до 1.11.4-alpha</h2>
-    <div class="tiles">
-      <div class="tile a-flip" style="--d:1.2s"><div class="big num" data-count="14" data-delay="1.3">14</div><div class="lbl">релизов с тегом версии</div><div class="rule a-growx" style="--d:1.6s"></div></div>
-      <div class="tile a-flip" style="--d:1.45s"><div class="big num" data-count="26" data-delay="1.55">26</div><div class="lbl">принятых pull request</div><div class="rule a-growx" style="--d:1.85s"></div></div>
-      <div class="tile a-flip" style="--d:1.7s"><div class="big num" data-count="29" data-delay="1.8">29</div><div class="lbl">коммитов без слияний</div><div class="rule a-growx" style="--d:2.1s"></div></div>
-      <div class="tile a-flip" style="--d:1.95s"><div class="big num" data-count="10517" data-delay="2.05" data-prefix="+">+10 517</div><div class="lbl">новых строк в 211 файлах</div><div class="rule a-growx" style="--d:2.35s"></div></div>
-    </div>
-    <div class="sub a-up" style="--d:3.2s">Коммитов меньше, чем на старте, но каждый этап заканчивался готовым релизом.</div>
-  </div>
-  <div class="foot a-fade" style="--d:3s"><span>Строки: добавлено между 31 октября и 15 ноября</span><span>ЛОГОС · итоги Q3</span></div>
-</section>
-
-<section class="scene t-zoom" id="s4" data-start="21" data-end="31.6">
+<!-- 3 -->
+<section class="scene bg-blue t-up" id="s3" data-bar="6" data-bars="3">
   <div class="grid"></div>
-  <div class="inner">
-    <div class="kicker a-up" style="--d:.5s">Что появилось в Q3</div>
-    <h2 class="a-up" style="--d:.7s">Сайт научился вести по корпусу</h2>
-    <div class="cards">
-      <div class="card a-pop" style="--d:1.3s"><svg viewBox="0 0 24 24"><circle cx="12" cy="10" r="3"/><path d="M12 21s7-6.2 7-11a7 7 0 0 0-14 0c0 4.8 7 11 7 11z"/></svg><h3>«Где я» и ведение</h3><p>GPS по углам корпуса, счёт шагов датчиком телефона, Bluetooth-маячки</p></div>
-      <div class="card a-pop" style="--d:1.7s"><svg viewBox="0 0 24 24"><path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7 2.5 7h-17S6 15 6 9z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><h3>Напоминания о парах</h3><p>Push за 5 минут до пары, без рассылки в праздники</p></div>
-      <div class="card a-pop" style="--d:2.1s"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="#8db1ff" stroke="none"/></svg><h3>Три темы</h3><p>Светлая, новая графитовая тёмная и розовая «Пикми»</p></div>
-      <div class="card a-pop" style="--d:2.5s"><svg viewBox="0 0 24 24"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></svg><h3>Новая карта</h3><p>Поиск кабинета над планом, в 3D стены расступаются вдоль маршрута</p></div>
-      <div class="card a-pop" style="--d:2.9s"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M8 14h8"/></svg><h3>Панель управления</h3><p>Обращения посетителей, включение тем, список маячков</p></div>
-      <div class="card a-pop" style="--d:3.3s"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 9l5 3-5 3z"/></svg><h3>Промо-ролик и мультик</h3><p>Своя музыка, озвучка, две серии про Mr.Брекина</p></div>
-    </div>
+  <div class="ghost" style="font-size:760px;right:-60px;top:-150px;transform-origin:100% 0">Q3</div>
+  <div class="ring" style="width:600px;height:600px;left:-200px;bottom:-240px;opacity:.3"></div>
+  <div class="cam"><div class="pad">
+    <div class="kicker a-pop" style="--d:.55s">Q3 в цифрах</div>
+    <h2 class="k-flip" data-split style="--d:.7s">От 1.2 до <span class="hl">1.11.4-alpha</span></h2>
+    <div class="sub a-up" style="--d:1.15s">1–15 ноября. Коммитов меньше, чем на старте, зато каждый шаг выходил релизом.</div>
   </div>
-  <div class="foot a-fade" style="--d:3s"><span>Источник: CHANGELOG.md, версии 1.2.0 – 1.11.4-alpha</span><span>ЛОГОС · итоги Q3</span></div>
+  <div class="tiles">
+    <div class="tile yel a-tilt" style="--d:1.1s;--r:-2deg"><div class="big num" data-count="14" data-delay="1.2">14</div><div class="lbl">релизов с тегом версии</div></div>
+    <div class="tile a-tilt" style="--d:1.25s;--r:1.5deg;--rz:9deg"><div class="big num" data-count="26" data-delay="1.35">26</div><div class="lbl">принятых pull request</div></div>
+    <div class="tile a-tilt" style="--d:1.4s;--r:-1deg"><div class="big num" data-count="29" data-delay="1.5">29</div><div class="lbl">коммитов без слияний</div></div>
+    <div class="tile dark a-tilt" style="--d:1.55s;--r:2deg;--rz:10deg"><div class="big num hl" data-count="10517" data-delay="1.65" data-prefix="+">+10 517</div><div class="lbl">новых строк в 211 файлах</div></div>
+  </div></div>
+  <div class="foot a-fade" style="--d:2s"><span>Строки: добавлено между 31 октября и 15 ноября</span><span>ЛОГОС · итоги Q3</span></div>
+  <i class="curtain up" style="--c:#fff"></i>
 </section>
 
-<section class="scene t-up" id="s5" data-start="31" data-end="38.6">
-  <div class="blob b"></div>
-  <div class="inner">
-    <div class="kicker a-up" style="--d:.5s">Ритм релизов</div>
-    <h2 class="a-up" style="--d:.7s">14 релизов за 9 дней</h2>
-    <div class="sub a-up" style="--d:.9s">В Q1 был один тег: 1.0.0-alpha.beta</div>
-  </div>
-  <div class="legend a-fade" style="--d:1.2s"><span><i style="background:var(--q3-deep)"></i>стабильная</span><span><i style="border:2px solid var(--q3)"></i>alpha</span></div>
-  <div class="rel" id="rel"></div>
-</section>
-
-<section class="scene t-diag" id="s6" data-start="38" data-end="49.6">
+<!-- 4 -->
+<section class="scene t-skew" id="s4" data-bar="9" data-bars="4">
   <div class="grid"></div>
-  <div class="inner" style="padding-top:70px">
-    <div class="kicker a-up" style="--d:.5s">Сравнение</div>
-    <h2 class="a-up" style="--d:.7s">Q1 против Q3</h2>
-    <div class="cmp" id="cmp"></div>
+  <div class="blob" style="--bc:#1f3dff;background:#1f3dff;width:800px;height:800px;right:-300px;top:-300px;--bx:-200px"></div>
+  <div class="cam"><div class="pad">
+    <div class="kicker a-pop" style="--d:.6s">Что появилось в Q3</div>
+    <h2 class="k-drop" data-split style="--d:.75s;--st:.022s">Сайт научился <span class="hl">вести</span> по корпусу</h2>
   </div>
-  <div class="foot a-fade" style="--d:3s"><span>Состояние на конец этапа: 22 октября и 15 ноября. Строки: JS, CSS, PHP, Python, HTML</span><span>ЛОГОС · итоги Q3</span></div>
+  <div class="cards">
+    <div class="card c1 a-tilt" style="--d:1.35s;--rz:-14deg"><svg viewBox="0 0 24 24"><circle class="a-draw" pathLength="1" style="--d:1.7s" cx="12" cy="10" r="3"/><path class="a-draw" pathLength="1" style="--d:1.6s" d="M12 21s7-6.2 7-11a7 7 0 0 0-14 0c0 4.8 7 11 7 11z"/></svg><h3>«Где я» и ведение</h3><p>GPS по углам корпуса, счёт шагов датчиком телефона, Bluetooth-маячки</p></div>
+    <div class="card a-tilt" style="--d:1.6s;--rz:10deg"><svg viewBox="0 0 24 24"><path class="a-draw" pathLength="1" style="--d:1.85s" d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7 2.5 7h-17S6 15 6 9z"/><path class="a-draw" pathLength="1" style="--d:2s" d="M10 20a2 2 0 0 0 4 0"/></svg><h3>Напоминания о парах</h3><p>Push за 5 минут до пары, без рассылки в праздники</p></div>
+    <div class="card c3 a-tilt" style="--d:1.85s;--rz:-10deg"><svg viewBox="0 0 24 24"><circle class="a-draw" pathLength="1" style="--d:2.1s" cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor" stroke="none"/></svg><h3>Три темы</h3><p>Светлая, новая графитовая тёмная и розовая «Пикми»</p></div>
+    <div class="card a-tilt" style="--d:2.1s;--rz:12deg"><svg viewBox="0 0 24 24"><path class="a-draw" pathLength="1" style="--d:2.35s" d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path class="a-draw" pathLength="1" style="--d:2.5s" d="M9 4v14M15 6v14"/></svg><h3>Новая карта</h3><p>Поиск кабинета над планом, в 3D стены расступаются вдоль маршрута</p></div>
+    <div class="card c2 a-tilt" style="--d:2.35s;--rz:-12deg"><svg viewBox="0 0 24 24"><rect class="a-draw" pathLength="1" style="--d:2.6s" x="3" y="4" width="18" height="16" rx="3"/><path class="a-draw" pathLength="1" style="--d:2.75s" d="M3 9h18M8 14h8"/></svg><h3>Панель управления</h3><p>Обращения посетителей, включение тем, список маячков</p></div>
+    <div class="card a-tilt" style="--d:2.6s;--rz:9deg"><svg viewBox="0 0 24 24"><rect class="a-draw" pathLength="1" style="--d:2.85s" x="3" y="5" width="18" height="14" rx="3"/><path class="a-draw" pathLength="1" style="--d:3s" d="M10 9l5 3-5 3z"/></svg><h3>Промо-ролик и мультик</h3><p>Своя музыка, озвучка, две серии про Mr.Брекина</p></div>
+  </div></div>
+  <div class="foot a-fade" style="--d:2s"><span>Источник: CHANGELOG.md, версии 1.2.0 – 1.11.4-alpha</span><span>ЛОГОС · итоги Q3</span></div>
+  <i class="curtain skew" style="--c:var(--blue)"></i>
 </section>
 
-<section class="scene t-split" id="s7" data-start="49" data-end="55.6">
-  <div class="blob a"></div>
-  <div class="inner">
-    <div class="kicker a-up" style="--d:.5s">С первого дня</div>
-    <h2 class="a-up" style="--d:.7s">Строк кода: 2 774 → 33 108</h2>
+<!-- 5 -->
+<section class="scene bg-yel t-iris" id="s5" data-bar="13" data-bars="3">
+  <div class="grid"></div>
+  <div class="ghost" style="font-size:700px;right:-40px;top:-170px;transform-origin:100% 0;opacity:.18">14</div>
+  <div class="cam"><div class="pad">
+    <div class="kicker a-pop" style="--d:.45s">Ритм релизов</div>
+    <h2 class="k-stretch" data-split style="--d:.6s;--st:.035s">14 релизов за 9 дней</h2>
+    <div class="sub a-up" style="--d:1.2s">В Q1 был один тег: 1.0.0-alpha.beta</div>
   </div>
-  <div class="x12 a-pop" style="--d:2.6s"><b>×12</b><span>за 32 дня</span></div>
-  <svg class="line" viewBox="0 0 1680 600" preserveAspectRatio="none" id="lineSvg"></svg>
-  <div id="pts"></div>
+  <div class="legend a-fade" style="--d:1.3s"><span><i style="background:#0b0f2c"></i>стабильная</span><span><i style="border:3px solid #0b0f2c"></i>alpha</span></div>
+  <div class="rel" id="rel"></div></div>
 </section>
 
-<section class="scene t-fade" id="s8" data-start="55" data-end="61">
-  <div class="grid"></div><div class="blob a"></div><div class="blob b"></div>
-  <div class="inner">
-    <div class="kicker a-up" style="--d:.6s">Итог</div>
-    <h2 class="a-up" style="--d:.8s">От прототипа карты к навигатору</h2>
-    <div class="take">
-      <div class="a-up" style="--d:1.3s"><b>+66%</b><span>кода к концу Q1: 20 тысяч строк стали 33 тысячами</span></div>
-      <div class="a-up" style="--d:1.6s"><b>×2</b><span>тестов: 123 → 243, покрыты маршруты, поиск, push</span></div>
-      <div class="a-up" style="--d:1.9s"><b>1 → 14</b><span>релизов с тегом: выпуск стал регулярным</span></div>
-    </div>
-    <div class="next a-up" style="--d:2.6s"><b>Дальше:</b> вывести 1.11 из alpha и проверить ведение по шагам в корпусе.</div>
-    <div class="brand a-fade" style="--d:3.2s;margin:54px 0 0">
-      <svg viewBox="0 0 64 64"><path fill="#8db1ff" fill-rule="evenodd" d="M2 32a30 30 0 1 0 60 0a30 30 0 1 0 -60 0ZM50.38 13.62L38.87 35.36Q37.66 37.66 35.36 38.87L13.62 50.38L25.13 28.64Q26.34 26.34 28.64 25.13ZM28.6 32a3.4 3.4 0 1 0 6.8 0a3.4 3.4 0 1 0 -6.8 0Z"/></svg>
-      logos-guide.ru
-    </div>
+<!-- 6 -->
+<section class="scene bg-light t-wipe" id="s6" data-bar="16" data-bars="2">
+  <div class="grid"></div>
+  <div class="ghost" style="font-size:420px;right:-20px;bottom:-90px;--gc:#1f3dff;transform-origin:100% 100%">ДИЗАЙН</div>
+  <div class="cam"><div class="pad">
+    <div class="kicker a-pop" style="--d:.5s">Дизайн · главная</div>
+    <h2 class="k-rise" data-split style="--d:.6s">Было <span class="hl">→</span> стало</h2>
   </div>
+  <div class="browser a-left" style="left:110px;top:372px;width:700px;--d:.8s"><div class="vp"><img src="shots/q1-d-light-home.jpg"></div></div>
+  <div class="tag a-pop" style="left:90px;top:340px;--d:1.1s">Q1 · 22 октября</div>
+  <div class="browser a-punch" style="left:880px;top:250px;width:940px;--d:1.15s"><div class="vp"><img src="shots/q3-d-light-home.jpg"></div></div>
+  <div class="tag q3 a-pop" style="left:1590px;top:218px;--d:1.5s">Q3 · 15 ноября</div>
+  <div class="notes" style="left:110px;top:868px">
+    <span class="a-left" style="--d:1.6s">Заголовок отвечает на главный вопрос</span>
+    <span class="a-left" style="--d:1.75s">Цифры корпуса в первом экране</span>
+    <span class="a-left" style="--d:1.9s">В шапке уведомления и преподаватели</span>
+  </div></div>
+  <i class="curtain" style="--c:var(--blue)"></i>
+</section>
+
+<!-- 7 -->
+<section class="scene bg-blue t-up" id="s7" data-bar="18" data-bars="2">
+  <div class="grid"></div>
+  <div class="ghost" style="font-size:440px;right:-20px;bottom:-100px;transform-origin:100% 100%">КАРТА</div>
+  <div class="cam"><div class="pad">
+    <div class="kicker a-pop" style="--d:.5s">Дизайн · карта</div>
+    <h2 class="k-flip" data-split style="--d:.6s">Меньше рамок, <span class="hl">больше плана</span></h2>
+  </div>
+  <div class="browser a-right" style="left:110px;top:330px;width:740px;--d:.8s"><div class="vp"><img src="shots/q1-d-light-map.jpg"></div></div>
+  <div class="tag a-pop" style="left:90px;top:298px;--d:1.1s">Q1</div>
+  <div class="browser a-punch" style="left:770px;top:400px;width:800px;--d:1.1s"><div class="vp"><img src="shots/q3-d-light-map.jpg"></div></div>
+  <div class="tag q3 a-pop" style="left:1400px;top:368px;--d:1.45s">Q3</div>
+  <div class="phone a-tilt" style="left:1590px;top:270px;width:250px;--d:1.4s;--r:5deg;--rz:20deg"><img src="shots/q3-m-light-map.jpg"></div>
+  <div class="notes" style="left:110px;top:960px;flex-direction:row;gap:40px">
+    <span class="a-up" style="--d:1.7s">Поиск над планом</span>
+    <span class="a-up" style="--d:1.8s">Кнопка «Где я»</span>
+    <span class="a-up" style="--d:1.9s">Крупные этажи</span>
+  </div></div>
+  <i class="curtain up" style="--c:var(--yel)"></i>
+</section>
+
+<!-- 8 -->
+<section class="scene bg-pink t-skew" id="s8" data-bar="20" data-bars="2">
+  <div class="ghost" style="font-size:430px;right:-20px;bottom:-100px;--gc:#ff4f9a;opacity:.3;transform-origin:100% 100%">ТЕМЫ</div>
+  <div class="cam"><div class="pad">
+    <div class="kicker a-pop" style="--d:.5s;background:#ff2f86">Дизайн · темы</div>
+    <h2 class="k-drop" data-split style="--d:.6s">Две темы <span style="color:#ff2f86">→ три</span></h2>
+  </div>
+  <div class="browser a-tilt" style="left:110px;top:400px;width:520px;--d:.85s;--r:-3deg"><div class="vp"><img src="shots/q1-d-dark-home.jpg"></div></div>
+  <div class="tag a-pop" style="left:90px;top:352px;--d:1.1s">Q1 · тёмная</div>
+  <div class="browser a-tilt" style="left:690px;top:370px;width:560px;--d:1.05s;--r:1.5deg;--rz:8deg"><div class="vp"><img src="shots/q3-d-dark-home.jpg"></div></div>
+  <div class="tag q3 a-pop" style="left:680px;top:326px;--d:1.3s">Q3 · графитовая</div>
+  <div class="browser a-tilt" style="left:1290px;top:350px;width:520px;--d:1.25s;--r:3deg"><div class="vp"><img src="shots/q3-d-pickme-home.jpg"></div></div>
+  <div class="tag a-pop" style="left:1290px;top:300px;background:#ff2f86;--d:1.5s">Q3 · «Пикми»</div>
+  <div class="phone a-tilt" style="left:1640px;top:520px;width:210px;--d:1.5s;--r:6deg;--rz:22deg"><img src="shots/q3-m-pickme-home.jpg"></div>
+  <div class="notes" style="left:110px;top:900px;flex-direction:row;gap:40px">
+    <span class="a-up" style="--d:1.7s">Тёмная без синего отлива, один акцент</span>
+    <span class="a-up" style="--d:1.85s">Темы включаются из панели</span>
+  </div></div>
+  <i class="curtain skew" style="--c:#ff4f9a"></i>
+</section>
+
+<!-- 9 -->
+<section class="scene t-wipe" id="s9" data-bar="22" data-bars="4">
+  <div class="grid"></div>
+  <div class="blob" style="--bc:#1f3dff;background:#1f3dff;width:700px;height:700px;left:-250px;bottom:-350px;--by:-120px"></div>
+  <div class="ghost mono" style="font-size:300px;right:-10px;top:-40px;transform-origin:100% 0;opacity:.09">src/</div>
+  <div class="cam"><div class="pad">
+    <div class="kicker a-pop" style="--d:.55s">Структура файлов</div>
+    <h2 class="k-rise" data-split style="--d:.7s;font-size:84px">218 файлов <span class="hl">→ 394</span></h2>
+  </div>
+  <div class="tkey a-fade" style="--d:1.2s"><span><i style="height:10px;background:var(--q1)"></i>Q1</span><span><i style="height:22px;background:var(--q3)"></i>Q3</span></div>
+  <div class="tree mono" id="tree"></div>
+  <div class="langs">
+    <h4 class="a-up" style="--d:1.3s">Строки кода по языкам</h4>
+    <div class="lrow a-fade" style="--d:1.5s">Q1 · <b>19 959</b></div><div class="stack" id="st1"></div>
+    <div class="lrow a-fade" style="--d:1.9s">Q3 · <b>33 108</b></div><div class="stack" id="st3"></div>
+    <div class="lleg" id="lleg"></div>
+    <div class="mini">
+      <div class="a-pop" style="--d:3.6s"><b><em>36 →</em> 48</b><span>CSS-файлов</span></div>
+      <div class="a-pop" style="--d:3.75s"><b><em>27 →</em> 31</b><span>компонент</span></div>
+      <div class="a-pop" style="--d:3.9s"><b><em>26 →</em> 44</b><span>файла с тестами</span></div>
+    </div>
+  </div></div>
+  <div class="foot a-fade" style="--d:2s"><span>Состояние репозитория на 22 октября и 15 ноября</span><span>ЛОГОС · итоги Q3</span></div>
+  <i class="curtain" style="--c:var(--pink)"></i><i class="curtain b2" style="--c2:var(--yel)"></i>
+</section>
+
+<!-- 10 -->
+<section class="scene t-up" id="s10" data-bar="26" data-bars="4">
+  <div class="grid"></div>
+  <div class="ghost" style="font-size:560px;right:-40px;top:-130px;transform-origin:100% 0">VS</div>
+  <div class="cam"><div class="pad" style="padding-top:64px">
+    <div class="kicker a-pop" style="--d:.55s">Сравнение</div>
+    <h2 class="k-stretch" data-split style="--d:.7s;--st:.04s"><span style="color:var(--q1)">Q1</span> против <span class="hl">Q3</span></h2>
+  </div>
+  <div class="cmp" id="cmp"></div></div>
+  <div class="foot a-fade" style="--d:2s;bottom:30px"><span>Состояние на конец этапа: 22 октября и 15 ноября. Строки: JS, CSS, PHP, Python, HTML</span><span>ЛОГОС · итоги Q3</span></div>
+  <i class="curtain up" style="--c:var(--blue)"></i>
+</section>
+
+<!-- 11 -->
+<section class="scene bg-blue t-zoom" id="s11" data-bar="30" data-bars="2">
+  <div class="grid"></div>
+  <div class="ring" style="width:900px;height:900px;left:-250px;top:-100px;opacity:.25"></div>
+  <div class="cam"><div class="pad">
+    <div class="kicker a-pop" style="--d:.3s">С первого дня</div>
+    <h2 class="k-rise" data-split style="--d:.4s;font-size:80px">Строк кода: 2 774 → 33 108</h2>
+  </div>
+  <div class="x12"><b class="a-elastic" style="--d:.7s">×12</b><span class="a-fade" style="--d:1.4s">за 32 дня</span></div>
+  <svg class="line" viewBox="0 0 1700 620" preserveAspectRatio="none" id="lineSvg"></svg>
+  <div id="pts"></div></div>
+</section>
+
+<!-- 12 -->
+<section class="scene t-iris" id="s12" data-bar="32" data-bars="3">
+  <div class="grid"></div>
+  <div class="blob" style="--bc:#1f3dff;background:#1f3dff;width:900px;height:900px;right:-300px;top:-380px;--bx:-200px"></div>
+  <div class="blob" style="--bc:#7a2cff;background:#7a2cff;width:600px;height:600px;left:-200px;bottom:-300px;--by:-100px"></div>
+  <div class="cam"><div class="pad">
+    <div class="kicker a-pop" style="--d:.5s">Итог</div>
+    <h2 class="k-rise k-wave" data-split style="--d:.65s;font-size:104px">От прототипа карты <span class="hl">к навигатору</span></h2>
+  </div>
+  <div class="take">
+    <div class="a-tilt" style="--d:1.3s;--r:-1.5deg"><b>+66%</b><span>кода к концу Q1: 20 тысяч строк стали 33 тысячами</span></div>
+    <div class="a-tilt" style="--d:1.5s;--r:1deg;--rz:8deg"><b>×2</b><span>тестов: 123 → 243, покрыты маршруты, поиск, push</span></div>
+    <div class="a-tilt" style="--d:1.7s;--r:-1deg"><b>1 → 14</b><span>релизов с тегом: выпуск стал регулярным</span></div>
+  </div>
+  <div class="next a-up" style="--d:2.3s"><b>Дальше:</b> вывести 1.11 из alpha и проверить ведение по шагам в корпусе.</div>
+  </div>
+  <div class="credit a-fade" style="--d:2.6s">
+    <div class="logo" style="font-size:26px;color:var(--ink)"><svg style="width:48px;height:48px" viewBox="0 0 64 64"><path fill="#ffd23f" fill-rule="evenodd" d="M2 32a30 30 0 1 0 60 0a30 30 0 1 0 -60 0ZM50.38 13.62L38.87 35.36Q37.66 37.66 35.36 38.87L13.62 50.38L25.13 28.64Q26.34 26.34 28.64 25.13ZM28.6 32a3.4 3.4 0 1 0 6.8 0a3.4 3.4 0 1 0 -6.8 0Z"/></svg>logos-guide.ru</div>
+    <span>Музыка: «Werq», Kevin MacLeod (incompetech.com), лицензия CC BY 4.0</span>
+  </div>
+  <i class="curtain iris" style="--c:var(--yel)"></i>
 </section>
 
 </div>
 <script>
 const fmt = n => Math.round(n).toLocaleString('ru-RU').replace(/ | /g, ' ');
+const BAR = 1.92;
 
 // --- 2: коммиты по дням (15 окт – 15 ноя) ---
 const days = [10,17,4,16,24,10,14,4, 1,0,21,4,12,5,2,0,0, 4,6,6,19,7,0,0,6,0,3,2,0,0,0,2];
@@ -278,64 +497,99 @@ const stageOf = i => i < 8 ? 0 : i < 17 ? 1 : 2;
 const colors = ['var(--q1)', 'var(--q2)', 'var(--q3)'];
 const bands = [['Q1 · старт', '15–22 октября', 8], ['Q2', '23–31 октября', 9], ['Q3', '1–15 ноября', 15]];
 document.getElementById('bands').innerHTML = bands.map((b, i) =>
-  `<div class="band a-up ${i === 2 ? 'hot' : ''}" style="flex:${b[2]};--d:${1.2 + i * .25}s">${b[0]}<small>${b[1]}</small></div>`).join('');
+  `<div class="st a-tilt ${i === 2 ? 'hot' : ''}" style="flex:${b[2]};--d:${1.0 + i * .16}s;--rz:${i % 2 ? 8 : -8}deg"><b>${b[0]}</b><small>${b[1]}</small></div>`).join('');
 const peaks = new Set([4, 10, 20]);
 document.getElementById('bars').innerHTML = days.map((v, i) =>
-  `<div class="col">${peaks.has(i) ? `<div class="val a-fade" style="--d:${2.6 + i * .06}s">${v}</div>` : ''}` +
-  `<div class="bar a-growy" style="height:${v / 24 * 250}px;background:${colors[stageOf(i)]};--d:${1.9 + i * .06}s"></div></div>`).join('');
+  `<div class="col">${peaks.has(i) ? `<div class="val a-pop" style="--d:${2.0 + i * .035}s">${v}</div>` : ''}` +
+  `<div class="bar a-growy" style="height:${v / 24 * 250}px;background:${colors[stageOf(i)]};--d:${1.5 + i * .035}s"></div></div>`).join('');
 document.getElementById('axis').innerHTML = [[0, '15 окт'], [8, '23 окт'], [17, '1 ноя'], [31, '15 ноя']].map(([i, t]) =>
-  `<span class="a-fade" style="left:${(i + .5) / 32 * 100}%;--d:2.2s">${t}</span>`).join('');
+  `<span class="a-fade" style="left:${(i + .5) / 32 * 100}%;--d:1.8s">${t}</span>`).join('');
 
 // --- 5: релизы ---
 const rel = [['3 ноя', ['1.2']], ['4 ноя', ['1.3','1.4','1.5','1.6','1.7','1.8','1.9']], ['5 ноя', ['1.10','1.11']],
   ['8 ноя', ['1.11.1α','1.11.2α']], ['10 ноя', ['1.11.3α']], ['11 ноя', ['1.11.4α']]];
 let n = 0;
 document.getElementById('rel').innerHTML = rel.map(([d, vs]) =>
-  `<div class="day" data-d="${d}">` + vs.map(v => `<div class="chip a-pop ${v.includes('α') ? 'alpha' : ''}" style="--d:${1.5 + (n++) * .22}s">${v}</div>`).join('') + '</div>').join('');
+  `<div class="day" data-d="${d}">` + vs.map(v => `<div class="chip a-pop ${v.includes('α') ? 'alpha' : ''}" style="--d:${1.35 + (n++) * .16}s">${v}</div>`).join('') + '</div>').join('');
 
-// --- 6: сравнение ---
+// --- 9: структура ---
+const tree = [['src/', 144, 226], ['├─ components/', 27, 31], ['├─ pages/', 18, 20], ['└─ admin/', 0, 28],
+  ['public/', 48, 107], ['└─ promo/', 0, 35], ['scripts/', 5, 13], ['deploy/', 7, 11], ['docs/', 0, 6], ['promo-voice/', 0, 15]];
+document.getElementById('tree').innerHTML = tree.map(([nm, a, b], i) => {
+  const t = 1.2 + i * .2, w = v => v / 226 * 330;
+  return `<div class="tr"><div class="nm a-type" style="--d:${t}s">${nm.replace(/^([├└]─ )/, '<em>$1</em>')}${a ? '' : '<span class="new">НОВАЯ</span>'}</div>` +
+    `<div class="track"><div class="b3 a-growx" style="width:${w(b)}px;--d:${t + .25}s"></div>${a ? `<div class="b1 a-growx" style="width:${w(a)}px;--d:${t + .1}s"></div>` : ''}</div>` +
+    `<div class="vv a-fade" style="--d:${t + .4}s">${a ? `<em>${a} →</em> ` : ''}${b}</div></div>`;
+}).join('');
+const langs = [['JavaScript', '#3987e5', 6691, 11081], ['JSX', '#d95926', 5291, 8206], ['CSS', '#199e70', 6640, 8710], ['PHP', '#c98500', 976, 3000], ['Python, mjs, HTML', '#d55181', 361, 2111]];
+const stack = (k, d0) => langs.map((l, i) => `<i class="a-growx" style="width:${l[k] / 33108 * 706}px;background:${l[1]};--d:${d0 + i * .12}s"></i>`).join('');
+document.getElementById('st1').innerHTML = stack(2, 1.55);
+document.getElementById('st3').innerHTML = stack(3, 1.95);
+document.getElementById('lleg').innerHTML = langs.map((l, i) =>
+  `<div class="a-up" style="--d:${2.6 + i * .1}s"><i style="background:${l[1]}"></i>${l[0]}<em>${fmt(l[2])} → ${fmt(l[3])}</em></div>`).join('');
+
+// --- 10: сравнение ---
 const cmp = [
-  ['Строк кода', 'на конец этапа', 19959, 33108, '+66%', ''],
-  ['Файлов', 'в репозитории', 218, 394, '+81%', ''],
-  ['Тестов', 'в 26 и 44 файлах', 123, 243, '×2', ''],
-  ['Релизов', 'с тегом версии', 1, 14, '×14', ''],
-  ['Коммитов', 'за этап, без слияний', 59, 29, '−51%', 'темп ниже'],
+  ['Строк кода', 'на конец этапа', 19959, 33108, '+66%', 1], ['Файлов', 'в репозитории', 218, 394, '+81%', 1],
+  ['Тестов', 'в 26 и 44 файлах', 123, 243, '×2', 1], ['Релизов', 'с тегом версии', 1, 14, '×14', 1],
+  ['Коммитов', 'за этап, без слияний', 59, 29, '−51%', 0],
 ];
-document.getElementById('cmp').innerHTML = cmp.map(([name, note, a, b, d, dn], i) => {
-  const m = Math.max(a, b), t = 1.2 + i * .55, w = v => Math.max(v / m * 760, 6);
-  return `<div class="row a-left" style="--d:${t}s"><div class="name">${name}<small>${note}</small></div><div class="pair">` +
-    `<div class="hb"><span class="tag">Q1</span><div class="fill a-growx" style="width:${w(a)}px;background:var(--q1);--d:${t + .3}s"></div><span class="v num" data-count="${a}" data-delay="${t + .3}">${fmt(a)}</span></div>` +
-    `<div class="hb"><span class="tag" style="color:var(--ink)">Q3</span><div class="fill a-growx" style="width:${w(b)}px;background:var(--q3);--d:${t + .5}s"></div><span class="v num" data-count="${b}" data-delay="${t + .5}">${fmt(b)}</span></div>` +
-    `</div><div class="delta a-pop" style="--d:${t + 1.1}s">${d}<small>${dn || 'Q3 к Q1'}</small></div></div>`;
+document.getElementById('cmp').innerHTML = cmp.map(([name, note, a, b, d, up], i) => {
+  const m = Math.max(a, b), t = 1.1 + i * .42, w = v => Math.max(v / m * 720, 8);
+  return `<div class="row ${i % 2 ? 'a-right' : 'a-left'}" style="--d:${t}s"><div class="name">${name}<small>${note}</small></div><div class="pair">` +
+    `<div class="hb"><span class="tg">Q1</span><div class="fill a-growx" style="width:${w(a)}px;background:var(--q1);--d:${t + .25}s"></div><span class="v num" data-count="${a}" data-delay="${t + .25}" data-dur=".7">${fmt(a)}</span></div>` +
+    `<div class="hb"><span class="tg" style="color:var(--yel)">Q3</span><div class="fill a-growx" style="width:${w(b)}px;background:var(--q3);--d:${t + .4}s"></div><span class="v num" data-count="${b}" data-delay="${t + .4}" data-dur=".7">${fmt(b)}</span></div>` +
+    `</div><div class="delta ${up ? '' : 'down'} a-pop" style="--d:${t + .8}s">${d}<small>${up ? 'Q3 к Q1' : 'темп ниже'}</small></div></div>`;
 }).join('');
 
-// --- 7: рост кода ---
+// --- 11: рост кода ---
 const pts = [[0, 2774, '15 окт', 'первый день'], [7, 19959, '22 окт', 'конец Q1'], [16, 25111, '31 окт', 'конец Q2'], [31, 33108, '15 ноя', 'конец Q3']];
-const X = d => d / 31 * 1500 + 60, Y = v => 560 - v / 36000 * 520;
+const X = d => d / 31 * 1500 + 80, Y = v => 580 - v / 36000 * 540;
 const path = pts.map((p, i) => (i ? 'L' : 'M') + X(p[0]) + ' ' + Y(p[1])).join(' ');
 document.getElementById('lineSvg').innerHTML =
-  `<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8db1ff" stop-opacity=".35"/><stop offset="1" stop-color="#8db1ff" stop-opacity="0"/></linearGradient></defs>` +
-  `<line x1="0" x2="1680" y1="560" y2="560" stroke="#2e3039" stroke-width="2"/>` +
-  `<path class="a-fade" style="--d:2.4s" d="${path} L${X(31)} 560 L${X(0)} 560 Z" fill="url(#g)"/>` +
-  `<path class="a-draw" style="--d:1.2s" pathLength="1" d="${path}" fill="none" stroke="#8db1ff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>` +
-  pts.map((p, i) => `<circle class="a-fade" style="--d:${1.3 + i * .6}s" cx="${X(p[0])}" cy="${Y(p[1])}" r="10" fill="#8db1ff" stroke="#0e0f13" stroke-width="4"/>`).join('');
+  `<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".3"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>` +
+  `<line x1="0" x2="1700" y1="580" y2="580" stroke="#fff" stroke-opacity=".35" stroke-width="3"/>` +
+  `<path class="a-fade" style="--d:1.7s" d="${path} L${X(31)} 580 L${X(0)} 580 Z" fill="url(#g)"/>` +
+  `<path class="a-draw" style="--d:.7s;animation-duration:1.2s" pathLength="1" d="${path}" fill="none" stroke="#fff" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"/>` +
+  pts.map((p, i) => `<circle class="a-fade" style="--d:${.8 + i * .32}s" cx="${X(p[0])}" cy="${Y(p[1])}" r="14" fill="#ffd23f" stroke="#1f3dff" stroke-width="5"/>`).join('');
 document.getElementById('pts').innerHTML = pts.map((p, i) =>
-  `<div class="pt a-up" style="left:${120 + X(p[0])}px;top:${330 + Y(p[1]) + [-24, 22, 22, -92][i]}px;margin-left:${[30, 6, 6, -250][i]}px;--d:${1.4 + i * .6}s">${fmt(p[1])}<small>${p[2]} · ${p[3]}</small></div>`).join('');
+  `<div class="pt a-pop" style="left:${110 + X(p[0])}px;top:${330 + Y(p[1]) + [-26, 26, 26, -96][i]}px;margin-left:${[34, 10, 10, -250][i]}px;--d:${.9 + i * .32}s">${fmt(p[1])}<small>${p[2]} · ${p[3]}</small></div>`).join('');
+
+// --- живые буквы: текст режется на слова и буквы ---
+for (const el of document.querySelectorAll('[data-split]')) {
+  let i = 0;
+  const walk = node => {
+    for (const c of [...node.childNodes]) {
+      if (c.nodeType === 3) {
+        const frag = document.createDocumentFragment();
+        for (const part of c.textContent.split(/(\s+)/)) {
+          if (!part) continue;
+          if (/^\s+$/.test(part)) { frag.append(' '); continue; }
+          const w = document.createElement('span'); w.className = 'w';
+          for (const ch of part) { const s = document.createElement('span'); s.className = 'ch'; s.style.setProperty('--i', i++); s.textContent = ch; w.append(s); }
+          frag.append(w);
+        }
+        c.replaceWith(frag);
+      } else if (c.nodeType === 1) walk(c);
+    }
+  };
+  walk(el);
+}
 
 // --- перемотка: всё состояние считается из времени t ---
-const scenes = [...document.querySelectorAll('.scene')].map((el, i) => ({ el, start: +el.dataset.start, end: +el.dataset.end, i }));
-scenes.forEach(s => s.el.style.zIndex = s.i + 1);
+const scenes = [...document.querySelectorAll('.scene')].map((el, i) => ({ el, i, start: +el.dataset.bar * BAR, len: +el.dataset.bars * BAR }));
+scenes.forEach((s, i) => { s.end = s.start + s.len + (i < scenes.length - 1 ? .9 : 0); s.el.style.zIndex = i + 1; });
 const pdf = location.search.includes('pdf');
 if (pdf) document.body.classList.add('pdf');
 const anims = document.getAnimations().map(a => ({ a, scene: scenes.find(s => s.el.contains(a.effect.target)) }));
 anims.forEach(x => x.a.pause());
-const counters = [...document.querySelectorAll('[data-count]')].map(el => ({ el, to: +el.dataset.count, delay: +el.dataset.delay, prefix: el.dataset.prefix || '', scene: scenes.find(s => s.el.contains(el)) }));
+const counters = [...document.querySelectorAll('[data-count]')].map(el => ({ el, to: +el.dataset.count, delay: +el.dataset.delay, dur: +(el.dataset.dur || .9), prefix: el.dataset.prefix || '', scene: scenes.find(s => s.el.contains(el)) }));
 window.DURATION = scenes[scenes.length - 1].end;
 window.seek = t => {
   for (const s of scenes) s.el.style.visibility = pdf || (t >= s.start && t < s.end) ? 'visible' : 'hidden';
-  for (const { a, scene } of anims) a.currentTime = pdf ? 30000 : Math.max(0, (t - scene.start) * 1000);
+  for (const { a, scene } of anims) a.currentTime = pdf ? 61440 : Math.max(0, (t - scene.start) * 1000);
   for (const c of counters) {
-    const k = pdf ? 1 : Math.min(1, Math.max(0, (t - c.scene.start - c.delay) / 1.2));
+    const k = pdf ? 1 : Math.min(1, Math.max(0, (t - c.scene.start - c.delay) / c.dur));
     c.el.textContent = c.prefix + fmt(c.to * (1 - Math.pow(1 - k, 3)));
   }
 };
