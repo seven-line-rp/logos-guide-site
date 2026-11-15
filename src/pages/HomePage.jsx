@@ -7,6 +7,8 @@ import { HERO_ROUTES } from '../hero-scene-model.js'
 import GuideBoard from '../components/GuideBoard.jsx'
 import { useFavorites, useRecentRoutes } from '../components/FavoriteButton.jsx'
 import HomeDashboard from '../components/HomeDashboard.jsx'
+import HomeCards from '../components/HomeCards.jsx'
+import { NumberTicker, trackSpotlight } from '../components/LandingFx.jsx'
 import { PickmeChip, PickmeGarden, PickmeNote } from '../components/Pickme.jsx'
 import { Reveal } from '../components/Primitives.jsx'
 import VoiceSearchButton from '../components/VoiceSearchButton.jsx'
@@ -82,6 +84,18 @@ function HeroCaption() {
   return <Link className="hero-scene-caption" to={`/route?from=${route.from}&to=${route.to}&mode=${route.via}`}><small>Пример маршрута {VIA_LABELS[route.via]}</small><strong>{from.name} → {roomTitle(route.to)} <ArrowUpRight size={14} aria-hidden="true" /></strong></Link>
 }
 
+// Короткая сводка под кнопками: числа берутся из данных сайта, не пишутся руками.
+function HeroStats() {
+  const teachers = useTeachers()
+  const items = [
+    [rooms.length, 'помещений на карте'],
+    [2, 'этажа'],
+    [4, 'пути между этажами'],
+    ...(teachers.length ? [[teachers.length, 'преподавателей']] : []),
+  ]
+  return <dl className="home-stats">{items.map(([value, label]) => <div key={label}><dt><NumberTicker value={value} /></dt><dd>{label}</dd></div>)}</dl>
+}
+
 export default function HomePage() {
   const scene3d = useScene3d()
   const theme = useTheme()
@@ -95,32 +109,38 @@ export default function HomePage() {
   const newcomer = !favorites.length && !recent.length
   return <>
     <section className={`home-hero hero-mesh home-hero-usual home-hero-scene${pickme ? ' home-hero-pickme' : ''}`} id="top">
+      <span className="home-hero-glow" aria-hidden="true" />
       {pickme ? <PickmeGarden /> : scene3d && <Suspense fallback={null}><HeroScene /></Suspense>}
       <div className="container home-hero-inner">
         <div className="home-hero-copy">
-          <PickmeChip />
+          {pickme ? <PickmeChip /> : <span className="home-kicker"><span className="home-kicker-dot" aria-hidden="true" /><span className="fx-shiny">Путеводитель колледжа «Логос»</span></span>}
           <h1>Где найти кабинет</h1>
           <PickmeNote />
           <p>Введите номер, название или фамилию преподавателя. Кабинет откроется на карте, оттуда можно построить маршрут.</p>
           <div className="home-search-group">
             <label className="home-search-label" htmlFor="home-room-search">Поиск по колледжу</label>
-            <HomeSearch />
+            <div className="fx-beam"><HomeSearch /></div>
           </div>
           <div className="home-hero-actions">
             <Link className="button button-white home-map-cta" to="/map">Смотреть карту <ArrowRight size={16} /></Link>
             <Link className="home-plain-link" to="/route" aria-label="Построить маршрут"><span className="home-route-long">Построить маршрут</span><span className="home-route-short">Маршрут</span><ArrowUpRight size={16} /></Link>
           </div>
+          <HeroStats />
         </div>
         {plainHero && <HeroCaption />}
       </div>
     </section>
 
+    <div className="landing" onPointerMove={trackSpotlight}>
+    <HomeCards />
+
     {newcomer && <GuideBoard />}
 
     <HomeDashboard />
 
-    <section className="quick-places container section-pad" id="quick-places"><div className="section-top"><div><h2>Часто ищут</h2></div><Link className="text-link" to="/rooms">Все помещения <span><ArrowRight size={15} /></span></Link></div><div className="quick-place-grid">{quickPlaces.map((place, index) => { const room = rooms.find((item) => item.id === place.roomId); return <Reveal key={place.roomId} delay={index * 60} variant="up"><Link className={`quick-place-card quick-place-${place.tone}${photosFor(room).length ? ' quick-place-media' : ''}`} to={`/map?floor=${room.floor}&room=${room.id}`}>{photosFor(room).length > 0 && <img className="quick-place-photo" src={photosFor(room)[0]} srcSet={photoSrcSet(photosFor(room)[0])} sizes="(max-width: 680px) 100vw, 320px" alt="" loading="lazy" decoding="async" />}<span className="quick-place-num">{room.floor} этаж</span><span className="quick-place-copy"><strong>{place.label}</strong><small>{place.meta}</small></span><span className="quick-place-arrow"><ArrowUpRight size={16} /></span></Link></Reveal> })}</div></section>
+    <section className="quick-places container section-pad" id="quick-places"><div className="section-top"><div><h2>Часто ищут</h2></div><Link className="text-link" to="/rooms">Все помещения <span><ArrowRight size={15} /></span></Link></div><div className="quick-place-grid">{quickPlaces.map((place, index) => { const room = rooms.find((item) => item.id === place.roomId); return <Reveal key={place.roomId} delay={index * 60} variant="up"><Link className={`quick-place-card fx-spot quick-place-${place.tone}${photosFor(room).length ? ' quick-place-media' : ''}`} to={`/map?floor=${room.floor}&room=${room.id}`}>{photosFor(room).length > 0 && <img className="quick-place-photo" src={photosFor(room)[0]} srcSet={photoSrcSet(photosFor(room)[0])} sizes="(max-width: 680px) 100vw, 320px" alt="" loading="lazy" decoding="async" />}<span className="quick-place-num">{room.floor} этаж</span><span className="quick-place-copy"><strong>{place.label}</strong><small>{place.meta}</small></span><span className="quick-place-arrow"><ArrowUpRight size={16} /></span></Link></Reveal> })}</div></section>
 
     {!newcomer && <GuideBoard />}
+    </div>
   </>
 }
