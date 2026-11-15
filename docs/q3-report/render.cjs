@@ -10,7 +10,7 @@ const path = require('path');
 
 const dir = __dirname;
 const url = 'file://' + path.join(dir, 'report.html');
-const FPS = 30, SUB = 2, WORKERS = 3;
+const FPS = 30, SUB = 3, WORKERS = 4;
 
 async function open(browser) {
   const page = await browser.newPage({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 });
