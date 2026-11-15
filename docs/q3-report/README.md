@@ -1,7 +1,7 @@
 # Итоги Q3
 
-- `logos-q3-itogi.pdf` — презентация, 12 слайдов
-- `logos-q3-itogi.mp4` — ролик, 67 секунд, 1080p
+- `logos-q3-itogi.pdf` — презентация, 13 слайдов
+- `logos-q3-itogi.mp4` — ролик, 73 секунды, 1080p
 
 Оба файла собираются из `report.html`:
 
@@ -15,6 +15,10 @@ node docs/q3-report/render.cjs video
 
 ## Музыка
 
-`music.mp3` — первые 67 секунд трека «Werq», Kevin MacLeod (incompetech.com).
+`music.mp3` — первые 73 секунды трека «Werq», Kevin MacLeod (incompetech.com).
 Лицензия Creative Commons Attribution 4.0: https://creativecommons.org/licenses/by/4.0/
 При публикации ролика строку с автором нужно сохранять (она есть в последнем кадре).
+
+## Фото команды
+
+`team/*.png` — фотографии со страницы «О проекте» (logos-guide.ru/team/) с удалённым белым фоном.
