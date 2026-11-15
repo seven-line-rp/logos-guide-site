@@ -118,3 +118,45 @@ html:root[data-theme='pickme'] .landing .quick-place-card { border-radius: 26px;
   .home-card, .home-card-media img, .home-card-body strong svg { transition: none; }
   .home-card:hover .home-card-media img, .home-card:hover .home-card-body strong svg { transform: none; }
 }
+
+/* ---------- Светлая тема: первый экран без синей подложки ----------
+   Первый экран стоит на том же фоне, что и вся главная: тёмный текст, синяя
+   главная кнопка, 3D-корпус нарисован тонкими линиями, маршрут — синим.
+   Пробные сцены (/?hero=…) приносят свой тёмный фон, их это не касается. */
+html:root:not([data-theme='dark']):not([data-theme='pickme']) .home-hero:not(:has(.hero-cine)) {
+  --ld-hero-ink: var(--ink);
+  --ld-hero-muted: var(--muted);
+  --scene-room: rgba(36, 92, 229, .05);
+  --scene-shaft: rgba(19, 33, 58, .04);
+  --scene-wall: rgba(19, 33, 58, .2);
+  --scene-corridor: transparent;
+  --scene-label: rgba(19, 33, 58, .42);
+  --scene-icon: rgba(36, 92, 229, .55);
+  --wall-top: rgba(19, 33, 58, .3);
+  --wall-face: rgba(36, 92, 229, .09);
+  --wall-face-2: rgba(36, 92, 229, .01);
+  --route: #245ce5;
+  --route-glow: rgba(36, 92, 229, .3);
+  --column: rgba(36, 92, 229, .14);
+  --shade: rgba(244, 247, 252, .97);
+  --shade-mid: rgba(244, 247, 252, .6);
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  background: var(--bg);
+
+  &::before, &::after { display: none; }
+  & h1, & h1 :is(em, span) { color: var(--ink); }
+  & .home-hero-copy > p { color: var(--muted); }
+  & .home-search-label { color: var(--ink); }
+  & .home-search { border: 1px solid var(--line); box-shadow: none; }
+  & .home-search:focus-within { border-color: var(--blue); }
+  & .home-map-cta { border-color: transparent; color: #fff; background: var(--blue); }
+  & .home-map-cta:hover { color: #fff; background: var(--blue-bright); }
+  & .home-plain-link { border-color: var(--line); color: var(--ink); background: var(--surface); }
+  & .home-plain-link:hover { border-color: var(--blue); color: var(--ink); background: var(--surface-soft); }
+  & .home-plain-link svg { color: var(--blue); }
+  & .hero-scene-caption { padding: 8px 12px; border-radius: 12px; background: color-mix(in srgb, var(--bg) 84%, transparent); }
+  & .hero-scene-caption small { color: var(--muted); }
+  & .hero-scene-caption strong { color: var(--ink); }
+  & :focus-visible { outline-color: var(--blue); }
+}
