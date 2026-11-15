@@ -19,6 +19,9 @@ import { useTheme } from '../theme.js'
 // 3D-корпус тяжёлый: грузим его отдельным файлом и только там, где он потянет
 // (компьютер с мышью, не «Лёгкий» режим). На телефонах остаётся градиентный фон.
 const HeroScene = lazy(() => import('../components/HeroScene.jsx'))
+// Пробные постановки первого экрана на WebGL: /?hero=1…5.
+const HeroCine = lazy(() => import('../components/HeroCine.jsx'))
+const heroCine = typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('hero')
 
 function HomeSearch() {
   const [query, setQuery] = useState('')
@@ -96,7 +99,7 @@ export default function HomePage() {
   const newcomer = !favorites.length && !recent.length
   return <>
     <section className={`home-hero hero-mesh home-hero-usual home-hero-scene${pickme ? ' home-hero-pickme' : ''}`} id="top">
-      {pickme ? <PickmeGarden /> : scene3d && <Suspense fallback={null}><HeroScene /></Suspense>}
+      {pickme ? <PickmeGarden /> : heroCine ? <Suspense fallback={null}><HeroCine variant={heroCine} /></Suspense> : scene3d && <Suspense fallback={null}><HeroScene /></Suspense>}
       <div className="container home-hero-inner">
         <div className="home-hero-copy">
           {pickme ? <PickmeChip /> : <span className="home-kicker">Путеводитель колледжа «Логос»</span>}
