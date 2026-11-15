@@ -151,7 +151,6 @@ html { scroll-behavior: smooth; }
    сине-графитовая (soft.css). Здесь всё приводится к ней. */
 :root[data-theme='dark'] .button-white { color: var(--bg); background: var(--ink); }
 :root[data-theme='dark'] :is(.home-hero, .home-hero.hero-mesh) { background: radial-gradient(55% 80% at 85% 20%, rgba(91, 124, 247, .16), transparent 70%), radial-gradient(40% 60% at 5% 100%, rgba(91, 124, 247, .08), transparent 70%), var(--bg); }
-:root[data-theme='dark'] .docs-hero { background: radial-gradient(45% 80% at 90% 10%, rgba(91, 124, 247, .14), transparent 70%), var(--surface); }
 :root[data-theme='dark'] .floor-preview-band { background: linear-gradient(180deg, var(--surface-soft), var(--surface)); }
 :root[data-theme='dark'] :is(.about-team-band, .faq-band, .route-hint-band, .services-help-band, .about-values-band) { background: var(--surface); }
 :root[data-theme='dark'] :is(.site-footer, .footer-top) { background: var(--surface); }

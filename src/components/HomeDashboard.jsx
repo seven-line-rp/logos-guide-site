@@ -53,13 +53,13 @@ export default function HomeDashboard() {
   return <section className="home-day container" aria-labelledby="home-day-title">
     <div className="section-top"><div><h2 id="home-day-title">Мой день</h2></div></div>
     <div className="home-day-grid">
-      <article className="day-card day-card-lesson fx-spot">
+      <article className="day-card day-card-lesson">
         <BellNow now={now} />
         <BellList now={now} />
         <Link className="day-link" to="/notifications">Напоминать за 5 минут до пары <ArrowRight size={15} /></Link>
       </article>
 
-      <article className="day-card fx-spot">
+      <article className="day-card">
         <h3><Star size={17} /> Мои места</h3>
         {favorites.length || recent.length ? <>
           {favorites.length > 0 && <div className="day-chips">{favorites.slice(0, 6).map((id) => { const room = rooms.find((item) => item.id === id); return <Link key={id} className="day-chip" to={`/map?floor=${room.floor}&room=${encodeURIComponent(id)}`}><Star size={13} fill="currentColor" /><RawText text={roomTitle(id)} /></Link> })}</div>}
@@ -67,7 +67,7 @@ export default function HomeDashboard() {
         </> : <><p className="day-hint">Нажмите ★ у кабинета на карте или в маршруте, и он появится здесь. Недавние маршруты сохраняются сами.</p><Link className="day-link" to="/map">Выбрать на карте <ArrowRight size={15} /></Link></>}
       </article>
 
-      <article className="day-card fx-spot">
+      <article className="day-card">
         <h3><LocateFixed size={17} /> Где ближайший</h3>
         <p className="day-hint">Считаем от главного входа или от вашей точки на маршруте.</p>
         <div className="day-chips">{nearbyKinds.map((kind) => <Link key={kind.id} className="day-chip" to={`/route?from=entrance-1&nearest=${kind.id}`}>{kind.label}</Link>)}</div>

@@ -1,4 +1,4 @@
-/* Панель /admin: тихая, светлая, без теней и градиентов, кроме самих графиков.
+/* Панель /admin: меню слева, тихая, без теней и градиентов, кроме самих графиков.
    Цвета берутся из токенов сайта, поэтому тёмная тема работает сама. */
 .adm {
   --adm-accent: #2f5fe0;
@@ -16,20 +16,26 @@
 body:has(.adm) { background: var(--bg); }
 :root[data-theme='dark'] .adm { --adm-accent: #6d97ff; --adm-up: #4fd08a; --adm-down: #ff8f80; }
 
-/* ---------- Шапка ---------- */
-.adm-top { position: sticky; top: 0; z-index: 20; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--bg) 86%, transparent); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
-.adm-top-inner { display: flex; align-items: center; gap: 28px; width: min(1120px, calc(100% - 40px)); height: 60px; margin-inline: auto; }
-.adm-brand { display: inline-flex; align-items: center; gap: 10px; flex: none; }
-.adm-brand img { width: 30px; height: 30px; }
-.adm-brand span { display: grid; line-height: 1.1; }
+/* ---------- Меню слева ---------- */
+.adm { display: grid; grid-template-columns: 252px minmax(0, 1fr); }
+.adm-side { position: sticky; top: 0; z-index: 30; display: flex; flex-direction: column; gap: 6px; height: 100vh; height: 100dvh; padding: 18px 12px 14px; overflow-y: auto; border-right: 1px solid var(--line); background: var(--surface); }
+.adm-side-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 8px 14px; }
+.adm .adm-side-close, .adm-bar, .adm-scrim { display: none; }
+.adm-brand { display: inline-flex; align-items: center; gap: 10px; }
+.adm-brand img { width: 32px; height: 32px; }
+.adm-brand span { display: grid; line-height: 1.15; }
 .adm-brand strong { font-size: 15px; letter-spacing: .04em; }
-.adm-brand small { color: var(--muted); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
-.adm-nav { display: flex; gap: 4px; flex: 1; min-width: 0; overflow-x: auto; scrollbar-width: none; }
-.adm-nav::-webkit-scrollbar { display: none; }
-.adm-nav-link { display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 12px; border-radius: 10px; color: var(--muted); font-size: 14px; font-weight: 600; white-space: nowrap; transition: color .15s, background .15s; }
-.adm-nav-link:hover { color: var(--ink); background: var(--adm-accent-soft); }
-.adm-nav-link-active, .adm-nav-link-active:hover { color: var(--adm-accent); background: var(--adm-accent-soft); }
-.adm-top-actions { display: flex; align-items: center; gap: 6px; flex: none; }
+.adm-brand small { color: var(--muted); font-size: 12px; }
+.adm-nav { display: grid; gap: 18px; align-content: start; flex: 1; }
+.adm-nav-group { display: grid; gap: 2px; }
+.adm-nav-title { padding: 0 10px 6px; color: var(--muted); font-size: 12px; font-weight: 600; }
+.adm-nav-link { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 38px; padding: 0 10px; border: 0; border-radius: 10px; color: var(--ink); background: none; font: inherit; font-size: 14px; font-weight: 550; text-align: left; white-space: nowrap; cursor: pointer; transition: color .15s, background .15s; }
+.adm-nav-link svg { flex: none; color: var(--muted); transition: color .15s; }
+.adm-nav-link:hover { color: var(--ink); background: color-mix(in srgb, var(--ink) 5%, transparent); }
+.adm-nav-link-active, .adm-nav-link-active:hover { color: var(--adm-accent); background: var(--adm-accent-soft); font-weight: 650; }
+.adm-nav-link-active svg { color: var(--adm-accent); }
+.adm-nav-link:focus-visible, .adm-icon:focus-visible { outline: 2px solid var(--adm-accent); outline-offset: 1px; }
+.adm-side-foot { display: grid; gap: 2px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
 .adm-icon { display: inline-grid; place-items: center; min-width: 36px; height: 36px; padding: 0; border: 1px solid var(--line); border-radius: 10px; color: var(--muted); background: transparent; cursor: pointer; transition: color .15s, border-color .15s, background .15s; }
 .adm-icon:hover { color: var(--ink); border-color: color-mix(in srgb, var(--ink) 30%, var(--line)); }
 .adm-icon:disabled { opacity: .5; cursor: default; }
@@ -37,7 +43,7 @@ body:has(.adm) { background: var(--bg); }
 .adm-icon-danger:hover { color: var(--adm-down); border-color: var(--adm-down); }
 
 /* ---------- Каркас страницы ---------- */
-.adm-main { width: min(1120px, calc(100% - 40px)); margin: 0 auto; padding: 36px 0 72px; }
+.adm-main { width: min(1120px, calc(100% - 64px)); min-width: 0; margin: 0 auto; padding: 36px 0 72px; }
 .adm-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px 24px; margin-bottom: 22px; }
 .adm-head h1 { margin: 0 0 6px; font-size: clamp(26px, 4vw, 34px); font-weight: 700; letter-spacing: -.025em; }
 .adm-head p { max-width: 560px; margin: 0; color: var(--muted); font-size: 15px; line-height: 1.5; }
@@ -166,14 +172,23 @@ body:has(.adm) { background: var(--bg); }
 .adm .admin-cards .eyebrow { display: none; }
 .adm .admin-cards .admin-lead { max-width: 640px; margin: 0 0 18px; color: var(--muted); font-size: 15px; line-height: 1.5; }
 
+/* Планшет и телефон: меню выезжает слева по кнопке в верхней полосе. */
+@media (max-width: 960px) {
+  .adm { display: block; }
+  .adm-bar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; height: 56px; padding: 0 16px; border-bottom: 1px solid var(--line); background: var(--bg); }
+  .adm-bar strong { font-size: 16px; }
+  .adm-side { position: fixed; inset: 0 auto 0 0; width: min(292px, 86vw); border-right: 1px solid var(--line); transform: translateX(-100%); visibility: hidden; transition: transform .22s ease, visibility 0s .22s; }
+  .adm-menu-open .adm-side { transform: none; visibility: visible; transition: transform .22s ease; }
+  .adm .adm-side-close { display: inline-grid; }
+  .adm-scrim { position: fixed; inset: 0; z-index: 25; display: block; padding: 0; border: 0; background: rgba(8, 16, 36, .45); opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+  .adm-menu-open .adm-scrim { opacity: 1; pointer-events: auto; }
+  .adm-nav-link { min-height: 44px; font-size: 15px; }
+  .adm-main { width: min(1120px, calc(100% - 32px)); padding-top: 24px; }
+}
 @media (max-width: 860px) {
   .adm-split, .adm-split-even { grid-template-columns: 1fr; }
 }
 @media (max-width: 640px) {
-  .adm-top-inner { flex-wrap: wrap; gap: 6px 12px; height: auto; padding: 10px 0 8px; }
-  .adm-top-actions { margin-left: auto; }
-  .adm-nav { order: 3; flex-basis: 100%; }
-  .adm-icon-text span { display: none; }
   .adm-main { padding-top: 24px; }
   .adm-kpis, .adm-skeleton { grid-template-columns: 1fr; }
   .adm-kpi { padding: 16px; }
@@ -189,8 +204,8 @@ body:has(.adm) { background: var(--bg); }
   .adm-line { stroke-dashoffset: 0; }
 }
 @media print {
-  .adm-top, .adm-head { display: none; }
-  .adm { background: #fff; }
+  .adm-side, .adm-bar, .adm-scrim, .adm-head { display: none; }
+  .adm { display: block; background: #fff; }
   .adm-main { width: auto; padding: 0; }
 }
 

@@ -173,7 +173,7 @@ export default function NotificationsPage() {
 
   const Guide = GUIDES[guide]
   return <>
-    <PageHeading eyebrow="Напоминания" title="Уведомления" description="Напоминания о парах, события в колледже и новые версии сайта. Работают на Android, iPhone и компьютере." />
+    <PageHeading title="Уведомления" description="Напоминания о парах, события в колледже и новые версии сайта. Работают на Android, iPhone и компьютере." />
     <div className="container tn">
       <StatusCard support={support} subscription={subscription} busy={busy === 'enable'} onEnable={enable} onDisable={disable} />
       {flash.text && <p className={`tn-flash tn-flash-${flash.kind}`} role="status">{flash.kind === 'ok' ? <Check size={16} /> : <TriangleAlert size={16} />} {flash.text}</p>}
