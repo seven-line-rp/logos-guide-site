@@ -14,12 +14,13 @@ export default function FloorPanorama({ floor, onExit }) {
     let renderer
     try { renderer = new T.WebGLRenderer({ antialias: true }) } catch { setFailed(true); return }
     renderer.toneMapping = T.ACESFilmicToneMapping
-    renderer.toneMappingExposure = 1.23
+    renderer.toneMappingExposure = 1.13
+    renderer.outputColorSpace = T.SRGBColorSpace
     el.append(renderer.domElement)
     renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5))
     const scene = new T.Scene()
-    scene.background = new T.Color(0x252b36)
-    scene.fog = new T.FogExp2(0x92999f, 0.0036)
+    scene.background = new T.Color(0x151d2a)
+    scene.fog = new T.FogExp2(0x56677b, 0.0022)
     const camera = new T.PerspectiveCamera(74, 1, 0.2, 720)
     camera.position.set(74, 9, 168)
     let yaw = Math.PI / 2, pitch = 0
@@ -97,7 +98,7 @@ export default function FloorPanorama({ floor, onExit }) {
     }
     actions.current = act
     const key = e => {
-      const movement = { ArrowLeft: [-0.14,0], ArrowRight: [0.14,0], ArrowUp: [0,5], ArrowDown: [0,-5] }[e.key]
+      const movement = { ArrowLeft: [-0.14,0], a: [-0.14,0], A: [-0.14,0], ArrowRight: [0.14,0], d: [0.14,0], D: [0.14,0], ArrowUp: [0,5], w: [0,5], W: [0,5], ArrowDown: [0,-5], s: [0,-5], S: [0,-5] }[e.key]
       if (movement) { e.preventDefault(); act(...movement) }
     }
     let drag = null
@@ -126,7 +127,7 @@ export default function FloorPanorama({ floor, onExit }) {
   return <div className="floor-pano">
     <div ref={host} className="pano-view" tabIndex={0} role="region" aria-label="Панорама коридора. Стрелки поворачивают камеру и перемещают по этажу." />
     <div className="pano-controls">{failed ? <><span>Браузер не поддерживает 3D.</span><button onClick={onExit}>Вернуться к плану</button></> : <>
-      <span>Этаж {floor} · Потяните, чтобы осмотреться</span>
+      <span>Этаж {floor} · Осмотр мышью или пальцем · Ходьба WASD / стрелки</span>
       {[['Повернуть влево','↶',-0.3,0],['Шаг назад','↓',0,-8],['Шаг вперёд','↑',0,8],['Повернуть вправо','↷',0.3,0]].map(([label,icon,turn,steps]) => <button type="button" key={label} aria-label={label} onClick={() => actions.current?.(turn,steps)}>{icon}</button>)}
     </>}</div>
   </div>

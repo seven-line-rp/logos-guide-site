@@ -32,8 +32,16 @@ function lettering(parent,text,width,height,x,y,z,color='#e5edfa') {
 }
 export function compassModel() {
   const group=new T.Group(), needle=new T.Group()
-  const chrome=finish(0xacb4c3,.96,.19), black=finish(0x232833,.83,.29)
+  const chrome=finish(0xc4cedb,.98,.12), black=finish(0x111923,.86,.24)
+  const gold=finish(0xc5a875,.93,.22), titanium=finish(0x536779,.94,.17)
   disc(group,2.08,.55,black,-.14)
+  // Machined bezel with layered metal trim and visible fasteners.
+  for(const [r,t,z,material] of [[2.105,.075,.145,gold],[2.01,.032,.255,chrome],[1.93,.018,.263,titanium],[2.075,.038,-.31,chrome]]) part(group,new T.TorusGeometry(r,t,16,160),material,0,0,z)
+  for(let i=0;i<12;i++){
+    const a=i*Math.PI/6
+    const screw=part(group,new T.CylinderGeometry(.047,.047,.024,20),titanium,2.045*Math.sin(a),2.045*Math.cos(a),.245)
+    screw.rotation.x=Math.PI/2
+  }
   for (const [r,t,z] of [[2.02,.12,.17],[2.04,.065,-.36],[1.86,.032,.19]]) {
     part(group,new T.TorusGeometry(r,t,12,128),chrome,0,0,z)
   }
@@ -54,14 +62,16 @@ export function compassModel() {
   },0,0,.149)
   group.add(needle)
   for(const [dir,color] of [[1,0x2368ef],[-1,0xc6d0dc]]){
-    const geometry=new T.ConeGeometry(.28,1.6,4)
+    const geometry=new T.ConeGeometry(.29,1.67,6)
     const blade=part(needle,geometry,finish(color,.79,.19),0,dir*.8,.29)
     blade.rotation.y=Math.PI/4;blade.rotation.z=dir===1?0:Math.PI
     blade.scale.z=.61
   }
-  disc(group,.15,.16,chrome,.4)
-  const glass=new T.MeshPhysicalMaterial({color:0xbdd7f3,metalness:.12,roughness:.09,clearcoat:1,transparent:true,opacity:.12,depthWrite:false})
+  disc(needle,.18,.2,gold,.43)
+  disc(group,.085,.04,chrome,.55)
+  const glass=new T.MeshPhysicalMaterial({color:0xbdd7f3,metalness:.12,roughness:.09,clearcoat:1,transparent:true,opacity:.085,depthWrite:false})
   disc(group,1.91,.048,glass,.51)
+  part(group,new T.TorusGeometry(1.9,.018,12,128),glass,0,0,.53)
   return {group,needle}
 }
 export function elevatorModel() {
