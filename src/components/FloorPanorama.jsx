@@ -17,12 +17,34 @@ export default function FloorPanorama({ floor, onExit }) {
     const scene = new T.Scene()
     scene.background = new T.Color(0x252b36)
     scene.fog = new T.FogExp2(0x303b4c, 0.006)
+    renderer.toneMapping = T.ACESFilmicToneMapping
     const camera = new T.PerspectiveCamera(74, 1, 0.2, 720)
     camera.position.set(74, 9, 168)
     let yaw = Math.PI / 2, pitch = 0
-    const wall = new T.MeshStandardMaterial({ color: 0x8b96a4 })
-    const door = new T.MeshStandardMaterial({ color: 0x234e92 })
+    const wall = new T.MeshStandardMaterial({ color: 0xc9c2b6 })
+    const door = new T.MeshStandardMaterial({ color: 0x87654e })
     const ground = new T.MeshStandardMaterial({ color: 0x424951 })
+    const trim = new T.MeshStandardMaterial({color:0x454e55,metalness:.38,roughness:.38})
+    const oak = new T.MeshStandardMaterial({color:0xab805b,roughness:.65})
+    const strip = new T.MeshBasicMaterial({color:0xffe8bc})
+    const tile = document.createElement('canvas')
+    tile.width = tile.height = 256
+    const paint = tile.getContext('2d')
+    paint.fillStyle = '#878884'
+    paint.fillRect(0,0,256,256)
+    for (let i=0;i<1100;i++) {
+      paint.fillStyle = i%2 ? '#92938f' : '#7d7e7a'
+      paint.fillRect((i*83)%251,(i*i*29+i*13)%253,2,1)
+    }
+    paint.strokeStyle = '#656864'
+    paint.strokeRect(0,0,256,256)
+    const tiles = new T.CanvasTexture(tile)
+    tiles.colorSpace = T.SRGBColorSpace
+    tiles.wrapS = tiles.wrapT = T.RepeatWrapping
+    tiles.repeat.set(85,66)
+    ground.color.set(0xffffff)
+    ground.map = tiles
+    ground.roughness = .48
     function box(w,h,d,x,y,z,mat,angle = 0) {
       const object = new T.Mesh(new T.BoxGeometry(w,h,d), mat)
       object.position.set(x,y,z); object.rotation.y = angle; scene.add(object)
@@ -31,12 +53,30 @@ export default function FloorPanorama({ floor, onExit }) {
     box(680,1,530,305,21,240,wall)
     for (const segment of floorWalls(floor)) {
       const a = segment.angle * Math.PI / 180
+      const cx = segment.x + Math.cos(a)*segment.length/2
+      const cz = segment.y + Math.sin(a)*segment.length/2
+      if (segment.length > 28) {
+        const normalX = -Math.sin(a), normalZ = Math.cos(a)
+        for (const side of [-1,1]) {
+          const offset = side*2.2
+          const bx = cx+normalX*offset, bz = cz+normalZ*offset
+          if (!circulation[floor].some(poly => pointInPolygon([bx,bz],poly))) continue
+          box(10,.6,2.5,bx,3,bz,oak,-a)
+          for (const along of [-3.7,3.7]) {
+            box(.55,2.8,1.85,bx+along*Math.cos(a),1.4,bz+along*Math.sin(a),trim,-a)
+          }
+        }
+      }
+      box(segment.length,.9,.86,cx,.45,cz,trim,-a)
+      box(segment.length,.22,.82,cx,6.4,cz,trim,-a)
       box(segment.length,20,0.65,segment.x + Math.cos(a)*segment.length/2,10,segment.y + Math.sin(a)*segment.length/2,wall,-a)
     }
     for (const room of rooms.filter(room => room.floor === floor && roomAccess[room.id])) {
       const {door: [x,z], branch} = roomAccess[room.id]
       const side = branch === 'west'
       box(side ? 1.1 : 7,14,side ? 7 : 1.1,x,7,z,door)
+      box(side ? 1.35 : 7.6,.65,side ? 7.6 : 1.35,x,14,z,trim)
+      box(side ? 1.55 : 1.5,.32,side ? 1.5 : 1.55,x+(side?0:2),6.4,z+(side?2:0),trim)
       const canvas = document.createElement('canvas')
       canvas.width = 512; canvas.height = 80
       const ctx = canvas.getContext('2d')
@@ -50,10 +90,21 @@ export default function FloorPanorama({ floor, onExit }) {
       label.scale.set(12,2.4,1)
       scene.add(label)
     }
-    scene.add(new T.HemisphereLight(0xe1edff,0xa2afbd,2.2))
+    // Place ceiling fixtures along the walkable corridors on each actual floor.
+    for (let x=74;x<630;x+=24) {
+      for (let z=48;z<495;z+=24) {
+        if (!circulation[floor].some(poly => pointInPolygon([x,z],poly))) continue
+        box(8,.4,2.2,x,20.3,z,trim)
+        box(7.6,.14,1.8,x,20.03,z,strip)
+      }
+    }
+    const warm = new T.PointLight(0xffdfb2,420,80,2)
+    scene.add(warm)
+    scene.add(new T.HemisphereLight(0xe1edff,0x837768,1.6))
     const light = new T.DirectionalLight(0xe8f0ff,1.8)
     light.position.set(3,5,-1); scene.add(light)
     function draw() {
+      warm.position.set(camera.position.x,19,camera.position.z)
       camera.lookAt(camera.position.x + Math.sin(yaw)*Math.cos(pitch),camera.position.y + Math.sin(pitch),camera.position.z - Math.cos(yaw)*Math.cos(pitch))
       renderer.render(scene,camera)
     }
@@ -89,8 +140,8 @@ export default function FloorPanorama({ floor, onExit }) {
       actions.current = null; observer.disconnect()
       Object.entries(events).forEach(([name,fn]) => el.removeEventListener(name,fn))
       scene.traverse(obj => { obj.geometry?.dispose(); if (obj.isSprite) { obj.material.map.dispose(); obj.material.dispose() } })
-      for (const mat of [ground,door,wall]) mat.dispose()
-      renderer.dispose(); renderer.domElement.remove()
+      for (const mat of [ground,door,wall,trim,strip,oak]) mat.dispose()
+      tiles.dispose(); renderer.dispose(); renderer.domElement.remove()
     }
   }, [floor])
   return <div className="floor-pano">
