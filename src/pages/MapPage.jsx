@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useTheme } from '../theme.js'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { ArrowRight, ArrowUpRight, Bluetooth, Box, Building2, Compass, DoorOpen, Info, LocateFixed, LocateOff, MapPin, Navigation, Settings2, Square, TriangleAlert, X, ZoomIn, ZoomOut } from 'lucide-react'
+import { ArrowRight, ArrowUpRight, Bluetooth, Box, Building2, Compass, DoorOpen, LocateFixed, LocateOff, MapPin, Navigation, Settings2, Square, TriangleAlert, X, ZoomIn, ZoomOut } from 'lucide-react'
 import { categoryLabels, floors, photosFor, rooms } from '../data.js'
 import FloorMap from '../components/FloorMap.jsx'
 import RouteScene from '../components/RouteScene.jsx'
@@ -21,6 +22,8 @@ import { bluetoothSupport, disableBluetooth, enableBluetooth } from '../bluetoot
 import { useSiteSettings } from '../site-settings.js'
 import { storageGet, storageRemove, storageSet } from '../storage.js'
 import { readMapContrast, setMapContrast } from '../map-contrast.js'
+
+const FloorPanorama = lazy(() => import('../components/FloorPanorama.jsx'))
 
 const hasTouch = typeof window !== 'undefined' && 'ontouchstart' in window
 const otherFloor = (floor) => floor === 1 ? 2 : 1
@@ -47,6 +50,8 @@ export default function MapPage() {
   const [contrast, setContrast] = useState(readMapContrast)
   const toggleContrast = (on) => { setContrast(on); setMapContrast(on) }
   const [zoomed, setZoomed] = useState(() => window.matchMedia('(max-width: 680px)').matches)
+  const theme = useTheme()
+  const [panorama, setPanorama] = useState(false)
   const [mode3d, setMode3d] = useState(false)
   const [gpsEnabled, setGpsEnabled] = useState(false)
   const [gpsAnchors, setGpsAnchors] = useState(() => readGpsAnchors(storageGet('map-gps-anchors')))
@@ -190,6 +195,7 @@ export default function MapPage() {
 
   const popular = floorRooms.filter((room) => room.category === 'Общие пространства' && !/^(stairs|lift|elevator|entrance|exit|wc|toilet)/.test(room.id)).slice(0, 4)
 
+  const inPanorama = theme === 'v2' && panorama && !picking
   return <section className="map-page-section mp container">
     <header className="mp-head">
       <div className="mp-title">
@@ -240,13 +246,14 @@ export default function MapPage() {
         <div className="mp-map-top">
           <span className="mp-map-views">
             <span className="mp-segment" role="group" aria-label="Вид карты">
-              <button type="button" aria-pressed={!mode3d} onClick={() => setMode3d(false)}><Square size={14} /> 2D</button>
-              <button type="button" aria-pressed={mode3d} onClick={() => { setPicking(''); setZoomed(false); setMode3d(true) }}><Box size={14} /> 3D</button>
+              <button type="button" aria-pressed={!mode3d && !inPanorama} onClick={() => { setPanorama(false); setMode3d(false) }}><Square size={14} /> 2D</button>
+              <button type="button" aria-pressed={mode3d && !inPanorama} onClick={() => { setPanorama(false); setPicking(''); setZoomed(false); setMode3d(true) }}><Box size={14} /> 3D</button>
+              {theme === 'v2' && <button type="button" aria-pressed={inPanorama} onClick={() => { setPicking(''); setPanorama(true) }}>Панорама β</button>}
             </span>
-            {!mode3d && <button type="button" className="mp-zoom" onClick={() => setZoomed((value) => !value)} aria-label={zoomed ? 'Показать весь план' : 'Увеличить план'} title={zoomed ? 'Весь план' : 'Крупнее'}>{zoomed ? <ZoomOut size={16} /> : <ZoomIn size={16} />}</button>}
+            {!inPanorama && !mode3d && <button type="button" className="mp-zoom" onClick={() => setZoomed((value) => !value)} aria-label={zoomed ? 'Показать весь план' : 'Увеличить план'} title={zoomed ? 'Весь план' : 'Крупнее'}>{zoomed ? <ZoomOut size={16} /> : <ZoomIn size={16} />}</button>}
           </span>
         </div>
-        {mode3d
+        {inPanorama ? <Suspense fallback={<p>Открываем панораму…</p>}><FloorPanorama floor={floor} onExit={() => { setPanorama(false); setMode3d(false) }} /></Suspense> : mode3d
           ? <div className="map-scene"><RouteScene floor={floor} mode="3d" points={scenePoints} selectedId={selected?.id || ''} targetId={routeTargetId && routeStart ? routeTargetId : ''} onRoomClick={selectRoom} notices={floorNotices} filterCategory={filter} /></div>
           : <FloorMap floor={floor} selectedId={selected?.id || ''} onSelect={selectRoom} onFloorRequest={picking ? undefined : chooseFloor} onPointSelect={placePoint} picking={Boolean(picking)} zoomed={zoomed} filterCategory={filter} showLabels={showLabels} showDoorMarks={showDoorMarks} manualPoint={manualPoint} gpsMarker={gpsMarker} centerOn={centerOn} routeStart={routeStart} routeTargetId={routeTargetId} transition={routeModeParam} notices={floorNotices} />}
 
@@ -284,7 +291,7 @@ export default function MapPage() {
           {selected.description && <p>{selected.description}</p>}
           <Link className="button button-primary mp-route" to={`/route?${fromParam ? `from=${encodeURIComponent(fromParam)}&` : manualPoint ? 'from=manual&' : ''}to=${encodeURIComponent(selected.id)}${params.get('mode') === 'stairs' ? '&mode=stairs' : ''}`}>Построить маршрут <ArrowRight size={16} /></Link>
           {stair && <button type="button" className="mp-secondary" onClick={() => chooseFloor(otherFloor(floor), rooms.find((room) => room.id === `${stair[1]}-${otherFloor(floor)}`))}>Подняться по лестнице на {otherFloor(floor)} этаж <ArrowRight size={15} /></button>}
-          <div className="mp-room-extra"><FavoriteButton id={selected.id} /><Link className="room-ask-ai" to={`/ai?about=${encodeURIComponent(selected.id)}`}><Info size={15} /> Спросить ИИ</Link></div>
+          <div className="mp-room-extra"><FavoriteButton id={selected.id} /></div>
           {selectedNotices.map((notice, index) => <div key={index} className={`nv-notice-item nv-notice-${NOTICE_TYPES[notice.type].tone}`}><TriangleAlert size={16} aria-hidden="true" /><span><strong>{notice.title}</strong>{notice.text && <small>{notice.text}</small>}</span></div>)}
           <RoomInfo room={selected} />
           <div className="mp-room-door"><DoorOpen size={15} />{showDoorMarks ? 'Вход — синяя черточка у стены кабинета' : 'Двери можно включить в настройках карты'}</div>

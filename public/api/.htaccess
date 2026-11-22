@@ -2,7 +2,7 @@
 # Служебные ai-guard.php, alert.php и notify-lib.php подключаются изнутри и снаружи закрыты.
 # Новый эндпоинт без записи здесь хостинг закроет с 403 (проверяет src/api-access.test.js). Конфиг с ключом (если его
 # положили сюда, а не уровнем выше) и база знаний напрямую не отдаются.
-<FilesMatch "^(?!(ai-chat|notices|notify|report|search-miss|client-error|stats|settings)\.php$)">
+<FilesMatch "^(?!(notices|report|search-miss|client-error|stats|settings)\.php$)">
   <IfModule mod_authz_core.c>
     Require all denied
   </IfModule>

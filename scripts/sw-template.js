@@ -61,63 +61,8 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(caches.match(request, { ignoreSearch: url.pathname.startsWith('/assets/') }).then((cached) => cached || fromNetwork(request)))
 })
 
-// ---------- Push-уведомления (src/push.js, public/api/notify.php) ----------
-
-const PUSH_ICON = '/apple-touch-icon.png'
-const PUSH_BADGE = '/push-badge.png'
-
-// Напоминание о паре из открытой вкладки (src/push.js, scheduleLessonReminders)
-// ставит тот же tag, поэтому два уведомления об одном звонке не придут.
-function withLessonTag(push) {
-  if (push.kind !== 'lesson-start' || !push.bell) return push
-  const now = new Date()
-  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
-  return { ...push, tag: `lesson-${today}-${push.bell.start}`, route: true }
-}
-
-self.addEventListener('push', (event) => {
-  let push
-  try { push = event.data ? event.data.json() : {} } catch { push = { body: event.data ? event.data.text() : '' } }
-  event.waitUntil(Promise.resolve(withLessonTag({ title: 'ЛОГОС', body: '', url: '/', kind: 'news', ...push })).then(async (item) => {
-    const tag = item.tag || item.kind
-    // Уже показано вкладкой сайта — обновляем текст молча, без второго звука.
-    const shown = await self.registration.getNotifications({ tag }).catch(() => [])
-    return self.registration.showNotification(item.title, {
-    body: item.body,
-    icon: PUSH_ICON,
-    badge: PUSH_BADGE,
-    tag,
-    renotify: !shown.length,
-    silent: shown.length > 0,
-    timestamp: item.ts ? item.ts * 1000 : Date.now(),
-    data: { url: item.url || '/' },
-    actions: item.route ? [{ action: 'open', title: 'Маршрут' }] : [],
-    })
-  }))
-})
-
-// Нажатие на уведомление: открытая вкладка сайта переходит по ссылке, иначе открываем новую.
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close()
-  const target = new URL(event.notification.data?.url || '/', self.location.origin)
-  if (target.origin !== self.location.origin) return
-  event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(async (windows) => {
-    const open = windows.find((client) => new URL(client.url).origin === target.origin)
-    if (open) {
-      await open.focus()
-      return open.navigate ? open.navigate(target.href) : null
-    }
-    return self.clients.openWindow(target.href)
-  }))
-})
-
-// Браузер сам сменил подписку (истёк срок): сервер переносит на новую темы старой.
-self.addEventListener('pushsubscriptionchange', (event) => {
-  const old = event.oldSubscription
-  event.waitUntil((async () => {
-    const options = old?.options || event.newSubscription?.options
-    if (!options?.applicationServerKey) return
-    const subscription = event.newSubscription || await self.registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: options.applicationServerKey })
-    await fetch('/api/notify.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'subscribe', subscription: subscription.toJSON(), previous: old?.endpoint || '' }) })
-  })())
+// Release subscriptions created by earlier versions of the site.
+self.addEventListener('activate', (event) => {
+  if (self.registration.pushManager) event.waitUntil(self.registration.pushManager.getSubscription()
+    .then((subscription) => subscription?.unsubscribe()).catch(() => {}))
 })

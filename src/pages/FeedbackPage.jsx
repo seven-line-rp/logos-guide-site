@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Bot, Bug, Check, Lightbulb, MessageCircleQuestion, Send } from 'lucide-react'
+import { Bug, Check, Lightbulb, MessageCircleQuestion, Send } from 'lucide-react'
 import { PageHeading } from '../components/Primitives.jsx'
 import { storageGet, storageRemove, storageSet } from '../storage.js'
 
@@ -12,7 +12,6 @@ import { storageGet, storageRemove, storageSet } from '../storage.js'
 
 export const FEEDBACK_KINDS = [
   { id: 'bug', icon: Bug, title: 'Что-то сломалось', hint: 'Не открывается, зависает, текст налезает' },
-  { id: 'ai', icon: Bot, title: 'Ошибка ИИ', hint: 'Неверный ответ, иероглифы, странности' },
   { id: 'idea', icon: Lightbulb, title: 'Идея', hint: 'Чего не хватает на сайте' },
   { id: 'question', icon: MessageCircleQuestion, title: 'Вопрос', hint: 'Не нашли, как что-то сделать' },
 ]
@@ -74,7 +73,7 @@ export default function FeedbackPage() {
   }
 
   return <>
-    <PageHeading title="Сообщить о проблеме" description="Нашли баг, ошибку ИИ или хотите что-то предложить? Напишите: сообщение попадёт к команде сайта." />
+    <PageHeading title="Сообщить о проблеме" description="Нашли баг или хотите что-то предложить? Напишите: сообщение попадёт к команде сайта." />
     <section className="container feedback">
       {state.status === 'sent'
         ? <div className="feedback-done" role="status"><Check size={22} /><div><strong>Спасибо, сообщение отправлено.</strong><p>Команда прочитает его и поправит сайт. Если оставили контакт, мы можем написать в ответ.</p><Link className="button button-primary" to="/">На главную</Link></div></div>
@@ -87,7 +86,7 @@ export default function FeedbackPage() {
             </label>)}
           </div>
           <label className="feedback-field"><span>Что случилось</span>
-            <textarea value={text} onChange={(event) => setText(event.target.value)} maxLength={MAX_TEXT} rows={6} placeholder={kind === 'bug' ? 'На какой странице, что нажали, что увидели. Какое устройство: телефон, доска, компьютер.' : kind === 'ai' ? 'Что спросили и что ответил ИИ.' : 'Опишите своими словами'} />
+            <textarea value={text} onChange={(event) => setText(event.target.value)} maxLength={MAX_TEXT} rows={6} placeholder={kind === 'bug' ? 'На какой странице, что нажали, что увидели. Какое устройство: телефон, доска, компьютер.' : 'Опишите своими словами'} />
             <small>{text.length} / {MAX_TEXT}</small>
           </label>
           <label className="feedback-field"><span>Как с вами связаться <em>(необязательно)</em></span>

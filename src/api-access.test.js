@@ -12,7 +12,7 @@ const sources = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((entr
 const called = new Set([...sources('src'), 'scripts/sw-template.js'].flatMap((file) => [...readFileSync(file, 'utf8').matchAll(/\/api\/([\w-]+\.php)/g)].map((match) => match[1])))
 
 test('every endpoint the site calls is open in api/.htaccess', () => {
-  assert.ok(called.has('notify.php') && called.has('notices.php'), 'нашли вызовы эндпоинтов')
+  assert.ok(!called.has('notify.php') && !called.has('ai-chat.php') && called.has('notices.php'), 'нашли вызовы эндпоинтов')
   for (const file of called) assert.ok(!blocked.test(file), `${file} закрыт в public/api/.htaccess — добавьте его в FilesMatch`)
 })
 

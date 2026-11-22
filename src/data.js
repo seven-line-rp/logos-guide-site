@@ -5,7 +5,6 @@ export const navigation = [
   { label: 'Маршрут', to: '/route' },
   { label: 'Кабинеты', to: '/rooms' },
   { label: 'Преподаватели', to: '/teachers' },
-  { label: 'ИИ-помощник', to: '/ai', badge: 'АЛЬФА' },
 ]
 
 export const floors = [

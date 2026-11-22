@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react'
-import { BrowserRouter, Link, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { BrowserRouter, Link, Route, Routes, useLocation } from 'react-router-dom'
 import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { Footer, Header, ToastProvider } from './components/Shell'
 import CookieBanner from './components/CookieBanner.jsx'
@@ -26,14 +26,11 @@ const DocsPage = lazy(() => import('./pages/DocsPage'))
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage'))
 const TermsPage = lazy(() => import('./pages/TermsPage'))
 const ConsentPage = lazy(() => import('./pages/ConsentPage'))
-const AiAgentPage = lazy(() => import('./pages/AiAgentPage'))
 const TourPage = lazy(() => import('./pages/TourPage'))
 const TeachersPage = lazy(() => import('./pages/TeachersPage'))
 const StartPage = lazy(() => import('./pages/StartPage'))
 const HerePage = lazy(() => import('./pages/HerePage'))
 const FeedbackPage = lazy(() => import('./pages/FeedbackPage'))
-const NotificationsPage = lazy(() => import('./pages/NotificationsPage'))
-const AdminPush = lazy(() => import('./admin/AdminPush'))
 const AdminReports = lazy(() => import('./admin/AdminReports'))
 const AdminSettings = lazy(() => import('./admin/AdminSettings'))
 const AdminPromo = lazy(() => import('./admin/AdminPromo'))
@@ -79,7 +76,7 @@ function Site() {
   const location = useLocation()
   const admin = location.pathname.startsWith('/admin')
   const pageKey = admin ? 'admin' : location.pathname
-  return <><RouteEffects />{!admin && <Header />}<main id="main-content" className="site-main page-transition" key={pageKey}><ErrorBoundary key={pageKey}><Suspense fallback={<div className="page-loading container" role="status"><PageLoadingCompass /> Открываем раздел…</div>}><Routes location={location}><Route path="/" element={<HomePage />} /><Route path="/map" element={<MapPage />} /><Route path="/rooms" element={<RoomsPage />} /><Route path="/route" element={<RoutePage />} /><Route path="/games" element={<GamesPage />} /><Route path="/services" element={<ServicesPage />} /><Route path="/about" element={<AboutPage />} /><Route path="/docs" element={<DocsPage />} /><Route path="/privacy" element={<PrivacyPage />} /><Route path="/terms" element={<TermsPage />} /><Route path="/consent" element={<ConsentPage />} /><Route path="/ai" element={<AiAgentPage />} /><Route path="/schedule" element={<Navigate to="/notifications" replace />} /><Route path="/tour" element={<TourPage />} /><Route path="/teachers" element={<TeachersPage />} /><Route path="/start" element={<StartPage />} /><Route path="/here" element={<HerePage />} /><Route path="/feedback" element={<FeedbackPage />} /><Route path="/notifications" element={<NotificationsPage />} /><Route path="/testNotification" element={<Navigate to="/notifications" replace />} /><Route path="/admin" element={<AdminLayout />}><Route index element={<AdminOverview />} /><Route path="notices" element={<AdminNotices />} /><Route path="cards" element={<AdminCardsPage />} /><Route path="push" element={<AdminPush />} /><Route path="reports" element={<AdminReports />} /><Route path="settings" element={<AdminSettings />} /><Route path="promo" element={<AdminPromo />} /><Route path="cartoon" element={<AdminCartoon />} /></Route><Route path="*" element={<NotFoundPage />} /></Routes></Suspense></ErrorBoundary></main>{location.pathname !== '/ai' && !admin && <Footer />}{!admin && <><SiteTour /><CookieBanner /></>}<OfflineNotice /><PickmeHearts /></>
+  return <><RouteEffects />{!admin && <Header />}<main id="main-content" className="site-main page-transition" key={pageKey}><ErrorBoundary key={pageKey}><Suspense fallback={<div className="page-loading container" role="status"><PageLoadingCompass /> Открываем раздел…</div>}><Routes location={location}><Route path="/" element={<HomePage />} /><Route path="/map" element={<MapPage />} /><Route path="/rooms" element={<RoomsPage />} /><Route path="/route" element={<RoutePage />} /><Route path="/games" element={<GamesPage />} /><Route path="/services" element={<ServicesPage />} /><Route path="/about" element={<AboutPage />} /><Route path="/docs" element={<DocsPage />} /><Route path="/privacy" element={<PrivacyPage />} /><Route path="/terms" element={<TermsPage />} /><Route path="/consent" element={<ConsentPage />} /><Route path="/tour" element={<TourPage />} /><Route path="/teachers" element={<TeachersPage />} /><Route path="/start" element={<StartPage />} /><Route path="/here" element={<HerePage />} /><Route path="/feedback" element={<FeedbackPage />} /><Route path="/admin" element={<AdminLayout />}><Route index element={<AdminOverview />} /><Route path="notices" element={<AdminNotices />} /><Route path="cards" element={<AdminCardsPage />} /><Route path="reports" element={<AdminReports />} /><Route path="settings" element={<AdminSettings />} /><Route path="promo" element={<AdminPromo />} /><Route path="cartoon" element={<AdminCartoon />} /></Route><Route path="*" element={<NotFoundPage />} /></Routes></Suspense></ErrorBoundary></main>{!admin && <Footer />}{!admin && <><SiteTour /><CookieBanner /></>}<OfflineNotice /><PickmeHearts /></>
 }
 
 export default function App() {

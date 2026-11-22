@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
-import { ArrowUpRight, Bell, BellRing, Check, Clapperboard, Film, Inbox, KeyRound, LayoutDashboard, LogOut, Menu, Moon, QrCode, SlidersHorizontal, Sun, TriangleAlert, X } from 'lucide-react'
+import { ArrowUpRight, Bell, Check, Clapperboard, Film, Inbox, KeyRound, LayoutDashboard, LogOut, Menu, Moon, QrCode, SlidersHorizontal, Sun, TriangleAlert, X } from 'lucide-react'
 import { storageGet, storageSet } from '../storage.js'
 import { postNotices, readKey, saveKey } from './admin-api.js'
 
@@ -16,7 +16,6 @@ const NAV = [
   ] },
   { title: 'Публикации', items: [
     { to: '/admin/notices', label: 'Объявления', icon: Bell },
-    { to: '/admin/push', label: 'Уведомления', icon: BellRing },
   ] },
   { title: 'Сайт', items: [
     { to: '/admin/settings', label: 'Темы и маячки', icon: SlidersHorizontal },
@@ -56,7 +55,7 @@ function LoginCard({ onLogin }) {
   return <form className="adm-login" onSubmit={submit}>
     <span className="adm-login-icon" aria-hidden="true"><KeyRound size={20} /></span>
     <h1>Панель сайта</h1>
-    <p>Статистика посещений, объявления на карте, уведомления, обращения посетителей, темы и карточки для дверей. Введите ключ доступа — его выдаёт команда сайта.</p>
+    <p>Статистика посещений, объявления на карте, обращения посетителей, темы и карточки для дверей. Введите ключ доступа — его выдаёт команда сайта.</p>
     <label>Ключ доступа<input type="password" value={value} onChange={(event) => setValue(event.target.value)} autoComplete="current-password" autoFocus required /></label>
     {error && <p className="adm-alert adm-alert-bad" role="alert"><TriangleAlert size={16} /> {error}</p>}
     <button className="adm-button adm-button-primary" type="submit" disabled={busy || !value.trim()}>{busy ? 'Проверяем…' : 'Войти'}</button>

@@ -87,11 +87,11 @@
       (function () {
         try {
           var asked = new URLSearchParams(window.location.search).get('theme')
-          var theme = /^(light|dark|pickme)$/.test(asked || '') ? asked : localStorage.getItem('site-theme')
+          var theme = /^(light|dark|pickme|v2)$/.test(asked || '') ? asked : localStorage.getItem('site-theme')
           // Тему могли выключить для всех в панели: тогда сайт светлый (src/site-settings.js).
           var saved = JSON.parse(localStorage.getItem('logos-site-settings') || 'null')
           var off = saved && Array.isArray(saved.themes) && saved.themes.indexOf(theme) < 0
-          if (/^(dark|pickme)$/.test(theme || '') && !off) document.documentElement.dataset.theme = theme
+          if (/^(dark|pickme|v2)$/.test(theme || '') && !off) { document.documentElement.dataset.theme = theme === 'v2' ? 'dark' : theme; document.documentElement.dataset.edition = theme }
         } catch (_error) { /* без localStorage остаётся светлая тема */ }
       })()
     </script>

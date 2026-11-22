@@ -6,7 +6,7 @@ import { nearbyKinds, roomTitle } from '../places.js'
 import { bellState, bellsFor, dateKey } from '../bells.js'
 import { holidayName } from '../holidays.js'
 import { useFavorites, useRecentRoutes } from './FavoriteButton.jsx'
-import { RawText } from './ai-message.js'
+import { RawText } from './raw-text.js'
 
 // Текущее время, обновляется раз в полминуты: по нему считаются звонки.
 function useNow() {
@@ -56,7 +56,6 @@ export default function HomeDashboard() {
       <article className="day-card day-card-lesson">
         <BellNow now={now} />
         <BellList now={now} />
-        <Link className="day-link" to="/notifications">Напоминать за 5 минут до пары <ArrowRight size={15} /></Link>
       </article>
 
       <article className="day-card">

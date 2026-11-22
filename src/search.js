@@ -1,3 +1,4 @@
+import { withProfiles } from './teacher-profiles.js'
 import { useEffect, useState } from 'react'
 import { rooms } from './data.js'
 import { searchableRoom } from './i18n.js'
@@ -166,7 +167,7 @@ export function useTeachers() {
   const [list, setList] = useState([])
   useEffect(() => {
     let alive = true
-    loadTeachers().then((value) => { if (alive) setList(value) })
+    loadTeachers().then((value) => { if (alive) setList(withProfiles(value)) })
     return () => { alive = false }
   }, [])
   return list

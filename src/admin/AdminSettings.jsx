@@ -13,6 +13,7 @@ import { postSettings } from './admin-api.js'
 const THEME_ROWS = [
   { id: 'light', icon: Sun, title: 'Светлая', hint: 'Основная тема. Всегда включена: на неё сайт переходит, если другую выключили.' },
   { id: 'dark', icon: Moon, title: 'Тёмная', hint: 'Спокойная тёмная тема для вечера и слабого света.' },
+  { id: 'v2', icon: Moon, title: 'Логос 2.0', hint: 'Графитовая тема с компасом и панорамой этажей.' },
   { id: 'pickme', icon: Flower2, title: 'Пикми', hint: 'Розовая, с цветами на главном экране и сердечками.' },
 ]
 const emptyBeacon = { id: '', roomId: 'hall-1', tx: '-59' }

@@ -21,7 +21,7 @@ const healthy = {
   '/': { type: 'text/html', body: html },
   '/assets/index-abc.js': { type: 'text/javascript', body: 'console.log(1)' },
   '/assets/index-abc.css': { type: 'text/css', body: 'a{}' },
-  '/api/ai-chat.php?health': { type: 'application/json', body: '{"ok":true}' },
+  '/api/settings.php': { type: 'application/json', body: '{"themes":["light"]}' },
 }
 
 test('a healthy site passes with no problems', async () => {
@@ -48,11 +48,11 @@ test('missing build files, wrong index.html and server errors count as down', as
 
 test('the AI endpoint only produces warnings, never "down"', async () => {
   for (const [route, expected] of [[{ status: 404 }, /не найден/], [{ status: 500 }, /500/], [{ type: 'text/html', body: '<?php' }, /не JSON/], [{ type: 'application/json', body: '{"ok":false}' }, /не настроен/]]) {
-    const result = await checkSite({ siteUrl: 'https://example.test', fetchImpl: server({ ...healthy, '/api/ai-chat.php?health': route }).fetchImpl })
+    const result = await checkSite({ siteUrl: 'https://example.test', fetchImpl: server({ ...healthy, '/api/settings.php': route }).fetchImpl })
     assert.deepEqual(result.down, [])
     assert.match(result.warnings.join(), expected)
   }
-  const skipped = await checkSite({ siteUrl: 'https://example.test', checkApi: false, fetchImpl: server({ ...healthy, '/api/ai-chat.php?health': { status: 500 } }).fetchImpl })
+  const skipped = await checkSite({ siteUrl: 'https://example.test', checkApi: false, fetchImpl: server({ ...healthy, '/api/settings.php': { status: 500 } }).fetchImpl })
   assert.deepEqual(skipped.warnings, [])
 })
 

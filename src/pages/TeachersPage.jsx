@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { GraduationCap, Heart, MapPin, Navigation, Quote, Search, X } from 'lucide-react'
 import { PageHeading, Reveal } from '../components/Primitives.jsx'
 import VoiceSearchButton from '../components/VoiceSearchButton.jsx'
-import { RawText } from '../components/ai-message.js'
+import { RawText } from '../components/raw-text.js'
 import { rooms } from '../data.js'
 import { loadTeachers, normalize, roomForTeacher } from '../search.js'
 import { focusInputOnPress } from '../search-field.js'
@@ -50,15 +50,15 @@ function TeacherProfile({ profile }) {
   </div>
 }
 
-function TeacherCard({ teacher }) {
+function TeacherCard({ teacher, onOpen }) {
   const { room, bySubject } = roomForTeacher(teacher)
   return <article className={teacher.profile ? 'teacher-card teacher-card-profiled' : 'teacher-card'}>
     <div className="teacher-card-top">
       <TeacherAvatar name={teacher.name} />
-      <div className="teacher-card-name"><h2><RawText text={teacher.name} /></h2>{teacher.position && <span>{teacher.position}</span>}</div>
+      <div className="teacher-card-name"><h2>{onOpen ? <button className="teacher-open" type="button" onClick={() => onOpen(teacher)} aria-haspopup="dialog"><RawText text={teacher.name} /></button> : <RawText text={teacher.name} />}</h2>{teacher.position && <span>{teacher.position}</span>}</div>
     </div>
     {teacher.subjects?.length > 0 && <ul className="teacher-subjects" aria-label="Предметы">{teacher.subjects.map((subject) => <li key={subject}>{subject}</li>)}</ul>}
-    {teacher.profile && <TeacherProfile profile={teacher.profile} />}
+    {!onOpen && teacher.profile && <TeacherProfile profile={teacher.profile} />}
     <div className="teacher-card-room">
       <MapPin size={15} aria-hidden="true" />
       {room ? <span>{room.name}{room.number && ` №${room.number}`}, {room.floor} этаж{bySubject && <small> — по предмету, уточняйте</small>}</span> : <span>Кабинет уточните в учебной части</span>}
@@ -78,6 +78,16 @@ export default function TeachersPage() {
     loadTeachers().then((value) => { if (alive) setTeachers(withProfiles(value)) })
     return () => { alive = false }
   }, [])
+  const dialog = useRef(null)
+  const [params, setParams] = useSearchParams()
+  const selected = teachers?.find((teacher) => teacher.name === params.get('person'))
+  const setSelected = (teacher) => {
+    const next = new URLSearchParams(params)
+    if (teacher) next.set('person', teacher.name)
+    else next.delete('person')
+    setParams(next, { replace: true, preventScrollReset: true })
+  }
+  useEffect(() => { if (selected) dialog.current?.showModal(); else dialog.current?.close() }, [selected])
   const [query, setQuery] = useState('')
   const [group, setGroup] = useState('all')
   const visible = useMemo(() => {
@@ -95,8 +105,11 @@ export default function TeachersPage() {
       <div className="directory-category-filters teachers-filters" role="group" aria-label="Кого показать">{groups.map((item) => <button key={item.id} type="button" onClick={() => setGroup(item.id)} className={group === item.id ? 'directory-chip directory-chip-active' : 'directory-chip'} aria-pressed={group === item.id}>{item.label}</button>)}</div>
       <div className="directory-results-head"><span><strong>{visible.length}</strong> человек{query && <> по запросу «{query}»</>}</span></div>
       {teachers === null ? <div className="teachers-grid" aria-busy="true">{[0, 1, 2, 3, 4, 5].map((index) => <div key={index} className="teacher-card teacher-card-skeleton"><span className="shimmer" /><span className="shimmer" /><span className="shimmer" /></div>)}</div>
-        : visible.length ? <div className="teachers-grid" aria-live="polite">{visible.map((teacher, index) => <Reveal key={teacher.name} delay={index % 6 * 40}><TeacherCard teacher={teacher} /></Reveal>)}</div>
+        : visible.length ? <div className="teachers-grid" aria-live="polite">{visible.map((teacher, index) => <Reveal key={teacher.name} delay={index % 6 * 40}><TeacherCard teacher={teacher} onOpen={setSelected} /></Reveal>)}</div>
           : <div className="directory-empty"><span className="directory-empty-icon"><GraduationCap size={20} /></span><h2>Никого не нашли.</h2><p>Проверьте фамилию или спросите в учебной части.</p><button className="button button-primary" type="button" onClick={() => { setQuery(''); setGroup('all') }}>Показать всех</button></div>}
+      <dialog className="teacher-dialog" ref={dialog} aria-label={selected?.name} onClose={() => setSelected(null)} onClick={(event) => { if (event.target === event.currentTarget) dialog.current.close() }}>
+        {selected && <div><button type="button" className="teacher-dismiss" onClick={() => dialog.current.close()} aria-label="Закрыть карточку"><X /></button><TeacherCard teacher={selected} /></div>}
+      </dialog>
       <p className="teachers-note">Список — со страницы «Педагогический состав» на сайте колледжа. Кабинет, подписанный «по предмету», — где обычно проходит этот предмет; точное место уточняйте в учебной части.</p>
     </section>
   </>
