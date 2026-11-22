@@ -1,78 +1,76 @@
 import { useEffect, useRef } from 'react'
 import * as T from 'three'
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
+import { booksModel, compassModel, elevatorModel } from './edition-models.js'
 
 export default function CompassScene({ progress }) {
   const host = useRef(null)
   useEffect(() => {
     const root = host.current
     let renderer
-    try { renderer = new T.WebGLRenderer({ alpha: true, antialias: true }) } catch { return }
+    try { renderer = new T.WebGLRenderer({ alpha:true, antialias:true }) } catch { return }
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 1.65))
+    renderer.toneMapping = T.ACESFilmicToneMapping
+    renderer.toneMappingExposure = 1.22
     root.append(renderer.domElement)
-    renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75))
     const scene = new T.Scene()
-    const camera = new T.PerspectiveCamera(34, 1, 0.1, 40)
-    camera.position.z = 8.4
-    const dial = new T.Group()
-    scene.add(dial)
-    const material = (color, metalness = 0.35) => new T.MeshStandardMaterial({ color, metalness, roughness: 0.32 })
-    const steel = material(0x9da8bb), face = material(0x212733), ink = material(0xb2c2dc), blue = material(0x296dff)
-    const mesh = (geometry, mat, parent = dial) => { const item = new T.Mesh(geometry, mat); parent.add(item); return item }
-    const body = mesh(new T.CylinderGeometry(2.15, 2.08, 0.26, 144), face)
-    body.rotation.x = Math.PI / 2
-    for (const [radius, thickness, depth] of [[2.12, 0.105, 0.11], [1.99, 0.028, 0.17], [1.53, 0.012, 0.14]]) {
-      mesh(new T.TorusGeometry(radius, thickness, 12, 160), steel).position.z = depth
+    const rig = new RoomEnvironment()
+    const pmrem = new T.PMREMGenerator(renderer)
+    const reflection = pmrem.fromScene(rig, .045)
+    scene.environment = reflection.texture
+    rig.dispose(); pmrem.dispose()
+    const camera = new T.PerspectiveCamera(32, 1, .1, 40)
+    const compass = compassModel(), elevator = elevatorModel(), books = booksModel()
+    const models = [compass.group, elevator.group, books]
+    scene.add(...models)
+    for (const [color,power,x,y,z] of [[0xffeedc,2.7,-3,5,5],[0x2669ff,5,4,1,2],[0xc6ddff,2,-2,-1,-3]]) {
+      const lamp = new T.DirectionalLight(color,power)
+      lamp.position.set(x,y,z); scene.add(lamp)
     }
-    for (let i = 0; i < 120; i++) {
-      const angle = i * Math.PI / 60, major = i % 10 === 0
-      const tick = mesh(new T.BoxGeometry(major ? 0.032 : 0.014, major ? 0.20 : 0.08, 0.016), major ? ink : steel)
-      tick.position.set(-Math.sin(angle) * 1.84, Math.cos(angle) * 1.84, 0.16)
-      tick.rotation.z = angle
-    }
-    const needle = new T.Group()
-    dial.add(needle)
-    for (const [direction, mat] of [[1, blue], [-1, steel]]) {
-      const g = new T.BufferGeometry()
-      const vertices = [-0.24,0,0, 0,1.73*direction,0, 0,0,0.21, 0,0,0.21, 0,1.73*direction,0, 0.24,0,0]
-      g.setAttribute('position', new T.Float32BufferAttribute(vertices, 3))
-      g.computeVertexNormals()
-      mat.side = T.DoubleSide
-      mesh(g, mat, needle).position.z = 0.23
-    }
-    mesh(new T.SphereGeometry(0.14, 24, 16), steel).position.z = 0.42
-    scene.add(new T.HemisphereLight(0xf0f5ff, 0x444e70, 2.3))
-    for (const [color, strength, x,y,z] of [[0xffffff,4,-3,5,5],[0x2869ff,5,4,-2,3]]) {
-      const light = new T.DirectionalLight(color, strength)
-      light.position.set(x,y,z)
-      scene.add(light)
-    }
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const motion = matchMedia('(prefers-reduced-motion: reduce)')
     function draw() {
-      const p = reduced.matches ? 0 : progress.current
-      dial.rotation.set(-0.38 + p * 0.25, 0.12 + p * 0.52, -0.12)
-      dial.scale.setScalar(1.08 - p * 0.22)
-      needle.rotation.z = -0.55 - p * 2.55
-      renderer.render(scene, camera)
+      const position = motion.matches ? Math.round(progress.current) : progress.current
+      const mobile = root.clientWidth < 700
+      const halfHeight = camera.position.z * Math.tan(T.MathUtils.degToRad(16))
+      models.forEach((model,i) => {
+        const d = position-i
+        model.visible = Math.abs(d)<.86
+        if (!model.visible) return
+        const away = T.MathUtils.smoothstep(Math.abs(d),.12,.86)
+        model.scale.setScalar((1-away)* (i===2 ? 1.16 : 1))
+        model.position.set((i && !mobile ? -.45*halfHeight*camera.aspect : 0) - d*1.8,
+          (mobile ? halfHeight*.32 : i ? 0 : halfHeight*.13) + d*.55, -away*2)
+      })
+      compass.group.rotation.set(.27 + position*.28,-.26-position*.62,-.16)
+      compass.needle.rotation.z = -.61-position*2.65
+      elevator.group.rotation.set(.10,-.31+(position-1)*.3,-.025)
+      const open=T.MathUtils.smoothstep(position,.75,1.23)*.91
+      elevator.doors.forEach((leaf,i) => { leaf.scale.x=1-open; leaf.position.x=(i?1:-1)*(.65+.64*open) })
+      books.rotation.set(.45,-.36+(position-2)*.45,-.11)
+      renderer.render(scene,camera)
     }
     function size() {
-      const { clientWidth: w, clientHeight: h } = root
-      renderer.setSize(w, h)
-      camera.aspect = w / Math.max(1,h)
-      camera.position.z = Math.max(8, 8.3 / camera.aspect)
-      camera.updateProjectionMatrix()
-      draw()
+      const w=root.clientWidth, h=root.clientHeight
+      renderer.setSize(w,h)
+      camera.aspect=w/Math.max(1,h)
+      camera.position.z=Math.max(9.3,8.45/camera.aspect)
+      camera.updateProjectionMatrix();draw()
     }
-    const observer = new ResizeObserver(size)
-    observer.observe(root)
-    let frame = 0
-    const redraw = () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(draw) }
-    window.addEventListener('scroll', redraw, { passive: true })
-    size()
+    let frame=0
+    function schedule() {
+      if (!frame) frame=requestAnimationFrame(() => { frame=0; draw() })
+    }
+    const observer=new ResizeObserver(size)
+    observer.observe(root); size()
+    window.addEventListener('scroll',schedule,{passive:true});motion.addEventListener('change',schedule)
     return () => {
-      window.removeEventListener('scroll', redraw); cancelAnimationFrame(frame); observer.disconnect()
-      scene.traverse(item => item.geometry?.dispose())
-      for (const m of [steel,face,ink,blue]) m.dispose()
-      renderer.dispose(); renderer.domElement.remove()
+      window.removeEventListener('scroll',schedule); motion.removeEventListener('change',schedule)
+      cancelAnimationFrame(frame);observer.disconnect()
+      const materials=new Set()
+      scene.traverse(obj => { obj.geometry?.dispose(); if(obj.material) materials.add(obj.material) })
+      for(const material of materials){material.map?.dispose();material.dispose()}
+      reflection.dispose();renderer.dispose();renderer.domElement.remove()
     }
-  }, [progress])
+  },[progress])
   return <div className="edition-canvas" ref={host} />
 }

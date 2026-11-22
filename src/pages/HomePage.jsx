@@ -98,8 +98,9 @@ export default function HomePage() {
   const favorites = useFavorites()
   const recent = useRecentRoutes()
   const newcomer = !favorites.length && !recent.length
+  if (theme === 'v2') return <EditionHome />
   return <>
-    {theme === "v2" ? <EditionHome /> : <section className={`home-hero hero-mesh home-hero-usual home-hero-scene${pickme ? ' home-hero-pickme' : ''}`} id="top">
+    <section className={`home-hero hero-mesh home-hero-usual home-hero-scene${pickme ? ' home-hero-pickme' : ''}`} id="top">
       {pickme ? <PickmeGarden /> : heroCine ? <Suspense fallback={null}><HeroCine variant={heroCine} /></Suspense> : scene3d && <Suspense fallback={null}><HeroScene /></Suspense>}
       <div className="container home-hero-inner">
         <div className="home-hero-copy">
@@ -118,7 +119,7 @@ export default function HomePage() {
         </div>
         {plainHero && <HeroCaption />}
       </div>
-    </section>}
+    </section>
 
     <div className="landing">
     <HomeCards />
