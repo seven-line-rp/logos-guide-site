@@ -1,6 +1,9 @@
 import { useEffect, useRef } from 'react'
 import * as T from 'three'
 
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js'
+
 export default function CompassScene({ progress }) {
   const host = useRef(null)
   useEffect(() => {
@@ -10,14 +13,22 @@ export default function CompassScene({ progress }) {
     root.append(renderer.domElement)
     renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75))
     const scene = new T.Scene()
+    renderer.toneMapping = T.ACESFilmicToneMapping
+    const room = new RoomEnvironment()
+    const pmrem = new T.PMREMGenerator(renderer)
+    const reflections = pmrem.fromScene(room, 0.04)
+    scene.environment = reflections.texture
+    room.dispose()
+    pmrem.dispose()
     const camera = new T.PerspectiveCamera(34, 1, 0.1, 40)
     camera.position.z = 8.4
     const dial = new T.Group()
     scene.add(dial)
     const material = (color, metalness = 0.35) => new T.MeshStandardMaterial({ color, metalness, roughness: 0.32 })
-    const steel = material(0x9da8bb), face = material(0x212733), ink = material(0xb2c2dc), blue = material(0x296dff)
+    const steel = material(0xc2c9d3, 0.94), face = material(0x212733), ink = material(0xb2c2dc), blue = material(0x296dff)
     const mesh = (geometry, mat, parent = dial) => { const item = new T.Mesh(geometry, mat); parent.add(item); return item }
-    const body = mesh(new T.CylinderGeometry(2.15, 2.08, 0.26, 144), face)
+    const body = mesh(new T.CylinderGeometry(2.15, 1.98, 0.52, 144), face)
+    body.position.z = -0.13
     body.rotation.x = Math.PI / 2
     for (const [radius, thickness, depth] of [[2.12, 0.105, 0.11], [1.99, 0.028, 0.17], [1.53, 0.012, 0.14]]) {
       mesh(new T.TorusGeometry(radius, thickness, 12, 160), steel).position.z = depth
@@ -45,10 +56,47 @@ export default function CompassScene({ progress }) {
       light.position.set(x,y,z)
       scene.add(light)
     }
+    const lift = new T.Group()
+    scene.add(lift)
+    const wood = material(0x967056, 0.12)
+    const lamp = new T.MeshBasicMaterial({color:0xffe5bc})
+    function panel(w,h,d,x,y,z,mat) {
+      const part = mesh(new RoundedBoxGeometry(w,h,d,2,0.025),mat,lift)
+      part.position.set(x,y,z)
+      return part
+    }
+    panel(2.8,3.9,.18,0,0,-.75,wood)
+    for (const side of [-1,1]) {
+      panel(.16,4,1.1,side*1.37,0,-.25,steel)
+      panel(.18,4.15,.22,side*1.48,0,.37,face)
+      panel(.04,3.5,.03,side*1.23,0,-.62,lamp)
+    }
+    panel(2.95,.16,1.18,0,-1.96,-.22,steel)
+    panel(2.95,.16,1.18,0,1.96,-.22,steel)
+    panel(1.95,.045,.66,0,1.86,-.23,lamp)
+    panel(2.32,.065,.09,0,-.45,-.55,steel)
+    const leaves = [-1,1].map(side => panel(1.32,3.78,.12,side*.67,0,.3,steel))
+    panel(.28,.52,.1,1.72,-.18,.34,face)
+    panel(.08,.08,.04,1.72,-.14,.41,blue)
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)')
     function draw() {
       const p = reduced.matches ? 0 : progress.current
-      dial.rotation.set(-0.38 + p * 0.25, 0.12 + p * 0.52, -0.12)
+      const smooth = (a,b) => T.MathUtils.smoothstep(p,a,b)
+      const swap = smooth(.12,.43)
+      const halfWidth = camera.position.z * Math.tan(T.MathUtils.degToRad(17)) * camera.aspect
+      dial.visible = swap < 1
+      dial.position.set(-swap*(halfWidth+3),swap*.4,-swap*2)
+      dial.rotation.set(-.53+p*.4,.35+p*1.7,-.15)
+      lift.visible = p > .16
+      const narrow = root.clientWidth <= 660
+      lift.scale.setScalar(narrow ? .65 : .91)
+      lift.position.set((1-smooth(.16,.45))*(halfWidth+3)+(narrow ? 0 : halfWidth*.42),narrow ? 1.22 : 0,-.25)
+      lift.rotation.y = -.32 + smooth(.5,1)*.53
+      leaves.forEach((leaf,i) => {
+        const open = smooth(.47,.87)
+        leaf.scale.x = 1-open*.97
+        leaf.position.x = (i ? 1 : -1)*(.67+.65*open)
+      })
       dial.scale.setScalar(1.08 - p * 0.22)
       needle.rotation.z = -0.55 - p * 2.55
       renderer.render(scene, camera)
@@ -70,8 +118,8 @@ export default function CompassScene({ progress }) {
     return () => {
       window.removeEventListener('scroll', redraw); cancelAnimationFrame(frame); observer.disconnect()
       scene.traverse(item => item.geometry?.dispose())
-      for (const m of [steel,face,ink,blue]) m.dispose()
-      renderer.dispose(); renderer.domElement.remove()
+      for (const m of [steel,face,ink,blue,wood,lamp]) m.dispose()
+      reflections.dispose(); renderer.dispose(); renderer.domElement.remove()
     }
   }, [progress])
   return <div className="edition-canvas" ref={host} />
