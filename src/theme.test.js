@@ -5,7 +5,7 @@ import { holidayName } from './holidays.js'
 import { bellsFor } from './bells.js'
 
 test('the site has light, dark and pickme themes, and falls back to light', () => {
-  assert.deepEqual(THEMES, ['light', 'dark', 'pickme'])
+  assert.deepEqual(THEMES, ['light', 'dark', 'pickme', 'v2'])
   assert.equal(resolveTheme('pickme'), 'pickme')
   assert.equal(resolveTheme('dark'), 'dark')
   assert.equal(resolveTheme('light'), 'light')
@@ -19,7 +19,8 @@ test('the site has light, dark and pickme themes, and falls back to light', () =
 test('the theme button cycles through the themes', () => {
   assert.equal(nextTheme('light'), 'dark')
   assert.equal(nextTheme('dark'), 'pickme')
-  assert.equal(nextTheme('pickme'), 'light')
+  assert.equal(nextTheme('pickme'), 'v2')
+  assert.equal(nextTheme('v2'), 'light')
 })
 
 test('themes switched off in the admin panel disappear; light always stays', () => {

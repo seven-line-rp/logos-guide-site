@@ -11,6 +11,40 @@
 // добавляем его в список сами.
 
 export const teacherProfiles = {
+  'Сиротин Дмитрий Александрович': {
+    roomId: 'informatics-222',
+    place: { title: 'Кабинет №222 и столовая', why: 'В кабинете №222 он ведёт занятия, а в столовую любит заходить на вкусный обед.' },
+    quotes: ['Never Give Up'],
+  },
+  'Лобастов Николай Алексеевич': {
+    place: { title: 'Свой кабинет', why: 'У доски в своём кабинете ему всегда душевно.' },
+    quotes: ['Все мы уроды, только разной породы.'],
+  },
+  'Григорьева Елизавета Анатольевна': {
+    extra: true, position: 'Преподаватель', subjects: ['Физика'],
+    place: { title: 'Кабинет физики после занятий', why: 'Когда студенты расходятся, в кабинете становится тихо и спокойно.' },
+    quotes: ['Дайте мне точку опоры, и я подниму Землю.'],
+  },
+  'Курносова Анастасия Сергеевна': {
+    place: { title: 'Столовая', roomId: 'canteen', why: 'Любит это место за вкусную еду.' },
+    quotes: ['Я не запуталась, я исследую альтернативные пути решения.'],
+  },
+  'Антушева Екатерина Викторовна': {
+    place: { title: 'Актовый зал', roomId: 'auditorium-104', why: 'Здесь всегда происходит что-нибудь интересное.' },
+    quotes: ['Мы не можем заставить себя чувствовать то, что не чувствуем, но мы можем заставить себя поступать правильно вне зависимости от наших чувств.'],
+  },
+  'Криволуцкая Наталья Олеговна': {
+    place: { title: 'Холл у библиотеки, второй этаж', why: 'Особенно нравится сама атмосфера этого холла.' },
+    quotes: ['На Бога надейся, сам не греши.'],
+  },
+  'Островский Вадим Валериевич': {
+    place: { title: 'Библиотека', roomId: 'library-214', why: 'По воскресеньям здесь проходят встречи.' },
+    quotes: ['Не хочешь скорби — не греши.'],
+  },
+  'Островская София Александровна': {
+    place: { title: 'Библиотека', roomId: 'library-214', why: 'Для неё это самое уютное место в колледже: вокруг столько книг.' },
+    quotes: ['Здесь дьявол с Богом борется, а поле битвы — сердца людей.', 'В человеке всё должно быть прекрасно: и лицо, и одежда, и душа, и мысли.'],
+  },
   'Полянский Александр Александрович': {
     extra: true,
     place: {
@@ -67,6 +101,6 @@ export function normalizeQuote(quote) {
 // Список с сайта + люди, которых там нет; к каждому — его профиль.
 export function withProfiles(list, profiles = teacherProfiles) {
   const names = new Set(list.map((teacher) => teacher.name))
-  const extras = Object.keys(profiles).filter((name) => profiles[name].extra && !names.has(name)).map((name) => ({ name }))
-  return list.concat(extras).map((teacher) => (profiles[teacher.name] ? { ...teacher, profile: profiles[teacher.name] } : teacher))
+  const extras = Object.keys(profiles).filter((name) => profiles[name].extra && !names.has(name)).map((name) => ({ name, position: profiles[name].position, subjects: profiles[name].subjects }))
+  return list.concat(extras).map((teacher) => (profiles[teacher.name] ? { ...teacher, roomId: profiles[teacher.name].roomId || teacher.roomId, profile: profiles[teacher.name] } : teacher))
 }

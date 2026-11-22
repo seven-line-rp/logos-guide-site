@@ -37,7 +37,7 @@ after(() => {
 const json = (path, body, key) => fetch(`${site}${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(key ? { 'X-Admin-Key': key } : {}) }, body: JSON.stringify(body) })
 
 test('settings: everyone reads them, only the admin key changes them', { skip }, async () => {
-  assert.deepEqual(await (await fetch(`${site}/api/settings.php`)).json(), { themes: ['light', 'dark', 'pickme'], beacons: [] })
+  assert.deepEqual(await (await fetch(`${site}/api/settings.php`)).json(), { themes: ['light', 'dark', 'pickme', 'v2'], beacons: [] })
   assert.equal((await json('/api/settings.php', { themes: ['light'] })).status, 403)
   assert.equal((await json('/api/settings.php', { themes: ['light'] }, 'wrong')).status, 403)
 

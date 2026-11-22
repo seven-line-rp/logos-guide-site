@@ -17,7 +17,6 @@ import './site-docs.css'
 import './hero-scene.css'
 import './about.css'
 import './route-scene.css'
-import './ai-agent.css'
 import './dark-theme.css'
 import './maps-modern.css'
 import './features.css'
@@ -33,8 +32,6 @@ import './search.css'
 import './a11y.css'
 import './human.css'
 import './motion.css'
-import './ai-math.css'
-import './ai-minimal.css'
 import './feedback.css'
 import './clean.css'
 import './perf.css'
@@ -54,11 +51,11 @@ import './pickme.css'
 import './dark.css'
 // Главная: общая сетка, отступы и эффекты для всех трёх тем — самым последним слоем.
 import './landing.css'
+import './edition.css'
 import './interactions.js'
 import { applyMapContrast } from './map-contrast.js'
 import { applyTextSize, readTextSize } from './text-size.js'
 import { installErrorReporting } from './error-report.js'
-import { keepPushAlive } from './push.js'
 import { initSiteSettings, readCachedSettings } from './site-settings.js'
 import { initTheme } from './theme.js'
 
@@ -69,8 +66,6 @@ initTheme(window.location.search, readCachedSettings().themes)
 initSiteSettings()
 // Сообщения о сбоях страницы для оповещений владельцу (только в рабочей сборке).
 if (import.meta.env.PROD) installErrorReporting()
-// Напоминания о парах по звонкам, пока сайт открыт (src/push.js).
-keepPushAlive()
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>

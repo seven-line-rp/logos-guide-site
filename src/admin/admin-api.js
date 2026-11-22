@@ -22,10 +22,6 @@ export async function fetchStats(key) {
   return data
 }
 
-export async function postPush(key, body) {
-  return parse(await fetch('/api/notify.php', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Admin-Key': key }, body: JSON.stringify(body) }))
-}
-
 // Обращения с сайта: «Сообщить о неточности» на карте и страница /feedback.
 export async function fetchReports(key) {
   const data = await parse(await fetch('/api/report.php?list=1', { headers: { 'X-Admin-Key': key }, cache: 'no-store' }))

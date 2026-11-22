@@ -1,3 +1,4 @@
+import EditionHome from "../components/EditionHome.jsx"
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { ArrowRight, ArrowUpRight, Search } from 'lucide-react'
@@ -38,7 +39,7 @@ function HomeSearch() {
   const goTo = (room) => navigate(`/map?floor=${room.floor}&room=${encodeURIComponent(room.id)}`)
   // Один список вариантов для мыши и клавиатуры: сначала преподаватели, потом места.
   const options = [
-    ...teacherHits.map(({ teacher, room, bySubject }) => ({ key: `t-${teacher.name}`, title: shortName(teacher.name), meta: room ? `${room.name}${room.number ? ` №${room.number}` : ''}${bySubject ? ', по предмету' : ''}` : 'Кабинет уточните в учебной части', go: () => goTo(room || rooms.find((item) => item.id === 'academic-office')) })),
+    ...teacherHits.map(({ teacher, room, bySubject }) => ({ key: `t-${teacher.name}`, title: shortName(teacher.name), meta: room ? `${room.name}${room.number ? ` №${room.number}` : ''}${bySubject ? ', по предмету' : ''}` : 'Кабинет уточните в учебной части', go: () => navigate(`/teachers?person=${encodeURIComponent(teacher.name)}`) })),
     ...matches.map((room) => ({ key: room.id, title: `${room.name}${room.number ? ` №${room.number}` : ''}`, meta: `${room.floor} этаж, ${room.category}`, go: () => goTo(room) })),
   ]
   const showList = open && Boolean(query.trim())
@@ -49,7 +50,7 @@ function HomeSearch() {
     event.preventDefault()
     if (showList && options[active]) options[active].go()
     else if (matches[0]) goTo(matches[0])
-    else if (teacherHits[0]?.room) goTo(teacherHits[0].room)
+    else if (teacherHits.length) options[0].go()
     else navigate(`/rooms?q=${encodeURIComponent(query.trim())}`)
   }
   const onKeyDown = (event) => {
@@ -98,7 +99,7 @@ export default function HomePage() {
   const recent = useRecentRoutes()
   const newcomer = !favorites.length && !recent.length
   return <>
-    <section className={`home-hero hero-mesh home-hero-usual home-hero-scene${pickme ? ' home-hero-pickme' : ''}`} id="top">
+    {theme === "v2" ? <EditionHome /> : <section className={`home-hero hero-mesh home-hero-usual home-hero-scene${pickme ? ' home-hero-pickme' : ''}`} id="top">
       {pickme ? <PickmeGarden /> : heroCine ? <Suspense fallback={null}><HeroCine variant={heroCine} /></Suspense> : scene3d && <Suspense fallback={null}><HeroScene /></Suspense>}
       <div className="container home-hero-inner">
         <div className="home-hero-copy">
@@ -117,7 +118,7 @@ export default function HomePage() {
         </div>
         {plainHero && <HeroCaption />}
       </div>
-    </section>
+    </section>}
 
     <div className="landing">
     <HomeCards />

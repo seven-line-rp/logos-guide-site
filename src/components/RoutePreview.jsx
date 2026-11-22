@@ -5,7 +5,7 @@ import { rooms } from '../data.js'
 import { buildRouteOptions, pickRoute } from '../map-routing.js'
 import { roomTitle } from '../places.js'
 import RouteScene from './RouteScene.jsx'
-import { RawText } from './ai-message.js'
+import { RawText } from './raw-text.js'
 
 // Карточка маршрута прямо в ответе ЛОГОС AI: откуда → куда, метры и
 // минуты, а у последнего ответа — живая 3D-карта со стенами.

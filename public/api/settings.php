@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 date_default_timezone_set('Europe/Moscow');
 
-const SITE_THEMES = ['light', 'dark', 'pickme'];
+const SITE_THEMES = ['light', 'dark', 'pickme', 'v2'];
 const BEACONS_MAX = 60;
 const ADMIN_FAILS_PER_HOUR = 10;
 
@@ -70,6 +70,9 @@ function current_settings(): array
 {
     $saved = is_file(stored_file()) ? json_decode((string) file_get_contents(stored_file()), true) : null;
     if (!is_array($saved)) $saved = [];
+    if (isset($saved['themes']) && is_array($saved['themes']) && empty($saved['edition_schema'])) {
+        $saved['themes'][] = 'v2';
+    }
     return ['themes' => clean_themes($saved['themes'] ?? null), 'beacons' => clean_beacons($saved['beacons'] ?? []) ?? []];
 }
 
@@ -128,6 +131,6 @@ if (array_key_exists('beacons', $data)) {
     if ($beacons === null) respond(400, ['error' => 'Проверьте маячки: у каждого нужны имя и помещение, не больше ' . BEACONS_MAX . ' штук.']);
     $settings['beacons'] = $beacons;
 }
-$json = json_encode($settings, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . "\n";
+$json = json_encode($settings + ['edition_schema' => 2], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . "\n";
 if (@file_put_contents(stored_file(), $json, LOCK_EX) === false) respond(500, ['error' => 'Сервер не смог сохранить файл рядом с папкой сайта.']);
 respond(200, ['ok' => true] + $settings);

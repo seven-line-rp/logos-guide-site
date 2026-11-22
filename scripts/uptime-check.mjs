@@ -1,5 +1,5 @@
 // Внешняя проверка сайта: открывает главную, подгружает файлы сборки, смотрит
-// ИИ-эндпоинт и срок сертификата. Запускается по расписанию в GitHub Actions
+// API настроек и срок сертификата. Запускается по расписанию в GitHub Actions
 // (.github/workflows/uptime.yml), то есть снаружи хостинга: если хостинг лёг,
 // сам сайт про это не расскажет. При падении и при восстановлении шлёт
 // сообщение в Telegram (deploy/alerts.md). Без зависимостей, нужен Node 18+.
@@ -60,17 +60,17 @@ export async function checkSite({ siteUrl, fetchImpl = fetch, checkApi = true, s
   }
   if (checkApi && !down.length) {
     try {
-      const api = await get(fetchImpl, `${base}/api/ai-chat.php?health`)
-      if (api.status === 404) warnings.push('ИИ-эндпоинт не найден: не залита папка api')
-      else if (api.status !== 200) warnings.push(`ИИ-эндпоинт отвечает ${api.status}`)
+      const api = await get(fetchImpl, `${base}/api/settings.php`)
+      if (api.status === 404) warnings.push('API настроек не найден: не залита папка api')
+      else if (api.status !== 200) warnings.push(`API настроек отвечает ${api.status}`)
       else {
         let body = null
         try { body = JSON.parse(api.text) } catch { /* не JSON */ }
-        if (!body) warnings.push('ИИ-эндпоинт отвечает не JSON: хостинг не выполняет PHP?')
-        else if (body.ok !== true) warnings.push('ИИ-чат не настроен: нет ключа DeepSeek или расширения curl')
+        if (!body) warnings.push('API настроек отвечает не JSON: хостинг не выполняет PHP?')
+        else if (!Array.isArray(body.themes)) warnings.push('API настроек не настроен')
       }
     } catch (error) {
-      warnings.push(`ИИ-эндпоинт не отвечает (${error.name === 'TimeoutError' ? 'таймаут' : error.message})`)
+      warnings.push(`API настроек не отвечает (${error.name === 'TimeoutError' ? 'таймаут' : error.message})`)
     }
   }
   return { down, warnings, ms }

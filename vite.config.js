@@ -2,10 +2,6 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import localizeJsx from './scripts/localize-jsx.js'
 import { transformAsync } from '@babel/core'
-import { buildKnowledge } from './src/ai-knowledge.js'
-import { BELLS, LUNCH } from './src/bells.js'
-import { HOLIDAYS } from './src/holidays.js'
-import { SITE_VERSION, SITE_VERSION_LABEL } from './src/version.js'
 import { PAGES, pageHtml } from './src/seo.js'
 import { createHash } from 'node:crypto'
 import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
@@ -71,20 +67,6 @@ export default defineConfig({
         filename: id.split('?')[0], configFile: false, babelrc: false,
         parserOpts: { plugins: ['jsx'] }, plugins: [localizeJsx], sourceMaps: true,
       })
-    },
-  }, {
-    // База знаний ИИ-агента рядом с public/api/ai-chat.php (см. deploy/ai-agent.md).
-    name: 'logos-ai-knowledge',
-    apply: 'build',
-    generateBundle() {
-      this.emitFile({ type: 'asset', fileName: 'api/ai-knowledge.txt', source: buildKnowledge() })
-    },
-  }, {
-    // Звонки и версия для рассылки уведомлений по крону (public/api/notify.php, deploy/push.md).
-    name: 'logos-push-meta',
-    apply: 'build',
-    generateBundle() {
-      this.emitFile({ type: 'asset', fileName: 'api/push-meta.json', source: JSON.stringify({ bells: BELLS, lunch: LUNCH, holidays: Object.keys(HOLIDAYS), version: SITE_VERSION, versionLabel: SITE_VERSION_LABEL }) })
     },
   }, prerenderPages(), offlineServiceWorker(), react()],
   server: {

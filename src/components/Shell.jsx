@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { ArrowUpRight, Bell, BookOpen, Building2, Bot, Check, Compass, Flag, Flower2, Gamepad2, GraduationCap, History, Info, LayoutGrid, ListChecks, Map as MapIcon, MapPin, Moon, Navigation, QrCode, Search, Sun, Type, Users, X } from 'lucide-react'
+import { ArrowUpRight, BookOpen, Building2, Check, Compass, Flag, Flower2, Gamepad2, GraduationCap, History, Info, LayoutGrid, ListChecks, Map as MapIcon, MapPin, Moon, Navigation, QrCode, Search, Sun, Type, Users, X } from 'lucide-react'
 import { navigation, quickPlaces, rooms } from '../data'
 import { clearRecentPlaces, nearbyKinds, readRecentPlaces, rememberPlace } from '../places.js'
 import { readHere } from '../route-prefs.js'
@@ -16,7 +16,6 @@ import { startTour } from '../tour-bus.js'
 import { openCookieSettings } from '../consent.js'
 import { SITE_VERSION_LABEL } from '../version.js'
 import { isLitePerf } from '../perf.js'
-import NotificationBell from './NotificationBell.jsx'
 
 const ToastContext = createContext(() => {})
 
@@ -43,7 +42,7 @@ export function useToast() { return useContext(ToastContext) }
 
 // Меню: разделы сгруппированы по задачам человека, а не по устройству сайта.
 // Иконки пунктов верхней навигации (сами пункты — в data.js).
-const navIcons = { '/map': MapIcon, '/route': Navigation, '/rooms': LayoutGrid, '/teachers': Users, '/ai': Bot }
+const navIcons = { '/map': MapIcon, '/route': Navigation, '/rooms': LayoutGrid, '/teachers': Users }
 
 function NavIcon({ to }) {
   const Icon = navIcons[to]
@@ -59,8 +58,6 @@ const menuGroups = [
     { to: '/services', label: 'Пространства', hint: 'Столовая, библиотека, залы', icon: Building2, tone: 'amber' },
   ] },
   { title: 'Учёба', items: [
-    { to: '/ai', label: 'ИИ-помощник', badge: 'АЛЬФА', hint: 'Спросите о чём угодно', icon: Bot, tone: 'violet' },
-    { to: '/notifications', label: 'Уведомления', hint: 'За 5 минут до пары, события', icon: Bell, tone: 'amber' },
     { to: '/start', label: 'Первая неделя', hint: 'Чек-лист для новичков', icon: ListChecks, tone: 'blue' },
   ] },
   { title: 'Ещё', items: [
@@ -69,23 +66,25 @@ const menuGroups = [
     { to: '/games', label: 'Игры', hint: 'Квизы по плану', icon: Gamepad2, tone: 'pink' },
     { to: '/about', label: 'О проекте', hint: 'Команда и идея', icon: Info, tone: 'slate' },
     { to: '/docs', label: 'Документация', hint: 'Как всё устроено', icon: BookOpen, tone: 'slate' },
-    { to: '/feedback', label: 'Сообщить о проблеме', hint: 'Баг, идея, ошибка ИИ', icon: Flag, tone: 'pink' },
+    { to: '/feedback', label: 'Сообщить о проблеме', hint: 'Баг или идея', icon: Flag, tone: 'pink' },
   ] },
 ]
 
 const THEME_LABELS = {
   light: { aria: 'Включить светлую тему', title: 'Светлая тема' },
   dark: { aria: 'Включить тёмную тему', title: 'Тёмная тема' },
+  v2: { aria: 'Включить тему Логос 2.0', title: 'Логос 2.0' },
   pickme: { aria: 'Включить розовую тему «Пикми»', title: 'Тема «Пикми»' },
 }
 
 // Значок на кнопке темы — та тема, которая включится следующей.
-const THEME_ICONS = { light: Sun, dark: Moon, pickme: Flower2 }
+const THEME_ICONS = { light: Sun, dark: Moon, pickme: Flower2, v2: Compass }
 
 // Темы в меню «Ещё». Показываем только включённые в панели /admin/settings.
 const THEME_CHOICES = [
   { id: 'light', label: 'Светлая' },
   { id: 'dark', label: 'Тёмная' },
+  { id: 'v2', label: 'Логос 2.0' },
   { id: 'pickme', label: 'Пикми' },
 ]
 
@@ -142,7 +141,7 @@ function SearchDialog({ open, onClose }) {
   const matches = query.trim() ? searchRooms(query, 7).map((entry) => entry.room) : [...recent, ...popular].slice(0, 7)
   const teacherHits = searchTeachers(teachers, query, 3)
   const items = [
-    ...teacherHits.map(({ teacher, room }) => ({ key: teacher.name, to: room ? resultPath(room) : '/map?floor=1&room=academic-office', room })),
+    ...teacherHits.map(({ teacher, room }) => ({ key: teacher.name, to: `/teachers?person=${encodeURIComponent(teacher.name)}`, room })),
     ...matches.map((room) => ({ key: room.id, to: resultPath(room), room })),
   ]
   const countLabel = matches.length === 1 ? 'место' : matches.length > 1 && matches.length < 5 ? 'места' : 'мест'
@@ -175,7 +174,7 @@ function SearchDialog({ open, onClose }) {
         {!query.trim() && !recent.length && <div className="search-section-label">Часто ищут</div>}
         <div className="search-results" id="search-results" role="listbox" ref={listRef} aria-live="polite">
           {teacherHits.map(({ teacher, room, bySubject }, index) => { const item = items[index]; return <div key={teacher.name} id={`search-item-${index}`} role="option" aria-selected={index === active} className={`search-row ${index === active ? 'is-active' : ''}`}><Link {...itemProps(index, item)} className="search-result search-teacher" to={item.to} onClick={() => { if (room) rememberPlace(room.id); onClose() }}><span className="search-result-icon"><GraduationCap size={16} /></span><span className="search-result-copy"><small>{[teacher.position, (teacher.subjects || []).slice(0, 2).join(', ')].filter(Boolean).join(' · ') || 'Преподаватель'}</small><strong>{shortName(teacher.name)}</strong><em>{room ? `${room.name}${room.number ? ` №${room.number}` : ''}${bySubject ? ', по предмету' : ''}` : 'Кабинет уточните в учебной части'}</em></span></Link>{routeButton(item)}</div> })}
-          {matches.length ? matches.map((room, offset) => { const index = teacherHits.length + offset; const item = items[index]; return <div key={room.id} id={`search-item-${index}`} role="option" aria-selected={index === active} className={`search-row ${index === active ? 'is-active' : ''}`}><Link {...itemProps(index, item)} className="search-result" to={item.to} onClick={() => { rememberPlace(room.id); onClose() }}><span className="search-result-icon">{!query.trim() && recent.includes(room) ? <History size={16} /> : <MapPin size={16} />}</span><span className="search-result-copy"><small>{room.category}, {room.floor} этаж</small><strong>{room.name}{room.number && ` №${room.number}`}</strong></span></Link>{routeButton(item)}</div> }) : teacherHits.length ? null : <div className="search-empty"><span>Такого места не нашли.</span><small>Проверьте номер или попробуйте «библиотека», «столовая». <Link to={`/ai?q=${encodeURIComponent(`Где найти: ${query.trim()}`)}`} onClick={onClose}>Спросить ИИ-помощника</Link></small></div>}
+          {matches.length ? matches.map((room, offset) => { const index = teacherHits.length + offset; const item = items[index]; return <div key={room.id} id={`search-item-${index}`} role="option" aria-selected={index === active} className={`search-row ${index === active ? 'is-active' : ''}`}><Link {...itemProps(index, item)} className="search-result" to={item.to} onClick={() => { rememberPlace(room.id); onClose() }}><span className="search-result-icon">{!query.trim() && recent.includes(room) ? <History size={16} /> : <MapPin size={16} />}</span><span className="search-result-copy"><small>{room.category}, {room.floor} этаж</small><strong>{room.name}{room.number && ` №${room.number}`}</strong></span></Link>{routeButton(item)}</div> }) : teacherHits.length ? null : <div className="search-empty"><span>Такого места не нашли.</span><small>Проверьте номер или попробуйте «библиотека», «столовая».</small></div>}
         </div>
         <div className="search-foot"><span><kbd>↑</kbd><kbd>↓</kbd> выбрать <kbd>Enter</kbd> открыть <kbd>Alt</kbd>+<kbd>Enter</kbd> маршрут</span><span>{matches.length} {countLabel}</span></div>
       </section>
@@ -252,7 +251,6 @@ export function Header() {
         <div className="header-actions">
           <button className="search-trigger" type="button" aria-keyshortcuts="K" onClick={openSearch} aria-label="Найти кабинет"><Search size={17} /><span>Найти место</span><kbd>K</kbd></button>
           {enabledThemes.length > 1 && <button className="theme-toggle header-theme hd-icon" type="button" onClick={changeTheme} aria-label={THEME_LABELS[upcomingTheme].aria} title={THEME_LABELS[upcomingTheme].title}>{(() => { const Icon = THEME_ICONS[upcomingTheme]; return <Icon size={17} /> })()}</button>}
-          <NotificationBell />
           <NavLink className={({ isActive }) => `mobile-map-link ${isActive ? 'mobile-map-link-active' : ''}`} to="/map" aria-label="Открыть карту"><MapPin size={18} /><span>Карта</span></NavLink>
           <button ref={menuToggleRef} className={`mobile-menu-toggle hd-burger ${mobileOpen ? 'is-open' : ''}`} type="button" onClick={() => setMobileOpen((value) => !value)} aria-controls="site-menu" aria-label={mobileOpen ? 'Закрыть меню' : 'Открыть меню'} aria-expanded={mobileOpen}><span className="hd-burger-lines" aria-hidden="true"><i /><i /><i /></span><span className="hd-burger-label">Ещё</span></button>
         </div>
@@ -298,5 +296,5 @@ export function Header() {
 }
 
 export function Footer() {
-  return <footer className="site-footer"><div className="footer-top container"><div className="footer-brand-block"><Brand /><p>Карта, маршруты и всё, что<br />нужно найти в колледже.</p><span className="footer-version">Версия {SITE_VERSION_LABEL}</span></div>{menuGroups.map((group) => <div key={group.title} className="footer-links-group"><span className="footer-label">{group.title}</span>{group.items.map((item) => <Link key={item.to} to={item.to} className="footer-link"><item.icon size={15} aria-hidden="true" />{item.label}</Link>)}</div>)}</div><div className="footer-bottom container"><span>Путеводитель колледжа «Логос»</span><nav className="footer-legal" aria-label="Правовая информация"><Link to="/privacy">Политика конфиденциальности</Link><Link to="/terms">Пользовательское соглашение</Link><Link to="/consent">Согласие на обработку данных</Link><Link to="/privacy#cookies">Cookie</Link><Link to="/notifications">Уведомления</Link><button type="button" onClick={openCookieSettings}>Настройки cookie</button></nav><a href="#top" onClick={(event) => { event.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>Наверх ↑</a></div></footer>
+  return <footer className="site-footer"><div className="footer-top container"><div className="footer-brand-block"><Brand /><p>Карта, маршруты и всё, что<br />нужно найти в колледже.</p><span className="footer-version">Версия {SITE_VERSION_LABEL}</span></div>{menuGroups.map((group) => <div key={group.title} className="footer-links-group"><span className="footer-label">{group.title}</span>{group.items.map((item) => <Link key={item.to} to={item.to} className="footer-link"><item.icon size={15} aria-hidden="true" />{item.label}</Link>)}</div>)}</div><div className="footer-bottom container"><span>Путеводитель колледжа «Логос»</span><nav className="footer-legal" aria-label="Правовая информация"><Link to="/privacy">Политика конфиденциальности</Link><Link to="/terms">Пользовательское соглашение</Link><Link to="/consent">Согласие на обработку данных</Link><Link to="/privacy#cookies">Cookie</Link><button type="button" onClick={openCookieSettings}>Настройки cookie</button></nav><a href="#top" onClick={(event) => { event.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>Наверх ↑</a></div></footer>
 }

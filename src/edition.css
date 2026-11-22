@@ -1,0 +1,56 @@
+[data-edition="v2"] { --edition-blue: #407dff; }
+.edition-track { height: 190svh; background:#141518; --progress:0; }
+.edition-stage { position:sticky; top:0; height:100svh; isolation:isolate; overflow:hidden; display:grid; place-items:center; color:#f6f6f8; background:radial-gradient(ellipse at 62% 48%,#252e40 0%,#191c22 35%,#141518 70%); }
+.edition-instrument,.edition-canvas { position:absolute; inset:0; }
+.edition-instrument { transform:translateX(calc(var(--progress) * -25%)); }
+.edition-copy { position:absolute; z-index:1; text-align:center; width:min(94%,56rem); text-shadow:0 2px 26px #080a10; }
+.edition-copy h1,.edition-copy h2 { color:#fafbff; margin:0; font-size:clamp(4.2rem,9vw,9rem); line-height:.94; letter-spacing:-.075em; font-weight:750; }
+.edition-copy h1 span { display:block; font-size:.43em; letter-spacing:-.045em; margin-top:.18em; }
+.edition-copy p { color:#d3d8e2; max-width:32ch; margin:1.4rem auto; }
+.edition-intro { opacity:clamp(0,1 - var(--progress)*2.4,1); transform:translateY(calc(var(--progress)*-3rem)); }
+.edition-next { opacity:clamp(0,var(--progress)*2.4 - 1.1,1); transform:translateX(calc(18% + (1 - var(--progress))*8%)); }
+.edition-copy[inert] { pointer-events:none; }
+.edition-actions { display:flex; flex-wrap:wrap; gap:.6rem; justify-content:center; margin:1.7rem auto; }
+.edition-actions a { display:inline-flex; align-items:center; gap:.5rem; padding:.8rem 1.2rem; border:1px solid #ffffff55; border-radius:2rem; background:#22262e; color:white; font-weight:600; text-decoration:none; text-shadow:none; }
+.edition-actions a:first-child { background:#305fde; border-color:#527fff; }
+.edition-chevron { position:absolute; bottom:8%; opacity:calc(1 - var(--progress)); }
+.floor-pano { position:relative; background:#232934; }
+.pano-view { height:clamp(350px,60svh,650px); touch-action:none; cursor:grab; }
+.pano-controls { display:flex; align-items:center; justify-content:center; gap:.5rem; flex-wrap:wrap; padding:.75rem; color:#eef2ff; font-size:.85rem; }
+.pano-controls button,.teacher-dismiss { background:#293440; color:white; border:1px solid #657182; border-radius:.7rem; min-width:44px; min-height:44px; }
+.teacher-card:has(.teacher-open) { position:relative; }
+.teacher-open { color:inherit; font:inherit; background:none; border:none; padding:0; text-align:start; cursor:pointer; }
+.teacher-open::after { content:''; position:absolute; inset:0; border-radius:inherit; }
+.teacher-card-actions a { position:relative; }
+.teacher-dialog { border:0; border-radius:1.4rem; padding:0; color:inherit; max-width:min(92vw,35rem); width:100%; max-height:85dvh; background:var(--surface,#fff); }
+.teacher-dialog::backdrop { background:#090d17b8; backdrop-filter:blur(5px); }
+.teacher-dialog .teacher-card { margin:0; padding:2rem; }
+.teacher-dialog .teacher-card-top { padding-right:2.2rem; }
+.teacher-dismiss { position:absolute; z-index:2; top:.7rem; right:.7rem; display:grid; place-items:center; }
+@media(max-width:660px) {
+  .edition-next { transform:none; padding:1rem; }
+  .edition-instrument { transform:translateY(calc(var(--progress)*-18%)); }
+  .edition-next h2 { font-size:4rem; }
+}
+@media(prefers-reduced-motion:no-preference) {
+  [data-edition="v2"] .page-transition { animation:edition-enter .55s cubic-bezier(.2,.75,.2,1) both; }
+  @keyframes edition-enter { from { opacity:.1; translate:0 9px; } to { opacity:1; translate:0 0; } }
+}
+@media(prefers-reduced-motion:reduce) {
+  .edition-instrument,.edition-copy { transform:none; }
+}
+@supports (animation-timeline:view()) {
+  @media(prefers-reduced-motion:no-preference) {
+    [data-edition="v2"] :is(.legal-body > section,.quick-places,.directory-results-head,.section-top) {
+      animation:edition-reveal linear both;
+      animation-timeline:view();
+      animation-range:entry 0% entry 90%;
+    }
+    @keyframes edition-reveal { from { opacity:.45; translate:0 1rem; } to { opacity:1; translate:0 0; } }
+  }
+}
+.edition-instrument:not(:has(canvas))::before {
+  content:''; position:absolute; inset:50% auto auto 50%; width:min(78vw,70svh); aspect-ratio:1;
+  border:5px double #6b7b93; border-radius:50%; transform:translate(-50%,-50%) rotate(-12deg) scaleY(.93);
+  background:radial-gradient(circle,#222a38 62%,transparent 63% 66%,#26303d 67%),repeating-conic-gradient(#8a9bb6 0deg 1deg,#222936 1deg 6deg);
+}
