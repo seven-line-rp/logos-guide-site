@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import * as T from 'three'
 import { floorWalls } from '../hero-scene-model.js'
 import { circulation, pointInPolygon, roomAccess } from '../map-geometry.js'
+import { corridorFinish, furnishHall } from './panorama-interior.js'
 import { rooms } from '../data.js'
 
 export default function FloorPanorama({ floor, onExit }) {
@@ -12,31 +13,43 @@ export default function FloorPanorama({ floor, onExit }) {
     const el = host.current
     let renderer
     try { renderer = new T.WebGLRenderer({ antialias: true }) } catch { setFailed(true); return }
+    renderer.toneMapping = T.ACESFilmicToneMapping
+    renderer.toneMappingExposure = 1.23
     el.append(renderer.domElement)
     renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5))
     const scene = new T.Scene()
     scene.background = new T.Color(0x252b36)
-    scene.fog = new T.FogExp2(0x303b4c, 0.006)
+    scene.fog = new T.FogExp2(0x92999f, 0.0036)
     const camera = new T.PerspectiveCamera(74, 1, 0.2, 720)
     camera.position.set(74, 9, 168)
     let yaw = Math.PI / 2, pitch = 0
-    const wall = new T.MeshStandardMaterial({ color: 0x8b96a4 })
-    const door = new T.MeshStandardMaterial({ color: 0x234e92 })
-    const ground = new T.MeshStandardMaterial({ color: 0x424951 })
+    const wall = corridorFinish(0xd2cdc1)
+    const door = new T.MeshStandardMaterial({ color: 0x78563f })
+    const trim = new T.MeshStandardMaterial({color:0x4e5355,roughness:.44})
+    const rail = new T.MeshStandardMaterial({color:0xb7b6ab,metalness:.55,roughness:.29})
+    const boxes = new Map()
+    const unitBox = new T.BoxGeometry(1,1,1)
     function box(w,h,d,x,y,z,mat,angle = 0) {
-      const object = new T.Mesh(new T.BoxGeometry(w,h,d), mat)
-      object.position.set(x,y,z); object.rotation.y = angle; scene.add(object)
+      const object = new T.Object3D()
+      object.scale.set(w,h,d); object.position.set(x,y,z); object.rotation.y = angle; object.updateMatrix()
+      if (!boxes.has(mat)) boxes.set(mat,[])
+      boxes.get(mat).push(object.matrix)
     }
-    box(680,1,530,305,-0.5,240,ground)
+    const blockedByFurniture = furnishHall(scene,floor)
     box(680,1,530,305,21,240,wall)
     for (const segment of floorWalls(floor)) {
       const a = segment.angle * Math.PI / 180
-      box(segment.length,20,0.65,segment.x + Math.cos(a)*segment.length/2,10,segment.y + Math.sin(a)*segment.length/2,wall,-a)
+      const x = segment.x + Math.cos(a)*segment.length/2, z = segment.y + Math.sin(a)*segment.length/2
+      box(segment.length,20,.65,x,10,z,wall,-a)
+      box(segment.length,.75,.84,x,.38,z,trim,-a)
+      box(segment.length,.22,.77,x,6.3,z,rail,-a)
     }
     for (const room of rooms.filter(room => room.floor === floor && roomAccess[room.id])) {
       const {door: [x,z], branch} = roomAccess[room.id]
       const side = branch === 'west'
-      box(side ? 1.1 : 7,14,side ? 7 : 1.1,x,7,z,door)
+      box(side ? 1.2 : 7.65,14.45,side ? 7.65 : 1.2,x,7.22,z,trim)
+      box(side ? 1.4 : 7,14,side ? 7 : 1.4,x,7,z,door)
+      box(side ? 1.8 : .85,.28,side ? .85 : 1.8,x+(side?0:2.5),6.4,z+(side?2.5:0),rail)
       const canvas = document.createElement('canvas')
       canvas.width = 512; canvas.height = 80
       const ctx = canvas.getContext('2d')
@@ -50,10 +63,25 @@ export default function FloorPanorama({ floor, onExit }) {
       label.scale.set(12,2.4,1)
       scene.add(label)
     }
-    scene.add(new T.HemisphereLight(0xe1edff,0xa2afbd,2.2))
+    for (const [material, matrices] of boxes) {
+      const batch = new T.InstancedMesh(unitBox,material,matrices.length)
+      matrices.forEach((matrix,i) => batch.setMatrixAt(i,matrix)); scene.add(batch)
+    }
+    scene.add(new T.HemisphereLight(0xfff1d8,0x828eaa,1.55))
+    const lamps = Array.from({length:2},() => new T.PointLight(0xffe7bd,200,65,1.6))
+    scene.add(...lamps)
     const light = new T.DirectionalLight(0xe8f0ff,1.8)
     light.position.set(3,5,-1); scene.add(light)
     function draw() {
+      const west = camera.position.z > 185 && camera.position.x < 91
+      const axis = west ? camera.position.z : camera.position.x
+      const span = west ? 46 : 45, start = west ? 206 : 24
+      const cell = (axis-start)/span, fraction=cell-Math.floor(cell)
+      lamps.forEach((light,i) => {
+        const at = start+(Math.floor(cell)+i)*span
+        light.position.set(west?74:at,19,west?at:168)
+        light.intensity = 300*(i?fraction:1-fraction)
+      })
       camera.lookAt(camera.position.x + Math.sin(yaw)*Math.cos(pitch),camera.position.y + Math.sin(pitch),camera.position.z - Math.cos(yaw)*Math.cos(pitch))
       renderer.render(scene,camera)
     }
@@ -62,7 +90,7 @@ export default function FloorPanorama({ floor, onExit }) {
       for (let i = 0; i < Math.abs(steps); i++) {
         const x = camera.position.x + Math.sign(steps)*Math.sin(yaw)
         const z = camera.position.z - Math.sign(steps)*Math.cos(yaw)
-        if (!circulation[floor].some(polygon => pointInPolygon([x,z],polygon))) break
+        if (blockedByFurniture(x,z) || !circulation[floor].some(polygon => pointInPolygon([x,z],polygon))) break
         camera.position.set(x,9,z)
       }
       draw()
@@ -88,8 +116,10 @@ export default function FloorPanorama({ floor, onExit }) {
     return () => {
       actions.current = null; observer.disconnect()
       Object.entries(events).forEach(([name,fn]) => el.removeEventListener(name,fn))
-      scene.traverse(obj => { obj.geometry?.dispose(); if (obj.isSprite) { obj.material.map.dispose(); obj.material.dispose() } })
-      for (const mat of [ground,door,wall]) mat.dispose()
+      const surfaces=new Set(), shapes=new Set()
+      scene.traverse(obj => { if (obj.geometry) shapes.add(obj.geometry); if (obj.material) surfaces.add(obj.material); if (obj.isInstancedMesh) obj.dispose() })
+      for (const shape of shapes) shape.dispose()
+      for (const mat of surfaces) { mat.map?.dispose(); mat.dispose() }
       renderer.dispose(); renderer.domElement.remove()
     }
   }, [floor])
