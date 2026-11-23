@@ -32,7 +32,8 @@ export default function CompassScene({ progress }) {
     const clock = new T.Clock()
     function draw() {
       const position = motion.matches ? Math.round(progress.current) : progress.current
-      const breathe = motion.matches ? 0 : Math.sin(clock.getElapsedTime()*.65)
+      const t = clock.getElapsedTime()
+      const breathe = motion.matches ? 0 : Math.sin(t*.65)
       const mobile = root.clientWidth < 700
       const halfHeight = camera.position.z * Math.tan(T.MathUtils.degToRad(16))
       models.forEach((model,i) => {
@@ -40,12 +41,12 @@ export default function CompassScene({ progress }) {
         model.visible = Math.abs(d)<.86
         if (!model.visible) return
         const away = T.MathUtils.smoothstep(Math.abs(d),.12,.86)
-        model.scale.setScalar((1-away)* (i===2 ? 1.16 : 1))
+        model.scale.setScalar((1-away)* (i===2 ? 1.16 : i===0 ? (mobile ? .94 : 1.19) : 1))
         model.position.set((i && !mobile ? -.45*halfHeight*camera.aspect : 0) - d*1.8,
-          (mobile ? halfHeight*.32 : i ? 0 : halfHeight*.13) + d*.55, -away*2)
+          (i === 0 ? 0 : mobile ? halfHeight*.20 : 0) + d*.55, -away*2)
       })
-      compass.group.rotation.set(.32 + position*.24 + breathe*.035,-.35-position*.58 + breathe*.06,-.12 + breathe*.028)
-      compass.needle.rotation.z = -.61-position*2.65 + (motion.matches ? 0 : Math.sin(clock.elapsedTime*.82)*.075)
+      compass.group.rotation.set(.52 + position*.21 + breathe*.045,-.22-position*.55 + Math.sin(t*.43)*.085,-.16 + breathe*.025)
+      compass.needle.rotation.z = -.61-position*2.65 + (motion.matches ? 0 : Math.sin(t*.82)*.095)
       elevator.group.rotation.set(.10,-.31+(position-1)*.3,-.025)
       const open=T.MathUtils.smoothstep(position,.75,1.23)*.91
       elevator.doors.forEach((leaf,i) => { leaf.scale.x=1-open; leaf.position.x=(i?1:-1)*(.65+.64*open) })
