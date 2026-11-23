@@ -57,7 +57,7 @@ export default function CompassScene({ progress }) {
         model.position.set((i && !mobile ? -.45*halfHeight*camera.aspect : 0) - d*1.8,
           (i === 0 ? 0 : mobile ? halfHeight*.20 : 0) + d*.55, -away*2)
       })
-      const fly=T.MathUtils.smoothstep(position,.12,.82)
+      const fly=T.MathUtils.smoothstep(position,.12,.65)*(1-T.MathUtils.smoothstep(position,.78,1.16))
       camera.position.z=Math.max(4.8,Math.max(9.3,8.45/camera.aspect)-fly*3.9)
       camera.position.x=fly*.55
       camera.position.y=fly*.18
