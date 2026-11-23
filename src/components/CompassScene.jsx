@@ -24,6 +24,18 @@ export default function CompassScene({ progress }) {
     const compass = compassModel(), elevator = elevatorModel(), books = booksModel()
     const models = [compass.group, elevator.group, books]
     scene.add(...models)
+    const positions=new Float32Array(180*3)
+    for(let i=0;i<180;i++){
+      const a=i*2.399963,r=2.5+Math.sqrt(i/180)*9
+      positions[i*3]=Math.cos(a)*r
+      positions[i*3+1]=Math.sin(a)*r*.62
+      positions[i*3+2]=-3-(i%11)*.42
+    }
+    const pointsGeometry=new T.BufferGeometry()
+    pointsGeometry.setAttribute('position',new T.BufferAttribute(positions,3))
+    const pointsMaterial=new T.PointsMaterial({color:0x7fa9ff,size:.027,transparent:true,opacity:.55,depthWrite:false})
+    const particles=new T.Points(pointsGeometry,pointsMaterial)
+    scene.add(particles)
     for (const [color,power,x,y,z] of [[0xffeedc,2.7,-3,5,5],[0x2669ff,5,4,1,2],[0xc6ddff,2,-2,-1,-3]]) {
       const lamp = new T.DirectionalLight(color,power)
       lamp.position.set(x,y,z); scene.add(lamp)
@@ -45,6 +57,12 @@ export default function CompassScene({ progress }) {
         model.position.set((i && !mobile ? -.45*halfHeight*camera.aspect : 0) - d*1.8,
           (i === 0 ? 0 : mobile ? halfHeight*.20 : 0) + d*.55, -away*2)
       })
+      const fly=T.MathUtils.smoothstep(position,.12,.82)
+      camera.position.z=Math.max(4.8,Math.max(9.3,8.45/camera.aspect)-fly*3.9)
+      camera.position.x=fly*.55
+      camera.position.y=fly*.18
+      camera.lookAt(0,0,0)
+      particles.rotation.z=motion.matches ? 0 : t*.006
       compass.group.rotation.set(.52 + position*.21 + breathe*.045,-.22-position*.55 + Math.sin(t*.43)*.085,-.16 + breathe*.025)
       compass.needle.rotation.z = -.61-position*2.65 + (motion.matches ? 0 : Math.sin(t*.82)*.095)
       elevator.group.rotation.set(.10,-.31+(position-1)*.3,-.025)
