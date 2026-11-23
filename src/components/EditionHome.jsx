@@ -22,11 +22,15 @@ export default function EditionHome() {
       const active = Math.round(value)
       panels.forEach((panel, i) => {
         const delta = Math.min(1, Math.abs(i - value))
-        panel.style.opacity = Math.max(0, 1 - delta * 2.25)
+        const proximity = Math.max(0, 1 - delta)
+        panel.style.opacity = (proximity * proximity * (3 - 2 * proximity)).toFixed(3)
+        panel.style.filter = 'blur(' + ((1-proximity)*5) + 'px)'
+        panel.style.translate = '0 ' + ((i-value)*12) + 'px'
         panel.inert = i !== active
         nav.current.children[i].setAttribute('aria-current', i === active ? 'step' : 'false')
       })
       el.dataset.chapter = active
+      el.style.setProperty('--progress', String(value / 2))
     }
     update()
     window.addEventListener('scroll', update, { passive: true })
