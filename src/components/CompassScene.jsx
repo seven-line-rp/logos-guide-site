@@ -24,6 +24,39 @@ export default function CompassScene({ progress }) {
     const compass = compassModel(), elevator = elevatorModel(), books = booksModel()
     const models = [compass.group, elevator.group, books]
     scene.add(...models)
+    const positions=new Float32Array(180*3)
+    for(let i=0;i<180;i++){
+      const a=i*2.399963,r=2.5+Math.sqrt(i/180)*9
+      positions[i*3]=Math.cos(a)*r
+      positions[i*3+1]=Math.sin(a)*r*.62
+      positions[i*3+2]=-3-(i%11)*.42
+    }
+    const pointsGeometry=new T.BufferGeometry()
+    pointsGeometry.setAttribute('position',new T.BufferAttribute(positions,3))
+    const pointsMaterial=new T.PointsMaterial({color:0x7fa9ff,size:.027,transparent:true,opacity:.55,depthWrite:false})
+    const particles=new T.Points(pointsGeometry,pointsMaterial)
+    scene.add(particles)
+    // One continuous glowing route ties the three objects together.
+    const routeCurve=new T.CatmullRomCurve3([
+      new T.Vector3(-3.8,-1.75,-1.6),
+      new T.Vector3(-1.9,-1.05,-1.15),
+      new T.Vector3(-.65,-.85,-.95),
+      new T.Vector3(.45,-.15,-1.2),
+      new T.Vector3(1.55,.5,-1.65),
+      new T.Vector3(3.9,1.15,-2.2)
+    ])
+    const route=new T.Group()
+    const routeMaterial=new T.MeshBasicMaterial({color:0x62a2ff,transparent:true,opacity:.6,depthWrite:false})
+    route.add(new T.Mesh(new T.TubeGeometry(routeCurve,140,.018,8,false),routeMaterial))
+    const routeHalo=new T.Mesh(
+      new T.TubeGeometry(routeCurve,140,.075,8,false),
+      new T.MeshBasicMaterial({color:0x2769f4,transparent:true,opacity:.13,depthWrite:false})
+    )
+    route.add(routeHalo)
+    const marker=new T.Mesh(new T.SphereGeometry(.075,16,12),
+      new T.MeshBasicMaterial({color:0xc4e4ff}))
+    route.add(marker)
+    scene.add(route)
     for (const [color,power,x,y,z] of [[0xffeedc,2.7,-3,5,5],[0x2669ff,5,4,1,2],[0xc6ddff,2,-2,-1,-3]]) {
       const lamp = new T.DirectionalLight(color,power)
       lamp.position.set(x,y,z); scene.add(lamp)
@@ -35,21 +68,47 @@ export default function CompassScene({ progress }) {
       const t = clock.getElapsedTime()
       const breathe = motion.matches ? 0 : Math.sin(t*.65)
       const mobile = root.clientWidth < 700
-      const halfHeight = camera.position.z * Math.tan(T.MathUtils.degToRad(16))
-      models.forEach((model,i) => {
-        const d = position-i
-        model.visible = Math.abs(d)<.86
-        if (!model.visible) return
-        const away = T.MathUtils.smoothstep(Math.abs(d),.12,.86)
-        model.scale.setScalar((1-away)* (i===2 ? 1.16 : i===0 ? (mobile ? .94 : 1.19) : 1))
-        model.position.set((i && !mobile ? -.45*halfHeight*camera.aspect : 0) - d*1.8,
-          (i === 0 ? 0 : mobile ? halfHeight*.20 : 0) + d*.55, -away*2)
+      // Continuously blend neighboring chapters rather than toggling models.
+      // The same scene, lights, camera and route persist for the whole scroll.
+      const smooth = x => {const u=T.MathUtils.clamp(x,0,1);return u*u*(3-2*u)}
+      const sceneTransition=smooth(position%1)
+      const anchor=position<1 ? 0 : 1
+      const blend=anchor+sceneTransition
+      const baseZ=Math.max(9.3,8.45/camera.aspect)
+      const travel=smooth(position/2)
+      const close= Math.sin(Math.PI*T.MathUtils.clamp(position,0,2)/2)**2
+      camera.position.set(
+        (mobile ? 0 : -.38)*travel + .18*Math.sin(Math.PI*position),
+        .14*travel,
+        baseZ-1.1*close
+      )
+      camera.lookAt(0,0,0)
+      const halfHeight=baseZ*Math.tan(T.MathUtils.degToRad(16))
+      const positionsX=mobile ? [0,0,0] : [0,-.42*halfHeight*camera.aspect,-.42*halfHeight*camera.aspect]
+      models.forEach((model,i)=>{
+        const distance=Math.abs(position-i)
+        // Wider overlapping envelopes leave both objects visible at transitions.
+        const envelope=1-smooth((distance-.24)/.94)
+        model.visible=envelope>.002
+        if(!model.visible)return
+        const natural=i===0 ? (mobile?.94:1.19) : i===2 ? 1.16 : 1
+        model.scale.setScalar(natural*(.04+.96*envelope))
+        model.position.set(positionsX[i]+(i-position)*1.1,
+          (i===0?0:mobile?halfHeight*.2:0)+(i-position)*.23,
+          -1.25*(1-envelope))
       })
-      compass.group.rotation.set(.52 + position*.21 + breathe*.045,-.22-position*.55 + Math.sin(t*.43)*.085,-.16 + breathe*.025)
-      compass.needle.rotation.z = -.61-position*2.65 + (motion.matches ? 0 : Math.sin(t*.82)*.095)
+      const pathProgress=smooth(position/2)
+      marker.position.copy(routeCurve.getPoint(pathProgress))
+      route.rotation.y=motion.matches ? 0 : .025*Math.sin(t*.25)
+      route.position.y=mobile ? -1.25 : -.65
+      route.scale.setScalar(mobile?.66:1)
+      particles.rotation.z=motion.matches ? 0 : t*.006
+      particles.position.x=-travel*.7
+      compass.group.rotation.set(.52+position*.21+breathe*.045,-.22-position*.55+Math.sin(t*.43)*.085,-.16+breathe*.025)
+      compass.needle.rotation.z=-.61-position*2.65+(motion.matches?0:Math.sin(t*.82)*.095)
       elevator.group.rotation.set(.10,-.31+(position-1)*.3,-.025)
-      const open=T.MathUtils.smoothstep(position,.75,1.23)*.91
-      elevator.doors.forEach((leaf,i) => { leaf.scale.x=1-open; leaf.position.x=(i?1:-1)*(.65+.64*open) })
+      const open=smooth((position-.67)/.65)*.91
+      elevator.doors.forEach((leaf,i)=>{leaf.scale.x=1-open;leaf.position.x=(i?1:-1)*(.65+.64*open)})
       books.rotation.set(.45,-.36+(position-2)*.45,-.11)
       renderer.render(scene,camera)
     }
