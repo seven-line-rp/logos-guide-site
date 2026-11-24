@@ -57,7 +57,7 @@ export default function CompassScene({ progress }) {
       new T.MeshBasicMaterial({color:0xc4e4ff}))
     route.add(marker)
     scene.add(route)
-    for (const [color,power,x,y,z] of [[0xffeedc,2.7,-3,5,5],[0x2669ff,5,4,1,2],[0xc6ddff,2,-2,-1,-3]]) {
+    for (const [color,power,x,y,z] of [[0xffeedc,2.7,-3,5,5],[0xb9cdff,3,4,1,2],[0xc6ddff,2,-2,-1,-3]]) {
       const lamp = new T.DirectionalLight(color,power)
       lamp.position.set(x,y,z); scene.add(lamp)
     }
@@ -71,9 +71,6 @@ export default function CompassScene({ progress }) {
       // Continuously blend neighboring chapters rather than toggling models.
       // The same scene, lights, camera and route persist for the whole scroll.
       const smooth = x => {const u=T.MathUtils.clamp(x,0,1);return u*u*(3-2*u)}
-      const sceneTransition=smooth(position%1)
-      const anchor=position<1 ? 0 : 1
-      const blend=anchor+sceneTransition
       const baseZ=Math.max(9.3,8.45/camera.aspect)
       const travel=smooth(position/2)
       const close= Math.sin(Math.PI*T.MathUtils.clamp(position,0,2)/2)**2
@@ -91,20 +88,21 @@ export default function CompassScene({ progress }) {
         const envelope=1-smooth((distance-.24)/.94)
         model.visible=envelope>.002
         if(!model.visible)return
-        const natural=i===0 ? (mobile?.94:1.19) : i===2 ? 1.16 : 1
+        const natural=i===0 ? (mobile?.92:.84) : i===2 ? 1.16 : 1
         model.scale.setScalar(natural*(.04+.96*envelope))
         model.position.set(positionsX[i]+(i-position)*1.1,
-          (i===0?0:mobile?halfHeight*.2:0)+(i-position)*.23,
+          (i===0?(mobile?-.15:-.40):mobile?halfHeight*.2:0)+(i-position)*.23,
           -1.25*(1-envelope))
       })
       const pathProgress=smooth(position/2)
+      route.visible=particles.visible=position>.32
       marker.position.copy(routeCurve.getPoint(pathProgress))
       route.rotation.y=motion.matches ? 0 : .025*Math.sin(t*.25)
       route.position.y=mobile ? -1.25 : -.65
       route.scale.setScalar(mobile?.66:1)
       particles.rotation.z=motion.matches ? 0 : t*.006
       particles.position.x=-travel*.7
-      compass.group.rotation.set(.52+position*.21+breathe*.045,-.22-position*.55+Math.sin(t*.43)*.085,-.16+breathe*.025)
+      compass.group.rotation.set(.24+position*.21+breathe*.025,-.48-position*.4+breathe*.035,-.40+breathe*.02)
       compass.needle.rotation.z=-.61-position*2.65+(motion.matches?0:Math.sin(t*.82)*.095)
       elevator.group.rotation.set(.10,-.31+(position-1)*.3,-.025)
       const open=smooth((position-.67)/.65)*.91

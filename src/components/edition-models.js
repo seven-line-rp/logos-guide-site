@@ -32,42 +32,36 @@ function lettering(parent,text,width,height,x,y,z,color='#e5edfa') {
 }
 export function compassModel() {
   const group=new T.Group(), needle=new T.Group()
-  const chrome=finish(0xc4cedb,.98,.12), black=finish(0x111923,.86,.24)
-  const gold=finish(0xc5a875,.93,.22), titanium=finish(0x536779,.94,.17)
-  disc(group,2.08,.55,black,-.14)
-  // Machined bezel with layered metal trim and visible fasteners.
-  for(const [r,t,z,material] of [[2.105,.075,.145,gold],[2.01,.032,.255,chrome],[1.93,.018,.263,titanium],[2.075,.038,-.31,chrome]]) part(group,new T.TorusGeometry(r,t,16,160),material,0,0,z)
-  for(let i=0;i<12;i++){
-    const a=i*Math.PI/6
-    const screw=part(group,new T.CylinderGeometry(.047,.047,.024,20),titanium,2.045*Math.sin(a),2.045*Math.cos(a),.245)
-    screw.rotation.x=Math.PI/2
+  const chrome=finish(0xd8e0ed,.96,.17), steel=finish(0x9ba8bb,.91,.25)
+  disc(group,2.04,.38,steel,-.08)
+  for (const [radius,tube,z] of [[2.02,.078,.13],[1.94,.026,.17],[2.015,.035,-.26]]) {
+    part(group,new T.TorusGeometry(radius,tube,16,160),chrome,0,0,z)
   }
-  for (const [r,t,z] of [[2.02,.12,.17],[2.04,.065,-.36],[1.86,.032,.19]]) {
-    part(group,new T.TorusGeometry(r,t,12,128),chrome,0,0,z)
-  }
+  const crown=part(group,new T.CylinderGeometry(.17,.22,.3,40),steel,0,2.14,-.06)
+  part(group,new T.TorusGeometry(.47,.065,20,96),chrome,0,crown.position.y+.54,-.06)
   disc(group,1.94,.1,finish(0x111b28,.47,.38),.09)
   print(group,3.82,3.82,(ctx,w) => {
     ctx.translate(w/2,w/2)
     for(let i=0;i<180;i++){
       ctx.save();ctx.rotate(i*Math.PI/90)
-      ctx.fillStyle=i%15===0?'#80acff':'#cad6e4'
+      ctx.fillStyle=i%15===0?'#f2f5fb':'#cad6e4'
       ctx.fillRect(-1.6,-485,i%15===0?5:2,i%5===0?37:15)
       if(i%15===0){ctx.textAlign='center';ctx.font='bold 26px sans-serif';ctx.fillText(String(i*2),0,-405)}
       ctx.restore()
     }
     ctx.textAlign='center';ctx.font='600 65px sans-serif'
     for(const [label,x,y] of [['N',0,-280],['S',0,325],['W',-311,22],['E',311,22]]) {
-      ctx.fillStyle=label==='N'?'#629aff':'#b7c1cc';ctx.fillText(label,x,y)
+      ctx.fillStyle=label==='N'?'#f2f5fb':'#b7c1cc';ctx.fillText(label,x,y)
     }
   },0,0,.149)
   group.add(needle)
-  for(const [dir,color] of [[1,0x2368ef],[-1,0xc6d0dc]]){
+  for(const [dir,color] of [[1,0xd82b38],[-1,0xc6d0dc]]){
     const geometry=new T.ConeGeometry(.29,1.67,6)
-    const blade=part(needle,geometry,finish(color,.79,.19),0,dir*.8,.29)
+    const blade=part(needle,geometry,finish(color,.32,.25),0,dir*.8,.29)
     blade.rotation.y=Math.PI/4;blade.rotation.z=dir===1?0:Math.PI
     blade.scale.z=.61
   }
-  disc(needle,.18,.2,gold,.43)
+  disc(needle,.18,.2,steel,.43)
   disc(group,.085,.04,chrome,.55)
   const glass=new T.MeshPhysicalMaterial({color:0xbdd7f3,metalness:.12,roughness:.09,clearcoat:1,transparent:true,opacity:.085,depthWrite:false})
   disc(group,1.91,.048,glass,.51)
