@@ -273,23 +273,3 @@
 .hd-seg.hd-seg-themes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .hd-seg-themes button { justify-content: center; padding: 0 8px; }
 .hd-seg-themes .nav-badge { margin-left: 2px; }
-
-/* Frosted navigation in Logos 2.0 */
-[data-edition="v2"] .hd.site-header{
- background:rgba(5,12,25,.79);border-bottom:1px solid rgba(150,188,255,.13);
- -webkit-backdrop-filter:blur(24px) saturate(160%);backdrop-filter:blur(24px) saturate(160%)
-}
-[data-edition="v2"] .hd.site-header.scrolled{
- background:rgba(6,15,30,.93);border-bottom-color:rgba(150,188,255,.23);box-shadow:0 14px 40px rgba(0,0,0,.28)
-}
-[data-edition="v2"] .hd .brand-copy strong{letter-spacing:.02em;font-size:19px}
-@media(min-width:1221px){
- [data-edition="v2"] .hd .desktop-nav{
- background:rgba(26,43,73,.62);border-color:rgba(176,206,255,.18);
- -webkit-backdrop-filter:blur(22px);backdrop-filter:blur(22px)
- }
- [data-edition="v2"] .hd .nav-link{font-size:15px;letter-spacing:0}
- [data-edition="v2"] .hd .nav-link-active{
- color:#f7faff;background:rgba(47,98,194,.55);box-shadow:inset 0 1px rgba(255,255,255,.12),0 0 24px rgba(59,119,255,.17)
- }
-}

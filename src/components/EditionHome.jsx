@@ -1,10 +1,10 @@
 import { lazy, Suspense, useLayoutEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowUpRight } from 'lucide-react'
+import { ArrowUpRight, Compass, Map as MapIcon } from 'lucide-react'
 
 const CompassScene = lazy(() => import('./CompassScene.jsx'))
 const chapters = [
-  { name: 'Ориентиры', title: 'Логос', subtitle: 'Путеводитель', text: 'Найди нужный кабинет, открой карту колледжа и проложи маршрут — уверенно, с первого шага.', links: [['Открыть карту', '/map'], ['Найти кабинет', '/rooms']] },
+  { name: 'Ориентиры', title: 'Логос', subtitle: 'Путеводитель', text: 'Найдите кабинет по номеру, названию или фамилии преподавателя. Откройте его на карте и постройте маршрут.', links: [['Начать путешествие', '/rooms'], ['Открыть карту', '/map']] },
   { name: 'Между этажами', title: 'На этаж выше', text: 'От входа до нужной аудитории — понятный маршрут с выбором лестницы или лифта и голосовыми подсказками на поворотах.', links: [['Построить маршрут', '/route'], ['Лифт на карте', '/map?floor=1&room=lift-1']] },
   { name: 'Библиотека', title: 'В читальный зал', text: 'Библиотека на втором этаже, кабинет №214. Открывай любимые места преподавателей и находи свой путь по колледжу.', links: [['В библиотеку', '/route?to=library-214'], ['Преподаватели', '/teachers']] },
 ]
@@ -46,9 +46,9 @@ export default function EditionHome() {
     <div className="edition-stage">
       <div className="edition-instrument" aria-hidden="true"><Suspense fallback={null}><CompassScene progress={progress} /></Suspense></div>
       {chapters.map(({title, subtitle, text, links}, i) => <div className={'edition-copy ' + (i ? 'edition-side' : 'edition-intro')} key={title}>
-        {i ? <h2>{title}</h2> : <h1>{title}<span>{subtitle}</span></h1>}
+        {i ? <h2>{title}</h2> : <h1><img src="/art/logos-wordmark.svg" alt={title} width="479" height="64" /><span>{subtitle}</span></h1>}
         <p>{text}</p>
-        <div className="edition-actions">{links.map(([label, url], j) => <Link to={url} key={url}>{label}{!j && <ArrowUpRight size={16} />}</Link>)}</div>
+        <div className="edition-actions">{links.map(([label, url], j) => <Link to={url} key={url}>{label}{i === 0 ? (j === 0 ? <Compass size={18} /> : <MapIcon size={18} />) : !j && <ArrowUpRight size={16} />}</Link>)}</div>
       </div>)}
       <nav className="edition-index" aria-label="Сцены путеводителя" ref={nav}>{chapters.map(({name},i) => <button type="button" key={name} onClick={() => jump(i)}>{name}</button>)}</nav>
     </div>
