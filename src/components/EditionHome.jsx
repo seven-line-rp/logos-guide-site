@@ -44,9 +44,12 @@ export default function EditionHome() {
   }
   return <section className="edition-track" ref={track} id="top">
     <div className="edition-stage">
-      <div className="edition-instrument" aria-hidden="true"><Suspense fallback={null}><CompassScene progress={progress} /></Suspense></div>
+      <div className="edition-instrument" aria-hidden="true">
+        <Suspense fallback={null}><CompassScene progress={progress} /></Suspense>
+        <img className="edition-compass" src="/art/edition-compass.webp" alt="" fetchPriority="high" />
+      </div>
       {chapters.map(({title, subtitle, text, links}, i) => <div className={'edition-copy ' + (i ? 'edition-side' : 'edition-intro')} key={title}>
-        {i ? <h2>{title}</h2> : <h1><img src="/art/logos-wordmark.svg" alt={title} width="479" height="64" /><span>{subtitle}</span></h1>}
+        {i ? <h2>{title}</h2> : <h1><img src="/art/logos-wordmark.svg" alt={title + " " + subtitle} width="722" height="146" /></h1>}
         <p>{text}</p>
         <div className="edition-actions">{links.map(([label, url], j) => <Link to={url} key={url}>{label}{i === 0 ? (j === 0 ? <Compass size={18} /> : <MapIcon size={18} />) : !j && <ArrowUpRight size={16} />}</Link>)}</div>
       </div>)}

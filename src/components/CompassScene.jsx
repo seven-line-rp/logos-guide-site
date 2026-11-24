@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import * as T from 'three'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
-import { booksModel, compassModel, elevatorModel } from './edition-models.js'
+import { booksModel, elevatorModel } from './edition-models.js'
 
 export default function CompassScene({ progress }) {
   const host = useRef(null)
@@ -21,8 +21,8 @@ export default function CompassScene({ progress }) {
     scene.environment = reflection.texture
     rig.dispose(); pmrem.dispose()
     const camera = new T.PerspectiveCamera(32, 1, .1, 40)
-    const compass = compassModel(), elevator = elevatorModel(), books = booksModel()
-    const models = [compass.group, elevator.group, books]
+    const elevator = elevatorModel(), books = booksModel()
+    const models = [elevator.group, books]
     scene.add(...models)
     const positions=new Float32Array(180*3)
     for(let i=0;i<180;i++){
@@ -66,7 +66,6 @@ export default function CompassScene({ progress }) {
     function draw() {
       const position = motion.matches ? Math.round(progress.current) : progress.current
       const t = clock.getElapsedTime()
-      const breathe = motion.matches ? 0 : Math.sin(t*.65)
       const mobile = root.clientWidth < 700
       // Continuously blend neighboring chapters rather than toggling models.
       // The same scene, lights, camera and route persist for the whole scroll.
@@ -81,17 +80,18 @@ export default function CompassScene({ progress }) {
       )
       camera.lookAt(0,0,0)
       const halfHeight=baseZ*Math.tan(T.MathUtils.degToRad(16))
-      const positionsX=mobile ? [0,0,0] : [0,-.42*halfHeight*camera.aspect,-.42*halfHeight*camera.aspect]
-      models.forEach((model,i)=>{
+      const modelX = mobile ? 0 : -.42 * halfHeight * camera.aspect
+      models.forEach((model, index) => {
+        const i = index + 1
         const distance=Math.abs(position-i)
         // Wider overlapping envelopes leave both objects visible at transitions.
         const envelope=1-smooth((distance-.24)/.94)
         model.visible=envelope>.002
         if(!model.visible)return
-        const natural=i===0 ? (mobile?.92:.84) : i===2 ? 1.16 : 1
+        const natural = i === 2 ? 1.16 : 1
         model.scale.setScalar(natural*(.04+.96*envelope))
-        model.position.set(positionsX[i]+(i-position)*1.1,
-          (i===0?(mobile?-.15:-.40):mobile?halfHeight*.2:0)+(i-position)*.23,
+        model.position.set(modelX + (i-position)*1.1,
+          (mobile ? halfHeight*.2 : 0) + (i-position)*.23,
           -1.25*(1-envelope))
       })
       const pathProgress=smooth(position/2)
@@ -102,8 +102,6 @@ export default function CompassScene({ progress }) {
       route.scale.setScalar(mobile?.66:1)
       particles.rotation.z=motion.matches ? 0 : t*.006
       particles.position.x=-travel*.7
-      compass.group.rotation.set(.24+position*.21+breathe*.025,-.48-position*.4+breathe*.035,-.40+breathe*.02)
-      compass.needle.rotation.z=-.61-position*2.65+(motion.matches?0:Math.sin(t*.82)*.095)
       elevator.group.rotation.set(.10,-.31+(position-1)*.3,-.025)
       const open=smooth((position-.67)/.65)*.91
       elevator.doors.forEach((leaf,i)=>{leaf.scale.x=1-open;leaf.position.x=(i?1:-1)*(.65+.64*open)})

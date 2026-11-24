@@ -11,11 +11,6 @@ function part(parent, shape, surface, x=0, y=0, z=0) {
 function slab(parent, dimensions, surface, x,y,z, bevel=0.035) {
   return part(parent,new RoundedBoxGeometry(...dimensions,2,bevel),surface,x,y,z)
 }
-function disc(parent,radius,depth,surface,z) {
-  const obj = part(parent,new T.CylinderGeometry(radius,radius,depth,96),surface,0,0,z)
-  obj.rotation.x = Math.PI/2
-  return obj
-}
 function print(parent, width, height, paint, x,y,z) {
   const canvas = document.createElement('canvas')
   canvas.width=1024; canvas.height=Math.max(64,Math.round(1024*height/width))
@@ -29,44 +24,6 @@ function lettering(parent,text,width,height,x,y,z,color='#e5edfa') {
     ctx.fillStyle=color; ctx.font='600 '+Math.round(h*.78)+'px sans-serif'
     ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,w/2,h*.52,w*.96)
   },x,y,z)
-}
-export function compassModel() {
-  const group=new T.Group(), needle=new T.Group()
-  const chrome=finish(0xd8e0ed,.96,.17), steel=finish(0x9ba8bb,.91,.25)
-  disc(group,2.04,.38,steel,-.08)
-  for (const [radius,tube,z] of [[2.02,.078,.13],[1.94,.026,.17],[2.015,.035,-.26]]) {
-    part(group,new T.TorusGeometry(radius,tube,16,160),chrome,0,0,z)
-  }
-  const crown=part(group,new T.CylinderGeometry(.17,.22,.3,40),steel,0,2.14,-.06)
-  part(group,new T.TorusGeometry(.47,.065,20,96),chrome,0,crown.position.y+.54,-.06)
-  disc(group,1.94,.1,finish(0x111b28,.47,.38),.09)
-  print(group,3.82,3.82,(ctx,w) => {
-    ctx.translate(w/2,w/2)
-    for(let i=0;i<180;i++){
-      ctx.save();ctx.rotate(i*Math.PI/90)
-      ctx.fillStyle=i%15===0?'#f2f5fb':'#cad6e4'
-      ctx.fillRect(-1.6,-485,i%15===0?5:2,i%5===0?37:15)
-      if(i%15===0){ctx.textAlign='center';ctx.font='bold 26px sans-serif';ctx.fillText(String(i*2),0,-405)}
-      ctx.restore()
-    }
-    ctx.textAlign='center';ctx.font='600 65px sans-serif'
-    for(const [label,x,y] of [['N',0,-280],['S',0,325],['W',-311,22],['E',311,22]]) {
-      ctx.fillStyle=label==='N'?'#f2f5fb':'#b7c1cc';ctx.fillText(label,x,y)
-    }
-  },0,0,.149)
-  group.add(needle)
-  for(const [dir,color] of [[1,0xd82b38],[-1,0xc6d0dc]]){
-    const geometry=new T.ConeGeometry(.29,1.67,6)
-    const blade=part(needle,geometry,finish(color,.32,.25),0,dir*.8,.29)
-    blade.rotation.y=Math.PI/4;blade.rotation.z=dir===1?0:Math.PI
-    blade.scale.z=.61
-  }
-  disc(needle,.18,.2,steel,.43)
-  disc(group,.085,.04,chrome,.55)
-  const glass=new T.MeshPhysicalMaterial({color:0xbdd7f3,metalness:.12,roughness:.09,clearcoat:1,transparent:true,opacity:.085,depthWrite:false})
-  disc(group,1.91,.048,glass,.51)
-  part(group,new T.TorusGeometry(1.9,.018,12,128),glass,0,0,.53)
-  return {group,needle}
 }
 export function elevatorModel() {
   const group=new T.Group(), doors=[]
