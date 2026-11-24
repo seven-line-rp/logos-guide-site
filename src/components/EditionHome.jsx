@@ -1,10 +1,10 @@
 import { lazy, Suspense, useLayoutEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowUpRight, Compass, Map as MapIcon } from 'lucide-react'
+import { ArrowUpRight, Compass, Map as MapIcon, Mouse } from 'lucide-react'
 
 const CompassScene = lazy(() => import('./CompassScene.jsx'))
 const chapters = [
-  { name: 'Ориентиры', title: 'Логос', subtitle: 'Путеводитель', text: 'Найдите кабинет по номеру, названию или фамилии преподавателя. Откройте его на карте и постройте маршрут.', links: [['Начать путешествие', '/rooms'], ['Открыть карту', '/map']] },
+  { name: 'Ориентиры', title: 'Логос', subtitle: 'Путеводитель', text: 'Введите номер, название или фамилию преподавателя. Кабинет откроется на карте, оттуда можно построить маршрут.', links: [['Начать путешествие', '/rooms'], ['Открыть карту', '/map']] },
   { name: 'Между этажами', title: 'На этаж выше', text: 'От входа до нужной аудитории — понятный маршрут с выбором лестницы или лифта и голосовыми подсказками на поворотах.', links: [['Построить маршрут', '/route'], ['Лифт на карте', '/map?floor=1&room=lift-1']] },
   { name: 'Библиотека', title: 'В читальный зал', text: 'Библиотека на втором этаже, кабинет №214. Открывай любимые места преподавателей и находи свой путь по колледжу.', links: [['В библиотеку', '/route?to=library-214'], ['Преподаватели', '/teachers']] },
 ]
@@ -50,6 +50,7 @@ export default function EditionHome() {
         <p>{text}</p>
         <div className="edition-actions">{links.map(([label, url], j) => <Link to={url} key={url}>{label}{i === 0 ? (j === 0 ? <Compass size={18} /> : <MapIcon size={18} />) : !j && <ArrowUpRight size={16} />}</Link>)}</div>
       </div>)}
+      <button className="edition-next" type="button" onClick={() => jump(1)}><Mouse size={18} aria-hidden="true" />Прокрутите вниз</button>
       <nav className="edition-index" aria-label="Сцены путеводителя" ref={nav}>{chapters.map(({name},i) => <button type="button" key={name} onClick={() => jump(i)}>{name}</button>)}</nav>
     </div>
   </section>
