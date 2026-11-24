@@ -83,14 +83,27 @@
   .edition-index { bottom: 0; }
   [data-edition="v2"] .edition-copy p { margin-block: .3rem; }
 }
-/* Keep the instrument visible while WebGL loads or when it is unavailable. */
-.edition-track:not([data-chapter="1"],[data-chapter="2"]) .edition-instrument:not(:has(canvas)) {
-  background: url('/art/edition-compass.webp') center 44% / min(84vw, 74svh) auto no-repeat;
+/* The opening composition uses the same studio render on every device.
+   As the visitor scrolls, the live instrument takes over and turns into the next scene. */
+.edition-instrument::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: url('/art/edition-compass.webp') center 35% / auto min(74svh, 84vw) no-repeat;
+  transform: rotate(-9deg) scaleX(.93);
+  opacity: clamp(0, 1 - var(--progress, 0) * 8, 1);
+}
+.edition-canvas { opacity: clamp(0, var(--progress, 0) * 8, 1); }
+
+/* Use installed Stapel faces when available, with the bundled Cyrillic face as fallback. */
+:root[data-edition="v2"] {
+  --font: 'Stapel', 'Stapel Text', 'Onest Variable', sans-serif;
+}
+:root[data-edition="v2"] :is(body, button, input, select, textarea, .edition-copy, .hd) {
+  font-family: var(--font);
 }
 
-/* Floating navigation above the compass stage. */
+/* The brand and section links share one glass surface. More has its own. */
 :root[data-edition="v2"] .hd.site-header {
-  --hd-h: 46px;
+  --hd-h: 44px;
   background: #0d131d; border: 0; box-shadow: none;
 }
 :root[data-edition="v2"] body:has(.edition-track) .hd.site-header {
@@ -98,14 +111,30 @@
   backdrop-filter: none;
 }
 [data-edition="v2"] .hd.site-header .header-inner {
-  width: min(calc(100% - 24px), 840px); margin-inline: auto;
-  display: flex; padding: 0 8px 0 14px; gap: 8px; border-radius: 14px;
-  background: #0d141fef; border: 1px solid #394352; color: white;
+  width: min(calc(100% - 24px), 772px); margin-inline: auto;
+  display: flex; position: relative; isolation: isolate;
+  padding: 0 0 0 14px; gap: 12px; color: white;
+  --more-width: 74px;
 }
-[data-edition="v2"] body:has(.edition-track) .hd.site-header .header-inner { position: relative; top: max(10px,env(safe-area-inset-top)); }
+[data-edition="v2"] .hd.site-header .header-inner::before {
+  content: ''; position: absolute; z-index: -1; pointer-events: none;
+  inset: 0 calc(var(--more-width) + 12px) 0 0; border-radius: 12px;
+  border: 1px solid #a8bfd12e; background: #0c111bd6; backdrop-filter: blur(16px);
+}
+[data-edition="v2"] .hd.site-header .hd-burger {
+  width: var(--more-width); height: 44px; border-radius: 12px;
+  justify-content: center; gap: .4rem; background: #101824e8; color: #fff;
+  border: 1px solid #a8bfd13d; font-weight: 550;
+}
+[data-edition="v2"] .hd.site-header .hd-burger-label { display: inline; }
+[data-edition="v2"] .hd.site-header .brand-mark { width: 25px; height: 25px; flex: 0 0 25px; }
+[data-edition="v2"] .hd.site-header .brand-copy small {
+  font-size: 7px !important; letter-spacing: .32em; color: #d2d6df;
+}
+[data-edition="v2"] body:has(.edition-track) .hd.site-header .header-inner { position: relative; top: max(14px,env(safe-area-inset-top)); }
 [data-edition="v2"] .hd.site-header .brand-mark { filter: grayscale(1) brightness(0) invert(1); }
 [data-edition="v2"] .hd.site-header .brand-copy strong {
-  width: 84px; height: 14px; background: url('/art/logos-wordmark.svg') center / contain no-repeat;
+  width: 99px; height: 15px; background: url('/art/logos-wordmark.svg') center / contain no-repeat;
   font-size: 0;
 }
 [data-edition="v2"] .hd.site-header .search-trigger,[data-edition="v2"] .hd.site-header .header-theme { display: none; }
@@ -117,7 +146,7 @@
   }
   [data-edition="v2"] .hd.site-header .desktop-nav .nav-link {
     display: inline-flex; align-items: center; gap: 5px; height: 42px;
-    font-size: 14px; color: #eff2f8; padding: 0 8px;
+    font-size: .84rem; font-weight: 550; color: #eff2f8; padding: 0 8px;
   }
   [data-edition="v2"] .hd.site-header .mobile-map-link { display: none; }
 }
@@ -126,5 +155,24 @@
 @media (min-width: 880px) {
   [data-edition="v2"] .hd.site-header .nav-link-icon,
   [data-edition="v2"] .hd.site-header .hd-burger-label { display: inline-block; }
-  [data-edition="v2"] .hd.site-header .hd-burger { width: auto; padding-inline: .8rem; }
+  [data-edition="v2"] .hd.site-header .hd-burger { padding-inline: .5rem; }
+}
+
+.edition-track[data-chapter="0"] .edition-index { display: none; }
+.edition-next {
+  position: absolute; bottom: max(8px,env(safe-area-inset-bottom)); align-items: center;
+  gap: .65rem; min-height: 44px; padding: .4rem .8rem; display: none;
+  background: transparent; border: 0; color: #c1cbd9; font: inherit; font-size: .8rem; cursor: pointer;
+}
+.edition-track[data-chapter="0"] .edition-next { display: inline-flex; }
+.edition-next svg { color: #91aaff; }
+[data-edition="v2"] .site-main .edition-intro p {
+  max-width: 640px; font-size: clamp(1rem, 1.5vw, 1.22rem) !important;
+  font-weight: 600; line-height: 1.35; margin: .7rem auto 1.1rem;
+}
+@media (min-width: 880px) {
+  [data-edition="v2"] .hd.site-header .brand { margin-right: 1.5rem; }
+}
+@media (max-width: 879px) {
+  [data-edition="v2"] .hd.site-header .header-actions { gap: 24px; }
 }
