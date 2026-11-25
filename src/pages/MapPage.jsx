@@ -299,6 +299,7 @@ export default function MapPage() {
           <ReportProblem key={selected.id} room={selected} />
           <button type="button" className="mp-clear" onClick={() => chooseFloor(floor, null, true)}>Снять выделение</button>
         </div> : <div className="mp-empty">
+          {theme === 'v2' && <div className="mp-floor-index" aria-hidden="true"><span>Этаж</span><b>{String(floor).padStart(2, '0')}</b></div>}
           <h2>Куда идём?</h2>
           <p>Коснитесь кабинета на плане или найдите его в поиске. Здесь появятся номер, вход и кнопка маршрута.</p>
           {popular.length > 0 && <div className="mp-popular"><span>Часто ищут на {floor} этаже</span>{popular.map((room) => <button type="button" key={room.id} onClick={() => selectRoom(room)}><MapPin size={14} />{roomTitle(room)}</button>)}</div>}
