@@ -67,7 +67,7 @@ export default function CompassFilm({ stageRef }) {
     let frame=0, lost=false
     const draw=()=>{
       frame=0;if(lost)return
-      const rect=stage.getBoundingClientRect(), travel=stage.offsetHeight-el.clientHeight
+      const rect=stage.getBoundingClientRect(), travel=stage.offsetHeight-stage.firstElementChild.clientHeight
       const p=clamp(-rect.top/Math.max(1,travel))
       const spread=(a,b)=>ease(a,b,p)*(1-ease(.52,.73,p))
       lens.position.z=.37+2.6*spread(.10,.25)
@@ -79,8 +79,8 @@ export default function CompassFilm({ stageRef }) {
       needle.rotation.z=.48*(1-ease(.55,.77,p))+.23*spread(.22,.37)
       root.rotation.set(-.29*(1-ease(.49,.76,p)),.26*(1-ease(.49,.76,p)),0)
       const fly=ease(.77,.98,p)
-      camera.position.set(2.0*spread(.12,.43),.6*spread(.12,.43),9.4-8.85*fly)
-      camera.lookAt(0,0,0)
+      camera.position.set(2.0*spread(.12,.43),.6*spread(.12,.43),12.2-12.12*fly)
+      camera.lookAt(0,0,-.5)
       renderer.render(scene,camera)
     }
     const schedule=()=>{if(!frame&&!lost)frame=requestAnimationFrame(draw)}
