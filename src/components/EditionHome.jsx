@@ -44,6 +44,10 @@ export default function EditionHome() {
   }
   return <section className="edition-track" ref={track} id="top">
     <div className="edition-stage">
+      <svg className="edition-lines" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
+        <use className="edition-lines-outer" href="/art/edition-background.svg#outer" />
+        <use className="edition-lines-inner" href="/art/edition-background.svg#inner" />
+      </svg>
       <div className="edition-instrument" aria-hidden="true">
         <Suspense fallback={null}><CompassScene progress={progress} /></Suspense>
         <img className="edition-compass" src="/art/edition-compass.webp" alt="" fetchPriority="high" />
