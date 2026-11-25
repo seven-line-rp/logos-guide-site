@@ -38,7 +38,7 @@ export default function EditionHome({ search }) {
     draw()
     return()=>{cancelAnimationFrame(frame);window.removeEventListener('scroll',schedule);window.removeEventListener('resize',schedule);reduced.removeEventListener('change',schedule)}
   },[])
-  return <main className="edition-home compass-home" id="top">
+  return <div className="edition-home compass-home" id="top">
     <section className="compass-stage" ref={stage} aria-labelledby="edition-title">
       <div className="compass-sticky">
         <div className="compass-intro" ref={intro}>
@@ -52,7 +52,7 @@ export default function EditionHome({ search }) {
           <div className="compass-map-copy">
             <h2 id="edition-plan-title">{translate('Найти кабинет',language)}</h2>
             <p>{translate('Выберите помещение на карте или воспользуйтесь поиском.',language)}</p>
-            <div className="edition-search">{search}</div>
+            <div className="edition-search"><label htmlFor="home-room-search">{translate('Поиск по колледжу',language)}</label>{search}</div>
             <div className="edition-plan-switch" role="group" aria-label={translate('Выбор этажа',language)}>
               {[1,2].map(n=><button key={n} type="button" aria-pressed={floor===n} onClick={()=>setFloor(n)}>{n} {translate('этаж',language)}</button>)}
             </div>
@@ -62,5 +62,5 @@ export default function EditionHome({ search }) {
         </section>
       </div>
     </section>
-  </main>
+  </div>
 }
