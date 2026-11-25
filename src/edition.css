@@ -468,3 +468,21 @@ html:root[data-edition="v2"] .directory-card-cover:has(.directory-card-mark, .di
 html:root[data-edition="v2"] .teacher-avatar { color: var(--ink); background: var(--surface-raised); }
 
 html:root[data-edition="v2"] .directory-card-mark { color: var(--ink); font-variant-numeric: tabular-nums; opacity: 1; }
+
+/* The floating instrument panel is shared by every 2.0 route. */
+html:root[data-edition="v2"] .hd.site-header .header-inner {
+  background: linear-gradient(112deg, #222832ca, #15191edb 52%, #202630c9);
+  border: 1px solid #b6c6dd42;
+  border-radius: 18px;
+  box-shadow: inset 0 1px 0 #f1f6ff1f, 0 8px 32px #0004;
+  -webkit-backdrop-filter: blur(22px) saturate(1.35);
+  backdrop-filter: blur(22px) saturate(1.35);
+}
+html:root[data-edition="v2"] .hd.site-header .nav-link-icon { color: #a6b7cb; }
+html:root[data-edition="v2"] .hd.site-header .nav-link[aria-current="page"] {
+  background: #c4d6f416; color: #fff; border-color: #c1d2eb35;
+  box-shadow: inset 0 1px 0 #ecf3ff13;
+}
+html:root[data-edition="v2"] .hd.site-header .hd-burger {
+  background: #829bb113; border-color: #d2deee2b;
+}

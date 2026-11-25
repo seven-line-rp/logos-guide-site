@@ -52,6 +52,7 @@ import './dark.css'
 // Главная: общая сетка, отступы и эффекты для всех трёх тем — самым последним слоем.
 import './landing.css'
 import './edition.css'
+import './instrument-pages.css'
 import './interactions.js'
 import { applyMapContrast } from './map-contrast.js'
 import { applyTextSize, readTextSize } from './text-size.js'

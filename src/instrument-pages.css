@@ -1,0 +1,196 @@
+/* Working surfaces of the instrument edition. Route and room data are shared with all themes. */
+html:root[data-edition="v2"] body:has(.hd.site-header):has(.site-main > :is(.mp, .rt, .directory-section)) {
+  --bg: #0c0e12;
+  --surface: #171b21;
+  --surface-soft: #20262e;
+  --surface-raised: #2a323e;
+  --line: #323944;
+  --line-strong: #647184;
+  --ink: #f3f4f6;
+  --muted: #b9c0cb;
+  --muted-2: #a6afbf;
+  --blue: #a2bcff;
+  --action-bg: #3659d8;
+  --action-hover: #4268ec;
+  --accent-tint: #253551;
+  background: radial-gradient(ellipse 58rem 24rem at 94% -8rem, #26364d, transparent), var(--bg);
+}
+
+html:root[data-edition="v2"] .site-main :is(.mp-head, .rt-head, .page-heading:has(+ .directory-section)) h1 {
+  color: var(--ink);
+  /* The all-theme heading cap in finish.css is important. */
+  font-size: clamp(2.6rem, 4.6vw, 4.75rem) !important;
+  font-weight: 610;
+  line-height: .99;
+  letter-spacing: -.065em;
+}
+
+html:root[data-edition="v2"] .site-main :is(.mp-head, .rt-head) {
+  padding-block: clamp(1.5rem, 3vw, 2.8rem) 1.35rem;
+  margin-bottom: .4rem;
+}
+html:root[data-edition="v2"] .mp { --mp-radius: 14px; padding-top: 0; }
+html:root[data-edition="v2"] .rt { --rt-r: 14px; }
+html:root[data-edition="v2"] .mp-title p { max-width: 64ch; }
+
+html:root[data-edition="v2"] .mp :is(.mp-floors, .mp-action, .mp-segment, .mp-zoom),
+html:root[data-edition="v2"] .rt :is(.rt-head-link, .rt-view, .rt-floors, .rt-now-card, .rt-controls) {
+  border-radius: 10px;
+}
+html:root[data-edition="v2"] .mp-floors button { border-radius: 7px; }
+html:root[data-edition="v2"] .mp .mp-floors small,
+html:root[data-edition="v2"] .mp .mp-chips button span {
+  font-variant-numeric: tabular-nums;
+  border-radius: 4px;
+}
+html:root[data-edition="v2"] .site-main :is(.directory-chip, .mp-chips button) {
+  min-height: 36px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+}
+html:root[data-edition="v2"] .site-main :is(.directory-chip, .mp-chips button):hover:not(:disabled) {
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+html:root[data-edition="v2"] .site-main :is(.directory-chip, .mp-chips button)[aria-pressed="true"] {
+  border-color: #667ca6;
+  background: #283953;
+  color: #eaf0ff;
+}
+html:root[data-edition="v2"] .mp .mp-chips button.is-on span { background: #364d70; color: #eef2fa; }
+
+html:root[data-edition="v2"]:not([data-map-contrast]) .site-main :is(.mp, .rt) {
+  --map-bg: #13181f;
+  --map-room: #263445;
+  --map-wall: #8a99ad;
+  --map-label: #e1e8f4;
+}
+html:root[data-edition="v2"]:not([data-map-contrast]) .mp .floor-map-art svg > :is(rect, path)[fill="white"] {
+  fill: #1b242f;
+}
+html:root[data-edition="v2"]:not([data-map-contrast]) .site-main :is(.mp, .rt) .rs {
+  --rs-floor: #202a36;
+  --rs-room: #2c3848;
+  --rs-shaft: #39485c;
+  --rs-line: #5a6a80;
+  --rs-label: #d0d9e6;
+  --rs-wall-top: #adb9cc;
+  --rs-wall-1: #77889c;
+  --rs-wall-2: #455267;
+  background: radial-gradient(ellipse at 68% 10%, #25374e, transparent 64%), #131920;
+}
+html:root[data-edition="v2"]:not([data-map-contrast]) .site-main :is(.mp, .rt) .rs-ground {
+  box-shadow: 0 0 0 1px var(--rs-line), 0 16px 38px #0008;
+}
+html:root[data-edition="v2"] .mp .mp-detail,
+html:root[data-edition="v2"] .rt .rt-card {
+  background: linear-gradient(155deg, #1d232b, var(--surface) 55%);
+  box-shadow: inset 0 1px 0 #ffffff08;
+}
+html:root[data-edition="v2"] .mp .mp-detail { padding: clamp(16px, 1.6vw, 24px); }
+html:root[data-edition="v2"] .mp-floor-index {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 8px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid #445061;
+}
+html:root[data-edition="v2"] .mp-floor-index span {
+  color: var(--muted);
+  font-size: .76rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+html:root[data-edition="v2"] .mp-floor-index b {
+  font-size: clamp(3.3rem, 5.4vw, 5rem);
+  line-height: 1;
+  font-weight: 480;
+  letter-spacing: -.08em;
+  font-variant-numeric: tabular-nums;
+  color: #c7d8f2;
+}
+html:root[data-edition="v2"] .mp .mp-popular { gap: 0; }
+html:root[data-edition="v2"] .mp .mp-popular > span { margin: 6px 0; }
+html:root[data-edition="v2"] .mp .mp-popular button {
+  padding-inline: 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  transition: color .16s;
+}
+html:root[data-edition="v2"] .mp .mp-popular button:hover { color: var(--blue); }
+
+html:root[data-edition="v2"] .site-main .page-heading:has(+ .directory-section) {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  margin-top: clamp(1rem, 2.3vw, 2.5rem);
+  padding: clamp(1.5rem, 3.7vw, 3.6rem);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #15191f;
+}
+html:root[data-edition="v2"] .page-heading:has(+ .directory-section)::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0 0 0 26%;
+  background: url('/rooms/classroom.webp') 50% 56% / cover no-repeat;
+  filter: saturate(.46) contrast(1.04);
+  mask-image: linear-gradient(90deg, transparent, #000 63%);
+}
+html:root[data-edition="v2"] .page-heading:has(+ .directory-section) .page-heading-main { max-width: 49%; }
+html:root[data-edition="v2"] .page-heading:has(+ .directory-section) p {
+  text-wrap: pretty;
+  color: #d4d9e2;
+}
+html:root[data-edition="v2"] .directory-section { padding-top: 1.5rem; }
+html:root[data-edition="v2"] .directory-results-head {
+  padding-block: .65rem;
+  border-bottom: 1px solid var(--line);
+}
+html:root[data-edition="v2"] .directory-results-head strong { color: var(--ink); font-variant-numeric: tabular-nums; }
+html:root[data-edition="v2"] .directory-grid { gap: 12px; }
+html:root[data-edition="v2"] .directory-grid .directory-card { height: 100%; border-radius: 10px; }
+html:root[data-edition="v2"] .directory-grid .directory-card-cover:has(.directory-card-mark, .directory-card-icon) {
+  background: linear-gradient(135deg, #2d3a4d, #1b222c 63%, #29333f);
+}
+html:root[data-edition="v2"] .directory-card-cover:has(.directory-card-mark, .directory-card-icon)::before {
+  background: repeating-linear-gradient(90deg, #d9e5ff 0 1px, transparent 1px 8px);
+  inset: auto 18px 14px;
+  height: 5px;
+  opacity: .32;
+  mask-image: none;
+}
+html:root[data-edition="v2"] .directory-grid .directory-card-mark {
+  font-size: clamp(2rem, 4vw, 4.4rem);
+  font-weight: 500;
+  letter-spacing: -.08em;
+}
+html:root[data-edition="v2"] .directory-card-media .directory-card-copy { gap: 4px; }
+html:root[data-edition="v2"] .directory-card-media .directory-card-copy strong { color: var(--ink); }
+html:root[data-edition="v2"] .directory-card-media .directory-card-copy small { color: var(--muted-2); }
+
+@media (min-width: 960px) {
+  html:root[data-edition="v2"] .directory-section .directory-filters {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 14px 24px;
+  }
+  html:root[data-edition="v2"] .directory-floor-filters {
+    padding-right: 24px;
+    border-right: 1px solid var(--line);
+  }
+}
+@media (max-width: 680px) {
+  html:root[data-edition="v2"] .page-heading:has(+ .directory-section)::before { inset: 0; opacity: .26; }
+  html:root[data-edition="v2"] .page-heading:has(+ .directory-section) .page-heading-main { max-width: 100%; }
+  html:root[data-edition="v2"] .mp-floor-index b { font-size: 2.8rem; }
+  html:root[data-edition="v2"] .directory-card-cover:has(.directory-card-mark, .directory-card-icon)::before { inset-inline: 8px; }
+}
