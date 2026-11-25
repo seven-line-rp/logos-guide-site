@@ -11,7 +11,7 @@ import { storageGet, storageSet } from './storage.js'
 
 export const THEMES = ['light', 'dark', 'pickme', 'v2']
 export const THEME_KEY = 'site-theme'
-const META_COLORS = { light: '#2f5fe8', v2: '#141518', dark: '#17181b', pickme: '#ffd9e8' }
+const META_COLORS = { light: '#2f5fe8', v2: '#090f1b', dark: '#17181b', pickme: '#ffd9e8' }
 
 // Список включённых тем из того, что прислал сервер: только известные,
 // в обычном порядке, светлая всегда на месте.

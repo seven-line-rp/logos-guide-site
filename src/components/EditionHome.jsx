@@ -1,64 +1,87 @@
-import { lazy, Suspense, useLayoutEffect, useRef } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowUpRight, Compass, Map as MapIcon, Mouse } from 'lucide-react'
+import { ArrowDown, ArrowRight, ArrowUpRight, BookOpen, GraduationCap, LayoutGrid, Map as MapIcon, Navigation } from 'lucide-react'
+import floorOnePlan from '../../map1lower.svg?raw'
+import floorTwoPlan from '../../map2lower.svg?raw'
+import { translate, useLanguage } from '../i18n.js'
+import { composePlanArt } from '../map-art.js'
 
-const CompassScene = lazy(() => import('./CompassScene.jsx'))
-const chapters = [
-  { name: 'Ориентиры', title: 'Логос', subtitle: 'Путеводитель', text: 'Введите номер, название или фамилию преподавателя. Кабинет откроется на карте, оттуда можно построить маршрут.', links: [['Начать путешествие', '/rooms'], ['Открыть карту', '/map']] },
-  { name: 'Между этажами', title: 'На этаж выше', text: 'От входа до нужной аудитории — понятный маршрут с выбором лестницы или лифта и голосовыми подсказками на поворотах.', links: [['Построить маршрут', '/route'], ['Лифт на карте', '/map?floor=1&room=lift-1']] },
-  { name: 'Библиотека', title: 'В читальный зал', text: 'Библиотека на втором этаже, кабинет №214. Открывай любимые места преподавателей и находи свой путь по колледжу.', links: [['В библиотеку', '/route?to=library-214'], ['Преподаватели', '/teachers']] },
+const sections = [
+  { href: '/route', icon: Navigation, title: 'Маршрут', description: 'Путь от входа или любого кабинета' },
+  { href: '/rooms', icon: LayoutGrid, title: 'Кабинеты', description: 'Аудитории, залы и общие зоны' },
+  { href: '/teachers', icon: GraduationCap, title: 'Преподаватели', description: 'Поиск по фамилии или предмету' },
 ]
-export default function EditionHome() {
-  const track = useRef(null)
-  const progress = useRef(0)
-  const nav = useRef(null)
-  useLayoutEffect(() => {
-    const el = track.current
-    const panels = el.querySelectorAll('.edition-copy')
-    function update() {
-      const distance = el.offsetHeight - el.firstElementChild.offsetHeight
-      const value = Math.max(0, Math.min(2, -2 * el.getBoundingClientRect().top / Math.max(1, distance)))
-      progress.current = value
-      const active = Math.round(value)
-      panels.forEach((panel, i) => {
-        const delta = Math.min(1, Math.abs(i - value))
-        const proximity = Math.max(0, 1 - delta)
-        panel.style.opacity = (proximity * proximity * (3 - 2 * proximity)).toFixed(3)
-        panel.style.filter = 'blur(' + ((1-proximity)*5) + 'px)'
-        panel.style.translate = '0 ' + ((i-value)*12) + 'px'
-        panel.inert = i !== active
-        nav.current.children[i].setAttribute('aria-current', i === active ? 'step' : 'false')
-      })
-      el.dataset.chapter = active
-      el.style.setProperty('--progress', String(value / 2))
-    }
-    update()
-    window.addEventListener('scroll', update, { passive: true })
-    window.addEventListener('resize', update)
-    return () => { window.removeEventListener('scroll', update); window.removeEventListener('resize', update) }
-  }, [])
-  function jump(i) {
-    const el = track.current
-    window.scrollTo({ top: window.scrollY + el.getBoundingClientRect().top + i * (el.offsetHeight - el.firstElementChild.offsetHeight) / 2,
-      behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' })
-  }
-  return <section className="edition-track" ref={track} id="top">
-    <div className="edition-stage">
-      <svg className="edition-lines" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
-        <use className="edition-lines-outer" href="/art/edition-background.svg#outer" />
-        <use className="edition-lines-inner" href="/art/edition-background.svg#inner" />
-      </svg>
-      <div className="edition-instrument" aria-hidden="true">
-        <Suspense fallback={null}><CompassScene progress={progress} /></Suspense>
-        <img className="edition-compass" src="/art/edition-compass.webp" alt="" fetchPriority="high" />
-      </div>
-      {chapters.map(({title, subtitle, text, links}, i) => <div className={'edition-copy ' + (i ? 'edition-side' : 'edition-intro')} key={title}>
-        {i ? <h2>{title}</h2> : <h1><img src="/art/logos-wordmark.svg" alt={title + " " + subtitle} width="722" height="146" /></h1>}
-        <p>{text}</p>
-        <div className="edition-actions">{links.map(([label, url], j) => <Link to={url} key={url}>{label}{i === 0 ? (j === 0 ? <Compass size={18} /> : <MapIcon size={18} />) : !j && <ArrowUpRight size={16} />}</Link>)}</div>
-      </div>)}
-      <button className="edition-next" type="button" onClick={() => jump(1)}><Mouse size={18} aria-hidden="true" />Прокрутите вниз</button>
-      <nav className="edition-index" aria-label="Сцены путеводителя" ref={nav}>{chapters.map(({name},i) => <button type="button" key={name} onClick={() => jump(i)}>{name}</button>)}</nav>
+
+const floors = [
+  { number: 1, label: 'Первый этаж', plan: floorOnePlan },
+  { number: 2, label: 'Второй этаж', plan: floorTwoPlan },
+]
+
+export default function EditionHome({ search }) {
+  const language = useLanguage()
+  const [floorIndex, setFloorIndex] = useState(0)
+  const floor = floors[floorIndex]
+
+  return (
+    <div className="edition-home" id="top">
+      <section className="edition-hero" aria-labelledby="edition-title">
+        <div className="edition-hero-grid container">
+          <div className="edition-copy">
+            <h1 id="edition-title">{translate('Найдите путь', language)} <span>{translate('в «Логосе»', language)}</span></h1>
+            <p>{translate('Карта колледжа подскажет, где проходит пара и как туда дойти.', language)}</p>
+            <div className="edition-search">
+              <label htmlFor="home-room-search">{translate('Поиск по колледжу', language)}</label>
+              {search}
+            </div>
+            <div className="edition-actions">
+              <Link className="edition-button edition-button-primary" to="/map"><MapIcon size={19} aria-hidden="true" />{translate('Открыть карту', language)}<ArrowUpRight size={17} aria-hidden="true" /></Link>
+              <Link className="edition-button edition-button-secondary" to="/route"><Navigation size={18} aria-hidden="true" />{translate('Построить маршрут', language)}</Link>
+            </div>
+          </div>
+          <div className="edition-art" aria-hidden="true">
+            <div className="edition-orbit" />
+            <img className="edition-compass" src="/art/edition-compass.webp" alt="" width="926" height="1024" fetchPriority="high" />
+          </div>
+          <a className="edition-scroll" href="#edition-plan"><ArrowDown size={17} aria-hidden="true" />{translate('Планы этажей', language)}</a>
+        </div>
+      </section>
+
+      <nav className="edition-shortcuts container" aria-label={translate('Разделы сайта', language)}>
+        {sections.map(({ href, icon: Icon, title, description }) => (
+          <Link to={href} key={href}>
+            <Icon className="edition-shortcut-icon" size={23} aria-hidden="true" />
+            <span><strong>{translate(title, language)}</strong><small>{translate(description, language)}</small></span>
+            <ArrowUpRight className="edition-shortcut-arrow" size={17} aria-hidden="true" />
+          </Link>
+        ))}
+      </nav>
+
+      <section className="edition-plan container" id="edition-plan" aria-labelledby="edition-plan-title">
+        <div className="edition-plan-copy">
+          <h2 id="edition-plan-title">{translate('Колледж по этажам', language)}</h2>
+          <p>{translate('Выберите этаж, чтобы посмотреть его план. На карте можно выбрать кабинет и узнать, как до него дойти.', language)}</p>
+          <Link className="edition-library" to="/route?to=library-214">
+            <BookOpen size={22} aria-hidden="true" />
+            <span><strong>{translate('Маршрут в библиотеку', language)}</strong><small>{translate('Кабинет 214, второй этаж', language)}</small></span>
+            <ArrowUpRight size={17} aria-hidden="true" />
+          </Link>
+        </div>
+        <div className="edition-plan-board">
+          <div className="edition-plan-switch" role="group" aria-label={translate('Выбор этажа', language)}>
+            {floors.map(({ number, label }, index) => (
+              <button type="button" key={number} aria-pressed={index === floorIndex} onClick={() => setFloorIndex(index)}>
+                {translate(label, language)}
+              </button>
+            ))}
+          </div>
+          <div className="edition-plan-image" role="img" aria-label={translate(floor.label, language)}>
+            <div className="floor-map-art" aria-hidden="true" dangerouslySetInnerHTML={{ __html: composePlanArt(floor.plan, floor.number, language) }} />
+          </div>
+          <Link className="edition-plan-link" to={`/map?floor=${floor.number}`}>
+            {translate('Открыть этаж на карте', language)}<ArrowRight size={17} aria-hidden="true" />
+          </Link>
+        </div>
+      </section>
     </div>
-  </section>
+  )
 }
