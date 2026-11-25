@@ -1,9 +1,9 @@
-import EditionHome from "../components/EditionHome.jsx"
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { ArrowRight, ArrowUpRight, Search } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { photoSrcSet, photosFor, rooms, quickPlaces } from '../data.js'
+import { translate, useLanguage } from '../i18n.js'
 import { HERO_ROUTES } from '../hero-scene-model.js'
 import GuideBoard from '../components/GuideBoard.jsx'
 import { useFavorites, useRecentRoutes } from '../components/FavoriteButton.jsx'
@@ -17,6 +17,8 @@ import { cancelMiss, reportMiss, searchRooms, searchTeachers, shortName, useTeac
 import { useScene3d } from '../use-scene3d.js'
 import { useTheme } from '../theme.js'
 
+const EditionHome = lazy(() => import('../components/EditionHome.jsx'))
+
 // 3D-корпус тяжёлый: грузим его отдельным файлом и только там, где он потянет
 // (компьютер с мышью, не «Лёгкий» режим). На телефонах остаётся градиентный фон.
 const HeroScene = lazy(() => import('../components/HeroScene.jsx'))
@@ -24,7 +26,8 @@ const HeroScene = lazy(() => import('../components/HeroScene.jsx'))
 const HeroCine = lazy(() => import('../components/HeroCine.jsx'))
 const heroCine = typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('hero')
 
-function HomeSearch() {
+function HomeSearch({ placeholder = 'Например, 217 или столовая' }) {
+  const language = useLanguage()
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
   const [active, setActive] = useState(0)
@@ -62,7 +65,7 @@ function HomeSearch() {
 
   return <form ref={formRef} id="home-search-form" className="home-search" onSubmit={submit} onPointerDown={focusInputOnPress} role="search">
     <Search size={19} aria-hidden="true" />
-    <input ref={inputRef} id="home-room-search" type="search" enterKeyHint="search" value={query} onFocus={() => setOpen(true)} onBlur={() => window.setTimeout(() => setOpen(false), 130)} onChange={(event) => { setQuery(event.target.value); setOpen(true) }} onKeyDown={onKeyDown} placeholder="Например, 217 или столовая" role="combobox" aria-expanded={showList} aria-controls={listId} aria-autocomplete="list" aria-activedescendant={showList && options[active] ? `${listId}-${active}` : undefined} autoComplete="off" />
+    <input ref={inputRef} id="home-room-search" type="search" enterKeyHint="search" value={query} onFocus={() => setOpen(true)} onBlur={() => window.setTimeout(() => setOpen(false), 130)} onChange={(event) => { setQuery(event.target.value); setOpen(true) }} onKeyDown={onKeyDown} placeholder={translate(placeholder, language)} role="combobox" aria-expanded={showList} aria-controls={listId} aria-autocomplete="list" aria-activedescendant={showList && options[active] ? `${listId}-${active}` : undefined} autoComplete="off" />
     <VoiceSearchButton onText={(text) => { setQuery(text); setOpen(true); inputRef.current?.focus() }} />
     <button type="submit" aria-label="Искать"><ArrowRight size={18} aria-hidden="true" /><span className="field-tip" aria-hidden="true">Искать</span></button>
     {showList && anchor && createPortal(<div className="home-search-suggestions search-popover" id={listId} role="listbox" aria-label="Подсказки" style={{ top: anchor.top + 8, left: anchor.left, width: anchor.width }}>
@@ -98,7 +101,7 @@ export default function HomePage() {
   const favorites = useFavorites()
   const recent = useRecentRoutes()
   const newcomer = !favorites.length && !recent.length
-  if (theme === 'v2') return <EditionHome />
+  if (theme === 'v2') return <EditionHome search={<HomeSearch placeholder="Кабинет или фамилия" />} />
   return <>
     <section className={`home-hero hero-mesh home-hero-usual home-hero-scene${pickme ? ' home-hero-pickme' : ''}`} id="top">
       {pickme ? <PickmeGarden /> : heroCine ? <Suspense fallback={null}><HeroCine variant={heroCine} /></Suspense> : scene3d && <Suspense fallback={null}><HeroScene /></Suspense>}

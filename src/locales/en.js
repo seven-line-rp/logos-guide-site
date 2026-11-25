@@ -1,5 +1,17 @@
 // English UI catalogue; keys are the original Russian presentation strings.
 export const english = {
+  'Найдите путь': 'Find your way',
+  'в «Логосе»': 'around Logos',
+  'Карта колледжа подскажет, где проходит пара и как туда дойти.': 'Find your classroom and get directions through the college.',
+  'Кабинет или фамилия': 'Room or surname',
+  'Путь от входа или любого кабинета': 'Directions from the entrance or any room',
+  'Аудитории, залы и общие зоны': 'Classrooms, halls and shared spaces',
+  'Поиск по фамилии или предмету': 'Search by surname or subject',
+  'Колледж по этажам': 'Explore the floors',
+  'Выберите этаж, чтобы посмотреть его план. На карте можно выбрать кабинет и узнать, как до него дойти.': 'Choose a floor to preview its layout. Open the map to select a room and get directions.',
+  'Маршрут в библиотеку': 'Directions to the library',
+  'Кабинет 214, второй этаж': 'Room 214, second floor',
+  'Открыть этаж на карте': 'Open this floor on the map',
   'Праздничный салют': 'Holiday fireworks', 'До праздника': 'Until the holiday', 'часов': 'hours', 'секунд': 'seconds', 'день': 'day', 'дня': 'days', 'дней': 'days',
   'Мини-игра': 'Mini game', 'Соберите флаг': 'Build the flag', 'Нажимайте на полосы, чтобы поменять цвет.': 'Tap the stripes to change their colour.', 'Знаете ли вы?': 'Did you know?', 'Следующий факт': 'Next fact',
   'К празднику': 'For the holiday', 'С Днём народного единства! Вместе мы сильнее.': 'Happy National Unity Day! Together we are stronger.', 'Флаг из трёх полос': 'A flag of three stripes',

@@ -32,7 +32,7 @@
 /* ---------- Типографика ---------- */
 h1, h2, h3 { text-wrap: balance; }
 p, .docs-lead { text-wrap: pretty; }
-.site-main h1:not(.home-hero h1) { font-size: clamp(28px, 3.4vw, 38px) !important; letter-spacing: -.015em; line-height: 1.12; }
+.site-main h1:not(:is(.home-hero, .edition-hero) h1) { font-size: clamp(28px, 3.4vw, 38px) !important; letter-spacing: -.015em; line-height: 1.12; }
 .site-main :is(.section-top, .ab-section-head, .directory-head, .break-walk-head, .arcade-intro, .services-help-inner, .play-teaser-copy) h2 { font-size: clamp(21px, 2.2vw, 26px) !important; letter-spacing: -.01em; line-height: 1.2; }
 input[type='checkbox'], input[type='radio'], input[type='range'], progress { accent-color: var(--action-bg, var(--blue)); }
 time, [class*='countdown'] { font-variant-numeric: tabular-nums; }
