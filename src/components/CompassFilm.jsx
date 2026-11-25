@@ -60,6 +60,8 @@ export default function CompassFilm({ stageRef }) {
     half(1,blue);half(-1,edge);disk(.11,.09,edge,needle,.045);disk(.035,.015,dark,needle,.095)
     ring(1.36,.085,steel,bezel,0);ring(1.42,.022,edge,bezel,.05);ring(1.29,.018,edge,bezel,.045)
     disk(1.29,.045,glass,lens,0);ring(1.29,.013,glass,lens,.022)
+    const routeLine=mesh(new THREE.PlaneGeometry(.035,2.4),blue,root,0,1.2,.22)
+    routeLine.visible=false
     const key=new THREE.DirectionalLight(0xe5edff,3.5);key.position.set(4,5,7);scene.add(key)
     const rim=new THREE.DirectionalLight(0x174fff,5);rim.position.set(-5,2,-2);scene.add(rim)
     const fill=new THREE.DirectionalLight(0xb8d5ff,1.6);fill.position.set(3,-4,1);scene.add(fill)
@@ -79,6 +81,7 @@ export default function CompassFilm({ stageRef }) {
       needle.rotation.z=.48*(1-ease(.55,.77,p))+.23*spread(.22,.37)
       root.rotation.set(-.29*(1-ease(.49,.76,p)),.26*(1-ease(.49,.76,p)),0)
       const fly=ease(.77,.98,p)
+      routeLine.visible=p>.76
       camera.position.set(2.0*spread(.12,.43),.6*spread(.12,.43),12.2-12.12*fly)
       camera.lookAt(0,0,-.5)
       renderer.render(scene,camera)
