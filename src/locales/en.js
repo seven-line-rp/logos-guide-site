@@ -1,5 +1,6 @@
 // English UI catalogue; keys are the original Russian presentation strings.
 export const english = {
+  'Ищите по номеру кабинета или фамилии преподавателя.': 'Search by room number or teacher’s surname.',
   'Логос': 'Logos',
   'Путеводитель': 'Guide',
   'Навигация по колледжу': 'Campus navigation',

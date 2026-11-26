@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowDown, ArrowRight, ArrowUpRight } from 'lucide-react'
+import { ArrowRight, Search } from 'lucide-react'
 import FloorMap from './FloorMap.jsx'
 import CompassFilm from './CompassFilm.jsx'
 import './compass-film.css'
@@ -79,27 +79,37 @@ export default function EditionHome({ search }) {
     window.scrollTo({ top: window.scrollY + el.getBoundingClientRect().top + distance * [0, .56, .95][index], behavior: reduced ? 'instant' : 'smooth' })
   }
 
+  function openRoomSearch() {
+    const el = stage.current
+    const top = matchMedia(staticLayout).matches
+      ? plan.current.getBoundingClientRect().top
+      : el.getBoundingClientRect().top + .95 * (el.offsetHeight - el.firstElementChild.clientHeight)
+    window.scrollTo({ top: window.scrollY + top, behavior: 'instant' })
+    plan.current.inert = false
+    plan.current.querySelector('#home-room-search')?.focus({ preventScroll: true })
+  }
+
   return <div className="instrument-home" id="top">
     <section ref={stage} className="instrument-stage" aria-labelledby="instrument-title">
       <div className="instrument-sticky">
         <div className="instrument-terrain" aria-hidden="true" />
         <div className="instrument-intro" ref={intro}>
           <h1 id="instrument-title">Логос <span>Путеводитель</span></h1>
-          <p>Найдите нужный кабинет и дорогу до следующей пары.</p>
+          <p>Ищите по номеру кабинета или фамилии преподавателя.</p>
           <div className="instrument-actions">
-            <Link className="instrument-primary" to="/map">Открыть карту<ArrowUpRight size={16} /></Link>
-            <button type="button" onClick={() => goToChapter(2)}>Найти кабинет<ArrowDown size={15} /></button>
+            <Link className="instrument-primary" to="/map">Открыть карту</Link>
+            <button type="button" onClick={openRoomSearch}><Search size={16} aria-hidden="true" />Найти кабинет</button>
           </div>
         </div>
         <CompassFilm />
         <div className="instrument-route" ref={route} tabIndex={-1}>
           <img className="instrument-static-exploded" src="/instrument/exploded.webp" loading="lazy" alt="" />
-          <h2><span>Кабинет</span>222</h2>
+          <h2><span>Кабинет информатики </span>222</h2>
           <div className="instrument-itinerary">
             <div><i aria-hidden="true"/><span>Главный вход</span><small>1 этаж</small></div>
-            <div><i aria-hidden="true"/><span>Кабинет информатики</span><small>2 этаж</small></div>
+            <div><i aria-hidden="true"/><span>Кабинет 222</span><small>2 этаж</small></div>
           </div>
-          <Link className="instrument-primary" to={exampleRoute}>Открыть маршрут<ArrowUpRight size={17} /></Link>
+          <Link className="instrument-primary" to={exampleRoute}>Открыть маршрут</Link>
         </div>
         <nav className="instrument-index" aria-label="Разделы главной страницы">
           <div className="instrument-chapters">
@@ -116,7 +126,7 @@ export default function EditionHome({ search }) {
             <div className="instrument-floors" role="group" aria-label="Выбор этажа">
               {[1, 2].map(n => <button type="button" key={n} aria-pressed={floor === n} onClick={() => setFloor(n)}>{n} этаж</button>)}
             </div>
-            <Link className="instrument-map-launch" to={`/map?floor=${floor}`}>Открыть карту<ArrowUpRight size={16} /></Link>
+            <Link className="instrument-map-launch" to={`/map?floor=${floor}`}>Открыть карту</Link>
           </header>
           <div className="instrument-atlas-sheet">
             <FloorMap floor={floor} routeStart="entrance-1" routeTargetId="informatics-222"
@@ -125,7 +135,7 @@ export default function EditionHome({ search }) {
           </div>
           <footer className="instrument-atlas-key">
             <Link to={exampleRoute}><span className="instrument-line-sample" aria-hidden="true" />Главный вход <ArrowRight size={14} /> кабинет 222</Link>
-            <Link to="/rooms">Все кабинеты<ArrowUpRight size={15} /></Link>
+            <Link to="/rooms">Все кабинеты</Link>
           </footer>
         </section>
       </div>
