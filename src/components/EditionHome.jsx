@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowDown, ArrowRight, ArrowUpRight, LocateFixed, Map, Route } from 'lucide-react'
+import { ArrowRight, Search } from 'lucide-react'
 import FloorMap from './FloorMap.jsx'
 import CompassFilm from './CompassFilm.jsx'
 import './compass-film.css'
@@ -19,7 +19,7 @@ export default function EditionHome({ search }) {
   const intro = useRef(null)
   const route = useRef(null)
   const plan = useRef(null)
-  const [floor, setFloor] = useState(1)
+  const [floor, setFloor] = useState(2)
   const [chapter, setChapter] = useState(0)
 
   useEffect(() => {
@@ -27,6 +27,8 @@ export default function EditionHome({ search }) {
     const sticky = el.firstElementChild
     const introduction = intro.current
     const routePanel = route.current
+    const atlas = plan.current
+    const chapterNav = sticky.querySelector("nav")
     const reduced = matchMedia(staticLayout)
     let frame = 0
     function draw() {
@@ -34,15 +36,19 @@ export default function EditionHome({ search }) {
       const staticView = reduced.matches
       const p = clamp(-el.getBoundingClientRect().top / Math.max(1, el.offsetHeight - sticky.clientHeight))
       const shift = ramp(.055, .50, p)
-      const disperse = ramp(.10, .5, p) * (1 - ramp(.73, 1, p))
+      const disperse = ramp(.10, .5, p) * (1 - ramp(.61, .79, p))
       const introFade = ramp(.035, .24, p)
-      const routeOpacity = ramp(.23, .48, p) * (1 - ramp(.79, .97, p))
+      const routeOpacity = ramp(.23, .48, p) * (1 - ramp(.61, .76, p))
       el.style.setProperty('--travel', p.toFixed(4))
       el.style.setProperty('--shift', shift.toFixed(4))
       el.style.setProperty('--open', disperse.toFixed(4))
-      el.style.setProperty('--dive', ramp(.84, 1, p).toFixed(4))
+      el.style.setProperty('--dive', ramp(.65, .93, p).toFixed(4))
       el.style.setProperty('--intro-alpha', (1 - introFade).toFixed(4))
       el.style.setProperty('--route-alpha', routeOpacity.toFixed(4))
+      const aperture = ramp(.75, .93, p)
+      el.style.setProperty('--aperture', aperture.toFixed(4))
+      atlas.inert = !staticView && p < .93
+      chapterNav.inert = !staticView && p >= .74
       introduction.inert = !staticView && introFade > .9
       routePanel.inert = !staticView && routeOpacity < .1
       setChapter(staticView || p < .31 ? 0 : 1)
@@ -60,67 +66,83 @@ export default function EditionHome({ search }) {
     }
   }, [])
 
-  function goToChapter(index) {
+  function goToChapter(index, keyboard = false) {
     const el = stage.current
     const reduced = matchMedia(staticLayout).matches
-    if (index === 2 || (index === 1 && reduced)) {
+    if (reduced && index !== 0) {
       const target = index === 2 ? plan.current : route.current
       window.scrollTo({ top: window.scrollY + target.getBoundingClientRect().top - (index === 2 ? 0 : 74), behavior: reduced ? 'instant' : 'smooth' })
       target.focus({ preventScroll: true })
       return
     }
     const distance = el.offsetHeight - el.firstElementChild.clientHeight
-    window.scrollTo({ top: window.scrollY + el.getBoundingClientRect().top + distance * (index === 1 ? .56 : 0), behavior: reduced ? 'instant' : 'smooth' })
+    window.scrollTo({ top: window.scrollY + el.getBoundingClientRect().top + distance * [0, .56, .95][index], behavior: reduced || keyboard ? 'instant' : 'smooth' })
+    if (keyboard) {
+      const target = [intro.current, route.current, plan.current][index]
+      target.inert = false
+      target.focus({ preventScroll: true })
+    }
+  }
+
+  function openRoomSearch() {
+    const el = stage.current
+    const top = matchMedia(staticLayout).matches
+      ? plan.current.getBoundingClientRect().top
+      : el.getBoundingClientRect().top + .95 * (el.offsetHeight - el.firstElementChild.clientHeight)
+    window.scrollTo({ top: window.scrollY + top, behavior: 'instant' })
+    plan.current.inert = false
+    plan.current.querySelector('#home-room-search')?.focus({ preventScroll: true })
   }
 
   return <div className="instrument-home" id="top">
     <section ref={stage} className="instrument-stage" aria-labelledby="instrument-title">
       <div className="instrument-sticky">
         <div className="instrument-terrain" aria-hidden="true" />
-        <div className="instrument-intro" ref={intro}>
-          <div className="instrument-caption"><span className="survey-cross" aria-hidden="true" />Навигация по колледжу</div>
+        <div className="instrument-intro" ref={intro} tabIndex={-1}>
           <h1 id="instrument-title">Логос <span>Путеводитель</span></h1>
-          <p>Найдите нужный кабинет и дорогу до следующей пары.</p>
+          <p>Кабинеты и маршруты по колледжу.</p>
           <div className="instrument-actions">
-            <Link className="instrument-primary" to="/map"><Map size={17} />Открыть карту<ArrowUpRight size={16} /></Link>
-            <button type="button" onClick={() => goToChapter(2)}>Найти кабинет<ArrowDown size={15} /></button>
+            <Link className="instrument-primary" to="/map">Открыть карту</Link>
+            <button type="button" onClick={openRoomSearch}><Search size={16} aria-hidden="true" />Найти кабинет</button>
           </div>
         </div>
         <CompassFilm />
         <div className="instrument-route" ref={route} tabIndex={-1}>
           <img className="instrument-static-exploded" src="/instrument/exploded.webp" loading="lazy" alt="" />
-          <div className="instrument-caption"><Route size={16} />Пример маршрута</div>
-          <h2>От входа <br/>до кабинета.</h2>
+          <h2><span>Кабинет информатики </span>222</h2>
           <div className="instrument-itinerary">
             <div><i aria-hidden="true"/><span>Главный вход</span><small>1 этаж</small></div>
-            <div><i aria-hidden="true"/><span>Информатика · 222</span><small>2 этаж</small></div>
+            <div><i aria-hidden="true"/><span>Кабинет 222</span><small>2 этаж</small></div>
           </div>
-          <Link className="instrument-primary" to={exampleRoute}>Открыть маршрут<ArrowUpRight size={17} /></Link>
+          <Link className="instrument-primary" to={exampleRoute}>Открыть маршрут</Link>
         </div>
         <nav className="instrument-index" aria-label="Разделы главной страницы">
           <div className="instrument-chapters">
-            {['Обзор', 'Маршрут', 'План этажей'].map((name, i) => <button key={name} type="button" onClick={() => goToChapter(i)} aria-current={chapter === i ? 'step' : undefined}><i aria-hidden="true" />{name}</button>)}
+            {['Обзор', 'Маршрут', 'План этажей'].map((name, i) => <button key={name} type="button" onClick={event => goToChapter(i, event.detail === 0)} aria-current={chapter === i ? 'step' : undefined}><i aria-hidden="true" />{name}</button>)}
           </div>
-          <button className="instrument-next" type="button" onClick={() => goToChapter(chapter + 1)}><span>{chapter === 0 ? 'К маршруту' : 'К плану'}</span><ArrowDown size={16} /></button>
         </nav>
-      </div>
-    </section>
-    <section className="instrument-plan" ref={plan} tabIndex={-1} aria-labelledby="instrument-plan-title">
-      <div className="instrument-plan-inner">
-        <div className="instrument-plan-copy">
-          <div className="instrument-caption"><LocateFixed size={16} />План этажей</div>
-          <h2 id="instrument-plan-title">Найти <br/>кабинет.</h2>
-          <p>Выберите помещение на плане или введите номер кабинета, название или фамилию преподавателя.</p>
-          <div className="edition-search"><label htmlFor="home-room-search">Поиск по колледжу</label>{search}</div>
-          <Link className="instrument-text-link" to="/rooms">Все кабинеты<ArrowUpRight size={16} /></Link>
-        </div>
-        <div className="instrument-plan-board">
-          <div className="instrument-board-head"><strong>Карта колледжа</strong><div className="instrument-floors" role="group" aria-label="Выбор этажа">
-            {[1, 2].map(n => <button type="button" key={n} aria-pressed={floor === n} onClick={() => setFloor(n)}>{n} этаж</button>)}
-          </div></div>
-          <FloorMap floor={floor} compact onSelect={room => navigate(`/map?floor=${room.floor}&room=${encodeURIComponent(room.id)}`)} onFloorRequest={setFloor}/>
-          <Link className="instrument-board-link" to={`/map?floor=${floor}`}>Открыть карту<ArrowRight size={16} /></Link>
-        </div>
+        <section className="instrument-plan" ref={plan} tabIndex={-1} aria-labelledby="instrument-plan-title">
+          <header className="instrument-atlas-tools">
+            <h2 id="instrument-plan-title">План этажей</h2>
+            <div className="edition-search instrument-atlas-search">
+              <label htmlFor="home-room-search">Поиск по колледжу</label>
+              {search}
+            </div>
+            <div className="instrument-floors" role="group" aria-label="Выбор этажа">
+              {[1, 2].map(n => <button type="button" key={n} aria-pressed={floor === n} onClick={() => setFloor(n)}>{n} этаж</button>)}
+            </div>
+          </header>
+          <div className="instrument-atlas-sheet">
+            <FloorMap floor={floor} routeStart="entrance-1" routeTargetId="informatics-222"
+              onSelect={room => navigate(`/map?floor=${room.floor}&room=${encodeURIComponent(room.id)}`)}
+              onFloorRequest={setFloor} />
+          </div>
+          <footer className="instrument-atlas-key">
+            <Link to={exampleRoute}><span className="instrument-line-sample" aria-hidden="true" />Главный вход <ArrowRight size={14} /> кабинет 222</Link>
+            <Link to="/rooms">Все кабинеты</Link>
+            <Link className="instrument-map-launch" to={`/map?floor=${floor}`}>Открыть карту</Link>
+          </footer>
+        </section>
       </div>
     </section>
   </div>

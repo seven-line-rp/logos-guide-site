@@ -21,15 +21,16 @@
 }
 .instrument-terrain {
   position: absolute; inset: -4% -3%;
-  background: #0a0d13 url('/instrument/terrain.webp') center / cover no-repeat;
+  background: radial-gradient(ellipse at 58% 67%,#28303a80,transparent 36%), radial-gradient(ellipse at 0% 87%,#15388866,transparent 49%), #101216;
   transform: translate3d(calc(-1.4% * var(--travel)), calc(-2% * var(--travel)), 0) scale(calc(1 + .065 * var(--travel)));
 }
 .instrument-terrain::after {
   content: ''; position: absolute; inset: 0;
-  background: linear-gradient(0deg, #0a0d13 0%, transparent 16%, transparent 89%, #0a0d1333);
+  background: url('/instrument/terrain.webp') left center / cover no-repeat;
+  mask-image: radial-gradient(ellipse 72% 66% at 0% 84%, black 0%, #000a 38%, transparent 92%);
 }
 .instrument-intro {
-  position: absolute; z-index: 3; top: max(calc(var(--head-space) + 22px), 13svh);
+  position: absolute; z-index: 3; top: max(calc(var(--head-space) + 20px), 11.5svh);
   width: 100%; padding: 0 20px; text-align: center;
   opacity: var(--intro-alpha); transform: translateY(calc((var(--intro-alpha) - 1) * 70px));
 }
@@ -39,24 +40,15 @@
   letter-spacing: .17em; text-transform: uppercase;
 }
 .instrument-caption > svg { color: #87abff; }
-.instrument-intro .instrument-caption { justify-content: center; }
-.survey-cross {
-  width: 14px; height: 14px; background: #78a4ff;
-  clip-path: polygon(50% 0,61% 39%,100% 50%,61% 61%,50% 100%,39% 61%,0 50%,39% 39%);
-}
 .instrument-home :is(h1, h2) {
   font-family: Stapel, 'Onest Variable', sans-serif;
   color: var(--paper); font-weight: 590; letter-spacing: -.066em;
 }
 .instrument-intro #instrument-title {
   margin: clamp(10px,1.6svh,20px) 0 0;
-  font-size: clamp(48px,6.05vw,116px); line-height: 1;
+  font-size: clamp(48px,5.4vw,102px); line-height: 1;
 }
-.instrument-intro h1 span {
-  color: #d5dce6;
-  background: linear-gradient(172deg, #f7f9fc 12%, #c4cbd7 76%, #9ba9bd);
-  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
-}
+.instrument-intro h1 span { color: #e2e5e8; }
 .instrument-home .instrument-intro p, .instrument-home .instrument-plan-copy p {
   color: var(--steel); font-size: clamp(15px,1.1vw,21px); line-height: 1.5;
 }
@@ -68,11 +60,11 @@
   text-decoration: none; cursor: pointer; white-space: nowrap;
 }
 .instrument-home .instrument-primary {
-  border: 1px solid #7e9eff88; border-radius: 100px; background: #345ef0;
+  border: 1px solid #829fff70; border-radius: 8px; background: var(--action-bg);
   box-shadow: inset 0 1px 0 #b3c6ff56, 0 4px 18px #081c6855;
   padding: 0 19px; transition: background .2s, transform .2s;
 }
-.instrument-home .instrument-primary:hover { background: #4775ff; transform: translateY(-2px); }
+.instrument-home .instrument-primary:hover { background: var(--action-hover); transform: translateY(-2px); }
 .instrument-actions button, .instrument-home .instrument-text-link { border: 0; padding: 0 2px; background: transparent; color: #c2cbd8; }
 .instrument-actions button:hover, .instrument-home .instrument-text-link:hover { color: white; }
 .instrument-film {
@@ -80,8 +72,8 @@
   opacity: calc(1 - var(--dive) * .95);
 }
 .instrument-object {
-  position: absolute; width: min(49vw, 61svh, 820px); aspect-ratio: 1200/965;
-  left: calc(50% + 16.4% * var(--shift)); top: calc(64.7% - 11% * var(--shift));
+  position: absolute; width: min(52vw, 66svh, 850px); aspect-ratio: 1200/965;
+  left: calc(50% + 16.4% * var(--shift)); top: calc(63.5% - 10% * var(--shift));
   transform: translate(-50%,-50%) rotate(calc(-8deg + 11deg * var(--shift))) scale(calc(1 - .21 * var(--shift) + 1.75 * var(--dive)));
 }
 .instrument-object img { display: block; position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
@@ -105,6 +97,15 @@
 .instrument-home .instrument-route h2, .instrument-home .instrument-plan-copy h2 {
   margin: 21px 0 30px; font-size: clamp(52px,6.2vw,116px); line-height: .99;
 }
+.instrument-home .instrument-route h2 {
+  display: grid; gap: 8px; margin: 0 0 clamp(20px,3svh,42px);
+  font-size: clamp(104px,12vw,210px); line-height: .88; font-weight: 540;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+.instrument-route h2 span {
+  color: var(--steel); font-size: clamp(20px,1.65vw,29px); line-height: 1.25;
+  font-weight: 480; letter-spacing: -.025em;
+}
 .instrument-itinerary { display: grid; gap: 18px; margin-bottom: 26px; max-width: 335px; }
 .instrument-itinerary > div { position: relative; display: flex; align-items: center; gap: 13px; font-size: clamp(14px,1.15vw,19px); }
 .instrument-itinerary i { width: 9px; height: 9px; border: 1.5px solid #8fa8d2; border-radius: 50%; }
@@ -113,7 +114,7 @@
 .instrument-itinerary small { margin-left: auto; font-size: 12px; color: #a7b3c4; }
 .instrument-index {
   position: absolute; z-index: 4; bottom: max(18px,3svh); left: max(5%,calc((100% - 1640px)/2)); right: max(5%,calc((100% - 1640px)/2));
-  display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--hairline);
+  display: flex; justify-content: center; align-items: center;
   padding-top: 8px;
 }
 .instrument-chapters { display: flex; gap: clamp(14px,2vw,42px); }
@@ -121,26 +122,129 @@
 .instrument-index button:hover, .instrument-index button[aria-current] { color: white; }
 .instrument-chapters i { width: 16px; height: 2px; background: #5f6874; border-radius: 2px; }
 .instrument-chapters [aria-current] i { width: 30px; background: #739cff; }
-.instrument-next svg { color: #8eadff; }
+
+/* The last scene is the college plan. Controls and drawing share a single canvas. */
 .instrument-plan {
-  padding: max(106px,13svh) 6% max(85px,12svh); scroll-margin-top: 60px;
-  background: radial-gradient(ellipse at 85% 30%,#1b273930,transparent 62%), #0c1016;
-  border-top: 1px solid #26303e;
+  --atlas-ground: #111821;
+  --atlas-gutter: clamp(20px, 5vw, 96px);
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  padding-top: calc(var(--head-space) + clamp(12px, 2svh, 32px));
+  color: var(--paper);
+  background: var(--atlas-ground);
+  outline-offset: -3px;
 }
-.instrument-plan-inner { max-width: 1480px; margin: auto; display: grid; grid-template-columns: .73fr 1.27fr; align-items: center; gap: clamp(36px,5vw,100px); }
-.instrument-home .instrument-plan-copy h2 { font-size: clamp(55px,5.5vw,100px); margin-bottom: 20px; }
-.instrument-home .instrument-plan-copy p { max-width: 36ch; margin: 0 0 26px; }
-.instrument-plan-copy .edition-search { margin-bottom: 10px; }
-.instrument-plan-board { min-width: 0; border: 1px solid #8cabc138; background: #151c26; border-radius: 18px; overflow: hidden; }
-.instrument-board-head, .instrument-home .instrument-board-link { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px; }
-.instrument-board-head { border-bottom: 1px solid var(--hairline); }
-.instrument-floors { display: flex; padding: 3px; border: 1px solid var(--hairline); border-radius: 30px; }
-.instrument-floors button { background: transparent; color: var(--steel); border: 0; border-radius: 30px; padding: 0 13px; min-height: 38px; cursor: pointer; }
-.instrument-floors button[aria-pressed="true"] { background: #35455d; color: white; }
-.instrument-home .instrument-board-link { justify-content: flex-end; border-top: 1px solid var(--hairline); color: #dce6ff; font-size: 14px; text-decoration: none; }
-.instrument-home .instrument-board-link:hover { background: #202b39; }
-.instrument-plan-board .floor-map-compact { min-height: 0; max-height: none; padding: clamp(12px,1.7vw,30px); }
-.instrument-plan-board .floor-map-stage { width: 100%; min-width: 0; }
+.instrument-atlas-tools {
+  display: grid;
+  grid-template-columns: 1fr minmax(230px, 360px) auto;
+  align-items: center;
+  gap: clamp(14px, 2.4vw, 44px);
+  padding: 0 var(--atlas-gutter) clamp(15px, 2svh, 28px);
+  border-bottom: 1px solid var(--hairline);
+}
+.instrument-home #instrument-plan-title {
+  margin: 0;
+  font-size: clamp(40px, 3.5vw, 72px);
+  line-height: 1;
+  font-weight: 580;
+}
+.instrument-atlas-tools .edition-search { position: relative; width: 100%; max-width: none; }
+.instrument-atlas-search label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.instrument-atlas-tools .instrument-floors { display: flex; align-items: center; gap: 3px; }
+.instrument-floors button, .instrument-home .instrument-map-launch {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 44px; white-space: nowrap; cursor: pointer;
+}
+.instrument-floors button {
+  padding: 0 13px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: #adb8c6;
+  background: transparent;
+}
+.instrument-floors button[aria-pressed="true"] { border-color: #53677e; background: var(--action-bg); color: #fff; font-weight: 650; }
+.instrument-floors button:hover { color: white; }
+.instrument-home .instrument-map-launch { color: #d6e4ff; text-decoration: none; }
+.instrument-atlas-sheet {
+  flex: 1;
+  display: flex;
+  position: relative;
+  isolation: isolate;
+  background-color: var(--atlas-ground);
+  background-image: linear-gradient(#99adc50b 1px, transparent 1px), linear-gradient(90deg, #99adc50b 1px, transparent 1px),
+    radial-gradient(ellipse at 46% 38%, #1b2a3c 0%, transparent 72%);
+  background-size: 46px 46px, 46px 46px, 100% 100%;
+}
+.instrument-atlas-sheet .floor-map-wrap { flex: 1; min-width: 0; }
+html[data-edition="v2"] .instrument-atlas-sheet .floor-map-viewport {
+  height: clamp(460px, calc(100svh - var(--head-space) - 168px), 1200px);
+  max-height: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  background: transparent;
+  overscroll-behavior: auto;
+}
+html[data-edition="v2"] .instrument-atlas-sheet .floor-map-stage {
+  width: min(92%, calc((100svh - var(--head-space) - 205px) * 1.37));
+  min-width: 0;
+  margin: clamp(10px, 1.6svh, 22px) auto;
+  background: transparent;
+}
+html[data-edition="v2"]:not([data-map-contrast]) .instrument-atlas-sheet {
+  --map-bg: #344455;
+  --map-room: #273746;
+  --map-wall: #97a8b8;
+  --map-label: #eff2f6;
+  --map-door: #86b2ec;
+  --map-route: #629bff;
+  --map-route-glow: #3385fc55;
+}
+html[data-edition="v2"]:not([data-map-contrast]) .instrument-atlas-sheet .floor-map-art svg > :is(rect,path)[fill="white"] { fill: #3a485b; }
+html[data-edition="v2"] .instrument-atlas-sheet .floor-map-zoom-controls { right: var(--atlas-gutter); bottom: 18px; }
+html[data-edition="v2"] .instrument-atlas-sheet .floor-map-zoom-controls button { width: 44px; height: 44px; }
+.instrument-atlas-key {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px 20px;
+  flex-wrap: wrap; padding: 7px var(--atlas-gutter); border-top: 1px solid var(--hairline);
+}
+.instrument-atlas-key a {
+  display: inline-flex; gap: 8px; align-items: center; min-height: 44px;
+  color: #becbdc; text-decoration: none;
+}
+.instrument-atlas-key a:hover, .instrument-map-launch:hover { color: white; }
+.instrument-line-sample { width: 24px; height: 3px; border-radius: 2px; background: #629bff; }
+
+@media (max-width: 1000px) {
+  .instrument-atlas-tools { grid-template-columns: 1fr minmax(200px, 1fr) auto; gap: 10px; }
+  .instrument-atlas-tools .instrument-floors { grid-column: 3; }
+  .instrument-atlas-tools .instrument-atlas-search { grid-column: 2; }
+}
+@media (max-width: 760px) {
+  .instrument-plan { --atlas-gutter: 16px; padding-top: calc(var(--head-space) + 12px); }
+  .instrument-atlas-tools {
+    grid-template-columns: minmax(0, 1fr) auto; gap: 8px 6px;
+    padding-bottom: 10px;
+  }
+  .instrument-home #instrument-plan-title { font-size: clamp(29px, 7.5vw, 42px); }
+  .instrument-atlas-tools .instrument-atlas-search { grid-column: 1 / -1; grid-row: 2; }
+  .instrument-atlas-tools .instrument-floors { grid-column: 2; grid-row: 1; }
+  .instrument-floors button { padding-inline: 9px; }
+  .instrument-atlas-sheet { flex: 1; align-items: center; }
+  html[data-edition="v2"] .instrument-atlas-sheet .floor-map-viewport { height: max(330px, 55svh); }
+  html[data-edition="v2"] .instrument-atlas-sheet .floor-map-stage { width: 100%; margin-block: 12px; }
+  html[data-edition="v2"] .instrument-atlas-sheet .floor-map-zoom-controls { bottom: 8px; right: var(--atlas-gutter); flex-direction: row; }
+  html[data-edition="v2"] .instrument-atlas-sheet .floor-map-zoom-controls button + button { border: 0; border-left: 1px solid var(--line); }
+  .instrument-atlas-key { gap: 0 8px; }
+}
 @media (max-width: 760px) {
   .instrument-stage { height: 224svh; }
   .instrument-intro { top: max(100px,15svh); }
@@ -152,19 +256,16 @@
   .instrument-object { width: min(86vw,49svh); left: calc(50% + 1% * var(--shift)); top: calc(66.5% - .2% * var(--shift)); transform: translate(-50%,-50%) rotate(calc(-8deg + 11deg * var(--shift))) scale(calc(1 - .22 * var(--shift) + 1.1 * var(--dive))); }
   .instrument-index { left: 5%; right: 5%; bottom: 12px; padding-top: 1px; }
   .instrument-chapters { gap: 15px; }
-  .instrument-index button { font-size: 11px; gap: 5px; }
+  .instrument-index button { font-size: 13px; gap: 5px; }
   .instrument-chapters i { width: 8px; }
   .instrument-chapters [aria-current] i { width: 15px; }
-  .instrument-next span { display: none; }
+
   .instrument-route { top: max(92px,13svh); left: 8%; max-width: 84%; transform: translateY(calc((1 - var(--route-alpha)) * 25px)); }
-  .instrument-home .instrument-route h2 { font-size: clamp(42px,9vw,58px); margin: 12px 0 18px; }
-  .instrument-route h2 br { display: none; }
+  .instrument-home .instrument-route h2 { font-size: clamp(70px,10svh,96px); margin: 0 0 16px; gap: 5px; }
+  .instrument-route h2 span { font-size: 16px; }
   .instrument-itinerary { gap: 10px; margin-bottom: 14px; }
   .instrument-itinerary div:first-child::after { height: 100%; }
-  .instrument-plan { padding: 92px 5% 64px; }
-  .instrument-plan-inner { grid-template-columns: 1fr; gap: 20px; }
-  .instrument-plan-copy h2 br { display: none; }
-  .instrument-board-head, .instrument-home .instrument-board-link { padding: 12px; }
+
 }
 @media (max-height: 700px) and (min-width: 761px) {
   .instrument-intro { top: 84px; }
@@ -185,4 +286,45 @@
   .instrument-static-exploded { display: block; float: right; width: min(36%,270px); margin: 20px 0 10px 18px; }
   .instrument-route { display: flow-root; }
   .instrument-terrain { transform: none; }
+}
+
+/* The atlas and compass share a camera axis and a pinned viewport. */
+@media (prefers-reduced-motion: no-preference) and (min-height: 591px), (prefers-reduced-motion: no-preference) and (min-width: 761px) {
+  .instrument-stage { height: 365svh; --aperture: 0; --axis-x: 66.4%; --axis-y: 53.5%; }
+  .instrument-film {
+    transform-origin: var(--axis-x) var(--axis-y);
+    transform: scale(calc(1 + 5 * var(--dive) * var(--dive)));
+    opacity: 1;
+  }
+  .instrument-index { opacity: clamp(0, calc(1 - 4 * var(--dive)), 1); }
+  .instrument-plan {
+    position: absolute; inset: 0; z-index: 5; overflow: auto; min-height: 0;
+    clip-path: circle(calc(135vmax * var(--aperture)) at var(--axis-x) var(--axis-y));
+  }
+  .instrument-atlas-sheet .floor-map-wrap {
+    transform-origin: var(--axis-x) var(--axis-y);
+    transform: scale(calc(1.35 - .35 * var(--aperture)));
+  }
+  .instrument-plan[inert] { pointer-events: none; }
+}
+@media (max-width: 760px) {
+  .instrument-stage { --axis-x: 51%; --axis-y: 66.3%; }
+}
+
+.instrument-map-launch:hover, .instrument-atlas-key a:hover { text-decoration: underline; text-underline-offset: .22em; }
+@media (max-width: 760px) and (min-height: 591px) and (max-height: 720px) and (prefers-reduced-motion: no-preference) {
+  .instrument-object {
+    width: min(82vw, 44svh);
+    top: calc(69% - 2.7% * var(--shift));
+  }
+}
+@media (max-width: 760px) and (min-height: 591px) and (max-height: 720px) {
+  .instrument-intro { top: max(82px, 12svh); }
+  .instrument-intro #instrument-title { font-size: clamp(39px, 10vw, 52px); }
+  .instrument-actions { margin-top: 11px; }
+}
+
+@media (max-width: 760px) {
+  .instrument-terrain::after { mask-image: radial-gradient(ellipse 92% 50% at 0% 94%, black, transparent 100%); }
+  .instrument-atlas-key a:first-child { flex-basis: 100%; }
 }
