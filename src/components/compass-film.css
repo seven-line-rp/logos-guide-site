@@ -290,3 +290,26 @@ html[data-edition="v2"] .instrument-atlas-sheet .floor-map-zoom-controls button 
   .instrument-route { display: flow-root; }
   .instrument-terrain { transform: none; }
 }
+
+/* The atlas and compass share a camera axis and a pinned viewport. */
+@media (prefers-reduced-motion: no-preference) and (min-height: 591px), (prefers-reduced-motion: no-preference) and (min-width: 761px) {
+  .instrument-stage { height: 365svh; --aperture: 0; --axis-x: 66.4%; --axis-y: 53.5%; }
+  .instrument-film {
+    transform-origin: var(--axis-x) var(--axis-y);
+    transform: scale(calc(1 + 5 * var(--dive) * var(--dive)));
+    opacity: 1;
+  }
+  .instrument-index { opacity: clamp(0, calc(1 - 4 * var(--dive)), 1); }
+  .instrument-plan {
+    position: absolute; inset: 0; z-index: 5; overflow: auto; min-height: 0;
+    clip-path: circle(calc(135vmax * var(--aperture)) at var(--axis-x) var(--axis-y));
+  }
+  .instrument-atlas-sheet .floor-map-wrap {
+    transform-origin: var(--axis-x) var(--axis-y);
+    transform: scale(calc(1.35 - .35 * var(--aperture)));
+  }
+  .instrument-plan[inert] { pointer-events: none; }
+}
+@media (max-width: 760px) {
+  .instrument-stage { --axis-x: 51%; --axis-y: 66.3%; }
+}
