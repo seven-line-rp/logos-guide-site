@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowDown, ArrowRight, ArrowUpRight, LocateFixed, Map, Route } from 'lucide-react'
+import { ArrowDown, ArrowRight, ArrowUpRight } from 'lucide-react'
 import FloorMap from './FloorMap.jsx'
 import CompassFilm from './CompassFilm.jsx'
 import './compass-film.css'
@@ -78,22 +78,20 @@ export default function EditionHome({ search }) {
       <div className="instrument-sticky">
         <div className="instrument-terrain" aria-hidden="true" />
         <div className="instrument-intro" ref={intro}>
-          <div className="instrument-caption"><span className="survey-cross" aria-hidden="true" />Навигация по колледжу</div>
           <h1 id="instrument-title">Логос <span>Путеводитель</span></h1>
           <p>Найдите нужный кабинет и дорогу до следующей пары.</p>
           <div className="instrument-actions">
-            <Link className="instrument-primary" to="/map"><Map size={17} />Открыть карту<ArrowUpRight size={16} /></Link>
+            <Link className="instrument-primary" to="/map">Открыть карту<ArrowUpRight size={16} /></Link>
             <button type="button" onClick={() => goToChapter(2)}>Найти кабинет<ArrowDown size={15} /></button>
           </div>
         </div>
         <CompassFilm />
         <div className="instrument-route" ref={route} tabIndex={-1}>
           <img className="instrument-static-exploded" src="/instrument/exploded.webp" loading="lazy" alt="" />
-          <div className="instrument-caption"><Route size={16} />Пример маршрута</div>
-          <h2>От входа <br/>до кабинета.</h2>
+          <h2><span>Кабинет</span>222</h2>
           <div className="instrument-itinerary">
             <div><i aria-hidden="true"/><span>Главный вход</span><small>1 этаж</small></div>
-            <div><i aria-hidden="true"/><span>Информатика · 222</span><small>2 этаж</small></div>
+            <div><i aria-hidden="true"/><span>Кабинет информатики</span><small>2 этаж</small></div>
           </div>
           <Link className="instrument-primary" to={exampleRoute}>Открыть маршрут<ArrowUpRight size={17} /></Link>
         </div>
@@ -101,27 +99,30 @@ export default function EditionHome({ search }) {
           <div className="instrument-chapters">
             {['Обзор', 'Маршрут', 'План этажей'].map((name, i) => <button key={name} type="button" onClick={() => goToChapter(i)} aria-current={chapter === i ? 'step' : undefined}><i aria-hidden="true" />{name}</button>)}
           </div>
-          <button className="instrument-next" type="button" onClick={() => goToChapter(chapter + 1)}><span>{chapter === 0 ? 'К маршруту' : 'К плану'}</span><ArrowDown size={16} /></button>
         </nav>
       </div>
     </section>
     <section className="instrument-plan" ref={plan} tabIndex={-1} aria-labelledby="instrument-plan-title">
-      <div className="instrument-plan-inner">
-        <div className="instrument-plan-copy">
-          <div className="instrument-caption"><LocateFixed size={16} />План этажей</div>
-          <h2 id="instrument-plan-title">Найти <br/>кабинет.</h2>
-          <p>Выберите помещение на плане или введите номер кабинета, название или фамилию преподавателя.</p>
-          <div className="edition-search"><label htmlFor="home-room-search">Поиск по колледжу</label>{search}</div>
-          <Link className="instrument-text-link" to="/rooms">Все кабинеты<ArrowUpRight size={16} /></Link>
+      <header className="instrument-atlas-tools">
+        <h2 id="instrument-plan-title">План этажей</h2>
+        <div className="edition-search instrument-atlas-search">
+          <label htmlFor="home-room-search">Поиск по колледжу</label>
+          {search}
         </div>
-        <div className="instrument-plan-board">
-          <div className="instrument-board-head"><strong>Карта колледжа</strong><div className="instrument-floors" role="group" aria-label="Выбор этажа">
-            {[1, 2].map(n => <button type="button" key={n} aria-pressed={floor === n} onClick={() => setFloor(n)}>{n} этаж</button>)}
-          </div></div>
-          <FloorMap floor={floor} compact onSelect={room => navigate(`/map?floor=${room.floor}&room=${encodeURIComponent(room.id)}`)} onFloorRequest={setFloor}/>
-          <Link className="instrument-board-link" to={`/map?floor=${floor}`}>Открыть карту<ArrowRight size={16} /></Link>
+        <div className="instrument-floors" role="group" aria-label="Выбор этажа">
+          {[1, 2].map(n => <button type="button" key={n} aria-pressed={floor === n} onClick={() => setFloor(n)}>{n} этаж</button>)}
         </div>
+        <Link className="instrument-map-launch" to={`/map?floor=${floor}`}>Открыть карту<ArrowUpRight size={16} /></Link>
+      </header>
+      <div className="instrument-atlas-sheet">
+        <FloorMap floor={floor} routeStart="entrance-1" routeTargetId="informatics-222"
+          onSelect={room => navigate(`/map?floor=${room.floor}&room=${encodeURIComponent(room.id)}`)}
+          onFloorRequest={setFloor} />
       </div>
+      <footer className="instrument-atlas-key">
+        <Link to={exampleRoute}><span className="instrument-line-sample" aria-hidden="true" />Главный вход <ArrowRight size={14} /> кабинет 222</Link>
+        <Link to="/rooms">Все кабинеты<ArrowUpRight size={15} /></Link>
+      </footer>
     </section>
   </div>
 }
