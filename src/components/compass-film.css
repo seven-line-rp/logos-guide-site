@@ -137,7 +137,7 @@
 }
 .instrument-atlas-tools {
   display: grid;
-  grid-template-columns: 1fr minmax(230px, 360px) auto auto;
+  grid-template-columns: 1fr minmax(230px, 360px) auto;
   align-items: center;
   gap: clamp(14px, 2.4vw, 44px);
   padding: 0 var(--atlas-gutter) clamp(15px, 2svh, 28px);
@@ -170,7 +170,7 @@
   color: #adb8c6;
   background: transparent;
 }
-.instrument-floors button[aria-pressed="true"] { border-color: #53677e; background: #26374b; color: #fff; }
+.instrument-floors button[aria-pressed="true"] { border-color: #53677e; background: var(--action-bg); color: #fff; font-weight: 650; }
 .instrument-floors button:hover { color: white; }
 .instrument-home .instrument-map-launch { color: #d6e4ff; text-decoration: none; }
 .instrument-atlas-sheet {
@@ -217,7 +217,7 @@ html[data-edition="v2"] .instrument-atlas-sheet .floor-map-zoom-controls button 
   flex-wrap: wrap; padding: 7px var(--atlas-gutter); border-top: 1px solid var(--hairline);
 }
 .instrument-atlas-key a {
-  display: inline-flex; gap: 8px; align-items: center; min-height: 38px;
+  display: inline-flex; gap: 8px; align-items: center; min-height: 44px;
   color: #becbdc; text-decoration: none;
 }
 .instrument-atlas-key a:hover, .instrument-map-launch:hover { color: white; }
@@ -225,7 +225,6 @@ html[data-edition="v2"] .instrument-atlas-sheet .floor-map-zoom-controls button 
 
 @media (max-width: 1000px) {
   .instrument-atlas-tools { grid-template-columns: 1fr minmax(200px, 1fr) auto; gap: 10px; }
-  .instrument-atlas-tools .instrument-map-launch { grid-column: 3; grid-row: 2; }
   .instrument-atlas-tools .instrument-floors { grid-column: 3; }
   .instrument-atlas-tools .instrument-atlas-search { grid-column: 2; }
 }
@@ -239,8 +238,6 @@ html[data-edition="v2"] .instrument-atlas-sheet .floor-map-zoom-controls button 
   .instrument-atlas-tools .instrument-atlas-search { grid-column: 1 / -1; grid-row: 2; }
   .instrument-atlas-tools .instrument-floors { grid-column: 2; grid-row: 1; }
   .instrument-floors button { padding-inline: 9px; }
-  .instrument-atlas-tools .instrument-map-launch { grid-column: auto; grid-row: auto; }
-  .instrument-atlas-tools .instrument-map-launch { display: none; }
   .instrument-atlas-sheet { flex: 1; align-items: center; }
   html[data-edition="v2"] .instrument-atlas-sheet .floor-map-viewport { height: max(330px, 55svh); }
   html[data-edition="v2"] .instrument-atlas-sheet .floor-map-stage { width: 100%; margin-block: 12px; }
@@ -325,4 +322,9 @@ html[data-edition="v2"] .instrument-atlas-sheet .floor-map-zoom-controls button 
   .instrument-intro { top: max(82px, 12svh); }
   .instrument-intro #instrument-title { font-size: clamp(39px, 10vw, 52px); }
   .instrument-actions { margin-top: 11px; }
+}
+
+@media (max-width: 760px) {
+  .instrument-terrain::after { mask-image: radial-gradient(ellipse 92% 50% at 0% 94%, black, transparent 100%); }
+  .instrument-atlas-key a:first-child { flex-basis: 100%; }
 }

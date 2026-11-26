@@ -19,7 +19,7 @@ export default function EditionHome({ search }) {
   const intro = useRef(null)
   const route = useRef(null)
   const plan = useRef(null)
-  const [floor, setFloor] = useState(1)
+  const [floor, setFloor] = useState(2)
   const [chapter, setChapter] = useState(0)
 
   useEffect(() => {
@@ -66,7 +66,7 @@ export default function EditionHome({ search }) {
     }
   }, [])
 
-  function goToChapter(index) {
+  function goToChapter(index, keyboard = false) {
     const el = stage.current
     const reduced = matchMedia(staticLayout).matches
     if (reduced && index !== 0) {
@@ -76,7 +76,12 @@ export default function EditionHome({ search }) {
       return
     }
     const distance = el.offsetHeight - el.firstElementChild.clientHeight
-    window.scrollTo({ top: window.scrollY + el.getBoundingClientRect().top + distance * [0, .56, .95][index], behavior: reduced ? 'instant' : 'smooth' })
+    window.scrollTo({ top: window.scrollY + el.getBoundingClientRect().top + distance * [0, .56, .95][index], behavior: reduced || keyboard ? 'instant' : 'smooth' })
+    if (keyboard) {
+      const target = [intro.current, route.current, plan.current][index]
+      target.inert = false
+      target.focus({ preventScroll: true })
+    }
   }
 
   function openRoomSearch() {
@@ -93,9 +98,9 @@ export default function EditionHome({ search }) {
     <section ref={stage} className="instrument-stage" aria-labelledby="instrument-title">
       <div className="instrument-sticky">
         <div className="instrument-terrain" aria-hidden="true" />
-        <div className="instrument-intro" ref={intro}>
+        <div className="instrument-intro" ref={intro} tabIndex={-1}>
           <h1 id="instrument-title">Логос <span>Путеводитель</span></h1>
-          <p>Ищите по номеру кабинета или фамилии преподавателя.</p>
+          <p>Кабинеты и маршруты по колледжу.</p>
           <div className="instrument-actions">
             <Link className="instrument-primary" to="/map">Открыть карту</Link>
             <button type="button" onClick={openRoomSearch}><Search size={16} aria-hidden="true" />Найти кабинет</button>
@@ -113,7 +118,7 @@ export default function EditionHome({ search }) {
         </div>
         <nav className="instrument-index" aria-label="Разделы главной страницы">
           <div className="instrument-chapters">
-            {['Обзор', 'Маршрут', 'План этажей'].map((name, i) => <button key={name} type="button" onClick={() => goToChapter(i)} aria-current={chapter === i ? 'step' : undefined}><i aria-hidden="true" />{name}</button>)}
+            {['Обзор', 'Маршрут', 'План этажей'].map((name, i) => <button key={name} type="button" onClick={event => goToChapter(i, event.detail === 0)} aria-current={chapter === i ? 'step' : undefined}><i aria-hidden="true" />{name}</button>)}
           </div>
         </nav>
         <section className="instrument-plan" ref={plan} tabIndex={-1} aria-labelledby="instrument-plan-title">
@@ -126,7 +131,6 @@ export default function EditionHome({ search }) {
             <div className="instrument-floors" role="group" aria-label="Выбор этажа">
               {[1, 2].map(n => <button type="button" key={n} aria-pressed={floor === n} onClick={() => setFloor(n)}>{n} этаж</button>)}
             </div>
-            <Link className="instrument-map-launch" to={`/map?floor=${floor}`}>Открыть карту</Link>
           </header>
           <div className="instrument-atlas-sheet">
             <FloorMap floor={floor} routeStart="entrance-1" routeTargetId="informatics-222"
@@ -136,6 +140,7 @@ export default function EditionHome({ search }) {
           <footer className="instrument-atlas-key">
             <Link to={exampleRoute}><span className="instrument-line-sample" aria-hidden="true" />Главный вход <ArrowRight size={14} /> кабинет 222</Link>
             <Link to="/rooms">Все кабинеты</Link>
+            <Link className="instrument-map-launch" to={`/map?floor=${floor}`}>Открыть карту</Link>
           </footer>
         </section>
       </div>
