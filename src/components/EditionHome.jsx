@@ -1,12 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowRight, Search } from 'lucide-react'
+import { rooms } from '../data.js'
+import { roomOutline } from '../map-geometry.js'
 import FloorMap from './FloorMap.jsx'
 import CompassFilm from './CompassFilm.jsx'
 import './compass-film.css'
 
 const staticLayout = '(prefers-reduced-motion: reduce), (max-height: 590px) and (max-width: 760px)'
 const exampleRoute = '/route?from=entrance-1&to=informatics-222'
+const floorDrawing = rooms.filter(room => room.floor === 2)
+  .map(room => 'M' + roomOutline(room.id).map(point => point.join(',')).join('L') + 'Z').join(' ')
 const clamp = value => Math.max(0, Math.min(1, value))
 function ramp(start, end, progress) {
   const t = clamp((progress - start) / (end - start))
@@ -28,7 +32,8 @@ export default function EditionHome({ search }) {
     const introduction = intro.current
     const routePanel = route.current
     const atlas = plan.current
-    const chapterNav = sticky.querySelector("nav")
+    const chapterNav = sticky.querySelector(".instrument-index")
+    const places = sticky.querySelector('.instrument-places')
     const reduced = matchMedia(staticLayout)
     let frame = 0
     function draw() {
@@ -50,6 +55,7 @@ export default function EditionHome({ search }) {
       atlas.inert = !staticView && p < .93
       chapterNav.inert = !staticView && p >= .74
       introduction.inert = !staticView && introFade > .9
+      places.inert = introduction.inert
       routePanel.inert = !staticView && routeOpacity < .1
       setChapter(staticView || p < .31 ? 0 : 1)
     }
@@ -97,15 +103,22 @@ export default function EditionHome({ search }) {
   return <div className="instrument-home" id="top">
     <section ref={stage} className="instrument-stage" aria-labelledby="instrument-title">
       <div className="instrument-sticky">
-        <div className="instrument-terrain" aria-hidden="true" />
+        <div className="instrument-terrain" aria-hidden="true">
+          <svg className="instrument-drawing" viewBox="0 0 767 561" preserveAspectRatio="xMidYMid slice"><path d={floorDrawing} /></svg>
+        </div>
         <div className="instrument-intro" ref={intro} tabIndex={-1}>
-          <h1 id="instrument-title">Логос <span>Путеводитель</span></h1>
-          <p>Кабинеты и маршруты по колледжу.</p>
+          <h1 id="instrument-title"><span>Логос</span>Путеводитель</h1>
+          <p>Найдите кабинет, преподавателя или дорогу от входа до пары.</p>
           <div className="instrument-actions">
             <Link className="instrument-primary" to="/map">Открыть карту</Link>
             <button type="button" onClick={openRoomSearch}><Search size={16} aria-hidden="true" />Найти кабинет</button>
           </div>
         </div>
+        <nav className="instrument-places" aria-label="Частые направления">
+          <Link to="/map?floor=1&room=canteen">Столовая</Link>
+          <Link to="/map?floor=2&room=library-214">Библиотека</Link>
+          <Link to="/map?floor=1&room=auditorium-104">Актовый зал</Link>
+        </nav>
         <CompassFilm />
         <div className="instrument-route" ref={route} tabIndex={-1}>
           <img className="instrument-static-exploded" src="/instrument/exploded.webp" loading="lazy" alt="" />
