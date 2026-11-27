@@ -7,11 +7,11 @@ import FloorMap from './FloorMap.jsx'
 import CompassFilm from './CompassFilm.jsx'
 import './compass-film.css'
 
-const chapters = ['Обзор', 'Маршрут', 'Лестница', 'Кабинет', 'Карта']
+const chapters = ['Обзор', 'Маршрут', 'Лестница', 'Корпус', 'Карта']
 const stops = [0, .27, .49, .69, .96]
 const guideScenes = [
   { model: 'stair', label: 'Переход между этажами', title: 'На второй этаж', text: 'Маршрут начинается у главного входа. На плане первого этажа линия ведёт к лестнице, а на втором продолжается до кабинета.' },
-  { model: 'plaque', label: 'Кабинет информатики', title: 'Ищите номер 222', text: 'Сверьте номер на двери с планом. Синяя отметка на стене кабинета показывает, с какой стороны вход.' },
+  { model: 'campus', label: 'Боровск', title: 'Колледж «Логос»', text: 'Главный вход легко узнать по арочному козырьку под вывеской. На плане можно выбрать этаж и найти нужный кабинет.' },
 ]
 
 const staticLayout = '(prefers-reduced-motion: reduce), (max-height: 590px) and (max-width: 760px)'
@@ -53,10 +53,10 @@ export default function EditionHome({ search }) {
       const introFade = ramp(.035, .16, p)
       const routeOpacity = ramp(.13, .23, p) * (1 - ramp(.33, .42, p))
       const stair = ramp(.35, .44, p) * (1 - ramp(.55, .62, p))
-      const plaque = ramp(.55, .64, p) * (1 - ramp(.745, .835, p))
+      const campus = ramp(.55, .64, p) * (1 - ramp(.745, .835, p))
       const interlude = ramp(.32, .41, p) * (1 - ramp(.75, .845, p))
       el.style.setProperty('--compass-alpha', (1 - interlude).toFixed(4))
-      const alphas = [stair, plaque]
+      const alphas = [stair, campus]
       alphas.forEach((alpha, i) => {
         const panel = scenePanels.current[i]
         panel.style.setProperty('--scene-alpha', alpha.toFixed(4))

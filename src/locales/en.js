@@ -545,6 +545,8 @@ Object.assign(english, {
   'Переход между этажами': 'Between floors',
   'На второй этаж': 'Up to the second floor',
   'Маршрут начинается у главного входа. На плане первого этажа линия ведёт к лестнице, а на втором продолжается до кабинета.': 'Start at the main entrance. The line on the first-floor plan leads to the stairs and continues to the classroom on the second floor.',
-  'Ищите номер 222': 'Look for room 222',
-  'Сверьте номер на двери с планом. Синяя отметка на стене кабинета показывает, с какой стороны вход.': 'Match the door number to the plan. The blue mark on the classroom wall shows which side to enter from.',
+  'Колледж «Логос»': 'Logos College',
+  'Корпус': 'Building',
+  'Боровск': 'Borovsk',
+  'Главный вход легко узнать по арочному козырьку под вывеской. На плане можно выбрать этаж и найти нужный кабинет.': 'Look for the arched canopy beneath the college sign. On the map, choose a floor and find your classroom.',
 })
