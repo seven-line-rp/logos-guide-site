@@ -7,6 +7,13 @@ import FloorMap from './FloorMap.jsx'
 import CompassFilm from './CompassFilm.jsx'
 import './compass-film.css'
 
+const chapters = ['Обзор', 'Маршрут', 'Лестница', 'Кабинет', 'Карта']
+const stops = [0, .27, .49, .69, .96]
+const guideScenes = [
+  { model: 'stair', label: 'Переход между этажами', title: 'На второй этаж', text: 'Маршрут начинается у главного входа. На плане первого этажа линия ведёт к лестнице, а на втором продолжается до кабинета.' },
+  { model: 'plaque', label: 'Кабинет информатики', title: 'Ищите номер 222', text: 'Сверьте номер на двери с планом. Синяя отметка на стене кабинета показывает, с какой стороны вход.' },
+]
+
 const staticLayout = '(prefers-reduced-motion: reduce), (max-height: 590px) and (max-width: 760px)'
 const exampleRoute = '/route?from=entrance-1&to=informatics-222'
 const floorDrawing = rooms.filter(room => room.floor === 2)
@@ -23,6 +30,7 @@ export default function EditionHome({ search }) {
   const intro = useRef(null)
   const route = useRef(null)
   const plan = useRef(null)
+  const scenePanels = useRef([])
   const [floor, setFloor] = useState(2)
   const [chapter, setChapter] = useState(0)
 
@@ -40,24 +48,34 @@ export default function EditionHome({ search }) {
       frame = 0
       const staticView = reduced.matches
       const p = clamp(-el.getBoundingClientRect().top / Math.max(1, el.offsetHeight - sticky.clientHeight))
-      const shift = ramp(.055, .50, p)
-      const disperse = ramp(.10, .5, p) * (1 - ramp(.61, .79, p))
-      const introFade = ramp(.035, .24, p)
-      const routeOpacity = ramp(.23, .48, p) * (1 - ramp(.61, .76, p))
+      const shift = ramp(.035, .24, p)
+      const disperse = ramp(.065, .25, p) * (1 - ramp(.35, .45, p))
+      const introFade = ramp(.035, .16, p)
+      const routeOpacity = ramp(.13, .23, p) * (1 - ramp(.33, .42, p))
+      const stair = ramp(.35, .44, p) * (1 - ramp(.55, .62, p))
+      const plaque = ramp(.55, .64, p) * (1 - ramp(.745, .835, p))
+      const interlude = ramp(.32, .41, p) * (1 - ramp(.75, .845, p))
+      el.style.setProperty('--compass-alpha', (1 - interlude).toFixed(4))
+      const alphas = [stair, plaque]
+      alphas.forEach((alpha, i) => {
+        const panel = scenePanels.current[i]
+        panel.style.setProperty('--scene-alpha', alpha.toFixed(4))
+        panel.inert = !staticView && alpha < .5
+      })
       el.style.setProperty('--travel', p.toFixed(4))
       el.style.setProperty('--shift', shift.toFixed(4))
       el.style.setProperty('--open', disperse.toFixed(4))
-      el.style.setProperty('--dive', ramp(.65, .93, p).toFixed(4))
+      el.style.setProperty('--dive', ramp(.802, .95, p).toFixed(4))
       el.style.setProperty('--intro-alpha', (1 - introFade).toFixed(4))
       el.style.setProperty('--route-alpha', routeOpacity.toFixed(4))
-      const aperture = ramp(.75, .93, p)
+      const aperture = ramp(.85, .95, p)
       el.style.setProperty('--aperture', aperture.toFixed(4))
-      atlas.inert = !staticView && p < .93
-      chapterNav.inert = !staticView && p >= .74
+      atlas.inert = !staticView && p < .95
+      chapterNav.inert = !staticView && p >= .85
       introduction.inert = !staticView && introFade > .9
       places.inert = introduction.inert
       routePanel.inert = !staticView && routeOpacity < .1
-      setChapter(staticView || p < .31 ? 0 : 1)
+      setChapter(staticView || p < .17 ? 0 : p < .39 ? 1 : p < .59 ? 2 : p < .84 ? 3 : 4)
     }
     const schedule = () => { if (!frame) frame = requestAnimationFrame(draw) }
     window.addEventListener('scroll', schedule, { passive: true })
@@ -75,16 +93,15 @@ export default function EditionHome({ search }) {
   function goToChapter(index, keyboard = false) {
     const el = stage.current
     const reduced = matchMedia(staticLayout).matches
+    const target = [intro.current, route.current, ...scenePanels.current, plan.current][index]
     if (reduced && index !== 0) {
-      const target = index === 2 ? plan.current : route.current
-      window.scrollTo({ top: window.scrollY + target.getBoundingClientRect().top - (index === 2 ? 0 : 74), behavior: reduced ? 'instant' : 'smooth' })
+      window.scrollTo({ top: window.scrollY + target.getBoundingClientRect().top - (index === 4 ? 0 : 74), behavior: reduced ? 'instant' : 'smooth' })
       target.focus({ preventScroll: true })
       return
     }
     const distance = el.offsetHeight - el.firstElementChild.clientHeight
-    window.scrollTo({ top: window.scrollY + el.getBoundingClientRect().top + distance * [0, .56, .95][index], behavior: reduced || keyboard ? 'instant' : 'smooth' })
+    window.scrollTo({ top: window.scrollY + el.getBoundingClientRect().top + distance * stops[index], behavior: reduced || keyboard ? 'instant' : 'smooth' })
     if (keyboard) {
-      const target = [intro.current, route.current, plan.current][index]
       target.inert = false
       target.focus({ preventScroll: true })
     }
@@ -129,9 +146,18 @@ export default function EditionHome({ search }) {
           </div>
           <Link className="instrument-primary" to={exampleRoute}>Открыть маршрут</Link>
         </div>
+        {guideScenes.map(({ model, label, title, text }, i) => <section key={model} className="instrument-guide-scene"
+          ref={node => { scenePanels.current[i] = node }} tabIndex={-1} aria-labelledby={model + '-title'}>
+          <div className="instrument-guide-copy">
+            <p className="instrument-guide-label">{label}</p>
+            <h2 id={model + '-title'}>{title}</h2>
+            <p>{text}</p>
+          </div>
+          <img src={'/instrument/' + model + '.webp'} alt="" width="900" height="760" />
+        </section>)}
         <nav className="instrument-index" aria-label="Разделы главной страницы">
           <div className="instrument-chapters">
-            {['Обзор', 'Маршрут', 'План этажей'].map((name, i) => <button key={name} type="button" onClick={event => goToChapter(i, event.detail === 0)} aria-current={chapter === i ? 'step' : undefined}><i aria-hidden="true" />{name}</button>)}
+            {chapters.map((name, i) => <button key={name} type="button" onClick={event => goToChapter(i, event.detail === 0)} aria-current={chapter === i ? 'step' : undefined}><i aria-hidden="true" />{name}</button>)}
           </div>
         </nav>
         <section className="instrument-plan" ref={plan} tabIndex={-1} aria-labelledby="instrument-plan-title">
