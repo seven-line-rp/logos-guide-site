@@ -1,5 +1,7 @@
 // English UI catalogue; keys are the original Russian presentation strings.
 export const english = {
+  'Найдите кабинет, преподавателя или дорогу от входа до пары.': 'Find a classroom, a teacher or your way from the entrance to class.',
+  'Частые направления': 'Common destinations',
   'Кабинеты и маршруты по колледжу.': 'Rooms and routes around the college.',
   'Ищите по номеру кабинета или фамилии преподавателя.': 'Search by room number or teacher’s surname.',
   'Логос': 'Logos',
@@ -540,4 +542,9 @@ Object.assign(english, {
   'Проверяем сервер рассылки…': 'Checking the notification server…',
   'Сегодня своих пар впереди нет.': 'No more classes of yours today.',
   'Добавьте пары в расписание': 'Add classes to your schedule',
+  'Переход между этажами': 'Between floors',
+  'На второй этаж': 'Up to the second floor',
+  'Маршрут начинается у главного входа. На плане первого этажа линия ведёт к лестнице, а на втором продолжается до кабинета.': 'Start at the main entrance. The line on the first-floor plan leads to the stairs and continues to the classroom on the second floor.',
+  'Ищите номер 222': 'Look for room 222',
+  'Сверьте номер на двери с планом. Синяя отметка на стене кабинета показывает, с какой стороны вход.': 'Match the door number to the plan. The blue mark on the classroom wall shows which side to enter from.',
 })
